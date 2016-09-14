@@ -4,12 +4,7 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :local-repo ".repo"
-  :dependencies [[com.damballa/abracad "0.4.13"]
-                 [cheshire "5.6.3"]
-                 [inflections "0.12.2"]
-                 [io.confluent/kafka-schema-registry-client "3.0.0"]
-                 [org.apache.kafka/kafka-streams "0.10.0.0-cp1"]
-                 [org.apache.kafka/kafka_2.11 "0.10.0.0-cp1"]
+  :dependencies [[org.apache.kafka/kafka-streams "0.10.0.0-cp1"]
                  [org.clojure/clojure "1.8.0"]]
   :repositories {"confluent"
                  {:url "http://packages.confluent.io/maven/"}})
