@@ -17,6 +17,7 @@
    [clojure.string :as str]
    [kafka.test.config :as config]
    [kafka.test.zk :as zk]
+   [kafka.test.fs :as fs]
    [kafka.test.kafka :as kafka]
    [manifold.stream :as s]
    [manifold.deferred :as d]
@@ -161,6 +162,12 @@
 ;; test system that just starts up the harness. We can control which one is
 ;; invoked just by making a different config available on jenkins or whatever.
 
+(defn multi-broker [n config]
+  (assoc config
+         "broker.id" (str n)
+         "port" (str (+ n 9092))
+         "log.dirs" (fs/tmp-dir "kafka-log" (str n))))
+
 (defn harness-system [config]
   (component/system-map
    :zookeeper (zk/server config)
@@ -182,6 +189,24 @@
    :harness (component/using
              (harness config)
              [:kafka :zookeeper])))
+
+(defmethod test-harness "multi-broker" [config]
+  (component/system-map
+   :zookeeper (zk/server (:broker config))
+
+   :kafka-1 (component/using
+             (kafka/server (multi-broker 1 (:broker config)))
+             [:zookeeper])
+   :kafka-2 (component/using
+             (kafka/server (multi-broker 2 (:broker config)))
+             [:zookeeper])
+   :kafka-3 (component/using
+             (kafka/server (multi-broker 3 (:broker config)))
+             [:zookeeper])
+
+   :harness (component/using
+             (harness config)
+             [:kafka-1 :kafka-2 :kafka-3 :zookeeper])))
 
 (defmethod test-harness "remote" [config]
   (component/system-map
