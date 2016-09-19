@@ -4,6 +4,7 @@
 .hgignore
 /.lein-*
 /.nrepl-port
+/checkouts
 /classes
 /codox
 /jackdaw-client/.lein-*
