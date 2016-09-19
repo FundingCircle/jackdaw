@@ -74,12 +74,7 @@
       (on-completion record-metadata exception))))
 
 (defn producer
-  "Build a kafka producer with the specified callback
-
-   The optional 2nd arity is to supply a function which will be invoked for
-   every message sent. The first parameter to the callback will be the record
-   metadata and the second will be the exception thrown while attempting to
-   send the message to the kafka brokers"
+  "Build a kafka producer with the supplied config."
   [config]
   (KafkaProducer. config))
 
