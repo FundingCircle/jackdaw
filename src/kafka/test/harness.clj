@@ -42,7 +42,12 @@
   (CountDownLatch. n))
 
 
-(defn collect-logs! [{:keys [config topics latch log-stream]}]
+(defn collect-logs!
+  "Creates a kafka consumer and `put!`s all messages into the supplied
+   `log-stream`.
+
+   Blocks until the `latch` has been released."
+  [{:keys [config topics latch log-stream]}]
   (let [consumer (kafka/consumer
                   (config/props config [:consumer])
                   topics)]
@@ -57,7 +62,22 @@
     (.await latch)))
 
 
-(defn start! [{:keys [config topics] :as harness}]
+(defn start!
+  "Starts the test harness
+
+   Returns a modified test harness with the following slots
+
+     :producer    a kafka producer with the supplied config
+     :zk-utils    this is required for administrive tasks like
+                  creating/listing topics etc
+     :log-stream  a manifold stream into which all records consumed
+                  by the consumer are `put!`
+     :latch       a java.util.concurrent primitive to indicate
+                  when the consumer can be closed
+     :collector   the log collection thread. this is a manifold
+                  future that can be dereferenced once the consumer
+                  has been closed."
+  [{:keys [config topics] :as harness}]
   (let [acks           (atom [])
         offsets        (atom {})
 
@@ -89,7 +109,9 @@
      :collector (d/future (try-collect!))}))
 
 
-(defn stop! [{:keys [log-stream zk-client producer latch]}]
+(defn stop!
+  "Stops the test harness"
+  [{:keys [log-stream zk-client producer latch]}]
   (.countDown latch)
   (s/close! log-stream)
 
@@ -101,23 +123,18 @@
    :consumer nil
    :log-stream nil})
 
-(defn put! [{:keys [producer]} {:keys [topic key value]} callback-fn]
+(defn put!
+  "Put a record onto a kafka topic"
+  [{:keys [producer]} {:keys [topic key value]} callback-fn]
   (let [record (if key
                  (ProducerRecord. topic key value)
                  (ProducerRecord. topic value))]
     @(.send producer record callback-fn)))
 
-(defn take! [{:keys [log-stream]}]
+(defn take!
+  "Take a record from the subscription"
+  [{:keys [log-stream]}]
   (s/take! log-stream))
-
-;;
-;; The test harness starts up a kafka producer with which to publish test
-;; messages and a consumer subscribed to all topics and `put!`s them
-;; on to a manifold stream which tests can consume to make assertions
-;; about the expected output of one or more stream processors.
-;;
-;; We use a java.util.concurrent.CountDownLatch to wait for the tests to
-;; finished and `close` the
 
 (defrecord Harness [zk-utils zk-client
                     log-stream
@@ -133,6 +150,16 @@
 (defn harness [config]
   (map->Harness {:config config
                  :topics (:topics config)}))
+
+;; Experimental
+;;
+;; The idea here is to make the test interface the same whether the test is
+;; to be run locally *or* against a remote kafka cluster.
+;;
+;; So we have an "embedded" test system that starts up it's own zookeeper and
+;; kafka services before running the tests. But in addition, we have the "remote"
+;; test system that just starts up the harness. We can control which one is
+;; invoked just by making a different config available on jenkins or whatever.
 
 (defn harness-system [config]
   (component/system-map
@@ -160,43 +187,30 @@
   (component/system-map
    :harness (harness config)))
 
-;; (defn try-start
-;;   "Tries to start `system` but stops it if there is an error
-;;    during the `start-system` method"
-;;   [system]
-;;   (try
-;;     (swap! system component/start-system)
-;;     (catch clojure.lang.ExceptionInfo e
-;;       (let [{:keys [component system]} (ex-data e)]
-;;         (component/stop-system system)
-;;         (throw e)))))
+(defn try-start
+  "Tries to start `system` but stops it if there is an error
+   during the `start-system` method"
+  [system]
+  (try
+    (swap! system component/start-system)
+    (catch clojure.lang.ExceptionInfo e
+      (let [{:keys [component system]} (ex-data e)]
+        (component/stop-system system)
+        (throw e)))))
 
-;; ;;
-;; ;; Always nice to build macros on top of a functional interface. At the
-;; ;; least, easier to debug when things go wrong, but gives the user a
-;; ;; bit more flexiblity with regard to usage.
-;; ;;
-;; ;; The way this works is that we start up the test harness, then run the
-;; ;; provided test function. It's up to you to write a test function that
-;; ;; doesn't block forever (e.g. if there's a chance your test might not
-;; ;; produce the output it's expecting, you could use `try-take!`
-;; (defn call-with-test-harness
-;;   [run-test-with config]
-;;   (let [harness (atom (test-harness config))]
+;; Not ready yet
+(defn call-with-test-harness
+  [run-test-with config]
+  (let [harness (atom (test-harness config))]
+    (try-start harness)
+    (try
+      (run-test-with (:harness @harness))
+      (finally
+        (swap! harness component/stop-system)))))
 
-;;     (try-start harness)
-
-;;     (try
-;;       (run-test-with (:harness @harness))
-;;       (finally
-;;         ;; countdown to release of the log collection thread
-;;         (.countDown (get-in @harness [:harness :countdown]))
-;;         (component/stop @harness)))))
-
-
-;; (defmacro with-test-harness [[sym config] & body]
-;;   `(call-with-test-harness
-;;     (fn [harness#]
-;;       (let [~sym harness#]
-;;         ~@body))
-;;     ~config))
+(defmacro with-test-harness [[sym config] & body]
+  `(call-with-test-harness
+    (fn [harness#]
+      (let [~sym harness#]
+        ~@body))
+    ~config))
