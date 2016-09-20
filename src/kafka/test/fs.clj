@@ -9,7 +9,7 @@
    the root temporary dir."
   [& parts]
   (let [gen-dir (fn [root]
-                  (apply io/file root "kafka.test" parts))]
+                  (apply io/file root "embedded-kafka" parts))]
     (-> (System/getProperty "java.io.tmpdir")
         (gen-dir)
         (.getPath))))
