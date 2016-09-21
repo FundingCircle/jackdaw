@@ -1,5 +1,5 @@
 (ns kstreams.core
-  "Clojure wrapper to kafka streams KStreamBuilder class."
+  "Clojure wrapper to kafka streams."
   (:refer-clojure :exclude [count map reduce group-by merge filter])
   (:require [kstreams.lambdas :refer :all])
   (:import org.apache.kafka.common.serialization.Serde
