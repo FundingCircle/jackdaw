@@ -20,8 +20,8 @@
 (deftest serializer-deserializer-test
   (testing "Serializing and deserializing a map returns the same map"
     (let [client (MockSchemaRegistryClient.)
-          ser (avro-serializer client schema)
-          de (avro-deserializer client)]
+          ser (avro-serializer client schema "http://localhost" true)
+          de (avro-deserializer client "http://localhost" true)]
       (is (= data
              (->> (.serialize ser topic-name data)
                   (.deserialize de topic-name)

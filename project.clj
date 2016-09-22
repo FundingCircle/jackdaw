@@ -1,4 +1,4 @@
-(defproject kafka-serdes "0.1.0-SNAPSHOT"
+(defproject kafka-serdes "0.2.0-SNAPSHOT"
   :description "Serializers/deserializers for Kafka"
   :url "https://github.com/FundingCircle/kafka-serdes"
   :license {:name "Eclipse Public License"

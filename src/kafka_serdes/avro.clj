@@ -1,5 +1,4 @@
 (ns kafka-serdes.avro
-  (:refer-clojure)
   (:require
    [kafka-serdes.avro-schema :as avro])
   (:import
@@ -26,27 +25,41 @@
      (avro/map->generic-record schema data)
      (throw (IllegalArgumentException. "Not a Clojure map")))))
 
-(deftype CljKafkaAvroSerializer [^Serializer serializer ^String schema]
+(deftype CljAvroSerializer [^Serializer serializer schema]
   Serializer
   (close [this]
     (.close serializer))
   (configure [this configs key?]
     (.configure serializer configs key?))
-  (serialize [this topic data]
-    (.serialize serializer topic (avro-record data schema))))
+  (serialize [this topic msg]
+    (.serialize serializer topic (avro-record msg schema))))
 
 (defn avro-serializer
-  "Create an Avro serializer"
-  [client schema]
-  (CljKafkaAvroSerializer. (KafkaAvroSerializer. client) schema))
+  "Makes an avro serializer."
+  ([schema config key?]
+   (avro-serializer nil schema config key?))
+  ([registry-client schema {:keys [schema-registry-url]} key?]
+   (let [serializer (KafkaAvroSerializer. registry-client)]
+     (when schema-registry-url
+       (let [config (java.util.HashMap.)]
+         (.put config "schema.registry.url" schema-registry-url)
+         (.configure serializer config key?)))
+     (CljAvroSerializer. serializer schema))))
 
 (defn avro-deserializer
-  "Create an Avro deserializer"
-  [client]
-  (KafkaAvroDeserializer. client))
+  "Makes an avro deserializer"
+  ([config key?]
+   (avro-deserializer nil config key?))
+  ([registry-client {:keys [schema-registry-url]} key?]
+   (let [deserializer (KafkaAvroDeserializer. registry-client)]
+     (when schema-registry-url
+       (let [config (java.util.HashMap.)]
+         (.put config "schema.registry.url" schema-registry-url)
+         (.configure deserializer config key?)))
+     deserializer)))
 
 (defn avro-serde
-  "Create an Avro SerDe."
-  [client schema]
-  (Serdes/serdeFrom (avro-serializer client schema)
-                    (avro-deserializer client)))
+  "Creates an avro serde."
+  [config json-schema key?]
+  (Serdes/serdeFrom (avro-serializer json-schema config key?)
+                    (avro-deserializer config key?)))
