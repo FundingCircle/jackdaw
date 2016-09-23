@@ -39,7 +39,7 @@
     (configure [this configs key?])
     (deserialize [this _topic data]
       (-> (bytes-to-string data)
-          (json/read-str)
+          (json/read-str :key-fn keyword)
           (inflections/hyphenate-keys)))))
 
 (def json-serde
