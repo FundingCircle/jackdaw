@@ -1,31 +1,18 @@
 (ns kafka-serdes.avro
-  (:require
-   [kafka-serdes.avro-schema :as avro])
-  (:import
-   (io.confluent.kafka.schemaregistry.client CachedSchemaRegistryClient
-                                             MockSchemaRegistryClient)
-   (io.confluent.kafka.serializers KafkaAvroDeserializer
-                                   KafkaAvroSerializer)
-   (org.apache.avro.generic GenericContainer)
-   (org.apache.kafka.common.serialization Deserializer
-                                          Serializer
-                                          Serdes)))
+  (:require [kafka-serdes.avro-schema :as avro-schema])
+  (:import [io.confluent.kafka.serializers KafkaAvroDeserializer KafkaAvroSerializer]
+           [org.apache.kafka.common.serialization Serdes Serializer]))
 
 (set! *warn-on-reflection* true)
 
 (defn avro-record
-  "Create an Avro-serializable object."
-  ([data]
-   (if (some #{(type data)}
-             [nil Boolean Integer Long Float Double CharSequence (type (byte-array 0)) GenericContainer])
-     data
-     (throw (IllegalArgumentException. "Not an primitive Avro type"))))
-  ([data schema]
-   (if schema
-     (if (map? data)
-       (avro/map->generic-record schema data)
-       (throw (IllegalArgumentException. "Not a Clojure map")))
-     (avro-record data))))
+  "Creates an avro record for serialization, from a clojure type.
+  Clojure maps are converted to a GenericDataRecord. Primitive types are passed
+  through to the avro serializer."
+  [msg schema]
+  (if (map? msg)
+    (avro-schema/map->generic-record schema msg)
+    msg))
 
 (deftype CljAvroSerializer [^Serializer serializer schema]
   Serializer
