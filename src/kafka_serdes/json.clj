@@ -42,6 +42,7 @@
           (json/read-str :key-fn keyword)
           (inflections/hyphenate-keys)))))
 
-(def json-serde
+(defn json-serde
   "Create a JSON serde."
+  []
   (Serdes/serdeFrom json-serializer json-deserializer))

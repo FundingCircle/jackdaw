@@ -5,28 +5,49 @@
             [kafka-serdes.json :as json])
   (:import org.apache.kafka.common.serialization.Serdes))
 
-(defn byte-array-serde [] (Serdes/ByteArray))
+(defmulti load
+  "Returns a serde."
+  (fn [config] (or (:serde/type config) config)))
 
-(defn byte-buffer-serde [] (Serdes/ByteBuffer))
+(defmethod load :serde/avro-key
+  [{json-schema :avro/schema}]
+  (avro/avro-serde env json-schema true))
 
-(defn double-serde [] (Serdes/Double))
+(defmethod load :serde/avro-value
+  [{json-schema :avro/schema}]
+  (avro/avro-serde env json-schema false))
 
-(defn integer-serde [] (Serdes/Integer))
+(defmethod load :serde/json
+  [_]
+  (json/json-serde))
 
-(defn long-serde [] (Serdes/Long))
+(defmethod load :serde/byte-array
+  [_]
+  (Serdes/ByteArray))
 
-(defn string-serde [] (Serdes/String))
+(defmethod load :serde/byte-buffer
+  [_]
+  (Serdes/ByteBuffer))
 
-(defn avro-value-serde
-  ([]
-   (avro-value-serde nil))
-  ([json-schema]
-   (avro/avro-serde env json-schema false)))
+(defmethod load :serde/double
+  [_]
+  (Serdes/Double))
 
-(defn avro-key-serde
-  ([]
-   (avro-key-serde nil))
-  ([json-schema]
-   (avro/avro-serde env json-schema true)))
+(defmethod load :serde/integer
+  [_]
+  (Serdes/Integer))
 
-(defn json-serde [] json/json-serde)
+(defmethod load :serde/long
+  [_]
+  (Serdes/Long))
+
+(defmethod load :serde/string
+  [_]
+  (Serdes/String))
+
+(defn load-serdes
+  "Updates a topic configuration by instantiating the key and value serde."
+  [topic-config]
+  (-> topic-config
+      (update :kafka-topic/key-serde load)
+      (update :kafka-topic/value-serde load)))
