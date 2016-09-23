@@ -21,9 +21,11 @@
      data
      (throw (IllegalArgumentException. "Not an primitive Avro type"))))
   ([data schema]
-   (if (map? data)
-     (avro/map->generic-record schema data)
-     (throw (IllegalArgumentException. "Not a Clojure map")))))
+   (if schema
+     (if (map? data)
+       (avro/map->generic-record schema data)
+       (throw (IllegalArgumentException. "Not a Clojure map")))
+     (avro-record data))))
 
 (deftype CljAvroSerializer [^Serializer serializer schema]
   Serializer
