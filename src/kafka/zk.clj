@@ -1,20 +1,23 @@
-(ns kafka.test.zk
-  (:require
-   [com.stuartsierra.component :as component]
-   [clojure.java.io :as io]
-   [clojure.string :as str]
-   [kafka.test.fs :as fs]
-   [manifold.deferred :as d])
-  (:import
-   (java.net InetSocketAddress)
-   (kafka.utils ZkUtils)
-   (org.apache.zookeeper.server ZooKeeperServer ServerCnxnFactory)
-   (org.apache.zookeeper KeeperException$NoNodeException)
-   (org.I0Itec.zkclient ZkClient ZkConnection)))
+(ns kafka.zk
+  (:require [clojure.string :as str])
+  (:import kafka.utils.ZkUtils))
 
 (def zk-connect "zookeeper.connect")
 (def zk-session-timeout "zookeeper.session.timeout.ms")
 (def zk-connection-timeout "zookeeper.connection.timeout.ms")
+
+(defn- int-get
+  [config key default]
+  (try
+    (Integer/parseInt (get config key default))
+    (catch Exception e
+      (let [msg (format "Invalid config value '%s' for key '%s'"
+                        (get config key default)
+                        key)
+            context {:config config
+                     :key key
+                     :default default}]
+        (throw (ex-info msg context e))))))
 
 (defn- ensure-connect-string
   [config]
