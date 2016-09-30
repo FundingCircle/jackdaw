@@ -1,14 +1,16 @@
 # kafka.core
 
-A Clojure library designed to ... well, that part is up to you.
+A Clojure library providing a very thin wrapper around the main Kafka APIs
 
 ## Usage
 
-FIXME
+In your project.clj
+
+  [kafka.core "0.1.0-SNAPSHOT"]
 
 ## License
 
-Copyright © 2016 FIXME
+Copyright © 2016 Funding Circle
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
