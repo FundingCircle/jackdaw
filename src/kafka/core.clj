@@ -1,10 +1,7 @@
 (ns kafka.core
   "Clojure wrapper to kafka consumers/producers"
-  (:import
-   (org.apache.kafka.clients.producer KafkaProducer Callback)
-   (org.apache.kafka.clients.consumer KafkaConsumer ConsumerRebalanceListener)
-   (org.apache.kafka.clients.consumer ConsumerRecord)
-   (org.apache.kafka.clients.producer ProducerRecord)))
+  (:import org.apache.kafka.clients.consumer.KafkaConsumer
+           org.apache.kafka.clients.producer.KafkaProducer))
 
 (defn producer
   "Return a KafkaProducer with the supplied properties"
