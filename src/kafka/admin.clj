@@ -2,7 +2,7 @@
   (:require [kafka.config :as config])
   (:import kafka.admin.AdminUtils))
 
-(defn create-topic
+(defn create-topic!
   "Create `topic` as specified in the topic spec"
   [zk-utils topic partitions replication-factor config]
   (AdminUtils/createTopic zk-utils topic
@@ -16,7 +16,7 @@
   [zk-utils topic]
   (AdminUtils/topicExists zk-utils topic))
 
-(defn delete-topic
+(defn delete-topic!
   "Delete `topic`"
   [zk-utils topic]
   (AdminUtils/deleteTopic zk-utils topic))
