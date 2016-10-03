@@ -99,6 +99,8 @@
 ;;
 ;;
 
+(def ^:dynamic *producers*)
+
 (defn- open-producers [configs]
   (let [logger (fn [p]
                  (log/infof "opened producer: %s" (first p)))]
@@ -108,13 +110,13 @@
          (apply hash-map))))
 
 (defn- close-producers []
-  (doseq [[k p] kafka/*producers*]
+  (doseq [[k p] *producers*]
     (.close p)
     (log/info "closed producer: %s" k)))
 
 (defn producers [configs]
   (fn [t]
-    (binding [kafka/*producers* (open-producers configs)]
+    (binding [*producers* (open-producers configs)]
       (try
         (t)
         (finally
@@ -124,7 +126,7 @@
   "Identifying the producer by :id means we can delegate the clean up
    of producers after the test to the fixture"
   ([id {:keys [topic key value]}]
-   (let [producer (get kafka/*producers* id)
+   (let [producer (get *producers* id)
          record (if key
                   (ProducerRecord. topic key value)
                   (ProducerRecord. topic value))]
