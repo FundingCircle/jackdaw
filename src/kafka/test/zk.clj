@@ -1,10 +1,8 @@
 (ns kafka.test.zk
   (:require
-   [com.stuartsierra.component :as component]
    [clojure.java.io :as io]
    [clojure.string :as str]
-   [kafka.test.fs :as fs]
-   [manifold.deferred :as d])
+   [kafka.test.fs :as fs])
   (:import
    (java.net InetSocketAddress)
    (kafka.utils ZkUtils)
@@ -70,11 +68,8 @@
     (.startup factory zk)
 
     {:zk zk
-     :factory factory
-     :thread (d/future
-               (.join factory)
-               (when (.isRunning zk)
-                 (.shutdown zk)))}))
+     :factory factory}))
+
 
 (defn stop! [{:keys [zk config factory]}]
   (try
@@ -89,16 +84,3 @@
     (finally
       (fs/try-delete! (io/file (fs/tmp-dir "zookeeper-snapshot")))
       (fs/try-delete! (io/file (fs/tmp-dir "zookeeper-log"))))))
-
-(defrecord ZooKeeper [config
-                      zk factory thread]
-  component/Lifecycle
-  (start [this]
-    (merge this (start! this)))
-
-  (stop [this]
-    (merge this (stop! this))))
-
-(defn server
-  [config]
-  (map->ZooKeeper {:config config}))
