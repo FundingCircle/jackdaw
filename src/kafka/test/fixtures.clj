@@ -165,7 +165,7 @@
   [consumer latch]
   (lazy-seq
    (when-let [records (when (pos? (.getCount latch))
-                        (locking consumer (.poll consumer 1000)))]
+                        (locking consumer (.poll consumer 100)))]
      (concat (lazy-iterate (.iterator records))
              (when (pos? (.getCount latch))
                (lazy-polling consumer latch))))))
