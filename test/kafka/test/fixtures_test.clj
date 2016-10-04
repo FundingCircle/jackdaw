@@ -48,13 +48,13 @@
 (defn call-with-consumer-queue
   "Functionally consume a consumer"
   [f consumer]
-  (let [latch (fix/latch 1)
+  (let [stop? (atom false)
         queue (fix/queue 10)
-        proc (fix/consumer-loop consumer queue latch)]
+        proc (fix/consumer-loop consumer queue stop?)]
     (try
       (f queue)
       (finally
-        (.countDown latch)
+        (reset! stop? true)
         @proc))))
 
 (deftest consumer-test
