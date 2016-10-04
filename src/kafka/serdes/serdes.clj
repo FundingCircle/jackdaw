@@ -1,8 +1,8 @@
-(ns kafka-serdes.serdes
+(ns kafka.serdes.serdes
   "Some useful serdes."
   (:require [environ.core :refer [env]]
-            [kafka-serdes.avro :as avro]
-            [kafka-serdes.json :as json])
+            [kafka.serdes.avro :as avro]
+            [kafka.serdes.json :as json])
   (:import org.apache.kafka.common.serialization.Serdes))
 
 (defmulti load

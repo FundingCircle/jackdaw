@@ -1,4 +1,4 @@
-(ns kafka-serdes.avro-schema
+(ns kafka.serdes.avro-schema
   (:import
    (org.apache.avro Schema
                     Schema$Field

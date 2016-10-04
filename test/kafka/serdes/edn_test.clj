@@ -1,11 +1,4 @@
-(ns kafka-serdes.json-test
-  (:require
-   [clojure.test :refer :all]
-   [clojure.test.check.clojure-test :as ct :refer [defspec]]
-   [clojure.test.check.generators :as gen]
-   [clojure.test.check.properties :as prop]
-   [kafka-serdes.edn :refer :all]
-   [clojure.edn :as edn]))
+(ns kafka.serdes.json-test)
 
 ;; (def edn-bytes-roundtrip-property
 ;;   "An edn form should be the same after writing to a byte array and reading

@@ -1,12 +1,7 @@
-(ns kafka-serdes.edn
-  (:refer-clojure)
-  (:require
-   [clojure.edn :as edn])
-  (:import
-   (java.nio.charset StandardCharsets)
-   (org.apache.kafka.common.serialization Deserializer
-                                          Serializer
-                                          Serdes)))
+(ns kafka.serdes.edn
+  (:require [clojure.edn :as edn])
+  (:import java.nio.charset.StandardCharsets
+           [org.apache.kafka.common.serialization Deserializer Serdes Serializer]))
 
 (def edn-serializer
   (reify Serializer

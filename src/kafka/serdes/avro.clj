@@ -1,5 +1,5 @@
-(ns kafka-serdes.avro
-  (:require [kafka-serdes.avro-schema :as avro-schema])
+(ns kafka.serdes.avro
+  (:require [kafka.serdes.avro-schema :as avro-schema])
   (:import [io.confluent.kafka.serializers KafkaAvroDeserializer KafkaAvroSerializer]
            [org.apache.kafka.common.serialization Serdes Serializer]))
 

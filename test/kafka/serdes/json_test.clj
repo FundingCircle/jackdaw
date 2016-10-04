@@ -1,11 +1,11 @@
-(ns kafka-serdes.json-test
+(ns kafka.serdes.json-test
   (:require
    [clojure.data.json :as json]
    [clojure.test :refer :all]
    [clojure.test.check.clojure-test :as ct :refer [defspec]]
    [clojure.test.check.generators :as gen]
    [clojure.test.check.properties :as prop]
-   [kafka-serdes.json :refer :all]))
+   [kafka.serdes.json :refer :all]))
 
 (def string-bytes-roundtrip-property
   "A strings `s' should be the same after writing to a byte array and reading

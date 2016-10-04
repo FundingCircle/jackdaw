@@ -1,14 +1,10 @@
-(ns kafka-serdes.json
+(ns kafka.serdes.json
   "Implements JSON serializer, deserializer, and SerDe."
-  (:require
-   [clojure.data.json :as json]
-   [clojure.java.io :as io]
-   [inflections.core :as inflections])
-  (:import
-   (java.nio.charset StandardCharsets)
-   (org.apache.kafka.common.serialization Deserializer
-                                          Serdes
-                                          Serializer)))
+  (:require [clojure.data.json :as json]
+            [clojure.java.io :as io]
+            [inflections.core :as inflections])
+  (:import java.nio.charset.StandardCharsets
+           [org.apache.kafka.common.serialization Deserializer Serdes Serializer]))
 
 (set! *warn-on-reflection* true)
 
