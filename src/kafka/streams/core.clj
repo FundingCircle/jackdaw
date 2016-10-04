@@ -1,7 +1,7 @@
-(ns kstreams.core
+(ns kafka.streams.core
   "Clojure wrapper to kafka streams."
   (:refer-clojure :exclude [count map reduce group-by merge filter])
-  (:require [kstreams.lambdas :refer :all])
+  (:require [kafka.streams.lambdas :refer :all])
   (:import org.apache.kafka.common.serialization.Serde
            org.apache.kafka.streams.KafkaStreams
            [org.apache.kafka.streams.kstream KGroupedTable KStream KStreamBuilder KTable Predicate Windows]

@@ -1,4 +1,4 @@
-(ns kstreams.lambdas
+(ns kafka.streams.lambdas
   "Wrappers for the Java 'lambda' functions."
   (:import org.apache.kafka.streams.KeyValue
            [org.apache.kafka.streams.kstream Aggregator ForeachAction Initializer KeyValueMapper Predicate Reducer TransformerSupplier ValueJoiner ValueMapper]
