@@ -3,10 +3,15 @@
    [kafka.admin :as admin]
    [kafka.client :as client]
    [kafka.zk :as zk]
-   [kafka.test.test-config :as test-config]
    [kafka.test.fs :as fs]
    [kafka.test.fixtures :as fix]
-   [clojure.test :refer :all]))
+   [kafka.test.test-config :as test-config]
+   [clojure.test :refer :all])
+  (:import
+   (org.apache.kafka.common.serialization Serdes)))
+
+(def str-serde  (Serdes/String))
+(def long-serde (Serdes/Long))  ;; clojure numbers are long by default
 
 (deftest zookeeper-test
   (let [fix (fix/zookeeper test-config/broker)
@@ -43,6 +48,25 @@
               (is (= 1 (:serializedValueSize (client/metadata a))))
               (is (= 2 (:serializedValueSize (client/metadata aa))))))]
     (testing "producer publish!"
+      (fix t))))
+
+(deftest producer-with-serde-test
+  (let [fix (join-fixtures
+             [(fix/zookeeper test-config/broker)
+              (fix/broker test-config/broker)
+              (fix/producer-registry {:words [test-config/producer
+                                              (.serializer long-serde)
+                                              (.serializer str-serde)]})])
+        t (fn []
+            (let [[a aa] [@(fix/publish! :words {:topic "words"
+                                                 :key 1
+                                                 :value "a"})
+                          @(fix/publish! :words {:topic "words"
+                                                 :key 2
+                                                 :value "aa"})]]
+              (is (= 1 (:serializedValueSize (client/metadata a))))
+              (is (= 2 (:serializedValueSize (client/metadata aa))))))]
+    (testing "producer publish! non-default serde"
       (fix t))))
 
 (defn call-with-consumer-queue

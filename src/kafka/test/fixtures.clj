@@ -106,7 +106,12 @@
   (let [logger (fn [p]
                  (log/infof "opened producer: %s" (first p)))]
     (->> (for [[k cfg] configs]
-           [k (client/producer cfg)])
+           [k (cond
+                (map? cfg)    (client/producer cfg)
+                (vector? cfg) (apply client/producer cfg)
+                :else         (throw (ex-info "unsupported producer config"
+                                              {:producer k
+                                               :config cfg})))])
          (mapcat identity)
          (apply hash-map))))
 
