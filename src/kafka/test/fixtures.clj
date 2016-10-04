@@ -6,8 +6,7 @@
    [kafka.admin :as admin]
    [kafka.client :as client]
    [kafka.test.zk :as zk]
-   [kafka.test.kafka :as broker]
-   [environ.core :refer [env]])
+   [kafka.test.kafka :as broker])
   (:import
    (kafka.common TopicExistsException)
    (java.util.concurrent CountDownLatch LinkedBlockingQueue)
@@ -98,7 +97,7 @@
 ;;
 ;;  Introducing the concept of a producer registry allows us to create a fixture
 ;;  that loads a "registry" with all producers the test might want to use, then
-;;  when tests want to publish! they can reference the producer it wants by a
+;;  when tests want to publish! they can reference the producer they want by a
 ;;  keyword id.
 ;;
 ;;
@@ -254,8 +253,8 @@
 (defn kafka-platform
   "Combine the zookeeper, broker, and schema-registry fixtures into
    one glorius test helper"
-  [broker-config]
-  (if (read-string (env :embedded-fixtures))
+  [broker-config embedded?]
+  (if embedded?
     (test/compose-fixtures (zookeeper broker-config)
                            (broker broker-config))
     identity-fixture))

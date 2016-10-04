@@ -9,7 +9,7 @@
    [kafka.test.fixtures :as fix]
    [kafka.test.test-config :as test-config]))
 
-(use-fixtures :once (join-fixtures [(fix/kafka-platform test-config/broker)
+(use-fixtures :once (join-fixtures [(fix/kafka-platform test-config/broker true)
                                     (fix/producer-registry {:foo test-config/producer})
                                     (fix/log-seqs {:foo test-config/consumer})]))
 
