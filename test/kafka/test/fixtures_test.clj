@@ -1,17 +1,17 @@
 (ns kafka.test.fixtures-test
   (:require
    [kafka.admin :as admin]
-   [kafka.core :as kafka]
+   [kafka.client :as client]
    [kafka.zk :as zk]
-   [kafka.test.config :as config]
+   [kafka.test.test-config :as test-config]
    [kafka.test.fs :as fs]
    [kafka.test.fixtures :as fix]
    [clojure.test :refer :all]))
 
 (deftest zookeeper-test
-  (let [fix (fix/zookeeper config/broker)
+  (let [fix (fix/zookeeper test-config/broker)
         t (fn []
-            (let [client (zk/client config/broker)]
+            (let [client (zk/client test-config/broker)]
               (is client)
               (.close client)))]
     (testing "zookeeper up/down"
@@ -19,10 +19,10 @@
 
 (deftest broker-test
   (let [fix (compose-fixtures
-             (fix/zookeeper config/broker)
-             (fix/broker config/broker))
+             (fix/zookeeper test-config/broker)
+             (fix/broker test-config/broker))
         t (fn []
-            (let [client (zk/client config/broker)
+            (let [client (zk/client test-config/broker)
                   utils (zk/utils client)]
               (is (.pathExists utils "/brokers/ids/0"))))]
     (testing "broker up/down"
@@ -30,9 +30,9 @@
 
 (deftest producer-test
   (let [fix (join-fixtures
-             [(fix/zookeeper config/broker)
-              (fix/broker config/broker)
-              (fix/producer-registry {:words config/producer})])
+             [(fix/zookeeper test-config/broker)
+              (fix/broker test-config/broker)
+              (fix/producer-registry {:words test-config/producer})])
         t (fn []
             (let [[a aa] [@(fix/publish! :words {:topic "words"
                                                  :key "1"
@@ -40,8 +40,8 @@
                           @(fix/publish! :words {:topic "words"
                                                  :key "2"
                                                  :value "aa"})]]
-              (is (= 1 (:serializedValueSize (kafka/metadata a))))
-              (is (= 2 (:serializedValueSize (kafka/metadata aa))))))]
+              (is (= 1 (:serializedValueSize (client/metadata a))))
+              (is (= 2 (:serializedValueSize (client/metadata aa))))))]
     (testing "producer publish!"
       (fix t))))
 
@@ -59,10 +59,10 @@
 
 (deftest consumer-test
   (let [fix (join-fixtures
-             [(fix/zookeeper config/broker)
-              (fix/broker config/broker)
-              (fix/consumer-registry {:words config/consumer})
-              (fix/producer-registry {:words config/producer})])
+             [(fix/zookeeper test-config/broker)
+              (fix/broker test-config/broker)
+              (fix/consumer-registry {:words test-config/consumer})
+              (fix/producer-registry {:words test-config/producer})])
         t #(call-with-consumer-queue
             (fn [queue]
               @(fix/publish! :words {:topic "words"
@@ -78,10 +78,10 @@
                 (is (= {:topic "words"
                         :key "1"
                         :value "a"}
-                       (kafka/select-methods a [:topic :key :value])))
+                       (client/select-methods a [:topic :key :value])))
                 (is (= {:topic "words"
                         :key "2"
                         :value "aa"}
-                       (kafka/select-methods aa [:topic :key :value])))))
+                       (client/select-methods aa [:topic :key :value])))))
             (fix/find-consumer :words))]
     (fix t)))

@@ -15,7 +15,6 @@ To include one of the above libraries, for example `jackdaw-client`
 add the following to your `:dependencies`:
 
     [fundingcircle/jackdaw-client "0.1.0-SNAPSHOT"]
-    [fundingcircle/jackdaw-serdes "0.1.0-SNAPSHOT"]
 
 To include all of them:
 

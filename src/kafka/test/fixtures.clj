@@ -4,7 +4,7 @@
    [clojure.test :as test]
    [clojure.tools.logging :as log]
    [kafka.admin :as admin]
-   [kafka.core :as kafka]
+   [kafka.client :as client]
    [kafka.test.zk :as zk]
    [kafka.test.kafka :as broker]
    [environ.core :refer [env]])
@@ -107,7 +107,7 @@
   (let [logger (fn [p]
                  (log/infof "opened producer: %s" (first p)))]
     (->> (for [[k cfg] configs]
-           [k (kafka/producer cfg)])
+           [k (client/producer cfg)])
          (mapcat identity)
          (apply hash-map))))
 
@@ -140,7 +140,7 @@
 (defn open-consumers [configs]
   (->> (for [[k cfg] configs]
          [k (do
-              (doto (kafka/consumer cfg)
+              (doto (client/consumer cfg)
                 (.subscribe [(name k)])))])
        (mapcat identity)
        (apply hash-map)))
