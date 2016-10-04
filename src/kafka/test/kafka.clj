@@ -9,7 +9,8 @@
 (defn start!
   "Starts a kakfa broker.
 
-   Returns a map containing the broker instance"
+   Returns a map containing the broker instance itself and a latch
+   that waits until the broker is shutdown"
   [{:keys [config]}]
   (let [broker (-> config
                    (config/properties)
@@ -22,7 +23,7 @@
 (defn stop!
   "Stops a kafka broker.
 
-   Shuts down the broker and deletes its log files"
+   Shuts down the broker, releases the latch, and deletes log files"
   [{:keys [broker config log-dirs]}]
   (when broker
     (try

@@ -10,7 +10,7 @@
    [environ.core :refer [env]])
   (:import
    (kafka.common TopicExistsException)
-   (java.util.concurrent LinkedBlockingQueue)
+   (java.util.concurrent CountDownLatch LinkedBlockingQueue)
    (org.apache.kafka.clients.consumer KafkaConsumer ConsumerRecord)
    (org.apache.kafka.clients.producer KafkaProducer ProducerRecord Callback)))
 
@@ -20,6 +20,9 @@
 (def ^:dynamic *log-seq-registry*)
 
 ;; utils
+
+(defn latch [n]
+  (CountDownLatch. n))
 
 (defn queue [n]
   (LinkedBlockingQueue. n))
@@ -155,14 +158,16 @@
 ;; automatically poll the consumers in their own thread and provide a lazy-seq over
 ;; the results
 
-(defn consumer-loop [consumer queue stop?]
+(defn consumer-loop [consumer queue latch]
   (future
     (loop []
-      (let [records (when-not @stop?
+      (let [stop? (zero? (.getCount latch))
+            records (when-not stop?
                       (locking consumer (.poll consumer 1000)))]
-        (when (pos? (.count records))
-          (doseq [rec (iterator-seq (.iterator records))]
-            (.put queue rec))
+        (when-not stop?
+          (when (pos? (.count records))
+            (doseq [rec (iterator-seq (.iterator records))]
+              (.put queue rec)))
           (recur))))))
 
 (defn- logger
@@ -173,11 +178,11 @@
 
    The consumer code originally used code from tubelines but we wanted more
    control over exactly when to stop consuming. A manual loop gives us a chance
-   between each `.poll` to stop if the stop flag has been set."
-  [k cfg stop?]
+   between each `.poll` to stop if the latch has been counted down to zero."
+  [k cfg latch]
   (let [consumer (find-consumer k)
         queue (queue 100)
-        processor (consumer-loop consumer queue stop?)]
+        processor (consumer-loop consumer queue latch)]
     {:queue queue
      :processor processor}))
 
@@ -185,20 +190,17 @@
   "Opens (starts?) a collection of loggers.
 
    Each logger has a `group-id` and consumes messages from it's configured topic.
-   All threads will stop when the stop atom is released."
-  [configs stop?]
+   All threads will stop when the latch is released."
+  [latch configs]
   (->> (for [[k cfg] configs]
-         [k (logger k cfg stop?)])
+         [k (logger k cfg latch)])
        (mapcat identity)
        (apply hash-map)))
 
 (defn- close-loggers
-  "Wait for the logger tasks to finish
-
-   This shouldn't be long after the maximum consumer poll duration
-
-   TODO: Naively waits in a loop. Is there a better way?"
-  []
+  "Countdown the latch that stops the logger threads"
+  [latch]
+  (.countDown latch)
   (doseq [[k {:keys [processor]}] *log-seq-registry*]
     @processor))
 
@@ -233,13 +235,12 @@
    data structure will give people the freedom to write clean tests."
   [configs]
   (fn [t]
-    (let [stop? (atom false)]
-      (binding [*log-seq-registry* (open-loggers configs stop?)]
+    (let [latch (latch 1)]
+      (binding [*log-seq-registry* (open-loggers latch configs)]
         (try
           (t)
           (finally
-            (reset! stop? true)
-            (close-loggers stop?)))))))
+            (close-loggers latch)))))))
 
 ;; fixture composition
 
