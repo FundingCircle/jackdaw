@@ -47,14 +47,16 @@
                          (mapcat identity)))))
 
 (defn metadata
-  "Clojurize the metadata returned from producing a kafka record"
+  "Clojurize the ProducerRecord returned from producing a kafka record"
   [record-meta]
   (select-methods record-meta
                   [:checksum :offset :partition
                    :serializedKeySize :serializedValueSize
                    :timestamp :topic :toString]))
 
-(defn record [consumer-record]
+(defn record
+  "Clojurize the ConsumerRecord returned from consuming a kafka record"
+  [consumer-record]
   (select-methods consumer-record
                   [:checksum :key :offset :partition
                    :serializedKeySize :serializedValueSize
