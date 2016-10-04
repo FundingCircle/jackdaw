@@ -1,4 +1,4 @@
-(ns kafka.core
+(ns kafka.client
   "Clojure wrapper to kafka consumers/producers"
   (:require
    [clojure.tools.logging :as log])
