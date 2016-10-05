@@ -109,3 +109,36 @@
                        (client/select-methods aa [:topic :key :value])))))
             (fix/find-consumer :words))]
     (fix t)))
+
+(deftest consumer-with-serde-test
+  (let [fix (join-fixtures
+             [(fix/zookeeper test-config/broker)
+              (fix/broker test-config/broker)
+              (fix/consumer-registry {:words [test-config/consumer
+                                              (.deserializer long-serde)
+                                              (.deserializer str-serde)]})
+              (fix/producer-registry {:words [test-config/producer
+                                              (.serializer long-serde)
+                                              (.serializer str-serde)]})])
+        t #(call-with-consumer-queue
+            (fn [queue]
+              @(fix/publish! :words {:topic "words"
+                                     :key 1
+                                     :value "a"})
+
+              @(fix/publish! :words {:topic "words"
+                                     :key 2
+                                     :value "aa"})
+
+              (let [[a aa] [(.take queue)
+                            (.take queue)]]
+                (is (= {:topic "words"
+                        :key 1
+                        :value "a"}
+                       (client/select-methods a [:topic :key :value])))
+                (is (= {:topic "words"
+                        :key 2
+                        :value "aa"}
+                       (client/select-methods aa [:topic :key :value])))))
+            (fix/find-consumer :words))]
+    (fix t)))

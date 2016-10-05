@@ -143,8 +143,13 @@
 
 (defn open-consumers [configs]
   (->> (for [[k cfg] configs]
-         [k (do
-              (doto (client/consumer cfg)
+         [k (let [consumer (cond
+                             (map? cfg)    (client/consumer cfg)
+                             (vector? cfg) (apply client/consumer cfg)
+                             :else (throw (ex-info "unsupported consumer config"
+                                                   {:consumer k
+                                                    :config cfg})))]
+              (doto consumer
                 (.subscribe [(name k)])))])
        (mapcat identity)
        (apply hash-map)))
