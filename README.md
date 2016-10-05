@@ -1,4 +1,4 @@
-# kafka.core
+# kafka.client
 
 A Clojure library providing a very thin wrapper around the main Kafka APIs
 
@@ -6,7 +6,7 @@ A Clojure library providing a very thin wrapper around the main Kafka APIs
 
 In your project.clj
 
-  [kafka.core "0.1.0-SNAPSHOT"]
+  [kafka.client "0.1.0-SNAPSHOT"]
 
 ## License
 
