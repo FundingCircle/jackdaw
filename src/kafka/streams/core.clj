@@ -795,12 +795,12 @@
   (KafkaStreams. ^TopologyBuilder (topology-builder* builder)
                  ^java.util.Properties opts))
 
-(defn start
+(defn start!
   "Starts processing."
   [kafka-streams]
   (.start ^KafkaStreams kafka-streams))
 
-(defn close
+(defn close!
   "Stops the kafka streams."
   [kafka-streams]
   (.close ^KafkaStreams kafka-streams))
