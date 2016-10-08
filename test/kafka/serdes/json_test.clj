@@ -22,5 +22,5 @@
   (testing "JSON string is the same after serialization and deserialization."
     (let [s (slurp (io/resource "resources/pass1.json"))]
       (is (= (json/read-str s)
-             (json/read-str (->> (.serialize json-serializer nil s)
-                                 (.deserialize json-deserializer nil))))))))
+             (json/read-str (->> (.serialize (json-serializer) nil s)
+                                 (.deserialize (json-deserializer) nil))))))))

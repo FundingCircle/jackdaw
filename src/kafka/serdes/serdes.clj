@@ -1,5 +1,6 @@
 (ns kafka.serdes.serdes
   "Some useful serdes."
+  (:refer-clojure :exclude [load])
   (:require [environ.core :refer [env]]
             [kafka.serdes.avro :as avro]
             [kafka.serdes.json :as json])
