@@ -3,6 +3,7 @@
    [clojure.test :refer :all]
    [kafka.client :as client])
   (:import
+   kafka.client.TopicProducer
    (org.apache.kafka.clients.consumer KafkaConsumer ConsumerRecord)
    (org.apache.kafka.clients.producer KafkaProducer RecordMetadata ProducerRecord Callback)))
 
@@ -22,8 +23,8 @@
 
 (deftest closeable-test
   (testing "open/close producer"
-    (with-open [p (client/producer producer-config)]
-      (is (instance? KafkaProducer p))))
+    (with-open [p (client/producer producer-config "test-topic-name")]
+      (is (instance? TopicProducer p))))
 
   (testing "open/close consumer"
     (with-open [c (client/consumer consumer-config)]
