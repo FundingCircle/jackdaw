@@ -61,11 +61,13 @@
     val))
 
 (defn generic-record->map [rec]
-  (reduce (fn [m field]
-            (assoc m (keyword (unmangle (.name ^Schema$Field field)))
-                   (value-unmarshal (.get rec (.name ^Schema$Field field)))))
-          {}
-          (.getFields ^Schema (.getSchema rec))))
+  (if (= (type rec) GenericData$Record)
+    (reduce (fn [m field]
+              (assoc m (keyword (unmangle (.name ^Schema$Field field)))
+                     (value-unmarshal (.get rec (.name ^Schema$Field field)))))
+            {}
+            (.getFields ^Schema (.getSchema rec)))
+    rec))
 
 ;; Clojure to GenericRecord mapping
 

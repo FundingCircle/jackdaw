@@ -1,7 +1,7 @@
 (ns kafka.serdes.avro
   (:require [kafka.serdes.avro-schema :as avro-schema])
   (:import [io.confluent.kafka.serializers KafkaAvroDeserializer KafkaAvroSerializer]
-           [org.apache.kafka.common.serialization Serdes Serializer]))
+           [org.apache.kafka.common.serialization Serdes Serializer Deserializer]))
 
 (set! *warn-on-reflection* true)
 
@@ -35,6 +35,16 @@
          (.configure serializer config key?)))
      (CljAvroSerializer. serializer schema))))
 
+(deftype CljAvroDeserializer [^Deserializer deserializer]
+  Deserializer
+  (close [this]
+    (.close deserializer))
+  (configure [this configs key?]
+    (.configure deserializer configs key?))
+  (deserialize [this topic msg]
+    (avro-schema/generic-record->map
+     (.deserialize deserializer topic msg))))
+
 (defn avro-deserializer
   "Makes an avro deserializer"
   ([config key?]
@@ -45,7 +55,7 @@
        (let [config (java.util.HashMap.)]
          (.put config "schema.registry.url" schema-registry-url)
          (.configure deserializer config key?)))
-     deserializer)))
+     (CljAvroDeserializer. deserializer))))
 
 (defn avro-serde
   "Creates an avro serde."

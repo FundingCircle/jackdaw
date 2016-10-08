@@ -19,26 +19,35 @@
   [data]
   (.getBytes ^String data StandardCharsets/UTF_8))
 
-(def json-serializer
-  "Create a JSON serializer"
-  (reify Serializer
-    (close [this])
-    (configure [this configs key?])
-    (serialize [this _topic data]
-      (-> (json/write-str data)
-          (string-to-bytes)))))
+(deftype JsonSerializer []
+  Serializer
+  (close [this])
+  (configure [this configs key?])
+  (serialize [this _topic data]
+    (-> (json/write-str data)
+        (string-to-bytes))))
 
-(def json-deserializer
+(defn json-serializer
+  "Create a JSON serializer"
+  []
+  (JsonSerializer.))
+
+(deftype JsonDeserializer []
+  Deserializer
+  (close [this])
+  (configure [this configs key?])
+  (deserialize [this _topic data]
+    (-> (bytes-to-string data)
+        (json/read-str :key-fn keyword)
+        (inflections/hyphenate-keys))))
+
+
+(defn json-deserializer
   "Create a JSON deserializer"
-  (reify Deserializer
-    (close [this])
-    (configure [this configs key?])
-    (deserialize [this _topic data]
-      (-> (bytes-to-string data)
-          (json/read-str :key-fn keyword)
-          (inflections/hyphenate-keys)))))
+  []
+  (JsonDeserializer.))
 
 (defn json-serde
   "Create a JSON serde."
   []
-  (Serdes/serdeFrom json-serializer json-deserializer))
+  (Serdes/serdeFrom (json-serializer) (json-deserializer)))
