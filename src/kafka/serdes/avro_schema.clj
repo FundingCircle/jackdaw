@@ -139,10 +139,10 @@
       Schema$Type/ENUM (doto record (.put mangled-key (map->generic-enum field-schema v)))
       (doto record (.put mangled-key v)))))
 
-(defn parse-schema
+(def parse-schema
   "Parse a JSON schema string into a Schema object"
-  [schema]
-  (.parse (Schema$Parser.) schema))
+  (memoize (fn [schema]
+             (.parse (Schema$Parser.) schema))))
 
 (defn map->generic-record [schema m]
   (let [schema (parse-schema schema)
