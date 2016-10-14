@@ -8,7 +8,6 @@
                  [com.101tec/zkclient "0.8"]
                  [org.apache.kafka/kafka_2.11 "0.10.0.1"]
                  [org.apache.kafka/kafka-clients "0.10.0.1"]]
-  :local-repo "../../.repo"
   :repositories
   {"snapshots" {:url "https://fundingcircle.artifactoryonline.com/fundingcircle/libs-snapshot-local"
                 :username [:gpg :env/artifactory_user]
