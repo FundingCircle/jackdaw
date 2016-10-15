@@ -59,6 +59,20 @@
         (finally
           (broker/stop! (merge kafka {:log-dirs log-dirs})))))))
 
+(defn multi-broker
+  [config n]
+  (fn [t]
+    (let [configs (map config (range n))
+          cluster (doall (map (fn [cfg]
+                                (assoc (broker/start! {:config cfg})
+                                       :log-dirs (get cfg "log.dirs")))
+                              configs))]
+      (try
+        (t)
+        (finally
+          (doseq [node cluster]
+            (broker/stop! node)))))))
+
 ;; auto-closing client
 
 (defn zk-utils

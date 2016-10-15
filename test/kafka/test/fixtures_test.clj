@@ -4,6 +4,7 @@
    [kafka.client :as client]
    [kafka.zk :as zk]
    [kafka.test.fs :as fs]
+   [kafka.test.config :as config]
    [kafka.test.fixtures :as fix]
    [kafka.test.test-config :as test-config]
    [clojure.test :refer :all])
@@ -33,6 +34,22 @@
                   utils (zk/utils client)]
               (is (.pathExists utils "/brokers/ids/0"))))]
     (testing "broker up/down"
+      (fix t))))
+
+(deftest multi-broker-test
+  (let [fix (join-fixtures
+             [(fix/zookeeper test-config/broker)
+              (fix/multi-broker (config/multi-config test-config/broker) 3)])
+        t (fn []
+            (let [client (zk/client test-config/broker)
+                  utils (zk/utils client)]
+              (try
+                (is (.pathExists utils "/brokers/ids/0"))
+                (is (.pathExists utils "/brokers/ids/1"))
+                (is (.pathExists utils "/brokers/ids/2"))
+                (finally
+                  (.close client)))))]
+    (testing "multi-broker fixture"
       (fix t))))
 
 (deftest find-producer-test
