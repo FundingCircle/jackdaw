@@ -120,13 +120,13 @@
 (defn open-consumers [configs]
   (->> (for [[k cfg] configs]
          [k (let [consumer (cond
-                             (map? cfg)    (client/consumer cfg)
-                             (vector? cfg) (apply client/consumer cfg)
+                             (map? cfg)    (client/consumer cfg (str (name k)))
+                             (vector? cfg) (let [[cfg key-serde val-serde] cfg]
+                                             (client/consumer cfg key-serde val-serde (str (name k))))
                              :else (throw (ex-info "unsupported consumer config"
                                                    {:consumer k
                                                     :config cfg})))]
-              (doto consumer
-                (.subscribe [(name k)])))])
+              consumer)])
        (mapcat identity)
        (apply hash-map)))
 

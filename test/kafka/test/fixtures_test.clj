@@ -9,8 +9,8 @@
    [clojure.test :refer :all])
   (:import
    (org.apache.kafka.common.serialization Serdes)
-   (org.apache.kafka.clients.consumer KafkaConsumer)
-   (kafka.client TopicProducer)))
+   (org.apache.kafka.clients.consumer)
+   (kafka.client TopicProducer TopicConsumer)))
 
 (def str-serde  (Serdes/String))
 (def long-serde (Serdes/Long))  ;; clojure numbers are long by default
@@ -58,7 +58,7 @@
                                       :custom-serde [test-config/consumer long-serde str-serde]})])
         t (fn []
             (testing "default serde"
-              (is (instance? KafkaConsumer (fix/find-consumer :default-serde))))
+              (is (instance? TopicConsumer (fix/find-consumer :default-serde))))
             (testing "custom serde"
-              (is (instance? KafkaConsumer (fix/find-consumer :custom-serde)))))]
+              (is (instance? TopicConsumer (fix/find-consumer :custom-serde)))))]
     (fix t)))
