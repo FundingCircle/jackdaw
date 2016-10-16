@@ -36,15 +36,17 @@
 
     broker.id
     port
+    advertised.port
     log.dirs
   "
   [base]
-  (let [default-port "9092"]
-    (fn [n]
+  (fn [n]
+    (let [port (+ n (Integer/parseInt (or (get base "port")
+                                          "9092")))]
       (assoc base
              "broker.id" (str n)
-             "port" (str (+ n (Integer/parseInt (or (get base "port")
-                                                    default-port))))
+             "port" (str port)
+             "advertised.port" (str port)
              "log.dirs" (str (get base "log.dirs")
                              "-"
                              n)))))
