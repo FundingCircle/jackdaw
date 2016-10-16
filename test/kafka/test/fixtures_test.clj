@@ -11,7 +11,6 @@
    [clojure.test :refer :all])
   (:import
    (org.apache.kafka.common.serialization Serdes)
-   (org.apache.kafka.clients.consumer)
    (kafka.client TopicProducer TopicConsumer)))
 
 (def str-serde  (Serdes/String))

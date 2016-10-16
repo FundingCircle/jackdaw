@@ -39,9 +39,11 @@
   (fn [t]
     (let [zk (zk/start! {:config config})]
       (try
+        (log/info "Started zookeeper fixture" zk)
         (t)
         (finally
-          (zk/stop! zk))))))
+          (zk/stop! zk)
+          (log/info "Stopped zookeeper fixture" zk))))))
 
 (defn broker
   "A kafka test fixture.
@@ -57,9 +59,11 @@
     (let [log-dirs (get config "log.dirs")
           kafka (broker/start! {:config config})]
       (try
+        (log/info "Started kafka fixture" kafka)
         (t)
         (finally
-          (broker/stop! (merge kafka {:log-dirs log-dirs})))))))
+          (broker/stop! (merge kafka {:log-dirs log-dirs}))
+          (log/info "Stopped kafka fixture" kafka))))))
 
 (defn multi-broker
   "A multi-broker kafka fixture
@@ -75,10 +79,13 @@
                                        :log-dirs (get cfg "log.dirs")))
                               configs))]
       (try
+        (log/info "Started multi-broker fixture" cluster)
         (t)
         (finally
-          (doseq [node cluster]
-            (broker/stop! node)))))))
+          ;; This takes a surprisingly
+          (doseq [node (reverse cluster)]
+            (broker/stop! node))
+          (log/info "Stopped multi-broker fixture" cluster))))))
 
 (defn schema-registry
   [config]
@@ -88,10 +95,11 @@
           server (.createServer app)]
       (try
         (.start server)
+        (log/info "Started schema registry fixture" server)
         (t)
         (finally
-          (.stop server))))))
-
+          (.stop server)
+          (log/info "Stopped schema registry fixture" server))))))
 
 ;; auto-closing client
 
@@ -139,9 +147,11 @@
   (fn [t]
     (binding [*producer-registry* (open-producers configs)]
       (try
+        (log/info "Started producer registry fixture")
         (t)
         (finally
-          (close-producers))))))
+          (close-producers)
+          (log/info "Stopped producer registry fixture"))))))
 
 (defn find-producer [id]
   (get *producer-registry* id))
@@ -181,9 +191,11 @@
   (fn [t]
     (binding [*consumer-registry* (open-consumers configs)]
       (try
+        (log/info "Started consumer registry")
         (t)
         (finally
-          (close-consumers))))))
+          (close-consumers)
+          (log/info "Stopped consumer registry"))))))
 
 ;; fixture composition
 
