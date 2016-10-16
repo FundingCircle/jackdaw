@@ -34,3 +34,8 @@
   {"bootstrap.servers" (env :bootstrap-servers)
    "key.serializer"    "org.apache.kafka.common.serialization.StringSerializer"
    "value.serializer"  "org.apache.kafka.common.serialization.StringSerializer"})
+
+(def schema-registry
+  {"listeners"                 "http://127.0.0.1:8081"
+   "kafkastore.connection.url" (env :zookeeper-connect)
+   "kafkastore.topic"          "_schemas"})

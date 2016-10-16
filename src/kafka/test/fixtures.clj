@@ -11,6 +11,7 @@
   (:import
    (kafka.common TopicExistsException)
    (java.util.concurrent CountDownLatch LinkedBlockingQueue)
+   (io.confluent.kafka.schemaregistry.rest SchemaRegistryRestApplication SchemaRegistryConfig)
    (org.apache.kafka.clients.consumer KafkaConsumer ConsumerRecord)
    (org.apache.kafka.clients.producer KafkaProducer ProducerRecord Callback)))
 
@@ -78,6 +79,19 @@
         (finally
           (doseq [node cluster]
             (broker/stop! node)))))))
+
+(defn schema-registry
+  [config]
+  (fn [t]
+    (let [app (SchemaRegistryRestApplication.
+               (SchemaRegistryConfig. (config/properties config)))
+          server (.createServer app)]
+      (try
+        (.start server)
+        (t)
+        (finally
+          (.stop server))))))
+
 
 ;; auto-closing client
 

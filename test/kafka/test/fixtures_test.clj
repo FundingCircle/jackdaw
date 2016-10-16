@@ -1,5 +1,6 @@
 (ns kafka.test.fixtures-test
   (:require
+   [clj-http.client :as http]
    [kafka.admin :as admin]
    [kafka.client :as client]
    [kafka.zk :as zk]
@@ -34,6 +35,18 @@
                   utils (zk/utils client)]
               (is (.pathExists utils "/brokers/ids/0"))))]
     (testing "broker up/down"
+      (fix t))))
+
+(deftest schema-registry-test
+  (let [fix (join-fixtures
+             [(fix/zookeeper test-config/broker)
+              (fix/broker test-config/broker)
+              (fix/schema-registry test-config/schema-registry)])
+        t (fn []
+            (let [result (http/get (get test-config/schema-registry "listeners"))]
+              (is (= 200 (:status result)))
+              (is (= "application/vnd.schemaregistry.v1+json" (get-in result [:headers "Content-Type"])))))]
+    (testing "schema registry up/down"
       (fix t))))
 
 (deftest multi-broker-test
