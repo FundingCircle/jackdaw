@@ -4,6 +4,7 @@
    [clojure.tools.logging :as log]
    [kafka.config :as config])
   (:import
+   (java.lang AutoCloseable)
    (org.apache.kafka.clients.consumer KafkaConsumer ConsumerRecord)
    (org.apache.kafka.clients.producer KafkaProducer ProducerRecord Callback)
    org.apache.kafka.common.serialization.Serde
@@ -13,32 +14,32 @@
 (set! *warn-on-reflection* true)
 
 (defprotocol Consumer
-  (close [this])
   (poll [this timeout]))
 
 (defprotocol Producer
-  (send! [this key value] "Sends a message to a kafka topic.")
-  (close [this] "Closes the producer"))
+  (send! [this key value] "Sends a message to a kafka topic."))
 
 (deftype TopicConsumer [^KafkaConsumer kafka-consumer topic-name]
-  Consumer
+  AutoCloseable
   (close [_]
     (.close kafka-consumer)
     (log/info "Closed kafka consumer" {:kafka-consumer kafka-consumer}))
+  Consumer
   (poll [this timeout-ms]
     (log/debug "Polling kafka consumer" {:kafka-consumer kafka-consumer :timeout-ms timeout-ms})
     (iterator-seq (.. kafka-consumer (poll timeout-ms) (iterator)))))
 
 (deftype TopicProducer [^KafkaProducer kafka-producer topic-name]
+  AutoCloseable
+  (close [_]
+    (.close kafka-producer)
+    (log/info "Closed kafka producer" {:kafka-producer kafka-producer}))
   Producer
   (send! [_ key value]
     (log/debug "Sending blocking message" {:topic-name topic-name :key key :value value :kafka-producer kafka-producer})
     (if key
       (.send kafka-producer (ProducerRecord. topic-name key value))
-      (.send kafka-producer (ProducerRecord. topic-name value))))
-  (close [_]
-    (.close kafka-producer)
-    (log/info "Closed kafka producer" {:kafka-producer kafka-producer})))
+      (.send kafka-producer (ProducerRecord. topic-name value)))))
 
 (defn producer
   "Return a KafkaProducer with the supplied properties"
@@ -62,8 +63,8 @@
   ([config]
    (KafkaConsumer. ^java.util.Properties (config/properties config)))
 
-  ([props topic-name]
-   (let [kafka-consumer (consumer props)]
+  ([config topic-name]
+   (let [kafka-consumer (consumer config)]
      (.subscribe ^KafkaConsumer kafka-consumer [topic-name])
      (log/debug "Set subscription" {:topic topic-name})
      (TopicConsumer. kafka-consumer topic-name)))
@@ -74,8 +75,8 @@
                    (.deserializer key-serde)
                    (.deserializer value-serde)))
 
-  ([props key-serde value-serde topic-name]
-   (let [kafka-consumer (consumer props key-serde value-serde)]
+  ([config key-serde value-serde topic-name]
+   (let [kafka-consumer (consumer config key-serde value-serde)]
      (.subscribe ^KafkaConsumer kafka-consumer [topic-name])
      (log/debug "Set subscription" {:topic topic-name})
      (TopicConsumer. kafka-consumer topic-name))))
