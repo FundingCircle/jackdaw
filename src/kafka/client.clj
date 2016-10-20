@@ -1,15 +1,12 @@
 (ns kafka.client
   "Clojure wrapper to kafka consumers/producers"
-  (:require
-   [clojure.tools.logging :as log]
-   [kafka.config :as config])
-  (:import
-   (java.lang AutoCloseable)
-   (org.apache.kafka.clients.consumer KafkaConsumer ConsumerRecord)
-   (org.apache.kafka.clients.producer KafkaProducer ProducerRecord Callback)
-   org.apache.kafka.common.serialization.Serde
-   (java.util.concurrent LinkedBlockingQueue)
-   (clojure.lang Reflector)))
+  (:require [clojure.tools.logging :as log]
+            [kafka.config :as config])
+  (:import clojure.lang.Reflector
+           java.lang.AutoCloseable
+           org.apache.kafka.clients.consumer.KafkaConsumer
+           [org.apache.kafka.clients.producer Callback KafkaProducer ProducerRecord]
+           org.apache.kafka.common.serialization.Serde))
 
 (set! *warn-on-reflection* true)
 
@@ -17,7 +14,7 @@
   (poll [this timeout]))
 
 (defprotocol Producer
-  (send! [this key value] "Sends a message to a kafka topic."))
+  (send! [this producer-record] "Sends a message to a kafka topic."))
 
 (deftype TopicConsumer [^KafkaConsumer kafka-consumer topic-name]
   AutoCloseable
@@ -35,11 +32,16 @@
     (.close kafka-producer)
     (log/info "Closed kafka producer" {:kafka-producer kafka-producer}))
   Producer
-  (send! [_ key value]
-    (log/debug "Sending blocking message" {:topic-name topic-name :key key :value value :kafka-producer kafka-producer})
-    (if key
-      (.send kafka-producer (ProducerRecord. topic-name key value))
-      (.send kafka-producer (ProducerRecord. topic-name value)))))
+  (send! [_ producer-record]
+    (log/debug "Sending record" producer-record)
+    (.send kafka-producer producer-record)))
+
+(defn producer-record
+  "Creates a kafka ProducerRecord for use with `send!`."
+  ([topic-name value] (ProducerRecord. topic-name value))
+  ([topic-name key value] (ProducerRecord. topic-name key value))
+  ([topic-name partition key value] (ProducerRecord. topic-name partition key value))
+  ([topic-name partition timestamp key value] (ProducerRecord. topic-name partition timestamp key value)))
 
 (defn producer
   "Return a KafkaProducer with the supplied properties"
