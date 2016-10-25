@@ -9,9 +9,12 @@
    [kafka.test.fixtures :as fix]
    [kafka.test.test-config :as test-config]))
 
-(use-fixtures :once (join-fixtures [(fix/kafka-platform test-config/broker true)
-                                    (fix/producer-registry {:foo test-config/producer})
-                                    (fix/consumer-registry {:foo test-config/consumer})]))
+(use-fixtures :once
+  (join-fixtures [(fix/kafka-platform test-config/zookeeper
+                                      test-config/broker
+                                      true)
+                  (fix/producer-registry {:foo test-config/producer})
+                  (fix/consumer-registry {:foo test-config/consumer})]))
 
 (def poll-timeout-ms 1000)
 (def consumer-timeout-ms 5000)

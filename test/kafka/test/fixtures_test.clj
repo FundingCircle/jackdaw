@@ -16,7 +16,7 @@
 (def long-serde (Serdes/Long))  ;; clojure numbers are long by default
 
 (deftest zookeeper-test
-  (let [fix (fix/zookeeper test-config/broker)
+  (let [fix (fix/zookeeper test-config/zookeeper)
         t (fn []
             (let [client (zk/client test-config/broker)]
               (is client)
@@ -26,7 +26,7 @@
 
 (deftest broker-test
   (let [fix (compose-fixtures
-             (fix/zookeeper test-config/broker)
+             (fix/zookeeper test-config/zookeeper)
              (fix/broker test-config/broker))
         t (fn []
             (let [client (zk/client test-config/broker)
@@ -37,7 +37,7 @@
 
 (deftest find-producer-test
   (let [fix (join-fixtures
-             [(fix/zookeeper test-config/broker)
+             [(fix/zookeeper test-config/zookeeper)
               (fix/broker test-config/broker)
               (fix/producer-registry {:default-serde test-config/producer
                                       :custom-serde [test-config/producer long-serde str-serde]})])
@@ -52,7 +52,7 @@
 
 (deftest find-consumer-test
   (let [fix (join-fixtures
-             [(fix/zookeeper test-config/broker)
+             [(fix/zookeeper test-config/zookeeper)
               (fix/broker test-config/broker)
               (fix/consumer-registry {:default-serde test-config/consumer
                                       :custom-serde [test-config/consumer long-serde str-serde]})])

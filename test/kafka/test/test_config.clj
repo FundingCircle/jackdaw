@@ -6,8 +6,13 @@
    [kafka.test.fs :as fs]
    [kafka.test.fixtures :as fix]))
 
+(def zk-connect (env :zookeeper-connect))
+
+(def zookeeper
+  {"zookeeper.connect"            zk-connect})
+
 (def broker
-  {"zookeeper.connect"            (env :zookeeper-connect)
+  {"zookeeper.connect"            zk-connect
    "broker.id"                    "0"
    "advertised.host.name"         (-> (env :bootstrap-servers)
                                       (config/host-port)
