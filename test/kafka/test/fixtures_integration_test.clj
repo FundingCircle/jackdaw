@@ -13,6 +13,9 @@
                                     (fix/producer-registry {:foo test-config/producer})
                                     (fix/consumer-registry {:foo test-config/consumer})]))
 
+(def poll-timeout-ms 1000)
+(def consumer-timeout-ms 5000)
+
 (deftest ^:integration integration-test
   (let [producer (fix/find-producer :foo)
         consumer (fix/find-consumer :foo)]

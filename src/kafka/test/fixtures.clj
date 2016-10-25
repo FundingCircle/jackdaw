@@ -95,8 +95,7 @@
                 :else         (throw (ex-info "unsupported producer config"
                                               {:producer k
                                                :config cfg})))])
-         (mapcat identity)
-         (apply hash-map))))
+         (into {}))))
 
 (defn- close-producers []
   (doseq [[k p] *producer-registry*]
