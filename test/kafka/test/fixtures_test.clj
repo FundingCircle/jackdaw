@@ -130,7 +130,7 @@
 (deftest schema-registry-with-multi-broker-test
   (let [fix (join-fixtures
              [(fix/zookeeper test-config/broker)
-              (fix/multi-broker (config/multi-config test-config/broker) 3)
+              (fix/multi-broker test-config/broker 3)
               (fix/schema-registry test-config/schema-registry)])]
     (testing "schema registry with multi broker"
       (fix schema-registry-tests*))))
