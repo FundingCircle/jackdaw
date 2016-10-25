@@ -41,14 +41,11 @@
              [(fix/zookeeper test-config/zookeeper)
               (fix/multi-broker test-config/broker 3)])
         t (fn []
-            (let [client (zk/client test-config/broker)
-                  utils (zk/utils client)]
-              (try
+            (with-open [client (zk/client test-config/broker)]
+              (let [utils (zk/utils client)]
                 (is (.pathExists utils "/brokers/ids/0"))
                 (is (.pathExists utils "/brokers/ids/1"))
-                (is (.pathExists utils "/brokers/ids/2"))
-                (finally
-                  (.close client)))))]
+                (is (.pathExists utils "/brokers/ids/2")))))]
     (testing "multi-broker fixture"
       (fix t))))
 
