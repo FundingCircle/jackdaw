@@ -5,6 +5,7 @@
    [clojure.tools.logging :as log]
    [kafka.admin :as admin]
    [kafka.client :as client]
+   [kafka.test.config :as config]
    [kafka.test.zk :as zk]
    [kafka.test.kafka :as broker])
   (:import
@@ -64,9 +65,10 @@
 
    Starts up `n` kafka brokers by generating a vector of configs
    by invoking the `multi-config` function on each integer up to `n`."
-  [multi-config n]
+  [config n]
   (fn [t]
-    (let [configs (map multi-config (range n))
+    (let [multi-config (config/multi-config config)
+          configs (map multi-config (range n))
           cluster (doall (map (fn [cfg]
                                 (assoc (broker/start! {:config cfg})
                                        :log-dirs (get cfg "log.dirs")))

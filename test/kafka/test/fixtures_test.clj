@@ -38,8 +38,8 @@
 
 (deftest multi-broker-test
   (let [fix (join-fixtures
-             [(fix/zookeeper test-config/broker)
-              (fix/multi-broker (config/multi-config test-config/broker) 3)])
+             [(fix/zookeeper test-config/zookeeper)
+              (fix/multi-broker test-config/broker 3)])
         t (fn []
             (let [client (zk/client test-config/broker)
                   utils (zk/utils client)]
