@@ -60,9 +60,13 @@
           (broker/stop! (merge kafka {:log-dirs log-dirs})))))))
 
 (defn multi-broker
-  [config n]
+  "A multi-broker kafka fixture
+
+   Starts up `n` kafka brokers by generating a vector of configs
+   by invoking the `multi-config` function on each integer up to `n`."
+  [multi-config n]
   (fn [t]
-    (let [configs (map config (range n))
+    (let [configs (map multi-config (range n))
           cluster (doall (map (fn [cfg]
                                 (assoc (broker/start! {:config cfg})
                                        :log-dirs (get cfg "log.dirs")))
