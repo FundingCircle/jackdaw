@@ -36,6 +36,6 @@
    "value.serializer"  "org.apache.kafka.common.serialization.StringSerializer"})
 
 (def schema-registry
-  {"listeners"                 "http://127.0.0.1:8081"
+  {"listeners"                 (env :schema-registry-url)
    "kafkastore.connection.url" (env :zookeeper-connect)
    "kafkastore.topic"          "_schemas"})
