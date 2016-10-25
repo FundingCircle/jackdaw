@@ -1,8 +1,7 @@
 (ns kafka.test.config
   (:require
    [clojure.string :as str]
-   [kafka.test.fs :as fs]
-   [environ.core :refer [env]])
+   [kafka.test.fs :as fs])
   (:import
    (java.util Properties)))
 
