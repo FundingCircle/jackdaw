@@ -3,30 +3,14 @@
   (:require
    [clojure.test :as test]
    [clojure.tools.logging :as log]
-   [kafka.admin :as admin]
-   [kafka.client :as client]
    [kafka.test.config :as config]
-   [kafka.test.zk :as zk]
-   [kafka.test.kafka :as broker])
+   [kafka.test.kafka :as broker]
+   [kafka.test.zk :as zk])
   (:import
-   (kafka.common TopicExistsException)
-   (java.util.concurrent CountDownLatch LinkedBlockingQueue)
    (io.confluent.kafka.schemaregistry.rest SchemaRegistryRestApplication SchemaRegistryConfig)
+   (kafka.common TopicExistsException)
    (org.apache.kafka.clients.consumer KafkaConsumer ConsumerRecord)
    (org.apache.kafka.clients.producer KafkaProducer ProducerRecord Callback)))
-
-(def ^:dynamic *zk-utils*)
-(def ^:dynamic *consumer-registry*)
-(def ^:dynamic *producer-registry*)
-(def ^:dynamic *log-seq-registry*)
-
-;; utils
-
-(defn latch [n]
-  (CountDownLatch. n))
-
-(defn queue [n]
-  (LinkedBlockingQueue. n))
 
 ;; services
 
@@ -100,102 +84,6 @@
         (finally
           (.stop server)
           (log/info "Stopped schema registry fixture" server))))))
-
-;; auto-closing client
-
-(defn zk-utils
-  "An instance of ZkUtils (typically required by kafka admin for ops)
-
-   Closes the corresponding zk client after the tests"
-  [config]
-  (fn [t]
-    (let [client (zk/client config)
-          utils (zk/utils client)]
-      (binding [*zk-utils* utils]
-        (try
-          (t)
-          (finally
-            (.close client)))))))
-
-;; Producer Registry
-;;
-;;  Introducing the concept of a producer registry allows us to create a fixture
-;;  that loads a "registry" with all producers the test might want to use, then
-;;  when tests want to publish! they can reference the producer they want by a
-;;  keyword id.
-;;
-;;
-
-(defn- open-producers [configs]
-  (let [logger (fn [p]
-                 (log/infof "opened producer: %s" (first p)))]
-    (->> (for [[k cfg] configs]
-           [k (cond
-                (map? cfg)    (client/producer cfg (str (name k)))
-                (vector? cfg) (let [[cfg key-serde val-serde] cfg]
-                                (client/producer cfg key-serde val-serde (str (name k))))
-                :else         (throw (ex-info "unsupported producer config"
-                                              {:producer k
-                                               :config cfg})))])
-         (into {}))))
-
-(defn- close-producers []
-  (doseq [[k p] *producer-registry*]
-    (.close p)))
-
-(defn producer-registry [configs]
-  (fn [t]
-    (binding [*producer-registry* (open-producers configs)]
-      (try
-        (log/info "Started producer registry fixture")
-        (t)
-        (finally
-          (close-producers)
-          (log/info "Stopped producer registry fixture"))))))
-
-(defn find-producer [id]
-  (get *producer-registry* id))
-
-;; Consumer Registry
-;;
-;;  Same as above
-
-(defn open-consumers [configs]
-  (->> (for [[k cfg] configs]
-         [k (let [consumer (cond
-                             (map? cfg)    (client/consumer cfg (str (name k)))
-                             (vector? cfg) (let [[cfg key-serde val-serde] cfg]
-                                             (client/consumer cfg key-serde val-serde (str (name k))))
-                             :else (throw (ex-info "unsupported consumer config"
-                                                   {:consumer k
-                                                    :config cfg})))]
-              consumer)])
-       (mapcat identity)
-       (apply hash-map)))
-
-(defn find-consumer [id]
-  (get *consumer-registry* id))
-
-(defn- close-consumers
-  "Close any opened consumers"
-  []
-  (doseq [[k c] *consumer-registry*]
-    (.close c)))
-
-(defn consumer-registry
-  "Open a collection of consumers.
-
-   Consumers are quite low-level. See `loggers` for an API that is a bit
-   easier to use for writing tests."
-  [configs]
-  (fn [t]
-    (binding [*consumer-registry* (open-consumers configs)]
-      (try
-        (log/info "Started consumer registry")
-        (t)
-        (finally
-          (close-consumers)
-          (log/info "Stopped consumer registry"))))))
 
 ;; fixture composition
 

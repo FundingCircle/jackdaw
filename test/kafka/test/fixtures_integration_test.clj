@@ -1,7 +1,6 @@
 (ns kafka.test.fixtures-integration-test
   (:require
    [clojure.test :refer :all]
-   [kafka.admin :as admin]
    [kafka.client :as client]
    [kafka.zk :as zk]
    [kafka.test.config :as config]
@@ -12,16 +11,14 @@
 (use-fixtures :once
   (join-fixtures [(fix/kafka-platform test-config/zookeeper
                                       test-config/broker
-                                      true)
-                  (fix/producer-registry {:foo test-config/producer})
-                  (fix/consumer-registry {:foo test-config/consumer})]))
+                                      true)]))
 
 (def poll-timeout-ms 1000)
 (def consumer-timeout-ms 5000)
 
 (deftest ^:integration integration-test
-  (let [producer (fix/find-producer :foo)
-        consumer (fix/find-consumer :foo)]
+  (with-open [producer (client/producer test-config/producer "foo")
+              consumer (client/consumer test-config/consumer "foo")]
 
     (let [result (client/send! producer "1" "bar")]
 

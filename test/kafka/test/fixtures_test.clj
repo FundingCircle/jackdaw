@@ -134,31 +134,3 @@
               (fix/schema-registry test-config/schema-registry)])]
     (testing "schema registry with multi broker"
       (fix schema-registry-tests*))))
-
-(deftest find-producer-test
-  (let [fix (join-fixtures
-             [(fix/zookeeper test-config/zookeeper)
-              (fix/broker test-config/broker)
-              (fix/producer-registry {:default-serde test-config/producer
-                                      :custom-serde [test-config/producer long-serde str-serde]})])
-        t (fn []
-            (testing "default serde"
-              (is (instance? TopicProducer (fix/find-producer :default-serde))))
-
-            (testing "custom serde"
-              (is (instance? TopicProducer (fix/find-producer :custom-serde)))))]
-    (testing "producer publish! non-default serde"
-      (fix t))))
-
-(deftest find-consumer-test
-  (let [fix (join-fixtures
-             [(fix/zookeeper test-config/zookeeper)
-              (fix/broker test-config/broker)
-              (fix/consumer-registry {:default-serde test-config/consumer
-                                      :custom-serde [test-config/consumer long-serde str-serde]})])
-        t (fn []
-            (testing "default serde"
-              (is (instance? TopicConsumer (fix/find-consumer :default-serde))))
-            (testing "custom serde"
-              (is (instance? TopicConsumer (fix/find-consumer :custom-serde)))))]
-    (fix t)))
