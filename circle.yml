@@ -4,7 +4,6 @@ machine:
   environment:
     GIT_AUTHOR_NAME: CircleCI
     GIT_AUTHOR_EMAIL: circleci@circleci.com
-
 deployment:
   snapshot:
     branch: /.*-SNAPSHOT/
