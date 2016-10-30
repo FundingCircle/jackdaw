@@ -1,11 +1,6 @@
 (ns kafka.client-test
-  (:require
-   [clojure.test :refer :all]
-   [kafka.client :as client])
-  (:import
-   kafka.client.TopicProducer
-   (org.apache.kafka.clients.consumer KafkaConsumer ConsumerRecord)
-   (org.apache.kafka.clients.producer KafkaProducer RecordMetadata ProducerRecord Callback)))
+  (:require [clojure.test :refer :all]
+            [kafka.client :as client]))
 
 (def producer-config
   {"bootstrap.servers" "localhost:9092"
@@ -20,15 +15,6 @@
    "metadata.max.age.ms"   "1000" ;; usually this is 5 minutes
    "auto.offset.reset"     "earliest"
    "enable.auto.commit"    "true"})
-
-(deftest closeable-test
-  (testing "open/close producer"
-    (with-open [p (client/producer producer-config "test-topic-name")]
-      (is (instance? TopicProducer p))))
-
-  (testing "open/close consumer"
-    (with-open [c (client/consumer consumer-config)]
-      (is (instance? KafkaConsumer c)))))
 
 (deftest callback-test
   (testing "producer callbacks"
