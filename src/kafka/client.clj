@@ -38,7 +38,7 @@
     (onCompletion [this record-metadata exception]
       (on-completion record-metadata exception))))
 
-(defn send
+(defn send!
   "Asynchronously sends a record to a topic."
   ([producer record]
    (.send ^KafkaProducer producer record))
@@ -61,7 +61,7 @@
 (defn subscribe
   "Subscribe a consumer to topics. Returns the consumer."
   [consumer & topics]
-  (.subscribe ^KafkaConsumer consumer (into-array String topics))
+  (.subscribe ^KafkaConsumer consumer topics)
   consumer)
 
 
@@ -119,6 +119,6 @@
   ([^KafkaConsumer consumer poll-timeout-ms]
    (map (fn [rec] [(:key rec) (:value rec)])
         (log-records consumer poll-timeout-ms)))
-  ([^KafkaConsumer topic-consumer poll-timeout-ms fuse-fn]
+  ([^KafkaConsumer consumer poll-timeout-ms fuse-fn]
    (map (fn [rec] [(:key rec) (:value rec)])
         (log-records consumer poll-timeout-ms fuse-fn))))
