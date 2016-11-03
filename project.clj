@@ -8,6 +8,16 @@
                  [com.101tec/zkclient "0.8"]
                  [org.apache.kafka/kafka_2.11 "0.10.0.1"]
                  [org.apache.kafka/kafka-clients "0.10.0.1"]]
+
+  :release-tasks [["vcs" "assert-committed"]
+                  ["change" "version" "leiningen.release/bump-version" "release"]
+                  ["vcs" "commit"]
+                  ["vcs" "tag" "v" "--no-sign"]
+                  ["deploy"]
+                  ["change" "version" "leiningen.release/bump-version"]
+                  ["vcs" "commit"]
+                  ["vcs" "push"]]
+
   :repositories
   {"snapshots" {:url "https://fundingcircle.artifactoryonline.com/fundingcircle/libs-snapshot-local"
                 :username [:gpg :env/artifactory_user]
