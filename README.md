@@ -2,16 +2,19 @@
 
 A Clojure library providing a very thin wrapper around the main Kafka APIs
 
-## Usage
+## Installation
 
-In your project.clj
-
-  [kafka.client "0.1.4-SNAPSHOT"]
-
-
-Here is code example that uses kafka.client to send and receive messages:
+Add the following to your `:dependencies`
 
 ```
+[fundingcircle/kafka.client "0.1.4"]
+```
+
+## Usage
+
+Here is code example that uses `kafka.client` to send and receive messages:
+
+```clojure
 (def timeout 30000)
 
 (defn fuse
