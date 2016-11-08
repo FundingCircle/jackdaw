@@ -107,8 +107,9 @@
   ([^KafkaConsumer consumer poll-timeout-ms]
    (log-seq consumer poll-timeout-ms (constantly true)))
   ([^KafkaConsumer consumer poll-timeout-ms fuse-fn]
-   (concat (next-record consumer poll-timeout-ms fuse-fn)
-           (lazy-seq (next-record consumer poll-timeout-ms fuse-fn)))))
+   (lazy-seq
+    (concat (next-record consumer poll-timeout-ms fuse-fn)
+            (log-seq consumer poll-timeout-ms fuse-fn)))))
 
 (defn log-records
   "Returns a lazy sequence of clojurized ConsumerRecords from a KafkaConsumer.
