@@ -12,8 +12,7 @@
    [kafka.test.test-config :as test-config]
    [clojure.test :refer :all])
   (:import
-   (org.apache.kafka.common.serialization Serdes)
-   (kafka.client TopicProducer TopicConsumer)))
+   (org.apache.kafka.common.serialization Serdes)))
 
 (def str-serde  (Serdes/String))
 (def long-serde (Serdes/Long))  ;; clojure numbers are long by default

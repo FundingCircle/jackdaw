@@ -93,12 +93,3 @@
    :troll:"
   [t]
   (t))
-
-(defn kafka-platform
-  "Combine the zookeeper, broker, and schema-registry fixtures into
-   one glorius test helper"
-  [zk-config broker-config embedded?]
-  (if embedded?
-    (test/compose-fixtures (zookeeper zk-config)
-                           (broker broker-config))
-    identity-fixture))

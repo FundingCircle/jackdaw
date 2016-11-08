@@ -9,9 +9,9 @@
    [kafka.test.test-config :as test-config]))
 
 (use-fixtures :once
-  (join-fixtures [(fix/kafka-platform test-config/zookeeper
-                                      test-config/broker
-                                      true)]))
+  (join-fixtures [(fix/zookeeper test-config/zookeeper)
+                  (fix/broker test-config/broker)
+                  (fix/schema-registry test-config/schema-registry)]))
 
 (def poll-timeout-ms 1000)
 (def consumer-timeout-ms 5000)
