@@ -17,6 +17,9 @@
 (def str-serde  (Serdes/String))
 (def long-serde (Serdes/Long))  ;; clojure numbers are long by default
 
+(def broken-test (fn []
+                   (throw (ex-info "generic unhandled exception" {}))))
+
 (deftest zookeeper-test
   (let [fix (fix/zookeeper test-config/zookeeper)
         t (fn []
@@ -24,7 +27,15 @@
               (is client)
               (.close client)))]
     (testing "zookeeper up/down"
-      (fix t))))
+      (fix t))
+
+    (testing "exception cleanup"
+      (try
+        (fix broken-test)
+        (catch Exception e
+          (is (not (fs/tmp-dir-exists? (fs/tmp-dir "zookeeper-snapshot"))))
+          (is (not (fs/tmp-dir-exists? (fs/tmp-dir "zookeeper-log")))))))))
+
 
 (deftest broker-test
   (let [fix (compose-fixtures
@@ -35,7 +46,13 @@
                   utils (zk/utils client)]
               (is (.pathExists utils "/brokers/ids/0"))))]
     (testing "broker up/down"
-      (fix t))))
+      (fix t))
+
+    (testing "exception cleanup"
+      (try
+        (fix broken-test)
+        (catch Exception e
+          (is (not (fs/tmp-dir-exists? (fs/tmp-dir "kafka-embedded")))))))))
 
 (defn- schema-registry-tests* []
   (let [test-url (fn [& path]
@@ -124,7 +141,15 @@
                 (is (.pathExists utils "/brokers/ids/1"))
                 (is (.pathExists utils "/brokers/ids/2")))))]
     (testing "multi-broker fixture"
-      (fix t))))
+      (fix t))
+
+    (testing "exception cleanup"
+      (try
+        (fix broken-test)
+        (catch Exception e
+          (is (not (fs/tmp-dir-exists? (fs/tmp-dir "kafka-embedded-0"))))
+          (is (not (fs/tmp-dir-exists? (fs/tmp-dir "kafka-embedded-1"))))
+          (is (not (fs/tmp-dir-exists? (fs/tmp-dir "kafka-embedded-2")))))))))
 
 (deftest schema-registry-with-multi-broker-test
   (let [fix (join-fixtures
