@@ -4,6 +4,7 @@ machine:
   environment:
     GIT_AUTHOR_NAME: CircleCI
     GIT_AUTHOR_EMAIL: circleci@circleci.com
+
 deployment:
   snapshot:
     branch: /.*-SNAPSHOT/
@@ -11,3 +12,8 @@ deployment:
      - git config --global user.name $GIT_AUTHOR_NAME
      - git config --global user.email $GIT_AUTHOR_EMAIL
      - lein deploy snapshots
+
+test:
+  override:
+    - mkdir -p $CIRCLE_TEST_REPORTS
+    - lein with-profile +test cloverage -o $CIRCLE_TEST_REPORTS --junit
