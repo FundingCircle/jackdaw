@@ -1,7 +1,7 @@
-(ns kstreams.core
+(ns kafka.streams.core
   "Clojure wrapper to kafka streams."
   (:refer-clojure :exclude [count map reduce group-by merge filter])
-  (:require [kstreams.lambdas :refer :all])
+  (:require [kafka.streams.lambdas :refer :all])
   (:import org.apache.kafka.common.serialization.Serde
            org.apache.kafka.streams.KafkaStreams
            [org.apache.kafka.streams.kstream KGroupedTable KStream KStreamBuilder KTable Predicate Windows]
@@ -9,42 +9,42 @@
 
 (set! *warn-on-reflection* true)
 
-(defprotocol IKStreamBuilder
-  "KStreamBuilder is a subclass of TopologyBuilder that provides the Kafka
-  Streams DSL for users to specify computational logic and translates the given
-  logic to a org.apache.kafka.streams.processor.internals.ProcessorTopology."
+(defprotocol ITopologyBuilder
+  "ITopologyBuilder provides the Kafka Streams DSL for users to specify
+  computational logic and translates the given logic to a
+  org.apache.kafka.streams.processor.internals.ProcessorTopology."
 
   (merge
-    [kstream-builder kstreams]
+    [topology-builder kstreams]
     "Create a new instance of KStream by merging the given streams.")
 
   (new-name
-    [kstream-builder prefix]
+    [topology-builder prefix]
     "Create a unique processor name used for translation into the processor
     topology.")
 
   (kstream
-    [kstream-builder topic-name]
-    [kstream-builder key-serde value-serde topic-name]
+    [topology-builder topic-name]
+    [topology-builder key-serde value-serde topic-name]
     "Create a KStream instance from the specified topic.")
 
   (kstreams
-    [kstream-builder topic-names]
-    [kstream-builder key-serde value-serde topic-names]
+    [topology-builder topic-names]
+    [topology-builder key-serde value-serde topic-names]
     "Create a KStream instance from the specified topics.")
 
   (ktable
-    [kstream-builder topic-name]
-    [kstream-builder key-serde value-serde topic-name]
+    [topology-builder topic-name]
+    [topology-builder key-serde value-serde topic-name]
     "Create a KTable instance for the specified topic.")
 
   (ktables
-    [kstream-builder topic-names]
-    [kstream-builder key-serde value-serde topic-names]
+    [topology-builder topic-names]
+    [topology-builder key-serde value-serde topic-names]
     "Create a KTable instance for the specified topics.")
 
-  (kstream-builder*
-    [kstream-builder]
+  (topology-builder*
+    [topology-builder]
     "Returns the underlying kstream builder."))
 
 (defprotocol IKStreamBase
@@ -267,29 +267,29 @@
 
 (declare clj-kstream clj-ktable clj-kgroupedtable)
 
-(deftype CljKStreamBuilder [^KStreamBuilder kstream-builder]
-  IKStreamBuilder
+(deftype CljKStreamBuilder [^KStreamBuilder topology-builder]
+  ITopologyBuilder
   (merge
     [_ kstream]
     (into []
           #(clojure.core/map clj-kstream %)
-          (.merge kstream-builder
+          (.merge topology-builder
                   (into-array KStream [kstream]))))
 
   (new-name
     [_ prefix]
-    (.newName kstream-builder prefix))
+    (.newName topology-builder prefix))
 
   (kstream
     [_ topic-name]
     (clj-kstream
-     (.stream kstream-builder
+     (.stream topology-builder
               (into-array String [topic-name]))))
 
   (kstream
     [_ key-serde value-serde topic-name]
     (clj-kstream
-     (.stream kstream-builder
+     (.stream topology-builder
               key-serde
               value-serde
               (into-array String [topic-name]))))
@@ -297,13 +297,13 @@
   (kstreams
     [_ topic-names]
     (clj-kstream
-     (.stream kstream-builder
+     (.stream topology-builder
               (into-array String topic-names))))
 
   (kstreams
     [_ key-serde value-serde topic-names]
-    (kstream-builder*
-     (.stream kstream-builder
+    (topology-builder*
+     (.stream topology-builder
               key-serde
               value-serde
               (into-array String topic-names))))
@@ -311,12 +311,12 @@
   (ktable
     [_ topic-name]
     (clj-ktable
-     (.table kstream-builder
+     (.table topology-builder
              (into-array String [topic-name]))))
 
   (ktable [_ key-serde value-serde topic-name]
     (clj-ktable
-     (.table kstream-builder
+     (.table topology-builder
              key-serde
              value-serde
              (into-array String [topic-name]))))
@@ -324,21 +324,21 @@
   (ktables
     [_ topic-names]
     (clj-ktable
-     (.table kstream-builder
+     (.table topology-builder
              (into-array String topic-names))))
 
   (ktables [_ key-serde value-serde topic-names]
     (clj-ktable
-     (.table kstream-builder
+     (.table topology-builder
              key-serde
              value-serde
              (into-array String topic-names))))
 
-  (kstream-builder*
+  (topology-builder*
     [_]
-    kstream-builder))
+    topology-builder))
 
-(defn kstream-builder
+(defn topology-builder
   "Makes a kstream builder."
   []
   (CljKStreamBuilder. (KStreamBuilder.)))
@@ -792,15 +792,15 @@
 (defn kafka-streams
   "Makes a Kafka Streams object."
   [builder opts]
-  (KafkaStreams. ^TopologyBuilder (kstream-builder* builder)
+  (KafkaStreams. ^TopologyBuilder (topology-builder* builder)
                  ^java.util.Properties opts))
 
-(defn start
+(defn start!
   "Starts processing."
   [kafka-streams]
   (.start ^KafkaStreams kafka-streams))
 
-(defn close
+(defn close!
   "Stops the kafka streams."
   [kafka-streams]
   (.close ^KafkaStreams kafka-streams))
