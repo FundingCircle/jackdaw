@@ -43,7 +43,7 @@
   ([producer record]
    (.send ^KafkaProducer producer record))
   ([producer record callback-fn]
-   (.send ^KafkaProducer producer (callback callback-fn))))
+   (.send ^KafkaProducer producer record (callback callback-fn))))
 
 (defn consumer
   "Return a KafkaConsumer with the supplied properties"
