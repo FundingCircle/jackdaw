@@ -94,7 +94,7 @@
                    :timestamp :timestampType
                    :topic :toString :value]))
 
-(defn next-record
+(defn next-records
   "Polls kafka until a message is received."
   [^KafkaConsumer consumer poll-timeout-ms fuse-fn]
   (when (fuse-fn)
@@ -107,9 +107,10 @@
   ([^KafkaConsumer consumer poll-timeout-ms]
    (log-seq consumer poll-timeout-ms (constantly true)))
   ([^KafkaConsumer consumer poll-timeout-ms fuse-fn]
-   (lazy-seq
-    (concat (next-record consumer poll-timeout-ms fuse-fn)
-            (log-seq consumer poll-timeout-ms fuse-fn)))))
+   (let [records (next-records consumer poll-timeout-ms fuse-fn)]
+     (lazy-seq
+      (concat records
+              (log-seq consumer poll-timeout-ms fuse-fn))))))
 
 (defn log-records
   "Returns a lazy sequence of clojurized ConsumerRecords from a KafkaConsumer.
