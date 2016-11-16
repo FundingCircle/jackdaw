@@ -145,6 +145,6 @@
              (.parse (Schema$Parser.) schema))))
 
 (defn map->generic-record [schema m]
-  (let [schema (parse-schema schema)
+  (let [schema (if (string? schema) (parse-schema schema) schema)
         record (GenericData$Record. schema)]
     (reduce (partial populate-generic-record schema) record m)))
