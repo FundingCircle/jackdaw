@@ -5,9 +5,13 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/tools.logging "0.3.1"]
-                 [com.101tec/zkclient "0.8"]
-                 [org.apache.kafka/kafka_2.11 "0.10.0.1"]
-                 [org.apache.kafka/kafka-clients "0.10.0.1"]]
+                 [com.101tec/zkclient "0.8" :exclusions [log4j org.slf4j/slf4j-log4j12]]
+                 [org.apache.kafka/kafka_2.11 "0.10.0.1" :exclusions [log4j org.slf4j/slf4j-log4j12 org.slf4j/slf4j-api
+                                                                      com.fasterxml.jackson.core/jackson-annotations
+                                                                      com.fasterxml.jackson.core/jackson-core]]
+                 [org.apache.kafka/kafka-clients "0.10.0.1" :exclusions [log4j org.slf4j/slf4j-log4j12 org.slf4j/slf4j-api
+                                                                         com.fasterxml.jackson.core/jackson-annotations
+                                                                         com.fasterxml.jackson.core/jackson-core]]]
 
   :release-tasks [["vcs" "assert-committed"]
                   ["change" "version" "leiningen.release/bump-version" "release"]
