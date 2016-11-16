@@ -1,9 +1,25 @@
-{"namespace": "example.avro",
- "type": "record",
- "name": "User",
- "fields": [
-     {"name": "name", "type": "string"},
-     {"name": "favorite_number",  "type": ["long", "null"]},
-     {"name": "favorite_color", "type": ["string", "null"]}
- ]
+{
+  "type" : "record",
+  "name" : "PiiAddress",
+  "namespace" : "com.fundingcircle",
+  "fields" : [ {
+    "name" : "customer_id",
+    "type" : "string",
+    "doc" : "The unique id of the customer"
+  }, {
+    "name" : "address",
+    "type" : {
+      "type" : "record",
+      "name" : "PiiEncryptedField",
+      "fields" : [ {
+        "name" : "value",
+        "type" : "string"
+      }, {
+        "name" : "key_path",
+        "type" : "string"
+      } ]
+    },
+    "doc" : "A string encrypted by Vault"
+  } ],
+  "public_name" : "pii_address"
 }
