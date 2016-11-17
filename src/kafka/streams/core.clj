@@ -739,7 +739,10 @@
     (clj-ktable
      (.outerJoin ktable
                  (ktable* other-ktable)
-                 (value-joiner value-joiner-fn)))))
+                 (value-joiner value-joiner-fn))))
+
+  (ktable* [_]
+    ktable))
 
 (defn clj-ktable
   "Makes a CljKTable object."
