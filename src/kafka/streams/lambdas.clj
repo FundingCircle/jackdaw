@@ -50,6 +50,19 @@
   [key-value-mapper-fn]
   (FnKeyValueMapper. key-value-mapper-fn))
 
+(deftype FnKeyValueFlatMapper [key-value-flatmapper-fn]
+  KeyValueMapper
+  (apply [this key value]
+    (mapv key-value (key-value-flatmapper-fn [key value]))))
+
+(defn key-value-flatmapper
+  "Packages up a clojure fn in a kstream key value mapper for use with .flatMap.
+
+  `key-value-flatmapper-fn` should be a function that takes a `[key value]` as a
+  single parameter, and returns a list of `[key value]`."
+  [key-value-flatmapper-fn]
+  (FnKeyValueFlatMapper. key-value-flatmapper-fn))
+
 (deftype FnPredicate [predicate-fn]
   Predicate
   (test [this key value]

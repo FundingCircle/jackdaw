@@ -475,7 +475,7 @@
   (flat-map
     [_ key-value-mapper-fn]
     (clj-kstream
-     (.flatMap kstream (key-value-mapper key-value-mapper-fn))))
+     (.flatMap kstream (key-value-flatmapper key-value-mapper-fn))))
 
   (flat-map-values
     [_ value-mapper-fn]
