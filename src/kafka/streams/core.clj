@@ -38,11 +38,6 @@
     [topology-builder key-serde value-serde topic-name]
     "Create a KTable instance for the specified topic.")
 
-  (ktables
-    [topology-builder topic-names]
-    [topology-builder key-serde value-serde topic-names]
-    "Create a KTable instance for the specified topics.")
-
   (topology-builder*
     [topology-builder]
     "Returns the underlying kstream builder."))
@@ -311,28 +306,11 @@
   (ktable
     [_ topic-name]
     (clj-ktable
-     (.table topology-builder
-             (into-array String [topic-name]))))
+     (.table topology-builder topic-name)))
 
   (ktable [_ key-serde value-serde topic-name]
     (clj-ktable
-     (.table topology-builder
-             key-serde
-             value-serde
-             (into-array String [topic-name]))))
-
-  (ktables
-    [_ topic-names]
-    (clj-ktable
-     (.table topology-builder
-             (into-array String topic-names))))
-
-  (ktables [_ key-serde value-serde topic-names]
-    (clj-ktable
-     (.table topology-builder
-             key-serde
-             value-serde
-             (into-array String topic-names))))
+     (.table topology-builder key-serde value-serde topic-name)))
 
   (topology-builder*
     [_]
