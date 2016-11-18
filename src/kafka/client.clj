@@ -15,10 +15,10 @@
 
 (defn producer-record
   "Creates a kafka ProducerRecord for use with `send!`."
-  ([topic-name value] (ProducerRecord. topic-name value))
-  ([topic-name key value] (ProducerRecord. topic-name key value))
-  ([topic-name partition key value] (ProducerRecord. topic-name partition key value))
-  ([topic-name partition timestamp key value] (ProducerRecord. topic-name partition timestamp key value)))
+  ([{:keys [topic.metadata/name]} value] (ProducerRecord. name value))
+  ([{:keys [topic.metadata/name]} key value] (ProducerRecord. name key value))
+  ([{:keys [topic.metadata/name]} partition key value] (ProducerRecord. name partition key value))
+  ([{:keys [topic.metadata/name]} partition timestamp key value] (ProducerRecord. name partition timestamp key value)))
 
 (defn producer
   "Return a KafkaProducer with the supplied properties"
@@ -26,46 +26,16 @@
    (log/debug "Making producer" {:config config})
    (KafkaProducer. ^java.util.Properties (p/map->properties config)))
 
-  ([config ^Serde key-serde ^Serde value-serde]
+  ([config {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
    (log/debug "Making producer" {:key-serde key-serde :value-serde value-serde})
-   (KafkaProducer. ^java.util.Properties (p/map->properties config)
-                   (.serializer key-serde)
-                   (.serializer value-serde))))
-
-(defn callback
-  "Build a kafka producer callback function out of a normal clojure one
-   The function should expect two parameters, the first being the record
-   metadata, the second being an exception if there was one. The function
-   should check for an exception and handle it appropriately."
-  [on-completion]
-  (reify Callback
-    (onCompletion [this record-metadata exception]
-      (on-completion record-metadata exception))))
-
-(defn send!
-  "Asynchronously sends a record to a topic."
-  ([producer record]
-   (.send ^KafkaProducer producer record))
-  ([producer record callback-fn]
-   (.send ^KafkaProducer producer record (callback callback-fn))))
-
-(defn consumer
-  "Return a KafkaConsumer with the supplied properties"
-  ([config]
-   (KafkaConsumer. ^java.util.Properties (p/map->properties config)))
-
-  ([config ^Serde key-serde ^Serde value-serde]
-   (log/debug "Making consumer" {:config config
-                                 :key-serde key-serde
-                                 :value-serde value-serde})
    (KafkaConsumer. ^java.util.Properties (p/map->properties config)
-                   (.deserializer key-serde)
-                   (.deserializer value-serde))))
+                   (.deserializer ^Serde key-serde)
+                   (.deserializer ^Serde value-serde))))
 
 (defn subscribe
   "Subscribe a consumer to topics. Returns the consumer."
-  [consumer & topics]
-  (.subscribe ^KafkaConsumer consumer topics)
+  [consumer & topic-specs]
+  (.subscribe ^KafkaConsumer consumer (mapv :topic.metadata/name topic-specs))
   consumer)
 
 (defn seek-to-end
