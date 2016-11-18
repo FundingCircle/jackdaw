@@ -13,7 +13,6 @@
   "ITopologyBuilder provides the Kafka Streams DSL for users to specify
   computational logic and translates the given logic to a
   org.apache.kafka.streams.processor.internals.ProcessorTopology."
-
   (merge
     [topology-builder kstreams]
     "Create a new instance of KStream by merging the given streams.")
@@ -24,18 +23,15 @@
     topology.")
 
   (kstream
-    [topology-builder topic-name]
-    [topology-builder key-serde value-serde topic-name]
+    [topology-builder topic-spec]
     "Create a KStream instance from the specified topic.")
 
   (kstreams
-    [topology-builder topic-names]
-    [topology-builder key-serde value-serde topic-names]
+    [topology-builder topic-specs]
     "Create a KStream instance from the specified topics.")
 
   (ktable
-    [topology-builder topic-name]
-    [topology-builder key-serde value-serde topic-name]
+    [topology-builder topic-spec]
     "Create a KTable instance for the specified topic.")
 
   (topology-builder*
@@ -69,27 +65,23 @@
 
   (print!
     [kstream]
-    [kstream key-serde value-serde]
+    [kstream topic-spec]
     "Print the elements of this stream to *out*.")
 
   (through
-    [kstream topic-name]
-    [kstream partition-fn topic-name]
-    [kstream key-serde value-serde topic-name]
-    [kstream key-serde value-serde partition-fn topic-name]
+    [kstream topic-spec]
+    [kstream partition-fn topic-spec]
     "Materialize this stream to a topic, also creates a new instance of KStream
     from the topic.")
 
   (to!
-    [kstream topic-name]
-    [kstream partition-fn topic-name]
-    [kstream key-serde value-serde topic-name]
-    [kstream key-serde value-serde partition-fn topic-name]
+    [kstream topic-spec]
+    [kstream partition-fn topic-spec]
     "Materialize this stream to a topic.")
 
   (write-as-text!
     [kstream file-path]
-    [kstream file-path key-serde value-serde]
+    [kstream file-path topic-spec]
     "Write the elements of this stream to a file at the given path."))
 
 (defprotocol IKStream
@@ -103,13 +95,12 @@
   KTable, or can be aggregated into a KTable."
 
   (aggregate-by-key
-    [kstream initializer-fn aggregator-fn topic-name]
-    [kstream initializer-fn aggregator-fn key-serde value-serde topic-name]
+    [kstream initializer-fn aggregator-fn topic-spec]
     "Aggregate values of this stream by key into a new instance of ever-updating KTable.")
 
   (aggregate-by-key-windowed
     [kstream initializer-fn aggregator-fn windows]
-    [kstream initializer-fn aggregator-fn windows key-serde value-serde]
+    [kstream initializer-fn aggregator-fn windows  topic-spec]
     "Aggregate values of this stream by key on a window basis into a new
     instance of windowed KTable.")
 
@@ -119,14 +110,13 @@
     the original stream based on the supplied predicates.")
 
   (count-by-key
-    [kstream topic-name]
-    [kstream key-serde topic-name]
+    [kstream topic-spec]
     "Count number of records of this stream by key into a new instance of
     ever-updating KTable.")
 
   (count-by-key-windowed
     [kstream windows]
-    [kstream windows key-serde]
+    [kstream windows topic-spec]
     "Count number of records of this stream by key into a new instance of
     ever-updating KTable.")
 
@@ -143,13 +133,13 @@
 
   (join-windowed
     [kstream other-kstream value-joiner-fn windows]
-    [kstream other-kstream value-joiner-fn windows key-serde this-value-serde other-value-serde]
+    [kstream other-kstream value-joiner-fn windows this-topic-spec other-topic-spec]
     "Combine element values of this stream with another KStream's elements of
     the same key using windowed Inner Join." )
 
   (left-join-windowed
     [kstream other-ktable value-joiner-fn windows]
-    [kstream other-ktable value-joiner-fn windows key-serde other-value-serde]
+    [kstream other-ktable value-joiner-fn windows this-topic-spec other-topic-spec]
     "Combine values of this stream with KTable's elements of the same key using Left Join.")
 
   (map
@@ -159,7 +149,7 @@
 
   (outer-join-windowed
     [kstream other-kstream value-joiner-fn windows]
-    [kstream other-kstream value-joiner-fn windows key-serde value-serde other-value-serde]
+    [kstream other-kstream value-joiner-fn windows this-topic-spec other-topic-spec]
     "Combine values of this stream with another KStream's elements of the same
     key using windowed Outer Join." )
 
@@ -169,14 +159,13 @@
     Processor.")
 
   (reduce-by-key
-    [kstream reducer-fn topic-name]
-    [kstream reducer-fn key-serde value-serde topic-name]
+    [kstream reducer-fn topic-spec]
     "Combine values of this stream by key into a new instance of ever-updating
     KTable.")
 
   (reduce-by-key-windowed
     [kstream reducer-fn windows]
-    [kstream reducer-fn windows key-serde value-serde]
+    [kstream reducer-fn windows topic-spec]
     "Combine values of this stream by key into a new instance of ever-updating
     KTable.")
 
@@ -211,7 +200,7 @@
   KStream, or can be re-partitioned and aggregated into a new KTable."
   (group-by
     [ktable key-value-mapper-fn]
-    [ktable key-value-mapper-fn key-serde value-serde]
+    [ktable key-value-mapper-fn topic-spec]
     "Group the records of this KTable using the provided KeyValueMapper.")
 
   (join
@@ -241,8 +230,8 @@
   It is an intermediate representation after a re-grouping of a KTable before an
   aggregation is applied to the new partitions resulting in a new KTable."
   (aggregate
-    [kgroupedtable initializer-fn adder-fn subtractor-fn topic-name]
-    [kgroupedtable initializer-fn adder-fn subtractor-fn value-serde topic-name]
+    [kgroupedtable initializer-fn adder-fn subtractor-fn
+     topic-spec]
     "Aggregate updating values of this stream by the selected key into a new
     instance of KTable.")
 
@@ -252,7 +241,7 @@
     instance of KTable.")
 
   (reduce
-    [kgroupedtable adder-fn subtractor-fn topic-name]
+    [kgroupedtable adder-fn subtractor-fn topic-spec]
     "Combine updating values of this stream by the selected key into a new
     instance of KTable.")
 
@@ -276,41 +265,24 @@
     (.newName topology-builder prefix))
 
   (kstream
-    [_ topic-name]
-    (clj-kstream
-     (.stream topology-builder
-              (into-array String [topic-name]))))
-
-  (kstream
-    [_ key-serde value-serde topic-name]
+    [_ {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
     (clj-kstream
      (.stream topology-builder
               key-serde
               value-serde
-              (into-array String [topic-name]))))
+              (into-array String [name]))))
 
   (kstreams
-    [_ topic-names]
+    [_ topic-specs]
     (clj-kstream
-     (.stream topology-builder
-              (into-array String topic-names))))
-
-  (kstreams
-    [_ key-serde value-serde topic-names]
-    (topology-builder*
-     (.stream topology-builder
-              key-serde
-              value-serde
-              (into-array String topic-names))))
+     (let [topic-names (map :topic.metadata/name topic-specs)]
+       (.stream topology-builder
+                (into-array String topic-names)))))
 
   (ktable
-    [_ topic-name]
+    [_ {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
     (clj-ktable
-     (.table topology-builder topic-name)))
-
-  (ktable [_ key-serde value-serde topic-name]
-    (clj-ktable
-     (.table topology-builder key-serde value-serde topic-name)))
+     (.table topology-builder key-serde value-serde name)))
 
   (topology-builder*
     [_]
@@ -356,48 +328,28 @@
     nil)
 
   (print!
-    [_ key-serde value-serde]
+    [_ {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
     (.print kstream key-serde value-serde)
     nil)
 
   (through
-    [_ topic-name]
+    [_ {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
     (clj-kstream
-     (.through kstream topic-name)))
+     (.through kstream key-serde value-serde name)))
 
   (through
-    [_ partition-fn topic-name]
+    [_ partition-fn {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
     (clj-kstream
-     (.through kstream (stream-partitioner partition-fn) topic-name)))
-
-  (through
-    [_ key-serde value-serde topic-name]
-    (clj-kstream
-     (.through kstream key-serde value-serde topic-name)))
-
-  (through
-    [_ key-serde value-serde partition-fn topic-name]
-    (clj-kstream
-     (.through kstream key-serde value-serde (stream-partitioner partition-fn) topic-name)))
+     (.through kstream key-serde value-serde (stream-partitioner partition-fn) name)))
 
   (to!
-    [_ topic-name]
-    (.to kstream topic-name)
+    [_ {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
+    (.to kstream key-serde value-serde name)
     nil)
 
   (to!
-    [_ partition-fn topic-name]
-    (.to kstream (stream-partitioner partition-fn) topic-name)
-    nil)
-
-  (to!
-    [_ key-serde value-serde topic-name]
-    (.to kstream key-serde value-serde topic-name)
-    nil)
-
-  (to!
-    [_ key-serde value-serde partition-fn topic-name]
-    (.to kstream key-serde value-serde (stream-partitioner partition-fn) topic-name)
+    [_ partition-fn {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
+    (.to kstream key-serde value-serde (stream-partitioner partition-fn) name)
     nil)
 
   (write-as-text!
@@ -405,27 +357,19 @@
     (.writeAsText kstream file-path))
 
   (write-as-text!
-    [_ file-path key-serde value-serde]
+    [_ file-path {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
     (.writeAsText kstream file-path key-serde value-serde))
 
   IKStream
   (aggregate-by-key
-    [_ initializer-fn aggregator-fn topic-name]
-    (clj-ktable
-     (.aggregateByKey kstream
-                      (initializer initializer-fn)
-                      (aggregator aggregator-fn)
-                      ^String topic-name)))
-
-  (aggregate-by-key
-    [_ initializer-fn aggregator-fn key-serde value-serde topic-name]
+    [_ initializer-fn aggregator-fn {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
     (clj-kstream
      (.aggregateByKey kstream
                       (initializer initializer-fn)
                       (aggregator aggregator-fn)
                       ^Serde key-serde
                       ^Serde value-serde
-                      ^String topic-name)))
+                      ^String name)))
 
   (aggregate-by-key-windowed
     [_ initializer-fn aggregator-fn windows]
@@ -436,7 +380,7 @@
                       ^Windows windows)))
 
   (aggregate-by-key-windowed
-    [_ initializer-fn aggregator-fn windows key-serde value-serde]
+    [_ initializer-fn aggregator-fn windows  {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
     (clj-kstream
      (.aggregateByKey kstream
                       (initializer initializer-fn)
@@ -453,14 +397,9 @@
                    (into-array Predicate (clojure.core/map predicate predicate-fns)))))
 
   (count-by-key
-    [_ topic-name]
+    [_ {:keys [topic.metadata/name kafka.serdes/key-serde]}]
     (clj-ktable
-             (.countByKey kstream ^String topic-name)))
-
-  (count-by-key
-    [_ key-serde topic-name]
-    (clj-ktable
-     (.countByKey kstream ^Serde key-serde ^String topic-name)))
+     (.countByKey kstream ^Serde key-serde ^String name)))
 
   (count-by-key-windowed
     [_ windows]
@@ -468,6 +407,7 @@
      (.countByKey kstream ^Windows windows)))
 
   (count-by-key-windowed
+    [_ windows {:keys [kafka.serdes/key-serde]}]
     [_ windows key-serde]
     (clj-ktable
      (.countByKey kstream ^Windows windows ^Serde key-serde)))
@@ -491,7 +431,9 @@
             windows)))
 
   (join-windowed
-    [_ other-kstream value-joiner-fn windows key-serde this-value-serde other-value-serde]
+    [_ other-kstream value-joiner-fn windows
+     {key-serde :kafka.serdes/key-serde this-value-serde :kafka.serdes/value-serde}
+     {other-value-serde :kafka.serdes/value-serde}]
     (clj-kstream
      (.join kstream
             (kstream* other-kstream)
@@ -510,7 +452,9 @@
                 windows)))
 
   (left-join-windowed
-    [_ other-kstream value-joiner-fn windows key-serde other-value-serde]
+    [_ other-kstream value-joiner-fn windows
+     {key-serde :kafka.serdes/key-serde}
+     {other-value-serde :kafka.serdes/value-serde}]
     (clj-kstream
      (.leftJoin kstream
                 (kstream* other-kstream)
@@ -533,7 +477,9 @@
                  windows)))
 
   (outer-join-windowed
-    [_ other-kstream value-joiner-fn windows key-serde value-serde other-value-serde]
+    [_ other-kstream value-joiner-fn windows
+     {key-serde :kafka.serdes/key-serde value-serde :kafka.serdes/value-serde}
+     {other-value-serde :kafka.serdes/value-serde}]
     (clj-kstream
      (.outerJoin kstream
                  (kstream* other-kstream)
@@ -550,18 +496,13 @@
               (into-array String state-store-names)))
 
   (reduce-by-key
-    [_ reducer-fn topic-name]
-    (clj-ktable
-     (.reduceByKey kstream (reducer reducer-fn) ^String topic-name)))
-
-  (reduce-by-key
-    [_ reducer-fn key-serde value-serde topic-name]
+   [_ reducer-fn {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
     (clj-ktable
      (.reduceByKey kstream
                    (reducer reducer-fn)
                    ^Serde key-serde
                    ^Serde value-serde
-                   ^String topic-name)))
+                   ^String name)))
 
   (reduce-by-key-windowed
     [_ reducer-fn windows]
@@ -569,7 +510,7 @@
      (.reduceByKey kstream (reducer reducer-fn) ^Windows windows)))
 
   (reduce-by-key-windowed
-    [_ reducer-fn windows key-serde value-serde]
+   [_ reducer-fn windows {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
     (clj-ktable
      (.reduceByKey kstream
                    (reducer reducer-fn)
@@ -639,48 +580,28 @@
     nil)
 
   (print!
-    [_ key-serde value-serde]
+    [_ {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
     (.print ktable key-serde value-serde)
     nil)
 
   (through
-    [_ topic-name]
+    [_ {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
     (clj-ktable
-     (.through ktable topic-name)))
+     (.through ktable key-serde value-serde name)))
 
   (through
-    [_ partition-fn topic-name]
+    [_ partition-fn {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
     (clj-ktable
-     (.through ktable (stream-partitioner partition-fn) topic-name)))
-
-  (through
-    [_ key-serde value-serde topic-name]
-    (clj-ktable
-     (.through ktable key-serde value-serde topic-name)))
-
-  (through
-    [_ key-serde value-serde partition-fn topic-name]
-    (clj-ktable
-     (.through ktable key-serde value-serde (stream-partitioner partition-fn) topic-name)))
+     (.through ktable key-serde value-serde (stream-partitioner partition-fn) name)))
 
   (to!
-    [_ topic-name]
-    (.to ktable topic-name)
+    [_ {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
+    (.to ktable key-serde value-serde name)
     nil)
 
   (to!
-    [_ partition-fn topic-name]
-    (.to ktable (stream-partitioner partition-fn) topic-name)
-    nil)
-
-  (to!
-    [_ key-serde value-serde topic-name]
-    (.to ktable key-serde value-serde topic-name)
-    nil)
-
-  (to!
-    [_ key-serde value-serde partition-fn topic-name]
-    (.to ktable key-serde value-serde (stream-partitioner partition-fn topic-name))
+    [_ partition-fn {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
+    (.to ktable key-serde value-serde (stream-partitioner partition-fn name))
     nil)
 
   (write-as-text!
@@ -688,7 +609,7 @@
     (.writeAsText ktable file-path))
 
   (write-as-text!
-    [_ file-path key-serde value-serde]
+    [_ file-path {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
     (.writeAsText ktable file-path key-serde value-serde))
 
   IKTable
@@ -698,7 +619,7 @@
      (.groupBy ktable (key-value-mapper key-value-mapper-fn))))
 
   (group-by
-    [_ key-value-mapper-fn key-serde value-serde]
+    [_ key-value-mapper-fn {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
     (clj-kgroupedtable
      (.groupBy ktable
                (key-value-mapper key-value-mapper-fn)
@@ -730,23 +651,15 @@
 (deftype CljKGroupedTable [^KGroupedTable kgroupedtable]
   IKGroupedTable
   (aggregate
-    [_ initializer-fn adder-fn subtractor-fn topic-name]
-    (clj-ktable
-     (.aggregate kgroupedtable
-                (initializer initializer-fn)
-                (aggregator adder-fn)
-                (aggregator subtractor-fn)
-                topic-name)))
-
-  (aggregate
-    [_ initializer-fn adder-fn subtractor-fn value-serde topic-name]
+    [_ initializer-fn adder-fn subtractor-fn
+     {:keys [topic.metadata/name kafka.serdes/value-serde]}]
     (clj-ktable
      (.aggregate kgroupedtable
                  (initializer initializer-fn)
                  (aggregator adder-fn)
                  (aggregator subtractor-fn)
                  value-serde
-                 topic-name)))
+                 name)))
 
   (count
     [_]
@@ -754,12 +667,12 @@
      (count kgroupedtable)))
 
   (reduce
-    [_ adder-fn subtractor-fn topic-name]
+    [_ adder-fn subtractor-fn {:keys [topic.metadata/name]}]
     (clj-ktable
      (.reduce kgroupedtable
               (reducer adder-fn)
               (reducer subtractor-fn)
-              topic-name)))
+              name)))
 
   (kgroupedtable*
     [_]
