@@ -3,7 +3,6 @@
   :url "https://github.com/FundingCircle/kafka-serdes"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :local-repo ".repo"
   :aot :all
   :dependencies [[environ "1.1.0"]
                  [io.confluent/kafka-avro-serializer "3.0.0"]
