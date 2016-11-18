@@ -1,9 +1,8 @@
-(defproject fundingcircle/kafka.serdes "0.4.4-SNAPSHOT"
+(defproject fundingcircle/kafka.serdes "0.5.0-SNAPSHOT"
   :description "Serializers/deserializers for Kafka"
   :url "https://github.com/FundingCircle/kafka-serdes"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :local-repo ".repo"
   :aot :all
   :dependencies [[environ "1.1.0"]
                  [inflections "0.12.2"]
