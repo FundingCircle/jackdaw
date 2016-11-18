@@ -6,7 +6,6 @@
   :local-repo ".repo"
   :aot :all
   :dependencies [[environ "1.1.0"]
-                 [inflections "0.12.2"]
                  [io.confluent/kafka-avro-serializer "3.0.0"]
                  [io.confluent/kafka-schema-registry-client "3.0.0"]
                  [org.apache.kafka/kafka-clients "0.10.0.0-cp1"]

@@ -24,3 +24,11 @@
       (is (= (json/read-str s)
              (json/read-str (->> (.serialize (json-serializer) nil s)
                                  (.deserialize (json-deserializer) nil))))))))
+
+(deftest reverse-json-roundtrip-test
+  (testing "JSON bytes are the same after deserialization and serialization."
+    (let [s (slurp (io/resource "resources/pass1.json"))
+          b (.serialize (json-serializer) nil {:foo_bar "baz"})]
+      (is (= (into [] b)
+             (into [] (->> (.deserialize (json-deserializer) nil b)
+                           (.serialize (json-serializer) nil))))))))
