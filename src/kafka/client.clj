@@ -28,9 +28,39 @@
 
   ([config {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
    (log/debug "Making producer" {:key-serde key-serde :value-serde value-serde})
-   (KafkaConsumer. ^java.util.Properties (p/map->properties config)
-                   (.deserializer ^Serde key-serde)
-                   (.deserializer ^Serde value-serde))))
+   (KafkaProducer. ^java.util.Properties (config/properties config)
+                   (.serializer ^Serde key-serde)
+                   (.serializer ^Serde value-serde))))
+
+(defn callback
+  "Build a kafka producer callback function out of a normal clojure one
+   The function should expect two parameters, the first being the record
+   metadata, the second being an exception if there was one. The function
+   should check for an exception and handle it appropriately."
+  [on-completion]
+  (reify Callback
+    (onCompletion [this record-metadata exception]
+      (on-completion record-metadata exception))))
+
+(defn send!
+  "Asynchronously sends a record to a topic."
+  ([producer record]
+   (.send ^KafkaProducer producer record))
+  ([producer record callback-fn]
+   (.send ^KafkaProducer producer record (callback callback-fn))))
+
+(defn consumer
+  "Return a KafkaConsumer with the supplied properties"
+  ([config]
+   (KafkaConsumer. ^java.util.Properties (config/properties config)))
+
+  ([config {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
+   (log/debug "Making consumer" {:config config
+                                 :key-serde key-serde
+                                 :value-serde value-serde})
+   (KafkaConsumer. ^java.util.Properties (config/properties config)
+                   (when key-serde (.deserializer ^Serde key-serde))
+                   (when value-serde (.deserializer ^Serde value-serde)))))
 
 (defn subscribe
   "Subscribe a consumer to topics. Returns the consumer."
@@ -46,6 +76,12 @@
     (.seekToEnd consumer assigned-partitions)
     (.poll consumer 0)
     consumer))
+
+(defn consumer-subscription
+  "Creates a consumer and subscribes to a single topic."
+  [config topic-spec]
+  (-> (consumer config topic-spec)
+      (subscribe topic-spec)))
 
 (defn select-methods
   "Like `select-keys` but instead builds a map by invoking the named java methods
