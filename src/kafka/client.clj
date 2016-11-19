@@ -64,6 +64,14 @@
   (.subscribe ^KafkaConsumer consumer topics)
   consumer)
 
+(defn seek-to-end
+  "Seeks to the end of all the partitions assigned to the given consumer.
+  Returns the consumer."
+  [^KafkaConsumer consumer]
+  (let [assigned-partitions (.assignment consumer)]
+    (.seekToEnd consumer assigned-partitions)
+    (.poll consumer 0)
+    consumer))
 
 (defn select-methods
   "Like `select-keys` but instead builds a map by invoking the named java methods
