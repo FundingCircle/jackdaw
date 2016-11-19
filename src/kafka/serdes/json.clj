@@ -22,8 +22,9 @@
   (close [this])
   (configure [this configs key?])
   (serialize [this _topic data]
-    (-> (json/write-str data)
-        (string-to-bytes))))
+    (when data
+      (-> (json/write-str data)
+          (string-to-bytes)))))
 
 (defn json-serializer
   "Create a JSON serializer"
@@ -35,8 +36,9 @@
   (close [this])
   (configure [this configs key?])
   (deserialize [this _topic data]
-    (-> (bytes-to-string data)
-        (json/read-str :key-fn keyword))))
+    (when data
+      (-> (bytes-to-string data)
+          (json/read-str :key-fn keyword)))))
 
 (defn json-deserializer
   "Create a JSON deserializer"
