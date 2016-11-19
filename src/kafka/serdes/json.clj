@@ -10,8 +10,7 @@
 (defn bytes-to-string
   "Convert a byte array to string."
   [data]
-  (-> (io/input-stream data)
-       (slurp)))
+  (String. data StandardCharsets/UTF_8))
 
 (defn string-to-bytes
   "Convert a string to byte array."
