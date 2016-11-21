@@ -23,15 +23,15 @@
     topology.")
 
   (kstream
-    [topology-builder topic-spec]
+    [topology-builder topic-config]
     "Create a KStream instance from the specified topic.")
 
   (kstreams
-    [topology-builder topic-specs]
+    [topology-builder topic-configs]
     "Create a KStream instance from the specified topics.")
 
   (ktable
-    [topology-builder topic-spec]
+    [topology-builder topic-config]
     "Create a KTable instance for the specified topic.")
 
   (topology-builder*
@@ -65,23 +65,23 @@
 
   (print!
     [kstream]
-    [kstream topic-spec]
+    [kstream topic-config]
     "Print the elements of this stream to *out*.")
 
   (through
-    [kstream topic-spec]
-    [kstream partition-fn topic-spec]
+    [kstream topic-config]
+    [kstream partition-fn topic-config]
     "Materialize this stream to a topic, also creates a new instance of KStream
     from the topic.")
 
   (to!
-    [kstream topic-spec]
-    [kstream partition-fn topic-spec]
+    [kstream topic-config]
+    [kstream partition-fn topic-config]
     "Materialize this stream to a topic.")
 
   (write-as-text!
     [kstream file-path]
-    [kstream file-path topic-spec]
+    [kstream file-path topic-config]
     "Write the elements of this stream to a file at the given path."))
 
 (defprotocol IKStream
@@ -95,12 +95,12 @@
   KTable, or can be aggregated into a KTable."
 
   (aggregate-by-key
-    [kstream initializer-fn aggregator-fn topic-spec]
+    [kstream initializer-fn aggregator-fn topic-config]
     "Aggregate values of this stream by key into a new instance of ever-updating KTable.")
 
   (aggregate-by-key-windowed
     [kstream initializer-fn aggregator-fn windows]
-    [kstream initializer-fn aggregator-fn windows  topic-spec]
+    [kstream initializer-fn aggregator-fn windows  topic-config]
     "Aggregate values of this stream by key on a window basis into a new
     instance of windowed KTable.")
 
@@ -110,13 +110,13 @@
     the original stream based on the supplied predicates.")
 
   (count-by-key
-    [kstream topic-spec]
+    [kstream topic-config]
     "Count number of records of this stream by key into a new instance of
     ever-updating KTable.")
 
   (count-by-key-windowed
     [kstream windows]
-    [kstream windows topic-spec]
+    [kstream windows topic-config]
     "Count number of records of this stream by key into a new instance of
     ever-updating KTable.")
 
@@ -133,13 +133,13 @@
 
   (join-windowed
     [kstream other-kstream value-joiner-fn windows]
-    [kstream other-kstream value-joiner-fn windows this-topic-spec other-topic-spec]
+    [kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config]
     "Combine element values of this stream with another KStream's elements of
     the same key using windowed Inner Join." )
 
   (left-join-windowed
     [kstream other-ktable value-joiner-fn windows]
-    [kstream other-ktable value-joiner-fn windows this-topic-spec other-topic-spec]
+    [kstream other-ktable value-joiner-fn windows this-topic-config other-topic-config]
     "Combine values of this stream with KTable's elements of the same key using Left Join.")
 
   (map
@@ -149,7 +149,7 @@
 
   (outer-join-windowed
     [kstream other-kstream value-joiner-fn windows]
-    [kstream other-kstream value-joiner-fn windows this-topic-spec other-topic-spec]
+    [kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config]
     "Combine values of this stream with another KStream's elements of the same
     key using windowed Outer Join." )
 
@@ -159,13 +159,13 @@
     Processor.")
 
   (reduce-by-key
-    [kstream reducer-fn topic-spec]
+    [kstream reducer-fn topic-config]
     "Combine values of this stream by key into a new instance of ever-updating
     KTable.")
 
   (reduce-by-key-windowed
     [kstream reducer-fn windows]
-    [kstream reducer-fn windows topic-spec]
+    [kstream reducer-fn windows topic-config]
     "Combine values of this stream by key into a new instance of ever-updating
     KTable.")
 
@@ -200,7 +200,7 @@
   KStream, or can be re-partitioned and aggregated into a new KTable."
   (group-by
     [ktable key-value-mapper-fn]
-    [ktable key-value-mapper-fn topic-spec]
+    [ktable key-value-mapper-fn topic-config]
     "Group the records of this KTable using the provided KeyValueMapper.")
 
   (join
@@ -231,7 +231,7 @@
   aggregation is applied to the new partitions resulting in a new KTable."
   (aggregate
     [kgroupedtable initializer-fn adder-fn subtractor-fn
-     topic-spec]
+     topic-config]
     "Aggregate updating values of this stream by the selected key into a new
     instance of KTable.")
 
@@ -241,7 +241,7 @@
     instance of KTable.")
 
   (reduce
-    [kgroupedtable adder-fn subtractor-fn topic-spec]
+    [kgroupedtable adder-fn subtractor-fn topic-config]
     "Combine updating values of this stream by the selected key into a new
     instance of KTable.")
 
@@ -273,9 +273,9 @@
               (into-array String [name]))))
 
   (kstreams
-    [_ topic-specs]
+    [_ topic-configs]
     (clj-kstream
-     (let [topic-names (map :topic.metadata/name topic-specs)]
+     (let [topic-names (map :topic.metadata/name topic-configs)]
        (.stream topology-builder
                 (into-array String topic-names)))))
 
