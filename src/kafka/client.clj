@@ -49,8 +49,15 @@
   ([producer record callback-fn]
    (.send ^KafkaProducer producer record (callback callback-fn))))
 
+(defn subscribe
+  "Subscribe a consumer to topics. Returns the consumer."
+  [consumer & topic-specs]
+  (.subscribe ^KafkaConsumer consumer (mapv :topic.metadata/name topic-specs))
+  consumer)
+
 (defn consumer
-  "Return a KafkaConsumer with the supplied properties"
+  "Return a KafkaConsumer with the supplied properties. If a topic config is
+  provided, it will be subscribed to."
   ([config]
    (KafkaConsumer. ^java.util.Properties (config/properties config)))
 
@@ -60,7 +67,7 @@
                                  :value-serde value-serde})
    (KafkaConsumer. ^java.util.Properties (config/properties config)
                    (when key-serde (.deserializer ^Serde key-serde))
-                   (when value-serde (.deserializer ^Serde value-serde)))))
+                   (when value-serde (.deserializer ^Serde value-serde))))
 
 (defn subscribe
   "Subscribe a consumer to topics. Returns the consumer."
@@ -82,6 +89,14 @@
   [config topic-spec]
   (-> (consumer config topic-spec)
       (subscribe topic-spec)))
+  ([config {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]} topic-config]
+   (log/debug "Making consumer" {:config config
+                                 :key-serde key-serde
+                                 :value-serde value-serde})
+   (-> (KafkaConsumer. ^java.util.Properties (config/properties config)
+                       (when key-serde (.deserializer ^Serde key-serde))
+                       (when value-serde (.deserializer ^Serde value-serde)))
+       (subscribe topic-config))))
 
 (defn select-methods
   "Like `select-keys` but instead builds a map by invoking the named java methods
