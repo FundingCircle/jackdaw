@@ -11,6 +11,9 @@
                                       ProducerRecord)
    (org.apache.kafka.common.serialization Serde)))
 
+(def default-fuse-timout-ms 30000)
+(def default-polling-interval-ms 1000)
+
 (set! *warn-on-reflection* true)
 
 (defn producer-record
@@ -137,28 +140,48 @@
 (defn log-seq
   "Given a consumer, returns a lazy sequence of ConsumerRecords. Stops after
   fuse-fn returns false."
-  ([^KafkaConsumer consumer poll-timeout-ms]
-   (log-seq consumer poll-timeout-ms (constantly true)))
-  ([^KafkaConsumer consumer poll-timeout-ms fuse-fn]
-   (let [records (next-records consumer poll-timeout-ms fuse-fn)]
+  ([^KafkaConsumer consumer polling-interval-ms]
+   (log-seq consumer polling-interval-ms (constantly true)))
+  ([^KafkaConsumer consumer polling-interval-ms fuse-fn]
+   (let [records (next-records consumer polling-interval-ms fuse-fn)]
      (lazy-seq
       (concat records
-              (log-seq consumer poll-timeout-ms fuse-fn))))))
+              (log-seq consumer polling-interval-ms fuse-fn))))))
 
 (defn log-records
   "Returns a lazy sequence of clojurized ConsumerRecords from a KafkaConsumer.
   Stops consuming after timeout-ms."
-  ([^KafkaConsumer consumer poll-timeout-ms]
-   (map record (log-seq consumer poll-timeout-ms)))
-  ([^KafkaConsumer consumer poll-timeout-ms fuse-fn]
-   (map record (log-seq consumer poll-timeout-ms fuse-fn))))
+  ([^KafkaConsumer consumer polling-interval-ms]
+   (map record (log-seq consumer polling-interval-ms)))
+  ([^KafkaConsumer consumer polling-interval-ms fuse-fn]
+   (map record (log-seq consumer polling-interval-ms fuse-fn))))
 
 (defn log-messages
   "Returns a lazy sequence of the keys and values of the messages from a
   KafkaConsumer. Stops consuming after consumer-timeout-ms."
-  ([^KafkaConsumer consumer poll-timeout-ms]
+  ([^KafkaConsumer consumer polling-interval-ms]
    (map (fn [rec] [(:key rec) (:value rec)])
-        (log-records consumer poll-timeout-ms)))
-  ([^KafkaConsumer consumer poll-timeout-ms fuse-fn]
+        (log-records consumer polling-interval-ms)))
+  ([^KafkaConsumer consumer polling-interval-ms fuse-fn]
    (map (fn [rec] [(:key rec) (:value rec)])
-        (log-records consumer poll-timeout-ms fuse-fn))))
+        (log-records consumer polling-interval-ms fuse-fn))))
+
+(defn timeout
+  "Returns a function that throws an exception when called after some time has
+  passed."
+  ([]
+   (timeout default-fuse-timout-ms))
+  ([millis]
+   (let [end (+ millis (System/currentTimeMillis))]
+     (fn []
+       (if (< end (System/currentTimeMillis))
+         (throw (ex-info "Timer expired" {:millis millis}))
+         true)))))
+
+(defn timed-log-messages
+  "Same as log-messages, but will stop consuming after a specified timeout in
+  milliseconds, or `default-fulse-time-ms` if no timeout is specified."
+  ([]
+   (log-messages default-polling-interval-ms (timeout)))
+  ([fuse-timeout-ms]
+   (log-messages default-polling-interval-ms (timeout fuse-timeout-ms))))
