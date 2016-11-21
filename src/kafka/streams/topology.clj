@@ -1,7 +1,8 @@
 (ns kafka.streams.topology
-  (:require [kafka.streams.core :as k]
-            kafka.config
-            [clojure.tools.logging :as log]))
+  (:require
+   [clojure.tools.logging :as log]
+   [clojurewerkz.propertied.properties :as p]
+   [kafka.streams.core :as k]))
 
 (defn start-topologies
   "Starts a kafka stream from a list of topology builder functions. A topology
@@ -13,6 +14,6 @@
         (log/info "Making topology" {:topology make-topology!})
         (make-topology! topology-builder))
       (let [stream (k/kafka-streams topology-builder
-                                    (kafka.config/properties kafka-configs))]
+                                    (p/map->properties kafka-configs))]
         (k/start! stream)
         stream))))
