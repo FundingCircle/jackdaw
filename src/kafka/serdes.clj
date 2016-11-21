@@ -1,5 +1,6 @@
 (ns kafka.serdes
   "Some useful serdes."
+  (:refer-clojure :exclude [resolve])
   (:require [environ.core :refer [env]]
             [kafka.serdes.avro :as avro]
             [kafka.serdes.json :as json])
@@ -45,10 +46,10 @@
   [_]
   (Serdes/String))
 
-(defn serdes
+(defn resolve
   "Loads the serdes for a topic spec."
   [{:keys [topic.metadata/key-serde topic.metadata/key-schema
-           topic.metadata/value-serde topic.metadata/value-schema] :as topic-spec}]
-  (assoc topic-spec
+           topic.metadata/value-serde topic.metadata/value-schema] :as topic-config}]
+  (assoc topic-config
          ::key-serde (serde {::type key-serde :avro/schema key-schema})
          ::value-serde (serde {::type value-serde :avro/schema value-schema})))
