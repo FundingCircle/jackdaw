@@ -9,7 +9,7 @@
 
 (defn bytes-to-string
   "Convert a byte array to string."
-  [data]
+  [^bytes data]
   (String. data StandardCharsets/UTF_8))
 
 (defn string-to-bytes
