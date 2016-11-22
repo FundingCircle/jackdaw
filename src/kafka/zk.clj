@@ -1,6 +1,8 @@
 (ns kafka.zk
-  (:require [clojure.string :as str])
-  (:import kafka.utils.ZkUtils))
+  (:require
+   [clojure.string :as str])
+  (:import
+   (kafka.utils ZkUtils)))
 
 (def zk-connect "zookeeper.connect")
 (def zk-session-timeout "zookeeper.session.timeout.ms")

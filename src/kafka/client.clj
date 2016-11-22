@@ -1,11 +1,15 @@
 (ns kafka.client
   "Clojure wrapper to kafka consumers/producers"
-  (:require [clojure.tools.logging :as log]
-            [kafka.config :as config])
-  (:import clojure.lang.Reflector
-           org.apache.kafka.clients.consumer.KafkaConsumer
-           [org.apache.kafka.clients.producer Callback KafkaProducer ProducerRecord]
-           org.apache.kafka.common.serialization.Serde))
+  (:require
+   [clojure.tools.logging :as log]
+   [clojurewerkz.propertied.properties :as p])
+  (:import
+   (clojure.lang Reflector)
+   (org.apache.kafka.clients.consumer KafkaConsumer)
+   (org.apache.kafka.clients.producer Callback
+                                      KafkaProducer
+                                      ProducerRecord)
+   (org.apache.kafka.common.serialization Serde)))
 
 (set! *warn-on-reflection* true)
 
@@ -20,11 +24,11 @@
   "Return a KafkaProducer with the supplied properties"
   ([config]
    (log/debug "Making producer" {:config config})
-   (KafkaProducer. ^java.util.Properties (config/properties config)))
+   (KafkaProducer. ^java.util.Properties (p/map->properties config)))
 
   ([config ^Serde key-serde ^Serde value-serde]
    (log/debug "Making producer" {:key-serde key-serde :value-serde value-serde})
-   (KafkaProducer. ^java.util.Properties (config/properties config)
+   (KafkaProducer. ^java.util.Properties (p/map->properties config)
                    (.serializer key-serde)
                    (.serializer value-serde))))
 
@@ -48,13 +52,13 @@
 (defn consumer
   "Return a KafkaConsumer with the supplied properties"
   ([config]
-   (KafkaConsumer. ^java.util.Properties (config/properties config)))
+   (KafkaConsumer. ^java.util.Properties (p/map->properties config)))
 
   ([config ^Serde key-serde ^Serde value-serde]
    (log/debug "Making consumer" {:config config
                                  :key-serde key-serde
                                  :value-serde value-serde})
-   (KafkaConsumer. ^java.util.Properties (config/properties config)
+   (KafkaConsumer. ^java.util.Properties (p/map->properties config)
                    (.deserializer key-serde)
                    (.deserializer value-serde))))
 

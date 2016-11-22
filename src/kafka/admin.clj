@@ -1,6 +1,8 @@
 (ns kafka.admin
-  (:require [kafka.config :as config])
-  (:import kafka.admin.AdminUtils))
+  (:require
+   [clojurewerkz.propertied.properties :as p])
+  (:import
+   (kafka.admin AdminUtils)))
 
 (defn create-topic!
   "Create `topic` as specified in the topic spec"
@@ -8,7 +10,7 @@
   (AdminUtils/createTopic zk-utils topic
                           (int partitions)
                           (int replication-factor)
-                          (config/properties config)
+                          (p/map->properties config)
                           nil))
 
 (defn topic-exists?
