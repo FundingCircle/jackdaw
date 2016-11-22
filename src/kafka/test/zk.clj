@@ -6,9 +6,11 @@
   (:import
    (java.net InetSocketAddress)
    (kafka.utils ZkUtils)
-   (org.apache.zookeeper.server ZooKeeperServer ServerCnxnFactory)
+   (org.apache.zookeeper.server ServerCnxnFactory
+                                ZooKeeperServer)
    (org.apache.zookeeper KeeperException$NoNodeException)
-   (org.I0Itec.zkclient ZkClient ZkConnection)))
+   (org.I0Itec.zkclient ZkClient
+                        ZkConnection)))
 
 (def zk-connect "zookeeper.connect")
 (def zk-session-timeout "zookeeper.session.timeout.ms")

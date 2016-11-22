@@ -1,10 +1,11 @@
 (ns kafka.test.kafka
   (:require
    [clojure.java.io :as io]
-   [kafka.test.config :as config]
+   [clojurewerkz.propertied.properties :as p]
    [kafka.test.fs :as fs])
   (:import
-   (kafka.server KafkaConfig KafkaServerStartable)))
+   (kafka.server KafkaConfig
+                 KafkaServerStartable)))
 
 (defn start!
   "Starts a kakfa broker.
@@ -13,7 +14,7 @@
    that waits until the broker is shutdown"
   [{:keys [config]}]
   (let [broker (-> config
-                   (config/properties)
+                   (p/map->properties)
                    (KafkaConfig.)
                    (KafkaServerStartable.))]
     (.startup broker)
