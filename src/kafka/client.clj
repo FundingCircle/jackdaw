@@ -31,7 +31,7 @@
 
   ([config {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
    (log/debug "Making producer" {:key-serde key-serde :value-serde value-serde})
-   (KafkaProducer. ^java.util.Properties (config/properties config)
+   (KafkaProducer. ^java.util.Properties (p/map->properties config)
                    (.serializer ^Serde key-serde)
                    (.serializer ^Serde value-serde))))
 
@@ -54,52 +54,51 @@
 
 (defn subscribe
   "Subscribe a consumer to topics. Returns the consumer."
-  [consumer & topic-specs]
-  (.subscribe ^KafkaConsumer consumer (mapv :topic.metadata/name topic-specs))
+  [consumer & topic-config]
+  (.subscribe ^KafkaConsumer consumer (mapv :topic.metadata/name topic-config))
   consumer)
 
 (defn consumer
-  "Return a KafkaConsumer with the supplied properties. If a topic config is
-  provided, it will be subscribed to."
+  "Return a KafkaConsumer with the supplied properties."
   ([config]
-   (KafkaConsumer. ^java.util.Properties (config/properties config)))
+   (KafkaConsumer. ^java.util.Properties (p/map->properties config)))
 
   ([config {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
    (log/debug "Making consumer" {:config config
                                  :key-serde key-serde
                                  :value-serde value-serde})
-   (KafkaConsumer. ^java.util.Properties (config/properties config)
+   (KafkaConsumer. ^java.util.Properties (p/map->properties config)
                    (when key-serde (.deserializer ^Serde key-serde))
-                   (when value-serde (.deserializer ^Serde value-serde))))
+                   (when value-serde (.deserializer ^Serde value-serde)))))
 
 (defn subscribe
   "Subscribe a consumer to topics. Returns the consumer."
-  [consumer & topic-specs]
-  (.subscribe ^KafkaConsumer consumer (mapv :topic.metadata/name topic-specs))
+  [consumer & topic-configs]
+  (.subscribe ^KafkaConsumer consumer (mapv :topic.metadata/name topic-configs))
   consumer)
 
 (defn seek-to-end
   "Seeks to the end of all the partitions assigned to the given consumer.
   Returns the consumer."
-  [^KafkaConsumer consumer]
-  (let [assigned-partitions (.assignment consumer)]
-    (.seekToEnd consumer assigned-partitions)
-    (.poll consumer 0)
-    consumer))
+  ([^KafkaConsumer consumer]
+   (let [assigned-partitions (.assignment consumer)]
+     (.seekToEnd consumer assigned-partitions)
+     (.poll consumer 0)
+     consumer))
 
-(defn consumer-subscription
-  "Creates a consumer and subscribes to a single topic."
-  [config topic-spec]
-  (-> (consumer config topic-spec)
-      (subscribe topic-spec)))
   ([config {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]} topic-config]
    (log/debug "Making consumer" {:config config
                                  :key-serde key-serde
                                  :value-serde value-serde})
-   (-> (KafkaConsumer. ^java.util.Properties (config/properties config)
+   (-> (KafkaConsumer. ^java.util.Properties (p/map->properties config)
                        (when key-serde (.deserializer ^Serde key-serde))
-                       (when value-serde (.deserializer ^Serde value-serde)))
-       (subscribe topic-config))))
+                       (when value-serde (.deserializer ^Serde value-serde))))))
+
+(defn consumer-subscription
+  "Returns a consumer that is subscribed to a single topic."
+  [config topic-config]
+  (-> (consumer config topic-config)
+      (subscribe topic-config)))
 
 (defn select-methods
   "Like `select-keys` but instead builds a map by invoking the named java methods
