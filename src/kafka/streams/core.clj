@@ -391,12 +391,10 @@
 
   (branch
     [_ predicate-fns]
-    (->> predicate-fns
-         (clojure.core/map predicate)
-         (into-array Predicate)
-         (.branch kstream)
-         (clojure.core/map clj-kstream)
-         (into [])))
+    (into []
+          (clojure.core/map clj-kstream)
+          (->> (into-array Predicate (clojure.core/map predicate predicate-fns))
+               (.branch kstream))))
 
   (count-by-key
     [_ {:keys [topic.metadata/name kafka.serdes/key-serde]}]
