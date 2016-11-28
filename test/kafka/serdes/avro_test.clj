@@ -20,5 +20,4 @@
           de (avro/avro-deserializer client "http://localhost" true)]
       (is (= data
              (->> (.serialize ser topic-name data)
-                  (.deserialize de topic-name)
-                  (avro-schema/generic-record->map)))))))
+                  (.deserialize de topic-name)))))))
