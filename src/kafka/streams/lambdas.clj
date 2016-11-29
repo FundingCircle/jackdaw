@@ -66,7 +66,7 @@
 (deftype FnPredicate [predicate-fn]
   Predicate
   (test [this key value]
-    (predicate-fn [key value])))
+    (boolean (predicate-fn [key value]))))
 
 (defn predicate
   "Packages up a clojure fn in a kstream predicate."
