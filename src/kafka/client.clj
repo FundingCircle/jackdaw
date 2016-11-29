@@ -11,7 +11,7 @@
                                       ProducerRecord)
    (org.apache.kafka.common.serialization Serde)))
 
-(def default-fuse-timout-ms 30000)
+(def default-fuse-timeout-ms 30000)
 (def default-polling-interval-ms 1000)
 
 (set! *warn-on-reflection* true)
@@ -169,7 +169,7 @@
   "Returns a function that throws an exception when called after some time has
   passed."
   ([]
-   (timeout default-fuse-timout-ms))
+   (timeout default-fuse-timeout-ms))
   ([millis]
    (let [end (+ millis (System/currentTimeMillis))]
      (fn []
