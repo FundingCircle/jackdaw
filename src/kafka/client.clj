@@ -180,7 +180,7 @@
 (defn timed-log-messages
   "Same as `log-messages`, but will stop consuming after a specified timeout in
   milliseconds, or `default-fulse-time-ms` if no timeout is specified."
-  ([]
-   (log-messages default-polling-interval-ms (timeout)))
-  ([fuse-timeout-ms]
-   (log-messages default-polling-interval-ms (timeout fuse-timeout-ms))))
+  ([^KafkaConsumer consumer]
+   (log-messages consumer default-polling-interval-ms (timeout)))
+  ([^KafkaConsumer consumer fuse-timeout-ms]
+   (log-messages consumer default-polling-interval-ms (timeout fuse-timeout-ms))))
