@@ -7,12 +7,12 @@
 (defn start-topologies
   "Starts a kafka stream from a list of topology builder functions. A topology
   builder function takes a TopologyBuilder and makes a kafka stream."
-  [topology-builders kafka-configs]
+  [topology-builders kafka-configs & more]
   (try
     (let [topology-builder (k/topology-builder)]
       (doseq [make-topology! topology-builders]
         (log/info "Making topology" {:topology make-topology!})
-        (make-topology! topology-builder))
+        (apply make-topology! topology-builder more))
       (let [stream (k/kafka-streams topology-builder
                                     (p/map->properties kafka-configs))]
         (k/start! stream)
