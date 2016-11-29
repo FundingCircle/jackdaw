@@ -6,8 +6,12 @@
 
 (defn create-topic!
   "Create `topic` as specified in the topic spec"
-  [zk-utils topic partitions replication-factor config]
-  (AdminUtils/createTopic zk-utils topic
+  [zk-utils
+   {:keys [topic.metadata/name
+           topic.metadata/partitions
+           topic.metadata/replication-factor]}
+   config]
+  (AdminUtils/createTopic zk-utils name
                           (int partitions)
                           (int replication-factor)
                           (p/map->properties config)
@@ -15,10 +19,10 @@
 
 (defn topic-exists?
   "Returns true if `topic` exists"
-  [zk-utils topic]
-  (AdminUtils/topicExists zk-utils topic))
+  [zk-utils {:keys [topic.metadata/name]}]
+  (AdminUtils/topicExists zk-utils name))
 
 (defn delete-topic!
   "Delete `topic`"
-  [zk-utils topic]
-  (AdminUtils/deleteTopic zk-utils topic))
+  [zk-utils {:keys [topic.metadata/name]}]
+  (AdminUtils/deleteTopic zk-utils name))
