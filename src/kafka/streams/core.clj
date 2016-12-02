@@ -251,12 +251,31 @@
 
 (declare clj-kstream clj-ktable clj-kgroupedtable)
 
+(def ^:private make-kstream
+  "Returns a kstream for the topic, creating a new one if needed."
+  (memoize
+   (fn [topology-builder
+        {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
+     (clj-kstream
+      (.stream ^KStreamBuilder topology-builder
+               key-serde
+               value-serde
+               (into-array String [name]))))))
+
+(def ^:private make-ktable
+  "Returns a ktable for the topic, creating a new one if needed."
+  (memoize
+   (fn [topology-builder
+        {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
+    (clj-ktable
+     (.table ^KStreamBuilder topology-builder key-serde value-serde name)))))
+
 (deftype CljKStreamBuilder [^KStreamBuilder topology-builder]
   ITopologyBuilder
   (merge
     [_ kstream]
     (into []
-          #(clojure.core/map clj-kstream %)
+          (clojure.core/map clj-kstream)
           (.merge topology-builder
                   (into-array KStream [kstream]))))
 
@@ -265,12 +284,8 @@
     (.newName topology-builder prefix))
 
   (kstream
-    [_ {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
-    (clj-kstream
-     (.stream topology-builder
-              key-serde
-              value-serde
-              (into-array String [name]))))
+    [_ topic-config]
+    (make-kstream topology-builder topic-config))
 
   (kstreams
     [_ topic-configs]
@@ -280,9 +295,8 @@
                 (into-array String topic-names)))))
 
   (ktable
-    [_ {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
-    (clj-ktable
-     (.table topology-builder key-serde value-serde name)))
+    [_ topic-config]
+    (make-ktable topology-builder topic-config))
 
   (topology-builder*
     [_]
