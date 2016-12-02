@@ -251,7 +251,7 @@
 
 (declare clj-kstream clj-ktable clj-kgroupedtable)
 
-(def ^:private make-kstream
+(def ^:private kstream-memo
   "Returns a kstream for the topic, creating a new one if needed."
   (memoize
    (fn [topology-builder
@@ -262,7 +262,7 @@
                value-serde
                (into-array String [name]))))))
 
-(def ^:private make-ktable
+(def ^:private ktable-memo
   "Returns a ktable for the topic, creating a new one if needed."
   (memoize
    (fn [topology-builder
@@ -285,7 +285,7 @@
 
   (kstream
     [_ topic-config]
-    (make-kstream topology-builder topic-config))
+    (kstream-memo topology-builder topic-config))
 
   (kstreams
     [_ topic-configs]
@@ -296,7 +296,7 @@
 
   (ktable
     [_ topic-config]
-    (make-ktable topology-builder topic-config))
+    (ktable-memo topology-builder topic-config))
 
   (topology-builder*
     [_]
