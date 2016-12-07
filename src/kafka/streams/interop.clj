@@ -51,7 +51,7 @@
   (kstreams
     [_ topic-configs]
     (clj-kstream
-     (let [topic-names (map :topic.metadata/name topic-configs)]
+     (let [topic-names (clojure.core/map :topic.metadata/name topic-configs)]
        (.stream topology-builder
                 (into-array String topic-names)))))
 
