@@ -15,6 +15,8 @@
                   ["change" "version" "leiningen.release/bump-version"]
                   ["vcs" "commit"]
                   ["vcs" "push"]]
+  :profiles {:dev {:dependencies
+                   [[org.apache.kafka/kafka-streams "0.10.0.0-cp1" :classifier "test"]]}}
   :repositories {"confluent" {:url "http://packages.confluent.io/maven/"}
                  "snapshots" {:url "https://fundingcircle.artifactoryonline.com/fundingcircle/libs-snapshot-local"
                               :username [:gpg :env/artifactory_user]
