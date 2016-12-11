@@ -29,6 +29,11 @@
     [topology-builder topic-config]
     "Create a KTable instance for the specified topic.")
 
+  (source-topics
+    [topology-builder application-id]
+    "Get the names of topics that are to be consumed by the source nodes created
+    by this builder.")
+
   (topology-builder*
     [topology-builder]
     "Returns the underlying kstream builder."))
@@ -165,8 +170,14 @@
     KTable.")
 
   (select-key
-    [kstream key-value-mapper-fn]
-    "Create a new key from the current key and value.")
+    [kstream select-key-value-mapper-fn]
+    "Create a new key from the current key and value.
+
+    `select-key-value-mapper-fn` should be a function that takes a key-value
+    pair, and returns the value of the new key. Here is example multiplies each
+    key by 10:
+
+    ```(fn [[k v]] (* 10 k))```")
 
   (transform
     [kstream transformer-supplier-fn state-store-names]
@@ -231,7 +242,7 @@
     instance of KTable.")
 
   (count
-    [kgroupedtable]
+    [kgroupedtable name]
     "Count number of records of this stream by the selected key into a new
     instance of KTable.")
 
@@ -247,8 +258,10 @@
 (defn kafka-streams
   "Makes a Kafka Streams object."
   ([builder opts]
-   (KafkaStreams. ^TopologyBuilder (topology-builder* builder)
-                  ^java.util.Properties opts)))
+   (let [props (java.util.Properties.)]
+     (.putAll props opts)
+     (KafkaStreams. ^TopologyBuilder (topology-builder* builder)
+                    ^java.util.Properties props))))
 
 (defn start!
   "Starts processing."

@@ -9,9 +9,10 @@
 (deftype ConfiguredTopologyBuilder [config topology-builder]
   ITopologyBuilder
   (merge
-    [_ kstream]
-    (mapv (partial configured-kstream config)
-          (merge topology-builder kstream)))
+    [_ kstreams]
+    (configured-kstream
+     config
+     (merge topology-builder kstreams)))
 
   (new-name
     [_ prefix]
@@ -34,6 +35,10 @@
     (configured-ktable
      config
      (ktable topology-builder topic-config)))
+
+  (source-topics
+    [_ application-id]
+    (source-topics topology-builder application-id))
 
   (topology-builder*
     [_]
@@ -83,27 +88,27 @@
     (print! kstream))
 
   (print!
-    [_ {:keys [kafka.serdes/key-serde kafka.serdes/value-serde] :as topic-config}]
+    [_ topic-config]
     (print! kstream topic-config))
 
   (through
-    [_ {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde] :as topic-config}]
+    [_ topic-config]
     (configured-kstream
      config
      (through kstream topic-config)))
 
   (through
-    [_ partition-fn {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde] :as topic-config}]
+    [_ partition-fn topic-config]
     (configured-kstream
      config
      (through kstream partition-fn topic-config)))
 
   (to!
-    [_ {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde] :as topic-config}]
+    [_ topic-config]
     (to! kstream topic-config))
 
   (to!
-    [_ partition-fn {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde] :as topic-config}]
+    [_ partition-fn topic-config]
     (to! kstream partition-fn topic-config))
 
   (write-as-text!
@@ -111,25 +116,25 @@
     (write-as-text! kstream file-path))
 
   (write-as-text!
-    [_ file-path {:keys [kafka.serdes/key-serde kafka.serdes/value-serde] :as topic-config}]
+    [_ file-path topic-config]
     (write-as-text! kstream file-path topic-config))
 
   IKStream
   (aggregate-by-key
-    [_ initializer-fn aggregator-fn {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde] :as topic-config}]
-    (configured-kstream
+    [_ initializer-fn aggregator-fn topic-config]
+    (configured-ktable
      config
      (aggregate-by-key kstream initializer-fn aggregator-fn topic-config)))
 
   (aggregate-by-key-windowed
     [_ initializer-fn aggregator-fn windows]
-    (configured-kstream
+    (configured-ktable
      config
      (aggregate-by-key-windowed kstream initializer-fn aggregator-fn windows)))
 
   (aggregate-by-key-windowed
-    [_ initializer-fn aggregator-fn windows  {:keys [kafka.serdes/key-serde kafka.serdes/value-serde] :as topic-config}]
-    (configured-kstream
+    [_ initializer-fn aggregator-fn windows topic-config]
+    (configured-ktable
      config
      (aggregate-by-key-windowed kstream initializer-fn aggregator-fn windows topic-config)))
 
@@ -139,7 +144,7 @@
            (branch kstream predicate-fns)))
 
   (count-by-key
-    [_ {:keys [topic.metadata/name kafka.serdes/key-serde] :as topic-config}]
+    [_ topic-config]
     (configured-ktable
      config
      (count-by-key kstream topic-config)))
@@ -151,10 +156,10 @@
      (count-by-key-windowed kstream windows)))
 
   (count-by-key-windowed
-    [_ windows {:keys [kafka.serdes/key-serde] :as topic-config}]
+    [_ windows topic-config]
     (configured-ktable
      config
-     (count-by-key-windowed kstream topic-config)))
+     (count-by-key-windowed kstream windows topic-config)))
 
   (flat-map
     [_ key-value-mapper-fn]
@@ -178,9 +183,7 @@
                     windows)))
 
   (join-windowed
-    [_ other-kstream value-joiner-fn windows
-     {key-serde :kafka.serdes/key-serde this-value-serde :kafka.serdes/value-serde :as topic-config}
-     {other-value-serde :kafka.serdes/value-serde :as other-topic-config}]
+    [_ other-kstream value-joiner-fn windows topic-config other-topic-config]
     (configured-kstream
      config
      (join-windowed kstream
@@ -197,9 +200,7 @@
      (left-join-windowed kstream other-kstream value-joiner-fn windows)))
 
   (left-join-windowed
-    [_ other-kstream value-joiner-fn windows
-     {key-serde :kafka.serdes/key-serde :as topic-config}
-     {other-value-serde :kafka.serdes/value-serde :as other-topic-config}]
+    [_ other-kstream value-joiner-fn windows topic-config other-topic-config]
     (configured-kstream
      config
      (left-join-windowed kstream
@@ -225,9 +226,7 @@
                           windows)))
 
   (outer-join-windowed
-    [_ other-kstream value-joiner-fn windows
-     {key-serde :kafka.serdes/key-serde value-serde :kafka.serdes/value-serde :as topic-config}
-     {other-value-serde :kafka.serdes/value-serde :as other-topic-config}]
+    [_ other-kstream value-joiner-fn windows topic-config other-topic-config]
     (configured-kstream
      config
      (outer-join-windowed kstream
@@ -242,7 +241,7 @@
     (process! kstream processor-supplier-fn state-store-names))
 
   (reduce-by-key
-   [_ reducer-fn {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde] :as topic-config}]
+   [_ reducer-fn topic-config]
     (configured-ktable
      config
      (reduce-by-key kstream reducer-fn topic-config)))
@@ -254,7 +253,7 @@
      (reduce-by-key-windowed kstream reducer-fn windows)))
 
   (reduce-by-key-windowed
-   [_ reducer-fn windows {:keys [kafka.serdes/key-serde kafka.serdes/value-serde] :as topic-config}]
+   [_ reducer-fn windows topic-config]
     (configured-ktable
      config
      (reduce-by-key-windowed kstream reducer-fn windows topic-config)))
@@ -329,27 +328,27 @@
     (print! ktable))
 
   (print!
-    [_ {:keys [kafka.serdes/key-serde kafka.serdes/value-serde] :as topic-config}]
+    [_ topic-config]
     (print! ktable topic-config))
 
   (through
-    [_ {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde] :as topic-config}]
+    [_ topic-config]
     (configured-ktable
      config
      (through ktable topic-config)))
 
   (through
-    [_ partition-fn {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde] :as topic-config}]
+    [_ partition-fn topic-config]
     (configured-ktable
      config
      (through ktable partition-fn topic-config)))
 
   (to!
-    [_ {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde] :as topic-config}]
+    [_ topic-config]
     (to! ktable topic-config))
 
   (to!
-    [_ partition-fn {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde] :as topic-config}]
+    [_ partition-fn topic-config]
     (to! ktable partition-fn topic-config))
 
   (write-as-text!
@@ -357,7 +356,7 @@
     (write-as-text! ktable file-path))
 
   (write-as-text!
-    [_ file-path {:keys [kafka.serdes/key-serde kafka.serdes/value-serde] :as topic-config}]
+    [_ file-path topic-config]
     (write-as-text! ktable file-path topic-config))
 
   IKTable
@@ -368,7 +367,7 @@
      (group-by ktable key-value-mapper-fn)))
 
   (group-by
-    [_ key-value-mapper-fn {:keys [kafka.serdes/key-serde kafka.serdes/value-serde] :as topic-config}]
+    [_ key-value-mapper-fn topic-config]
     (configured-kgroupedtable
      config
      (group-by ktable key-value-mapper-fn topic-config)))
@@ -384,6 +383,18 @@
     (configured-ktable
      config
      (outer-join ktable other-ktable value-joiner-fn)))
+
+  (to-kstream
+    [_]
+    (configured-kstream
+     config
+     (to-kstream ktable)))
+
+  (to-kstream
+    [_ key-value-mapper-fn]
+    (configured-kstream
+     config
+     (to-kstream ktable key-value-mapper-fn)))
 
   (ktable* [_]
     (ktable* ktable))
@@ -405,20 +416,19 @@
 (deftype ConfiguredKGroupedTable [config kgroupedtable]
   IKGroupedTable
   (aggregate
-    [_ initializer-fn adder-fn subtractor-fn
-     {:keys [topic.metadata/name kafka.serdes/value-serde] :as topic-config}]
+    [_ initializer-fn adder-fn subtractor-fn topic-config]
     (configured-ktable
      config
      (aggregate kgroupedtable initializer-fn adder-fn subtractor-fn topic-config)))
 
   (count
-    [_]
+    [_ name]
     (configured-ktable
      config
-     (count kgroupedtable)))
+     (count kgroupedtable name)))
 
   (reduce
-    [_ adder-fn subtractor-fn {:keys [topic.metadata/name] :as topic-config}]
+    [_ adder-fn subtractor-fn topic-config]
     (configured-ktable
      config
      (reduce kgroupedtable adder-fn subtractor-fn topic-config)))
