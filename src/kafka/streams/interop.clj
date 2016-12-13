@@ -34,11 +34,10 @@
 (deftype CljKStreamBuilder [^KStreamBuilder topology-builder]
   ITopologyBuilder
   (merge
-    [_ kstream]
-    (into []
-          (clojure.core/map clj-kstream)
-          (.merge topology-builder
-                  (into-array KStream [kstream]))))
+    [_ kstreams]
+    (clj-kstream
+     (.merge topology-builder
+             (into-array KStream (mapv kstream* kstreams)))))
 
   (new-name
     [_ prefix]
@@ -58,6 +57,10 @@
   (ktable
     [_ topic-config]
     (ktable-memo topology-builder topic-config))
+
+  (source-topics
+    [_ application-id]
+    (.sourceTopics topology-builder application-id))
 
   (topology-builder*
     [_]
@@ -138,7 +141,7 @@
   IKStream
   (aggregate-by-key
     [_ initializer-fn aggregator-fn {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
-    (clj-kstream
+    (clj-ktable
      (.aggregateByKey kstream
                       (initializer initializer-fn)
                       (aggregator aggregator-fn)
@@ -148,7 +151,7 @@
 
   (aggregate-by-key-windowed
     [_ initializer-fn aggregator-fn windows]
-    (clj-kstream
+    (clj-ktable
      (.aggregateByKey kstream
                       (initializer initializer-fn)
                       (aggregator aggregator-fn)
@@ -156,7 +159,7 @@
 
   (aggregate-by-key-windowed
     [_ initializer-fn aggregator-fn windows  {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
-    (clj-kstream
+    (clj-ktable
      (.aggregateByKey kstream
                       (initializer initializer-fn)
                       (aggregator aggregator-fn)
@@ -166,9 +169,8 @@
 
   (branch
     [_ predicate-fns]
-    (into []
-          (clojure.core/map clj-kstream)
-          (->> (into-array Predicate (clojure.core/map predicate predicate-fns))
+    (mapv clj-kstream
+          (->> (into-array Predicate (mapv predicate predicate-fns))
                (.branch kstream))))
 
   (count-by-key
@@ -293,9 +295,9 @@
                    ^Serde value-serde)))
 
   (select-key
-    [_ key-value-mapper-fn]
+    [_ select-key-value-mapper-fn]
     (clj-kstream
-     (.selectKey kstream (key-value-mapper key-value-mapper-fn))))
+     (.selectKey kstream (select-key-value-mapper select-key-value-mapper-fn))))
 
   (transform
     [_ transformer-supplier-fn state-store-names]
@@ -375,7 +377,7 @@
 
   (to!
     [_ partition-fn {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
-    (.to ktable key-serde value-serde (stream-partitioner partition-fn name))
+    (.to ktable key-serde value-serde (stream-partitioner partition-fn) name)
     nil)
 
   (write-as-text!
@@ -414,6 +416,16 @@
                  (ktable* other-ktable)
                  (value-joiner value-joiner-fn))))
 
+  (to-kstream
+    [_]
+    (clj-kstream
+     (.toStream ktable)))
+
+  (to-kstream
+    [_ key-value-mapper-fn]
+    (clj-kstream
+     (.toStream ktable (key-value-mapper key-value-mapper-fn))))
+
   (ktable* [_]
     ktable))
 
@@ -436,9 +448,9 @@
                  name)))
 
   (count
-    [_]
+    [_ name]
     (clj-ktable
-     (count kgroupedtable)))
+     (.count kgroupedtable name)))
 
   (reduce
     [_ adder-fn subtractor-fn {:keys [topic.metadata/name]}]

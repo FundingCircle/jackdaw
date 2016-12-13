@@ -12,7 +12,7 @@
 (deftype FnAggregator [aggregator-fn]
   Aggregator
   (apply [this aggKey value aggregate]
-    (aggregator-fn aggKey value aggregate)))
+    (aggregator-fn aggregate [aggKey value])))
 
 (defn aggregator
   "Packages up a clojure fn in a kstream aggregator."
@@ -49,6 +49,17 @@
   "Packages up a clojure fn in a kstream key value mapper."
   [key-value-mapper-fn]
   (FnKeyValueMapper. key-value-mapper-fn))
+
+(deftype FnSelectKeyValueMapper [select-key-value-mapper-fn]
+  KeyValueMapper
+  (apply [this key value]
+    (select-key-value-mapper-fn [key value])))
+
+(defn select-key-value-mapper
+  "Packages up a clojure fn in a kstream key value mapper for use with
+  `select-key`."
+  [select-key-value-mapper-fn]
+  (FnSelectKeyValueMapper. select-key-value-mapper-fn))
 
 (deftype FnKeyValueFlatMapper [key-value-flatmapper-fn]
   KeyValueMapper
