@@ -1,8 +1,8 @@
 (ns kafka.streams.interop
   "Clojure wrapper to kafka streams."
   (:refer-clojure :exclude [count map reduce group-by merge filter])
-  (:require [kafka.streams.lambdas :refer :all]
-            [kafka.streams :refer :all])
+  (:require [kafka.streams :refer :all]
+            [kafka.streams.lambdas :refer :all])
   (:import org.apache.kafka.common.serialization.Serde
            org.apache.kafka.streams.KafkaStreams
            [org.apache.kafka.streams.kstream KGroupedTable KStream KStreamBuilder KTable Predicate Windows]
@@ -307,10 +307,10 @@
                  (into-array String state-store-names))))
 
   (transform-values
-    [_ transformer-supplier-fn state-store-names]
+    [_ value-transformer-supplier-fn state-store-names]
     (clj-kstream
      (.transformValues kstream
-                       (transformer-supplier transformer-supplier-fn)
+                       (value-transformer-supplier value-transformer-supplier-fn)
                        (into-array String state-store-names))))
 
   (kstream* [_]

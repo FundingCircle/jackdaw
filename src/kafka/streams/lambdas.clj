@@ -1,7 +1,7 @@
 (ns kafka.streams.lambdas
   "Wrappers for the Java 'lambda' functions."
   (:import org.apache.kafka.streams.KeyValue
-           [org.apache.kafka.streams.kstream Aggregator ForeachAction Initializer KeyValueMapper Predicate Reducer TransformerSupplier ValueJoiner ValueMapper]
+           [org.apache.kafka.streams.kstream Aggregator ForeachAction Initializer KeyValueMapper Predicate Reducer TransformerSupplier ValueJoiner ValueMapper ValueTransformerSupplier]
            [org.apache.kafka.streams.processor ProcessorSupplier StreamPartitioner]))
 
 (defn key-value
@@ -144,3 +144,12 @@
   "Packages up a Clojure fn in a kstream transformer supplier."
   [transformer-supplier-fn]
   (FnTransformerSupplier. transformer-supplier-fn))
+
+(deftype FnValueTransformerSupplier [value-transformer-supplier-fn]
+  ValueTransformerSupplier
+  (get [this]
+    (value-transformer-supplier-fn)))
+
+(defn value-transformer-supplier
+  [value-transformer-supplier-fn]
+  (FnValueTransformerSupplier. value-transformer-supplier-fn))
