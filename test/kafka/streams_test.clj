@@ -4,8 +4,9 @@
             [clojure.test :refer :all]
             [kafka.streams :as k :refer [IKStream IKTable ITopologyBuilder]]
             [kafka.streams.interop :as interop]
-            [kafka.streams.mock :as mock])
-  (:import [org.apache.kafka.streams.kstream JoinWindows TimeWindows]
+            [kafka.streams.mock :as mock]
+            [kafka.streams.lambdas :as lambdas :refer [key-value]])
+  (:import [org.apache.kafka.streams.kstream JoinWindows TimeWindows Transformer ValueTransformer]
            [org.apache.kafka.test MockProcessorSupplier MockProcessorSupplier$MockProcessor]))
 
 (deftest TopologyBuilder
@@ -265,21 +266,21 @@
                        (k/to-kstream)
                        (mock/build))]
       (-> topology
-            (mock/send topic-a, 1, 1)
-            (mock/send topic-a, 2, 2)
-            (mock/send topic-a, 3, 3)
-            (mock/send topic-a, 4, 4)
-            (mock/send topic-a, 1, 1)
-            (mock/send topic-a, 1, 1)
-            (mock/send topic-a, 2, 2)
-            (mock/send topic-a, 4, 4)
-            (mock/send topic-a, 2, 2)
-            (mock/send topic-a, 3, 3)
-            (mock/send topic-a, 1, 1)
-            (mock/send topic-a, 2, 2)
-            (mock/send topic-a, 4, 4)
-            (mock/send topic-a, 2, 2)
-            (mock/send topic-a, 3, 3))
+          (mock/send topic-a, 1, 1)
+          (mock/send topic-a, 2, 2)
+          (mock/send topic-a, 3, 3)
+          (mock/send topic-a, 4, 4)
+          (mock/send topic-a, 1, 1)
+          (mock/send topic-a, 1, 1)
+          (mock/send topic-a, 2, 2)
+          (mock/send topic-a, 4, 4)
+          (mock/send topic-a, 2, 2)
+          (mock/send topic-a, 3, 3)
+          (mock/send topic-a, 1, 1)
+          (mock/send topic-a, 2, 2)
+          (mock/send topic-a, 4, 4)
+          (mock/send topic-a, 2, 2)
+          (mock/send topic-a, 3, 3))
       (let [result (mock/collect topology)]
         (is (= result ["[1@0]:1" "[2@0]:2" "[3@0]:3" "[4@0]:4" "[1@0]:2"
                        "[1@0]:3" "[2@0]:4" "[4@0]:8" "[2@0]:6" "[3@0]:6"
@@ -502,11 +503,58 @@
         (is (= ["10:2"] result)))))
 
   (testing "transform"
-    ;; todo
-    )
+    (let [transformer-supplier-fn #(let [total (atom 0)]
+                                     (reify Transformer
+                                       (init [_ _])
+                                       (close [_])
+                                       (punctuate [_ timestamp]
+                                         (key-value [-1 (int timestamp)]))
+                                       (transform [_ k v]
+                                         (swap! total + v)
+                                         (key-value [(* k 2) @total]))))
+          topic-a (mock/topic "topic-a")
+          kstream (-> (mock/topology-builder)
+                      (k/kstream topic-a)
+                      (k/transform transformer-supplier-fn))]
 
-  (testing "transform-keys"
-    ;; todo
+      (let [topology (mock/build kstream)]
+
+        (doseq [k [1 10 100 1000]]
+          (mock/send topology topic-a k (* 10 k)))
+
+        (let [result (mock/collect topology)]
+          (is (= ["2:10" "20:110" "200:1110" "2000:11110"] result)))
+
+        ;; TODO
+        ;; Expose KStreamTestDriver to test punctuate
+        )))
+
+  (testing "transform-values"
+    (let [value-transformer-supplier-fn #(let [total (atom 0)]
+                                           (reify ValueTransformer
+                                             (init [_ _])
+                                             (close [_])
+                                             (punctuate [_ timestamp]
+                                               (int timestamp))
+                                             (transform [_ v]
+                                               (swap! total + v)
+                                               @total)))
+          topic-a (mock/topic "topic-a")
+          kstream (-> (mock/topology-builder)
+                      (k/kstream topic-a)
+                      (k/transform-values value-transformer-supplier-fn))]
+
+      (let [topology (mock/build kstream)]
+
+        (doseq [k [1 10 100 1000]]
+          (mock/send topology topic-a k (* 10 k)))
+
+        (let [result (mock/collect topology)]
+          (is (= ["1:10" "10:110" "100:1110" "1000:11110"] result)))
+
+        ;; TODO
+        ;; Expose KStreamTestDriver to test punctuate
+        ))
     ))
 
 (deftest KTable

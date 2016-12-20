@@ -180,12 +180,14 @@
     ```(fn [[k v]] (* 10 k))```")
 
   (transform
+    [kstream transformer-supplier-fn]
     [kstream transformer-supplier-fn state-store-names]
     "Create a new KStream instance by applying a Transformer to all elements in
     this stream, one element at a time.")
 
   (transform-values
-    [kstream transformer-supplier-fn state-store-names]
+    [kstream value-transformer-supplier-fn]
+    [kstream value-transformer-supplier-fn state-store-names]
     "Create a new KStream instance by applying a ValueTransformer to all values
     in this stream, one element at a time.")
 

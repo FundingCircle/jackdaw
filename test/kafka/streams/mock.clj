@@ -1,5 +1,6 @@
 (ns kafka.streams.mock
   "Mocks for testing kafka streams."
+  (:refer-clojure :exclude [send])
   (:require [kafka.streams :as k]
             [kafka.streams.configurable :refer [config configure]]
             [kafka.streams.configured :as configured]

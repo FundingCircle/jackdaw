@@ -265,16 +265,24 @@
      (select-key kstream key-value-mapper-fn)))
 
   (transform
+      [this transformer-supplier-fn]
+    (transform this transformer-supplier-fn []))
+
+  (transform
     [_ transformer-supplier-fn state-store-names]
     (configured-kstream
      config
      (transform kstream transformer-supplier-fn state-store-names)))
 
   (transform-values
-    [_ transformer-supplier-fn state-store-names]
+      [this value-transformer-supplier-fn]
+    (transform-values this value-transformer-supplier-fn []))
+
+  (transform-values
+    [_ value-transformer-supplier-fn state-store-names]
     (configured-kstream
      config
-     (transform-values kstream transformer-supplier-fn state-store-names)))
+     (transform-values kstream value-transformer-supplier-fn state-store-names)))
 
   (kstream* [_]
     (kstream* kstream))
