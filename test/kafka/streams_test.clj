@@ -16,7 +16,7 @@
           kstream-b (k/kstream topology-builder (mock/topic "topic-b"))
           merged-kstream (k/merge topology-builder [kstream-a kstream-b])]
       (is (satisfies? IKStream merged-kstream))
-      (is (= #{"topic-a" "topic-b"} (k/source-topics topology-builder "")))))
+      (is (= #{"topic-a" "topic-b"} (k/source-topics topology-builder)))))
 
   (testing "new-name"
     (let [new-name (k/new-name (mock/topology-builder) "foo")]
@@ -28,7 +28,7 @@
                         (k/kstream (mock/topic "topic-a")))]
 
       (is (satisfies? IKStream kstream-a))
-      (is (= #{"topic-a"} (k/source-topics topology-builder "")))))
+      (is (= #{"topic-a"} (k/source-topics topology-builder)))))
 
   (testing "kstreams"
     (let [topology-builder (mock/topology-builder)
@@ -38,14 +38,14 @@
 
       (is (satisfies? IKStream kstream))
       (is (= #{"topic-a" "topic-b"}
-             (k/source-topics topology-builder "")))))
+             (k/source-topics topology-builder)))))
 
   (testing "ktable"
     (let [topology-builder (mock/topology-builder)
           ktable-a (-> topology-builder
                        (k/ktable (mock/topic "topic-a")))]
       (is (satisfies? IKTable ktable-a))
-      (is (= #{"topic-a"} (k/source-topics topology-builder "")))))
+      (is (= #{"topic-a"} (k/source-topics topology-builder)))))
 
 
   (testing "topology-builder*"
@@ -137,7 +137,7 @@
         (let [topology (mock/build kstream)]
           (mock/send topology topic-a 1 2)
           (let [result (mock/collect topology)]
-            (is (= "1 , 2\n" (.toString mock-out)))))
+            (is (= "[KSTREAM-SOURCE-0000000000]: 1 , 2\n" (.toString mock-out)))))
         (finally
           (System/setOut std-out)))))
 
@@ -154,7 +154,7 @@
         (let [topology (mock/build kstream)]
           (mock/send topology topic-a 1 2)
           (let [result (mock/collect topology)]
-            (is (= "1 , 2\n" (.toString mock-out)))))
+            (is (= "[KSTREAM-SOURCE-0000000000]: 1 , 2\n" (.toString mock-out)))))
         (finally
           (System/setOut std-out)))))
 
@@ -219,7 +219,7 @@
       (let [topology (mock/build kstream)]
         (mock/send topology topic-a 1 2)
         (let [result (mock/collect topology)]
-          (is (= "1 , 2\n" (slurp temp-file)))))))
+          (is (=  "[KSTREAM-SOURCE-0000000000]: 1 , 2\n" (slurp temp-file)))))))
 
   (testing "write-as-text! (with custom serdes)"
     (let [topic-a (mock/topic "topic-a")
@@ -232,7 +232,7 @@
       (let [topology (mock/build kstream)]
         (mock/send topology topic-a 1 2)
         (let [result (mock/collect topology)]
-          (is (= "1 , 2\n" (slurp temp-file)))))))
+          (is (= "[KSTREAM-SOURCE-0000000000]: 1 , 2\n" (slurp temp-file)))))))
 
   (testing "aggregate-by-key"
     (let [initializer-fn (constantly 0)
@@ -255,7 +255,7 @@
     (let [initializer-fn (constantly 0)
           aggregator-fn (fn [acc [k v]] (+ acc v))
           topic-a (mock/topic "topic-a")
-          windows (.. (TimeWindows/of "topic-a-canonized" 4)
+          windows (.. (TimeWindows/of 4)
                       (advanceBy 2))
           topology (-> (mock/topology-builder)
                        (k/kstream topic-a)
@@ -338,7 +338,7 @@
 
   (testing "count-by-key-windowed"
     (let [topic-a (mock/topic "topic-a")
-          windows (.. (TimeWindows/of "topic-a-canonized" 4)
+          windows (.. (TimeWindows/of 4)
                       (advanceBy 2))
           topology (-> (mock/topology-builder)
                        (k/kstream topic-a)
@@ -383,7 +383,7 @@
           right-topic (mock/topic "right-topic")
           left-kstream (k/kstream topology-builder left-topic)
           right-kstream (k/kstream topology-builder right-topic)
-          windows (JoinWindows/of "test")
+          windows (JoinWindows/of 1000)
           topology (-> left-kstream
                        (k/join-windowed right-kstream
                                         (fn [v1 v2] [v1 v2])
@@ -419,7 +419,7 @@
           right-topic (mock/topic "right-topic")
           left-kstream (k/kstream topology-builder left-topic)
           right-kstream (k/kstream topology-builder right-topic)
-          windows (JoinWindows/of "test")
+          windows (JoinWindows/of 1000)
           topology (-> left-kstream
                        (k/outer-join-windowed right-kstream
                                               (fn [v1 v2] [v1 v2])
@@ -472,7 +472,7 @@
 
   (testing "reduce-by-key-windowed"
     (let [reducer-fn +
-          windows (.. (TimeWindows/of "topic-a-canonized" 4)
+          windows (.. (TimeWindows/of 4)
                       (advanceBy 2))
           topic-a (mock/topic "topic-a")
           topology (-> (mock/topology-builder)
@@ -643,7 +643,7 @@
         (let [topology (mock/build (k/to-kstream ktable))]
           (mock/send topology topic-a 1 2)
           (let [result (mock/collect topology)]
-            (is (= "1 , (2<-null)\n" (.toString mock-out)))))
+            (is (= "[KTABLE-SOURCE-0000000001]: 1 , (2<-null)\n" (.toString mock-out)))))
         (finally
           (System/setOut std-out)))))
 
@@ -660,7 +660,7 @@
         (let [topology (mock/build (k/to-kstream ktable))]
           (mock/send topology topic-a 1 2)
           (let [result (mock/collect topology)]
-            (is (= "1 , (2<-null)\n" (.toString mock-out)))))
+            (is (= "[KTABLE-SOURCE-0000000001]: 1 , (2<-null)\n" (.toString mock-out)))))
         (finally
           (System/setOut std-out)))))
 
@@ -727,7 +727,7 @@
       (let [topology (mock/build (k/to-kstream ktable))]
         (mock/send topology topic-a 1 2)
         (let [result (mock/collect topology)]
-          (is (= "1 , (2<-null)\n" (slurp temp-file)))))))
+          (is (= "[KTABLE-SOURCE-0000000001]: 1 , (2<-null)\n" (slurp temp-file)))))))
 
   (testing "write-as-text! (with custom serdes)"
     (let [topic-a (mock/topic "topic-a")
@@ -740,7 +740,7 @@
       (let [topology (mock/build (k/to-kstream ktable))]
         (mock/send topology topic-a 1 2)
         (let [result (mock/collect topology)]
-          (is (= "1 , (2<-null)\n" (slurp temp-file)))))))
+          (is (= "[KTABLE-SOURCE-0000000001]: 1 , (2<-null)\n" (slurp temp-file)))))))
 
   (testing "group-by"
     (let [topic-a (mock/topic "topic-a")
@@ -796,8 +796,8 @@
 (deftest GroupedTable
   (testing "aggregate"
     (let [initializer-fn (constantly 0)
-          adder-fn (fn [acc [k v]] (+ acc v))
-          subtractor-fn (fn [acc [k v]] (- acc v))
+          adder-fn (fn [acc [k v]] (+ acc 3 v))
+          subtractor-fn (fn [acc [k v]] (- acc 2 v))
           topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
           topology (-> (mock/topology-builder)
@@ -809,10 +809,11 @@
 
       (-> topology
           (mock/send topic-a 1 1)
-          (mock/send topic-a 1 2))
+          (mock/send topic-a 1 2)
+          (mock/send topic-a 2 3))
 
       (let [result (mock/collect topology)]
-        (is (= ["1:1" "1:3" "1:2"] result)))))
+        (is (= ["1:4" "1:6" "2:6"] result)))))
 
   (testing "count"
     (let [topic-a (mock/topic "topic-a")
@@ -845,7 +846,7 @@
           (mock/send topic-a 1 2))
 
       (let [result (mock/collect topology)]
-        (is (= ["1:1" "1:3" "1:2"] result))))))
+        (is (= ["1:1" "1:2"] result))))))
 
 (deftest kafka-streams-test
   (is (instance? org.apache.kafka.streams.KafkaStreams

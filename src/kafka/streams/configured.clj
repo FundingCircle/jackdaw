@@ -4,7 +4,7 @@
   (:require [kafka.streams :refer :all]
             [kafka.streams.configurable :refer [config IConfigurable]]))
 
-(declare configured-kstream configured-ktable configured-kgroupedtable)
+(declare configured-kstream configured-ktable configured-kgroupedtable configured-kgroupedstream)
 
 (deftype ConfiguredTopologyBuilder [config topology-builder]
   ITopologyBuilder
@@ -24,6 +24,12 @@
      config
      (kstream topology-builder topic-config)))
 
+  (kstream
+    [_ topic-config topic-pattern]
+    (configured-kstream
+     config
+     (kstream topology-builder topic-config topic-pattern)))
+
   (kstreams
     [_ topic-configs]
     (configured-kstream
@@ -36,9 +42,15 @@
      config
      (ktable topology-builder topic-config)))
 
+  (ktable
+    [_ topic-config store-name]
+    (configured-ktable
+     config
+     (ktable topology-builder* topic-config store-name)))
+
   (source-topics
-    [_ application-id]
-    (source-topics topology-builder application-id))
+    [_]
+    (source-topics topology-builder))
 
   (topology-builder*
     [_]
@@ -46,7 +58,12 @@
 
   IConfigurable
   (config [_]
-    config))
+    config)
+
+  (configure [_ key value]
+    (ConfiguredTopologyBuilder.
+     (assoc config key value)
+     topology-builder)))
 
 (defn topology-builder
   "Makes a topology builder."
@@ -76,6 +93,18 @@
     (configured-kstream
      config
      (filter-not kstream predicate-fn)))
+
+  (group-by
+    [_ key-value-mapper-fn]
+    (configured-kgroupedstream
+     config
+     (group-by kstream key-value-mapper-fn)))
+
+  (group-by
+    [_ key-value-mapper-fn topic-config]
+    (configured-kgroupedstream
+     config
+     (group-by kstream key-value-mapper-fn topic-config)))
 
   (map-values
     [_ value-mapper-fn]
@@ -127,12 +156,6 @@
      (aggregate-by-key kstream initializer-fn aggregator-fn topic-config)))
 
   (aggregate-by-key-windowed
-    [_ initializer-fn aggregator-fn windows]
-    (configured-ktable
-     config
-     (aggregate-by-key-windowed kstream initializer-fn aggregator-fn windows)))
-
-  (aggregate-by-key-windowed
     [_ initializer-fn aggregator-fn windows topic-config]
     (configured-ktable
      config
@@ -172,6 +195,18 @@
     (configured-kstream
      config
      (flat-map-values kstream value-mapper-fn)))
+
+  (group-by-key
+    [_]
+    (configured-kgroupedstream
+     config
+     (group-by-key kstream)))
+
+  (group-by-key
+    [kstream topic-config]
+    (configured-kgroupedstream
+     config
+     (group-by-key kstream topic-config)))
 
   (join-windowed
     [_ other-kstream value-joiner-fn windows]
@@ -245,12 +280,6 @@
     (configured-ktable
      config
      (reduce-by-key kstream reducer-fn topic-config)))
-
-  (reduce-by-key-windowed
-    [_ reducer-fn windows]
-    (configured-ktable
-     config
-     (reduce-by-key-windowed kstream reducer-fn windows)))
 
   (reduce-by-key-windowed
    [_ reducer-fn windows topic-config]
@@ -422,7 +451,7 @@
   (ConfiguredKTable. config ktable))
 
 (deftype ConfiguredKGroupedTable [config kgroupedtable]
-  IKGroupedTable
+  IKGroupedBase
   (aggregate
     [_ initializer-fn adder-fn subtractor-fn topic-config]
     (configured-ktable
@@ -441,6 +470,7 @@
      config
      (reduce kgroupedtable adder-fn subtractor-fn topic-config)))
 
+  IKGroupedTable
   (kgroupedtable*
     [_]
     (kgroupedtable* kgroupedtable))
@@ -458,3 +488,52 @@
   "Makes a ConfiguredKGroupedTable object."
   [config kgroupedtable]
   (ConfiguredKGroupedTable. config kgroupedtable))
+
+(deftype ConfiguredKGroupedStream [config kgroupedstream]
+  IKGroupedBase
+  (aggregate
+    [_ initializer-fn aggregator-fn topic-config]
+    (configured-ktable
+     config
+     (aggregate kgroupedstream initializer-fn aggregator-fn topic-config)))
+
+  (count
+    [_ name]
+    (configured-ktable
+     config
+     (count kgroupedstream name)))
+
+  (reduce
+    [_ reducer-fn topic-config]
+    (configured-ktable
+     config
+     (reduce kgroupedstream reducer-fn topic-config)))
+
+  IKGroupedStream
+  (aggregate-windowed
+    [_ initializer-fn aggregator-fn windows topic-config]
+    (configured-ktable
+     config
+     (aggregate-windowed kgroupedstream initializer-fn aggregator-fn windows topic-config)))
+
+  (count-windowed
+    [_ windows topic-config]
+    (configured-ktable
+     config
+     (count-windowed kgroupedstream windows topic-config)))
+
+  (reduce-windowed
+    [_ reducer-fn windows topic-config]
+    (configured-ktable
+     config
+     (reduce-windowed kgroupedstream reducer-fn windows topic-config)))
+
+  (kgroupedstream*
+    [_]
+    kgroupedstream))
+
+
+(defn configured-kgroupedstream
+  "Makes a ConfiguredKGroupedStream object."
+  [config kgroupedstream]
+  (ConfiguredKGroupedStream. config kgroupedstream))

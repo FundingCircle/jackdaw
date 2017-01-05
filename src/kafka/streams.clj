@@ -19,6 +19,7 @@
 
   (kstream
     [topology-builder topic-config]
+    [topology-builder topic-config topic-pattern]
     "Create a KStream instance from the specified topic.")
 
   (kstreams
@@ -27,10 +28,11 @@
 
   (ktable
     [topology-builder topic-config]
+    [topology-builder topic-config store-name]
     "Create a KTable instance for the specified topic.")
 
   (source-topics
-    [topology-builder application-id]
+    [topology-builder]
     "Get the names of topics that are to be consumed by the source nodes created
     by this builder.")
 
@@ -57,6 +59,11 @@
     [kstream predicate-fn]
     "Create a new instance of KStream that consists all elements of this stream
     which do not satisfy a predicate.")
+
+  (group-by
+    [ktable key-value-mapper-fn]
+    [ktable key-value-mapper-fn topic-config]
+    "Group the records of this KStream/KTable using the provided key-value-mapper-fn.")
 
   (map-values
     [kstream value-mapper-fn]
@@ -99,10 +106,10 @@
     "Aggregate values of this stream by key into a new instance of ever-updating KTable.")
 
   (aggregate-by-key-windowed
-    [kstream initializer-fn aggregator-fn windows]
-    [kstream initializer-fn aggregator-fn windows  topic-config]
+    [kstream initializer-fn aggregator-fn windows topic-config]
     "Aggregate values of this stream by key on a window basis into a new
     instance of windowed KTable.")
+
 
   (branch
     [kstream predicate-fns]
@@ -130,6 +137,12 @@
     "Create a new instance of KStream by transforming the value of each element
     in this stream into zero or more values with the same key in the new
     stream.")
+
+  (group-by-key
+    [kstream]
+    [kstream topic-config]
+    "Group the records with the same key into a KGroupedStream while preserving
+    the original values.")
 
   (join-windowed
     [kstream other-kstream value-joiner-fn windows]
@@ -164,7 +177,6 @@
     KTable.")
 
   (reduce-by-key-windowed
-    [kstream reducer-fn windows]
     [kstream reducer-fn windows topic-config]
     "Combine values of this stream by key into a new instance of ever-updating
     KTable.")
@@ -206,11 +218,6 @@
 
   A KTable can be transformed record by record, joined with another KTable or
   KStream, or can be re-partitioned and aggregated into a new KTable."
-  (group-by
-    [ktable key-value-mapper-fn]
-    [ktable key-value-mapper-fn topic-config]
-    "Group the records of this KTable using the provided KeyValueMapper.")
-
   (join
     [ktable other-ktable value-joiner-fn]
     "Combine values of this stream with another KTable stream's elements of the
@@ -230,6 +237,25 @@
     [ktable]
     "Returns the underlying KTable object."))
 
+(defprotocol IKGroupedBase
+  "Methods shared between `IKGroupedTable` and `IKGroupedStream`."
+  (aggregate
+    [kgrouped initializer-fn adder-fn subtractor-fn topic-config]
+    [kgrouped initializer-fn aggregator-fn topic-config]
+    "Aggregate updating values of this stream by the selected key into a new
+    instance of KTable.")
+
+  (count
+    [kgrouped name]
+    "Count number of records of this stream by the selected key into a new
+    instance of KTable.")
+
+  (reduce
+    [kgrouped adder-fn subtractor-fn topic-config]
+    [kgrouped reducer-fn topic-config]
+    "Combine updating values of this stream by the selected key into a new
+    instance of KTable."))
+
 (defprotocol IKGroupedTable
   "KGroupedTable is an abstraction of a grouped changelog stream from a
   primary-keyed table, usually on a different grouping key than the original
@@ -237,25 +263,29 @@
 
   It is an intermediate representation after a re-grouping of a KTable before an
   aggregation is applied to the new partitions resulting in a new KTable."
-  (aggregate
-    [kgroupedtable initializer-fn adder-fn subtractor-fn
-     topic-config]
-    "Aggregate updating values of this stream by the selected key into a new
-    instance of KTable.")
-
-  (count
-    [kgroupedtable name]
-    "Count number of records of this stream by the selected key into a new
-    instance of KTable.")
-
-  (reduce
-    [kgroupedtable adder-fn subtractor-fn topic-config]
-    "Combine updating values of this stream by the selected key into a new
-    instance of KTable.")
-
   (kgroupedtable*
     [kgroupedtable]
     "Returns the underlying KGroupedTable object."))
+
+(defprotocol IKGroupedStream
+  "KGroupedStream is an abstraction of a grouped record stream of key-value pairs usually grouped on a different key than the original stream key
+It is an intermediate representation of a KStream before an aggregation is applied to the new partitions resulting in a new KTable."
+  (aggregate-windowed
+    [kgroupedstream initializer-fn aggregator-fn windows topic-config])
+
+  (count-windowed
+    [kgroupedstream windows topic-config]
+    "Count number of records of this stream by the selected key into a new
+    instance of KTable.")
+
+  (reduce-windowed
+    [kgroupedstream reducer-fn windows topic-config]
+    "Combine updating values of this stream by the selected key into a new
+    instance of KTable.")
+
+  (kgroupedstream*
+    [kgroupedstream]
+    "Returns the underlying KGroupedStream object."))
 
 (defn kafka-streams
   "Makes a Kafka Streams object."
