@@ -3,7 +3,8 @@
   (:refer-clojure :exclude [resolve])
   (:require [environ.core :refer [env]]
             [kafka.serdes.avro :as avro]
-            [kafka.serdes.json :as json])
+            [kafka.serdes.json :as json]
+            [kafka.serdes.uuid :as uuid])
   (:import org.apache.kafka.common.serialization.Serdes))
 
 (defmulti serde
@@ -21,6 +22,10 @@
 (defmethod serde ::json
   [_]
   (json/json-serde))
+
+(defmethod serde ::uuid
+  [_]
+  (uuid/uuid-serde))
 
 (defmethod serde ::byte-array
   [_]
