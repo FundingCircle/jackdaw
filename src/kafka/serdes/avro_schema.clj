@@ -1,4 +1,5 @@
 (ns kafka.serdes.avro-schema
+  (:require [clj-uuid :as uuid])
   (:import
    (org.apache.avro Schema
                     Schema$Field
@@ -60,11 +61,22 @@
   (value-unmarshal [val]
     val))
 
+(defn uuid-schema?
+  "Return true if a `Schema` object has a \"logicalType\" property of
+  \"kafka.serdes.avro.UUID\"."
+  [s]
+  (= (.getProp s "logicalType") "kafka.serdes.avro.UUID"))
+
 (defn generic-record->map [rec]
   (if (= (type rec) GenericData$Record)
     (reduce (fn [m field]
-              (assoc m (keyword (unmangle (.name ^Schema$Field field)))
-                     (value-unmarshal (.get rec (.name ^Schema$Field field)))))
+              (assoc m
+                     (keyword (unmangle (.name ^Schema$Field field)))
+                     (let [v (value-unmarshal (.get rec (.name ^Schema$Field field)))]
+                       (if (and (string? v)
+                                (uuid-schema? (.schema field)))
+                         (uuid/as-uuid v)
+                         v))))
             {}
             (.getFields ^Schema (.getSchema rec)))
     rec))
@@ -83,7 +95,7 @@
         types (map value-function fields)]
     (zipmap names types)))
 
-(defn schema-by-field-name [^Schema$Field f ^Schema s]
+(defn schema-by-field-name [f ^Schema s]
   (let [get-schema #(.schema %)
         fields (fields-for-schema s :value-function get-schema)]
         (f fields)))
@@ -100,7 +112,6 @@
                            value)]
         (doto array (.add return-value))))
     array))
-
 
 (defn match-schema? [s m]
   (let [schema-fields ((comp set keys fields-for-schema) s)
@@ -137,6 +148,10 @@
       Schema$Type/ARRAY (doto record (.put mangled-key (map->generic-array field-schema v)))
       Schema$Type/UNION (doto record (.put mangled-key (map->generic-union field-schema v)))
       Schema$Type/ENUM (doto record (.put mangled-key (map->generic-enum field-schema v)))
+      Schema$Type/STRING (let [v (if (uuid-schema? field-schema)
+                                   (str v)
+                                   v)]
+                           (doto record (.put mangled-key v)))
       (doto record (.put mangled-key v)))))
 
 (def parse-schema

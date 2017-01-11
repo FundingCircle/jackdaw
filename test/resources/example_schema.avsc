@@ -4,7 +4,9 @@
   "namespace" : "com.fundingcircle",
   "fields" : [ {
     "name" : "customer_id",
-    "type" : "string",
+    "type" : {
+      "type" : "string",
+      "logicalType": "kafka.serdes.avro.UUID"},
     "doc" : "The unique id of the customer"
   }, {
     "name" : "address",

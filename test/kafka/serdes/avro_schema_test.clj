@@ -2,7 +2,7 @@
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.test :refer :all]
-            [kafka.serdes.avro-schema :as avro-schema]))
+            [kafka.serdes.avro-schema :refer :all]))
 
 (def schema (slurp (io/resource "resources/example_schema.avsc")))
 
@@ -11,5 +11,5 @@
 (deftest map-roundtrip-test
   (testing "Map is the same after conversion to generic record and back"
     (is (= record
-           (-> (avro-schema/map->generic-record schema record)
-               (avro-schema/generic-record->map))))))
+           (-> (map->generic-record schema record)
+               (generic-record->map))))))
