@@ -1,21 +1,11 @@
 (ns kafka.test.fixtures
   "Test fixtures for kafka based apps"
-  (:require
-   [clojure.test :as test]
-   [clojure.tools.logging :as log]
-   [clojurewerkz.propertied.properties :as p]
-   [kafka.test.config :as config]
-   [kafka.test.kafka :as broker]
-   [kafka.test.zk :as zk])
-  (:import
-   (io.confluent.kafka.schemaregistry.rest SchemaRegistryConfig
-                                           SchemaRegistryRestApplication)
-   (kafka.common TopicExistsException)
-   (org.apache.kafka.clients.consumer ConsumerRecord
-                                      KafkaConsumer)
-   (org.apache.kafka.clients.producer Callback
-                                      KafkaProducer
-                                      ProducerRecord)))
+  (:require [clojure.tools.logging :as log]
+            [clojurewerkz.propertied.properties :as p]
+            [kafka.test.config :as config]
+            [kafka.test.kafka :as broker]
+            [kafka.test.zk :as zk])
+  (:import [io.confluent.kafka.schemaregistry.rest SchemaRegistryConfig SchemaRegistryRestApplication]))
 
 ;; services
 

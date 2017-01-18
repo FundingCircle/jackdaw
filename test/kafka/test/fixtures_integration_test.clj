@@ -26,9 +26,10 @@
         true))))
 
 (deftest ^:integration integration-test
-  (with-open [producer (client/producer test-config/producer)
-              consumer (-> (client/consumer test-config/consumer)
-                           (client/subscribe "foo"))]
+  (let [topic {:topic.metadata/name "foo"}]
+    (with-open [producer (client/producer test-config/producer)
+                consumer (-> (client/consumer test-config/consumer)
+                             (client/subscribe topic))]
 
     (testing "publish!"
       (let [result (client/send! producer (client/producer-record "foo" "1" "bar"))]
