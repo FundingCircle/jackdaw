@@ -1,23 +1,30 @@
 (ns kafka.serdes.edn
-  (:require [clojure.edn :as edn])
-  (:import java.nio.charset.StandardCharsets
-           [org.apache.kafka.common.serialization Deserializer Serdes Serializer]))
+  (:require [clojure.edn :as edn]
+            [taoensso.nippy :as nippy])
+  (:import
+   [org.apache.kafka.common.serialization Deserializer Serdes Serializer]))
 
-(def edn-serializer
+(defn edn-serializer
+  "EDN serializer."
+  []
   (reify Serializer
     (close [this])
     (configure [this configs key?])
     (serialize [this _topic data]
       (when data
-        (.getBytes (pr-str data))))))
+        (nippy/freeze data)))))
 
-(def edn-deserializer
+(defn edn-deserializer
+  "EDN deserializer."
+  []
   (reify Deserializer
     (close [this])
     (configure [this configs key?])
     (deserialize [this _topic data]
       (when data
-        (edn/read-string (String. data StandardCharsets/UTF_8))))))
+        (nippy/thaw data)))))
 
-(def edn-serde
-  (Serdes/serdeFrom edn-serializer edn-deserializer))
+(defn edn-serde
+  "EDN serde."
+  []
+  (Serdes/serdeFrom (edn-serializer) (edn-deserializer)))

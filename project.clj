@@ -18,6 +18,7 @@
                                com.fasterxml.jackson.core/jackson-databind]]
                  [org.clojure/clojure "1.8.0"]
                  [org.clojure/data.json "0.2.6"]
+                 [com.taoensso/nippy "2.12.2"]]
   :profiles {:dev {:dependencies [[org.clojure/test.check "0.9.0"]]}}
   :release-tasks [["vcs" "assert-committed"]
                   ["change" "version" "leiningen.release/bump-version" "release"]

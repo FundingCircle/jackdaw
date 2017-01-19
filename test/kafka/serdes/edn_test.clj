@@ -1,11 +1,22 @@
-(ns kafka.serdes.json-test)
+(ns kafka.serdes.edn-test
+  (:require [clojure.test :refer :all]
+            [clojure.test.check
+             [clojure-test :as ct :refer [defspec]]
+             [generators :as gen]
+             [properties :as prop]]
+            [kafka.serdes.edn :refer :all]
+            [taoensso.nippy :as nippy]))
 
-;; (def edn-bytes-roundtrip-property
-;;   "An edn form should be the same after writing to a byte array and reading
-;;   back as a string."
-;;   (prop/for-all [edn gen/any-printable]
-;;                 (= edn
-;;                    (->> (.serialize edn-serializer nil (edn/read-string (str edn)))
-;;                         (.deserialize edn-deserializer nil)))))
+(deftest edn-roundtrip-test
+  (testing "EDN data is the same after serialization and deserialization."
+    (is (= nippy/stress-data-comparable
+           (->> nippy/stress-data-comparable
+                (.serialize (edn-serializer) nil)
+                (.deserialize (edn-deserializer) nil))))))
 
-;; (defspec edn-roundtrip-test 100 edn-bytes-roundtrip-property)
+(deftest edn-reverse-roundtrip-test
+  (testing "EDN data is the same after deserialization and serialization."
+    (let [bytes (.serialize (edn-serializer) nil nippy/stress-data-comparable)]
+      (is (= (seq bytes)
+             (seq (->> (.deserialize (edn-deserializer) nil bytes)
+                       (.serialize (edn-serializer) nil))))))))

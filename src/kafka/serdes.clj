@@ -2,9 +2,11 @@
   "Some useful serdes."
   (:refer-clojure :exclude [resolve])
   (:require [environ.core :refer [env]]
-            [kafka.serdes.avro :as avro]
-            [kafka.serdes.json :as json]
-            [kafka.serdes.uuid :as uuid])
+            [kafka.serdes
+             [avro :as avro]
+             [edn :as edn]
+             [json :as json]
+             [uuid :as uuid]])
   (:import org.apache.kafka.common.serialization.Serdes))
 
 (defmulti serde
@@ -18,6 +20,10 @@
 (defmethod serde ::avro-value
   [{json-schema :avro/schema}]
   (avro/avro-serde env json-schema false))
+
+(defmethod serde ::edn
+  [_]
+  (edn/edn-serde))
 
 (defmethod serde ::json
   [_]
