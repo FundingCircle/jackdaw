@@ -20,5 +20,4 @@
           de (avro/avro-deserializer client schema {:schema-registry-url "http://localhost:8081"} true)]
       (is (= data
              (->> (.serialize ser topic-name data)
-                  (.deserialize de topic-name)
-                  (avro-schema/generic-record->map)))))))
+                  (.deserialize de topic-name)))))))
