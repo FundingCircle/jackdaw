@@ -1,4 +1,4 @@
-(defproject fundingcircle/kafka.streams "0.4.7"
+(defproject fundingcircle/kafka.streams "0.5.0-SNAPSHOT"
   :description "Kafka streams clojure wrapper"
   :url "https://github.com/FundingCircle/kstreams-common"
   :license {:name "Eclipse Public License"
