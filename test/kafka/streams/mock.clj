@@ -45,8 +45,9 @@
               key
               message)
     (.setTime test-driver time)
+    (.flushState test-driver)
     (-> topology
-        (configure ::test-driver-time time))))
+        (configure ::test-driver-time (inc time)))))
 
 (defn collect
   "Collects the test results. The test driver returns a list of messages with
