@@ -14,12 +14,12 @@
   (fn [config] (or (::type config) config)))
 
 (defmethod serde ::avro-key
-  [{json-schema :avro/schema}]
-  (avro/avro-serde env json-schema true))
+  [config]
+  (avro/avro-serde config))
 
 (defmethod serde ::avro-value
-  [{json-schema :avro/schema}]
-  (avro/avro-serde env json-schema false))
+  [config]
+  (avro/avro-serde config))
 
 (defmethod serde ::edn
   [_]

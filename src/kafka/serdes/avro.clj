@@ -1,8 +1,11 @@
 (ns kafka.serdes.avro
   (:require [clj-uuid :as uuid]
-            [kafka.serdes.avro-schema :as avro-schema])
+            [kafka.serdes.avro-schema :as avro-schema]
+            [kafka.serdes.registry :as registry]
+            [environ.core :as env])
   (:import [io.confluent.kafka.serializers KafkaAvroDeserializer KafkaAvroSerializer]
-           [org.apache.kafka.common.serialization Serdes Serializer Deserializer]))
+           [org.apache.kafka.common.serialization Serdes Serializer Deserializer]
+           [io.confluent.kafka.schemaregistry.client CachedSchemaRegistryClient]))
 
 (set! *warn-on-reflection* true)
 
@@ -32,13 +35,13 @@
   "Makes an avro serializer."
   ([schema config key?]
    (avro-serializer nil schema config key?))
-  ([registry-client schema {:keys [schema-registry-url]} key?]
+  ([registry-client schema base-config key?]
    (let [serializer (KafkaAvroSerializer. registry-client)]
-     (when schema-registry-url
-       (let [config (java.util.HashMap.)]
-         (.put config "schema.registry.url" schema-registry-url)
-         (.configure serializer config key?)))
+     (let [config (java.util.HashMap.)]
+       (.put config "schema.registry.url" (registry/url base-config))
+       (.configure serializer config key?))
      (CljAvroSerializer. serializer schema))))
+
 
 (deftype CljAvroDeserializer [^Deserializer deserializer schema]
   Deserializer
@@ -57,16 +60,27 @@
   "Makes an avro deserializer"
   ([schema config key?]
    (avro-deserializer nil schema config key?))
-  ([registry-client schema {:keys [schema-registry-url]} key?]
+  ([registry-client schema {:keys [schema-registry-url] :as base-config} key?]
    (let [deserializer (KafkaAvroDeserializer. registry-client)]
-     (when schema-registry-url
-       (let [config (java.util.HashMap.)]
-         (.put config "schema.registry.url" schema-registry-url)
-         (.configure deserializer config key?)))
+     (let [config (java.util.HashMap.)]
+       (.put config "schema.registry.url" (registry/url base-config))
+       (.configure deserializer config key?))
      (CljAvroDeserializer. deserializer schema))))
 
 (defn avro-serde
-  "Creates an avro serde."
-  [config json-schema key?]
-  (Serdes/serdeFrom (avro-serializer json-schema config key?)
-                    (avro-deserializer json-schema config key?)))
+  "Creates an avro serde.
+
+   Defaults to using the cached schema registry client but this default
+   can be overridden by setting :schema.registry/client to something
+   else."
+  ([config json-schema key?]
+   (Serdes/serdeFrom (avro-serializer json-schema config key?)
+                     (avro-deserializer json-schema config key?)))
+  ([{json-schema :avro/schema
+     schema-registry-url "schema.registry.url"
+     registry-client :schema.registry/client
+     :or {registry-client (registry/client config 100)}
+     :as config}
+    key?]
+   (Serdes/serdeFrom (avro-serializer registry-client json-schema config key?)
+                     (avro-deserializer registry-client json-schema config key?))))
