@@ -20,6 +20,8 @@
                  [com.taoensso/nippy "2.12.2"]]
   :profiles {:dev {:dependencies [[org.clojure/test.check "0.9.0"]
                                   [com.fasterxml.jackson.core/jackson-databind "2.7.0"]]}}
+  :test-selectors {:default (complement :integration)
+                   :integration :integration}
   :release-tasks [["vcs" "assert-committed"]
                   ["change" "version" "leiningen.release/bump-version" "release"]
                   ["vcs" "commit"]

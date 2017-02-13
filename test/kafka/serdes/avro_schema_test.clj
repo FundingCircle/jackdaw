@@ -48,7 +48,7 @@
                                (.deserialize "foo" serialized))]
           (is (= deserialized msg)))))))
 
-(deftest schema-registry
+(deftest ^:integration schema-registry
   (testing "schema registry set in environment"
     (with-redefs [env/env (fn [x]
                             (-> {:schema-registry-url "http://localhost:8081"}
