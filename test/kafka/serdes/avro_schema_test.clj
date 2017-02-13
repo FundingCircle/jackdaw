@@ -5,7 +5,8 @@
             [environ.core :as env]
             [kafka.serdes.avro :as avro]
             [kafka.serdes.avro-schema :refer :all]
-            [kafka.serdes.registry :as registry])
+            [kafka.serdes.registry :as registry]
+            [clj-uuid :as uuid])
   (:import
    (io.confluent.kafka.schemaregistry.client CachedSchemaRegistryClient MockSchemaRegistryClient)))
 
@@ -25,10 +26,7 @@
 (def avro-config
   {:avro/schema schema
    :avro/is-key false
-   "schema.registry.url" "http://localhost:8081"})
-
-(defn uuid []
-  (java.util.UUID/randomUUID))
+   :schema.registry/url "http://localhost:8081"})
 
 (deftest map-roundtrip-test
   (testing "Map is the same after conversion to generic record and back"
@@ -38,7 +36,7 @@
 
   (testing "schema can be serialized by registry client"
     (let [serde (avro/avro-serde (with-mock-client avro-config) false)]
-      (let [msg {:customer-id (uuid)
+      (let [msg {:customer-id (uuid/v4)
                  :address {:value "foo"
                            :key-path "foo.bar.baz"}}]
 
@@ -50,11 +48,9 @@
 
 (deftest ^:integration schema-registry
   (testing "schema registry set in environment"
-    (with-redefs [env/env (fn [x]
-                            (-> {:schema-registry-url "http://localhost:8081"}
-                                x))]
+    (with-redefs [env/env {:schema-registry-url "http://localhost:8081"}]
       (let [serde (avro/avro-serde (with-real-client avro-config) false)]
-        (let [msg {:customer-id (uuid)
+        (let [msg {:customer-id (uuid/v4)
                    :address {:value "foo"
                              :key-path "foo.bar.baz"}}]
           (let [serialized (-> (.serializer serde)
@@ -64,11 +60,9 @@
             (is (= deserialized msg)))))))
 
   (testing "schema registry set in config"
-    (with-redefs [env/env (fn [x]
-                            (-> {:schema-registry-url "http://registry.example.com:8081"}
-                                x))]
+    (with-redefs [env/env {:schema-registry-url "http://registry.example.com:8081"}]
       (let [serde (avro/avro-serde (with-real-client avro-config) false)]
-        (let [msg {:customer-id (uuid)
+        (let [msg {:customer-id (uuid/v4)
                    :address {:value "foo"
                              :key-path "foo.bar.baz"}}]
           (let [serialized (-> (.serializer serde)

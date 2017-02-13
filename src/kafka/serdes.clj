@@ -15,11 +15,11 @@
 
 (defmethod serde ::avro-key
   [config]
-  (avro/avro-serde config))
+  (avro/avro-serde config true))
 
 (defmethod serde ::avro-value
   [config]
-  (avro/avro-serde config))
+  (avro/avro-serde config false))
 
 (defmethod serde ::edn
   [_]
@@ -62,5 +62,9 @@
   [{:keys [topic.metadata/key-serde topic.metadata/key-schema
            topic.metadata/value-serde topic.metadata/value-schema] :as topic-config}]
   (assoc topic-config
-         ::key-serde (serde {::type key-serde :avro/schema key-schema})
-         ::value-serde (serde {::type value-serde :avro/schema value-schema})))
+         ::key-serde (serde (assoc topic-config
+                                   ::type key-serde
+                                   :avro/schema key-schema))
+         ::value-serde (serde (assoc topic-config
+                                     ::type value-serde
+                                     :avro/schema value-schema))))

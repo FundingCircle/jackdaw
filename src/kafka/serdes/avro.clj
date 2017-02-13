@@ -37,11 +37,8 @@
    (avro-serializer nil schema config key?))
   ([registry-client schema base-config key?]
    (let [serializer (KafkaAvroSerializer. registry-client)]
-     (let [config (java.util.HashMap.)]
-       (.put config "schema.registry.url" (registry/url base-config))
-       (.configure serializer config key?))
+     (.configure serializer base-config key?)
      (CljAvroSerializer. serializer schema))))
-
 
 (deftype CljAvroDeserializer [^Deserializer deserializer schema]
   Deserializer
@@ -60,27 +57,34 @@
   "Makes an avro deserializer"
   ([schema config key?]
    (avro-deserializer nil schema config key?))
-  ([registry-client schema {:keys [schema-registry-url] :as base-config} key?]
+  ([registry-client schema base-config key?]
    (let [deserializer (KafkaAvroDeserializer. registry-client)]
-     (let [config (java.util.HashMap.)]
-       (.put config "schema.registry.url" (registry/url base-config))
-       (.configure deserializer config key?))
+     (.configure deserializer base-config key?)
      (CljAvroDeserializer. deserializer schema))))
 
 (defn avro-serde
-  "Creates an avro serde.
+  "Creates an avro serde from the supplied topic-config
 
-   Defaults to using the cached schema registry client but this default
-   can be overridden by setting :schema.registry/client to something
-   else."
+   topic-config may include the following namespaced keys
+
+     :avro/schema An avro schema as a string
+     :schema.registry/client A schema registry client
+     :schema.registry/url The base url for the schema registry
+
+   "
+  ([topic-config key?]
+   (let [json-schema (get topic-config :avro/schema)
+         registry-client (registry/client topic-config 10)
+         registry-url (registry/url topic-config)]
+
+     (when (instance? CachedSchemaRegistryClient registry-client)
+       (assert registry-url "schema registry client needs base registry url"))
+
+     (Serdes/serdeFrom (avro-serializer registry-client json-schema
+                                        {"schema.registry.url" registry-url} key?)
+                       (avro-deserializer registry-client json-schema
+                                          {"schema.registry.url" registry-url} key?))))
+
   ([config json-schema key?]
    (Serdes/serdeFrom (avro-serializer json-schema config key?)
-                     (avro-deserializer json-schema config key?)))
-  ([{json-schema :avro/schema
-     schema-registry-url "schema.registry.url"
-     registry-client :schema.registry/client
-     :or {registry-client (registry/client config 100)}
-     :as config}
-    key?]
-   (Serdes/serdeFrom (avro-serializer registry-client json-schema config key?)
-                     (avro-deserializer registry-client json-schema config key?))))
+                     (avro-deserializer json-schema config key?))))
