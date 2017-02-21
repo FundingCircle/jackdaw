@@ -2,11 +2,10 @@
   "Test fixtures for kafka based apps"
   (:require [clojure.tools.logging :as log]
             [clojurewerkz.propertied.properties :as p]
-            [kafka.test
-             [config :as config]
-             [kafka :as broker]
-             [zk :as zk]
-             [fs :as fs]])
+            [kafka.test.config :as config]
+            [kafka.test.kafka :as broker]
+            [kafka.test.zk :as zk]
+            [kafka.test.fs :as fs])
   (:import [io.confluent.kafka.schemaregistry.rest SchemaRegistryConfig SchemaRegistryRestApplication]))
 
 ;; services

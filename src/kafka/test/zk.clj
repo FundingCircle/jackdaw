@@ -82,4 +82,5 @@
      :factory nil}
 
     (finally
-      (mapv fs/try-delete! [snapshot-dir log-dir]))))
+      (fs/try-delete! snapshot-dir)
+      (fs/try-delete! log-dir))))
