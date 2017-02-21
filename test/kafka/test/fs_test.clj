@@ -29,6 +29,12 @@
   (let [dir-1 (fs/tmp-dir "tmp-1")
         dir-2 (fs/tmp-dir "tmp-2")]
 
+    (io/make-parents (str dir-1 "/" "foo.txt"))
+    (io/make-parents (str dir-2 "/" "bar.txt"))
+
+    (spit (str dir-1 "/" "foo.txt") "bar")
+    (spit (str dir-2 "/" "foo.txt") "bar")
+
     (fs/delete-directories! dir-1 dir-2 (str "/" (java.util.UUID/randomUUID)))
 
     (is (not (fs/tmp-dir-exists? dir-1)))
