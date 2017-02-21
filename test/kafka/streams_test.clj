@@ -744,10 +744,11 @@
 
   (testing "group-by"
     (let [topic-a (mock/topic "topic-a")
+          count-a (mock/topic "count-a")
           topology (-> (mock/topology-builder)
                        (k/ktable topic-a)
                        (k/group-by (fn [[k v]] [v k]) topic-a)
-                       (k/count "count-name")
+                       (k/count count-a)
                        (k/to-kstream)
                        (mock/build))]
 
@@ -755,6 +756,22 @@
 
       (let [result (mock/collect topology)]
         (is (= ["2:1"] result)))))
+
+  (testing "group-by-key"
+    (let [topic-a (mock/topic "topic-a")
+          count-a (mock/topic "count-a")
+          topology (-> (mock/topology-builder)
+                       (k/kstream topic-a)
+                       (k/group-by-key count-a)
+                       (k/count count-a)
+                       (k/to-kstream)
+                       (mock/build))]
+
+      (mock/send topology topic-a 1 2)
+      (mock/send topology topic-a 1 2)
+
+      (let [result (mock/collect topology)]
+        (is (= ["1:1" "1:2"] result)))))
 
   (testing "join"
     (let [topology-builder (mock/topology-builder)
@@ -817,10 +834,11 @@
 
   (testing "count"
     (let [topic-a (mock/topic "topic-a")
+          count-a (mock/topic "count-a")
           topology (-> (mock/topology-builder)
                        (k/ktable topic-a)
                        (k/group-by (fn [[k v]] [v k]) topic-a)
-                       (k/count "count-name")
+                       (k/count count-a)
                        (k/to-kstream)
                        (mock/build))]
 
