@@ -479,7 +479,7 @@
                  value-serde
                  name)))
   (count
-    [_ name]
+    [_ {:keys [topic.metadata/name]}]
     (clj-ktable
      (.count kgroupedtable name)))
 
