@@ -203,7 +203,7 @@
      (group-by-key kstream)))
 
   (group-by-key
-    [kstream topic-config]
+    [_ topic-config]
     (configured-kgroupedstream
      config
      (group-by-key kstream topic-config)))
