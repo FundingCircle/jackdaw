@@ -2,9 +2,11 @@
   "Test fixtures for kafka based apps"
   (:require [clojure.tools.logging :as log]
             [clojurewerkz.propertied.properties :as p]
-            [kafka.test.config :as config]
-            [kafka.test.kafka :as broker]
-            [kafka.test.zk :as zk])
+            [kafka.test
+             [config :as config]
+             [kafka :as broker]
+             [zk :as zk]
+             [fs :as fs]])
   (:import [io.confluent.kafka.schemaregistry.rest SchemaRegistryConfig SchemaRegistryRestApplication]))
 
 ;; services
@@ -16,12 +18,19 @@
    the test `t`"
   [config]
   (fn [t]
-    (let [zk (zk/start! {:config config})]
+    (let [snapshot-dir (fs/tmp-dir "zookeeper-snapshot")
+          log-dir  (fs/tmp-dir "zookeeper-log")
+          _ (fs/delete-directories! snapshot-dir log-dir)
+          zk (zk/start! {:config       config
+                         :snapshot-dir snapshot-dir
+                         :log-dir      log-dir})]
       (try
         (log/info "Started zookeeper fixture" zk)
         (t)
         (finally
-          (zk/stop! zk)
+          (zk/stop! (assoc zk
+                           :snapshot-dir snapshot-dir
+                           :log-dir      log-dir))
           (log/info "Stopped zookeeper fixture" zk))))))
 
 (defn broker
@@ -33,9 +42,9 @@
   (when-not (get config "log.dirs")
     (throw (ex-info "Invalid config: missing required field 'log.dirs'"
                     {:config config})))
-
   (fn [t]
     (let [log-dirs (get config "log.dirs")
+          _ (fs/delete-directories! log-dirs)
           kafka (broker/start! {:config config})]
       (try
         (log/info "Started kafka fixture" kafka)

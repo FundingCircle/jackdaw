@@ -24,3 +24,12 @@
     (is (not (fs/tmp-dir-exists? (fs/tmp-dir "root" "depth-1" "depth-2"))))
     (is (not (fs/tmp-dir-exists? (fs/tmp-dir "root" "depth-1"))))
     (is (not (fs/tmp-dir-exists? (fs/tmp-dir "root"))))))
+
+(deftest delete-directories!-test
+  (let [dir-1 (fs/tmp-dir "tmp-1")
+        dir-2 (fs/tmp-dir "tmp-2")]
+
+    (fs/delete-directories! dir-1 dir-2 (str "/" (java.util.UUID/randomUUID)))
+
+    (is (not (fs/tmp-dir-exists? dir-1)))
+    (is (not (fs/tmp-dir-exists? dir-2)))))

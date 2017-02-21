@@ -37,3 +37,10 @@
       (throw (ex-info "Failed to cleanup test state due to exception"
                       {:dir dir
                        :exception e})))))
+
+(defn delete-directories!
+  "Deletes existing directories, skips if directory does not exists"
+  [& dirs]
+  (doseq [dir dirs]
+    (when (tmp-dir-exists? dir)
+      (delete-directory dir))))

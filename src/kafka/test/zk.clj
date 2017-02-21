@@ -56,10 +56,8 @@
   [zk-client]
   (ZkUtils/apply zk-client false))
 
-(defn start! [{:keys [zk config factory]}]
+(defn start! [{:keys [config snapshot-dir log-dir]}]
   (let [tick-time 500
-        snapshot-dir (fs/tmp-dir "zookeeper-snapshot")
-        log-dir      (fs/tmp-dir "zookeeper-log")
         zk           (ZooKeeperServer. (io/file snapshot-dir)
                                        (io/file log-dir)
                                        tick-time)
@@ -73,7 +71,7 @@
      :factory factory}))
 
 
-(defn stop! [{:keys [zk config factory]}]
+(defn stop! [{:keys [zk config factory snapshot-dir log-dir]}]
   (try
     (-> (org.apache.zookeeper.jmx.MBeanRegistry/getInstance)
         (.unregisterAll))
@@ -84,5 +82,4 @@
      :factory nil}
 
     (finally
-      (fs/try-delete! (io/file (fs/tmp-dir "zookeeper-snapshot")))
-      (fs/try-delete! (io/file (fs/tmp-dir "zookeeper-log"))))))
+      (mapv fs/try-delete! [snapshot-dir log-dir]))))
