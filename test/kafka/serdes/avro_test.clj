@@ -16,8 +16,8 @@
 (deftest serializer-deserializer-test
   (testing "Serializing and deserializing a map returns the same map"
     (let [client (MockSchemaRegistryClient.)
-          ser (avro/avro-serializer client schema {:schema-registry-url "http://localhost:8081"} true)
-          de (avro/avro-deserializer client schema {:schema-registry-url "http://localhost:8081"} true)]
+          ser (avro/avro-serializer client schema {"schema.registry.url" "http://localhost:8081"} true)
+          de (avro/avro-deserializer client schema {"schema.registry.url" "http://localhost:8081"} true)]
       (is (= data
              (->> (.serialize ser topic-name data)
                   (.deserialize de topic-name)))))))
