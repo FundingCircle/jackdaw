@@ -11,15 +11,15 @@
                   :exclusions [org.slf4j/slf4j-log4j12
                                org.slf4j/slf4j-api
                                com.fasterxml.jackson.core/jackson-databind]]
+                 [org.apache.kafka/kafka-clients "0.10.1.0-cp2"
+                  :exclusions [log4j org.slf4j/slf4j-log4j12 org.slf4j/slf4j-api
+                               com.fasterxml.jackson.core/jackson-annotations
+                               com.fasterxml.jackson.core/jackson-core]]
                  [org.clojure/clojure "1.8.0"]
                  [org.clojure/data.json "0.2.6"]
                  [com.taoensso/nippy "2.12.2"]]
   :profiles {:dev {:dependencies [[org.clojure/test.check "0.9.0"]
-                                  [com.fasterxml.jackson.core/jackson-databind "2.7.0"]]}
-             :test {:dependencies [[org.apache.kafka/kafka-clients "0.10.1.0-cp2"
-                                    :exclusions [log4j org.slf4j/slf4j-log4j12 org.slf4j/slf4j-api
-                                                 com.fasterxml.jackson.core/jackson-annotations
-                                                 com.fasterxml.jackson.core/jackson-core]]]}}
+                                  [com.fasterxml.jackson.core/jackson-databind "2.7.0"]]}}
   :test-selectors {:default (complement :integration)
                    :integration :integration}
   :release-tasks [["vcs" "assert-committed"]
