@@ -4,7 +4,8 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :aot :all
-  :dependencies [[danlentz/clj-uuid "0.1.6"]
+  :dependencies [[cheshire "5.7.0"]
+                 [danlentz/clj-uuid "0.1.6"]
                  [environ "1.1.0"]
                  [io.confluent/kafka-avro-serializer "3.1.0"]
                  [io.confluent/kafka-schema-registry-client "3.1.0"

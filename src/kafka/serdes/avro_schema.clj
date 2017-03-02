@@ -1,20 +1,10 @@
 (ns kafka.serdes.avro-schema
-  (:require [clj-uuid :as uuid])
-  (:import
-   (org.apache.avro Schema
-                    Schema$Field
-                    Schema$Parser
-                    Schema$Type)
-   (org.apache.avro.generic GenericData$Array
-                            GenericData$EnumSymbol
-                            GenericData$Record
-                            GenericEnumSymbol
-                            GenericRecord)
-   (org.apache.avro.util Utf8)))
+  (:import [org.apache.avro Schema Schema$Parser Schema$Field Schema$Type]
+           [org.apache.avro.generic GenericData GenericEnumSymbol GenericData$Record GenericRecord GenericData$Array GenericData$EnumSymbol]
+           [org.apache.avro.util Utf8]
+           [java.util UUID]))
 
-;; from https://github.com/FundingCircle/avro-schemas/blob/3c2eec6098d8c51ffb1d09e02e733ccf55b5f1f9/src/avro_schemas/confluent.clj
-
-(declare map->generic-record generic-record->map map->generic-union)
+;; auxiliary functions
 
 (defn- mangle [^String n]
   (clojure.string/replace n #"-" "_"))
@@ -22,7 +12,88 @@
 (defn- unmangle [^String n]
   (clojure.string/replace n #"_" "-"))
 
+(defn get-schema-type [^Schema s]
+  (-> s
+      .schema
+      .getType))
+
+(defn fields-for-schema [^Schema s & {:keys [value-function]
+                                      :or {value-function get-schema-type}}]
+  (let [fields (.getFields s)
+        names (map #(keyword (unmangle (.name %))) fields)
+        types (map value-function fields)]
+    (zipmap names types)))
+
+(defn uuid-schema?
+  "Return true if a `Schema` object has a \"logicalType\" property of
+  \"kafka.serdes.avro.UUID\"."
+  [s]
+  (= (.getProp s "logicalType") "kafka.serdes.avro.UUID"))
+
+;; Parser
+
+(defmulti accept? (fn [schema v] (.getType schema)))
+(defmethod accept? Schema$Type/RECORD [_ v] (map? v))
+(defmethod accept? Schema$Type/ARRAY  [_ v] (vector? v))
+(defmethod accept? Schema$Type/STRING [s v] (or (string? v)
+                                                (uuid-schema? s)))
+(defmethod accept? Schema$Type/NULL [_ v] (nil? v))
+(defmethod accept? :default [_ _] true)
+
+
+(defmulti marshall (fn [schema v]
+                     (if (accept? schema v)
+                      (.getType schema)
+                      (throw (Exception. (str "Value not accepted for parser " schema ": " v))))))
+
+(defmethod marshall Schema$Type/RECORD [s v]
+  (let [record (GenericData$Record. s)]
+
+    (letfn [(schema-by-field-name [^Schema$Field f ^Schema s]
+            (let [get-schema #(.schema %)
+                  fields (fields-for-schema s :value-function get-schema)]
+              (f fields)))
+
+          (marshall-for-field [record [k v]]
+            (let [fields (fields-for-schema s)
+                  mangled-key (-> k name mangle)
+                  field-schema (schema-by-field-name k s)]
+              (doto record (.put mangled-key (marshall field-schema v)))))]
+
+      (reduce marshall-for-field record v))))
+
+(defmethod marshall Schema$Type/ENUM [s v]
+  (GenericData$EnumSymbol. s (mangle (name v))))
+
+
+(defmethod marshall Schema$Type/LONG [s v] (long v))
+
+(defmethod marshall Schema$Type/ARRAY [s v]
+  (let [array (GenericData$Array. (count v) s)
+        element-schema-type (.getElementType s)]
+    (doseq [e v]
+      (doto array (.add (marshall element-schema-type e))))
+    array))
+
+(defmethod marshall Schema$Type/UNION [s v]
+  (let [inner-types (iterator-seq (.iterator (.getTypes s)))
+        found-value (->> inner-types
+                         (map #(try
+                                 (marshall % v)
+                                 (catch Exception _ ::not-valid)))
+                         (filter #(not= % ::not-valid)))]
+    (if (empty? found-value)
+      (throw (Exception. "Cannot find valid union schema for value " v))
+      (first found-value))))
+
+(defmethod marshall Schema$Type/STRING [s v]
+  (if (uuid-schema? s) (str v) v))
+
+(defmethod marshall :default [_ v] v)
+
 ;; GenericRecord to Clojure mapping
+
+(declare generic-record->map)
 
 (defprotocol Unmarshal
   (value-unmarshal [in] "Converts from GenericData to Clojure value"))
@@ -43,7 +114,7 @@
 
   GenericEnumSymbol
   (value-unmarshal [val]
-    (keyword (.toString val)))
+    (keyword (unmangle (.toString val))))
 
   GenericData$Array
   (value-unmarshal [val]
@@ -61,12 +132,6 @@
   (value-unmarshal [val]
     val))
 
-(defn uuid-schema?
-  "Return true if a `Schema` object has a \"logicalType\" property of
-  \"kafka.serdes.avro.UUID\"."
-  [s]
-  (= (.getProp s "logicalType") "kafka.serdes.avro.UUID"))
-
 (defn generic-record->map [rec]
   (if (= (type rec) GenericData$Record)
     (reduce (fn [m field]
@@ -74,85 +139,13 @@
                      (keyword (unmangle (.name ^Schema$Field field)))
                      (let [v (value-unmarshal (.get rec (.name ^Schema$Field field)))]
                        (if (and (string? v)
-                                (uuid-schema? (.schema field)))
-                         (uuid/as-uuid v)
+                                (or (uuid-schema? field)
+                                    (uuid-schema? (.schema field))))
+                         (UUID/fromString ^String v)
                          v))))
             {}
             (.getFields ^Schema (.getSchema rec)))
     rec))
-
-;; Clojure to GenericRecord mapping
-
-(defn get-schema-type [^Schema s]
-  (-> s
-      .schema
-      .getType))
-
-(defn fields-for-schema [^Schema s & {:keys [value-function]
-                              :or {value-function get-schema-type}}]
-  (let [fields (.getFields s)
-        names (map #(keyword (unmangle (.name %))) fields)
-        types (map value-function fields)]
-    (zipmap names types)))
-
-(defn schema-by-field-name [f ^Schema s]
-  (let [get-schema #(.schema %)
-        fields (fields-for-schema s :value-function get-schema)]
-        (f fields)))
-
-(defn map->generic-array [s m]
-  (let [schema s
-        element-schema (.getElementType s)
-        element-schema-type (.getType element-schema)
-        array (GenericData$Array. (count m) schema)]
-    (doseq [value m]
-      (let [return-value (condp = element-schema-type
-                           Schema$Type/UNION (map->generic-union element-schema value)
-                           Schema$Type/RECORD (map->generic-record element-schema value)
-                           value)]
-        (doto array (.add return-value))))
-    array))
-
-(defn match-schema? [s m]
-  (let [schema-fields ((comp set keys fields-for-schema) s)
-        map-fields ((comp set keys) m)]
-    (= map-fields schema-fields)))
-
-(defn map->generic-enum
-  [field-schema v]
-  (GenericData$EnumSymbol. field-schema (name v)))
-
-(defn map->generic-union [s m]
-  (loop [inner-types (.iterator (.getTypes s))
-         result nil]
-    (if result
-      result
-      (let [current-type (.next inner-types)]
-          (condp = (.getType current-type)
-            Schema$Type/NULL (if m (recur inner-types nil) nil)
-            Schema$Type/ARRAY (recur nil (map->generic-array current-type m))
-            Schema$Type/ENUM (map->generic-enum current-type m)
-            Schema$Type/STRING (if (string? m) m (recur inner-types nil))
-            Schema$Type/RECORD (if (and (map? m)
-                                        (match-schema? current-type m))
-                                 (map->generic-record current-type m)
-                                 (recur inner-types nil))
-            m)))))
-
-(defn- populate-generic-record [^Schema schema ^GenericData$Record record [k v]]
-  (let [fields (fields-for-schema schema)
-        mangled-key (-> k name mangle)
-        field-schema (schema-by-field-name k schema)]
-    (condp = (k fields)
-      Schema$Type/RECORD (doto record (.put mangled-key (map->generic-record field-schema v)))
-      Schema$Type/ARRAY (doto record (.put mangled-key (map->generic-array field-schema v)))
-      Schema$Type/UNION (doto record (.put mangled-key (map->generic-union field-schema v)))
-      Schema$Type/ENUM (doto record (.put mangled-key (map->generic-enum field-schema v)))
-      Schema$Type/STRING (let [v (if (uuid-schema? field-schema)
-                                   (str v)
-                                   v)]
-                           (doto record (.put mangled-key v)))
-      (doto record (.put mangled-key v)))))
 
 (def parse-schema
   "Parse a JSON schema string into a Schema object"
@@ -160,6 +153,9 @@
              (.parse (Schema$Parser.) schema))))
 
 (defn map->generic-record [schema m]
-  (let [schema (if (string? schema) (parse-schema schema) schema)
-        record (GenericData$Record. schema)]
-    (reduce (partial populate-generic-record schema) record m)))
+  (marshall (parse-schema schema) m))
+
+;(defn map->generic-record [schema m]
+;  (let [schema (if (string? schema) (parse-schema schema) schema)
+;        record (GenericData$Record. schema)]
+;    (reduce (partial populate-generic-record schema) record m)))
