@@ -107,8 +107,7 @@
 
 (defn position
   [^KafkaConsumer consumer topic-partition]
-  (.position consumer topic-partition)
-  consumer)
+  (.position consumer topic-partition))
 
 (defn- load-assignments
   "Forces the partitions to be assigned and returns them."
