@@ -9,12 +9,29 @@
    (org.apache.kafka.clients.producer Callback
                                       KafkaProducer
                                       ProducerRecord)
-   (org.apache.kafka.common.serialization Serde)))
+   (org.apache.kafka.common TopicPartition)
+   (org.apache.kafka.common.serialization Serde)
+   (org.apache.kafka.common.utils Utils)))
 
 (def default-fuse-timeout-ms 30000)
 (def default-polling-interval-ms 1000)
 
 (set! *warn-on-reflection* true)
+
+;; https://github.com/apache/kafka/blob/41e676d29587042994a72baa5000a8861a075c8c/clients/src/main/java/org/apache/kafka/clients/producer/internals/DefaultPartitioner.java#L67
+;; return Utils.toPositive(Utils.murmur2(keyBytes)) % numPartitions;
+(defn ^Integer default-partition*
+  "Mimics the kafka default partitioner"
+  [^bytes key-bytes ^Integer num-partitions]
+  {:pre [(some? key-bytes) (pos? num-partitions)]}
+  (-> key-bytes Utils/murmur2 Utils/toPositive (mod num-partitions) int))
+
+(defn default-partition
+  "Mimics the kafka default partitioner, given a message key"
+  [{:keys [kafka.serdes/key-serde topic.metadata/name topic.metadata/partitions] :as topic-config}
+   key]
+  (let [key-bytes (.serialize (.serializer ^Serde key-serde) name key)]
+    (default-partition* key-bytes partitions)))
 
 (defn producer-record
   "Creates a kafka ProducerRecord for use with `send!`."
@@ -22,6 +39,11 @@
   ([{:keys [topic.metadata/name]} key value] (ProducerRecord. name key value))
   ([{:keys [topic.metadata/name]} partition key value] (ProducerRecord. name partition key value))
   ([{:keys [topic.metadata/name]} partition timestamp key value] (ProducerRecord. name partition timestamp key value)))
+
+(defn topic-partition
+  "Return a TopicPartition"
+  [{:keys [:topic.metadata/name] :as topic-config} partition]
+  (TopicPartition. name (int partition)))
 
 (defn producer
   "Return a KafkaProducer with the supplied properties"
@@ -58,6 +80,12 @@
   (.subscribe ^KafkaConsumer consumer (mapv :topic.metadata/name topic-config))
   consumer)
 
+(defn assign
+  "Assign a consumer to specific partitions for specific topics. Returns the consumer."
+  [^KafkaConsumer consumer & topic-partitions]
+  (.assign consumer topic-partitions)
+  consumer)
+
 (defn consumer
   "Return a KafkaConsumer with the supplied properties."
   ([config]
@@ -78,6 +106,17 @@
   consumer)
 
 (defn seek-to-end
+  "Seek to the end of the specified topic-partitions. Returns the consumer."
+  [^KafkaConsumer consumer & topic-partitions]
+  (.seekToEnd consumer topic-partitions)
+  consumer)
+
+(defn position
+  [^KafkaConsumer consumer topic-partition]
+  (.position consumer topic-partition)
+  consumer)
+
+(defn seek-all-to-end
   "Seeks to the end of all the partitions assigned to the given consumer.
   Returns the consumer."
   ([^KafkaConsumer consumer]
