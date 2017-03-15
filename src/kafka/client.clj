@@ -105,33 +105,28 @@
   (.subscribe ^KafkaConsumer consumer (mapv :topic.metadata/name topic-configs))
   consumer)
 
-(defn seek-to-end
-  "Seek to the end of the specified topic-partitions. Returns the consumer."
-  [^KafkaConsumer consumer & topic-partitions]
-  (.seekToEnd consumer topic-partitions)
-  consumer)
-
 (defn position
   [^KafkaConsumer consumer topic-partition]
   (.position consumer topic-partition)
   consumer)
 
-(defn seek-all-to-end
+(defn- load-assignments
+  "Forces the partitions to be assigned and returns them."
+  [^KafkaConsumer consumer]
+  (.poll consumer 0) ;; partition assignment occurs
+  (.assignment consumer))
+
+(defn seek-to-end
   "Seeks to the end of all the partitions assigned to the given consumer.
   Returns the consumer."
-  ([^KafkaConsumer consumer]
-   (let [assigned-partitions (.assignment consumer)]
-     (.seekToEnd consumer assigned-partitions)
-     (.poll consumer 0)
-     consumer))
-
-  ([config {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]} topic-config]
-   (log/debug "Making consumer" {:config config
-                                 :key-serde key-serde
-                                 :value-serde value-serde})
-   (-> (KafkaConsumer. ^java.util.Properties (p/map->properties config)
-                       (when key-serde (.deserializer ^Serde key-serde))
-                       (when value-serde (.deserializer ^Serde value-serde))))))
+  [^KafkaConsumer consumer & topic-partitions]
+  (.poll consumer 0)
+  (let [assigned-partitions (or topic-partitions (load-assignments consumer))]
+    (.seekToEnd consumer assigned-partitions)
+    (doseq [assigned-partition assigned-partitions]
+      ;; This forces the seek to happen now
+      (.position consumer assigned-partition))
+    consumer))
 
 (defn consumer-subscription
   "Returns a consumer that is subscribed to a single topic."
