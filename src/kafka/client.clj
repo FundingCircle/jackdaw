@@ -112,7 +112,7 @@
 
 (defn- load-assignments
   "Forces the partitions to be assigned and returns them."
-  [consumer]
+  [^KafkaConsumer consumer]
   (.poll consumer 0) ;; partition assignment occurs
   (.assignment consumer))
 
