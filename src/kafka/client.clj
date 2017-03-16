@@ -119,7 +119,6 @@
   "Seeks to the end of all the partitions assigned to the given consumer.
   Returns the consumer."
   [^KafkaConsumer consumer & topic-partitions]
-  (.poll consumer 0)
   (let [assigned-partitions (or topic-partitions (load-assignments consumer))]
     (.seekToEnd consumer assigned-partitions)
     (doseq [assigned-partition assigned-partitions]
