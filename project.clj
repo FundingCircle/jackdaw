@@ -1,4 +1,4 @@
-(defproject fundingcircle/kafka.client "0.5.1"
+(defproject fundingcircle/kafka.client "0.5.2-SNAPSHOT"
   :description "No frills Clojure wrapper around core kafka APIs"
   :url "http://github.com/FundingCircle/kafka.client"
   :license {:name "Eclipse Public License"
