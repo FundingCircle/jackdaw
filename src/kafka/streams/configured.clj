@@ -46,7 +46,7 @@
     [_ topic-config store-name]
     (configured-ktable
      config
-     (ktable topology-builder* topic-config store-name)))
+     (ktable topology-builder topic-config store-name)))
 
   (source-topics
     [_]
