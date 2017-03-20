@@ -103,7 +103,7 @@
   (value-unmarshal [val]
     (reduce (fn [m k]
               (assoc m
-                     (keyword (value-unmarshal k))
+                     (value-unmarshal k)
                      (value-unmarshal (get val k))))
             {}
             (keys val)))
