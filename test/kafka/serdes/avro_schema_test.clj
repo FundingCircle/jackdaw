@@ -138,6 +138,13 @@
           expected (GenericData$Array. avro-schema ["0.4" "56.7"])]
       (is (= expected (marshall avro-schema ["0.4" "56.7"]))))))
 
+(deftest marshall-map-test
+  (testing "marshalling a map returns the map"
+    (let [avro-edn {:type "map" :values "long"}
+          avro-schema (.parse (Schema$Parser.) (json/generate-string avro-edn))
+          expected {"foo" 1 "bar" 2}]
+      (is (= expected (marshall avro-schema expected))))))
+
 (deftest marshall-union-test
   (testing "marshalling a union"
 
@@ -187,6 +194,11 @@
           avro-schema (.parse parser ^String (json/generate-string avro-edn))
           generic-record (marshall avro-schema {:industry-code-version :SIC-2003})]
       (is (= {:industry-code-version :SIC-2003} (generic-record->map generic-record))))))
+
+(deftest unmarshall-map-test
+  (testing "unmarshalling a map"
+    (let [m {"foo" 1 "bar" 2}]
+      (is (= m (value-unmarshal m))))))
 
 (deftest unmarshall-array-test
   (testing "unmarshalling an array"
