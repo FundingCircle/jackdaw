@@ -1,5 +1,5 @@
 (ns kafka.serdes.avro-schema-test
-  (:require [cheshire.core :as json]
+  (:require [clojure.data.json :as json]
             [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.test :refer :all]
@@ -80,7 +80,7 @@
 
     (let [parser (Schema$Parser.)
           avro-edn {:type "string", :name "postcode" :namespace "com.fundingcircle"}
-          avro-schema (.parse parser ^String (json/generate-string avro-edn))]
+          avro-schema (.parse parser ^String (json/write-str avro-edn))]
       (is (= "test-string" (marshall avro-schema "test-string")))))
 
   (testing "marshalling a string with UUID logicalType"
@@ -88,7 +88,7 @@
     (let [parser (Schema$Parser.)
           avro-edn {:type "string" :name "id" :namespace "com.fundingcircle"
                     :logicalType "kafka.serdes.avro.UUID"}
-          avro-schema (.parse parser ^String (json/generate-string avro-edn))
+          avro-schema (.parse parser ^String (json/write-str avro-edn))
           payload (uuid/v4)]
       (is (= (str payload) (marshall avro-schema payload)))))
 
@@ -98,7 +98,7 @@
           avro-edn {:type "record" :name "recordStringLogicalTypeTest" :namespace "com.fundingcircle"
                     :fields [{:name "id" :namespace "com.fundingcircle"
                               :type {:type "string" :logicalType "kafka.serdes.avro.UUID"}}]}
-          avro-schema (.parse parser ^String (json/generate-string avro-edn))
+          avro-schema (.parse parser ^String (json/write-str avro-edn))
           id (uuid/v4)
           expected (GenericData$Record. avro-schema)]
       (.put expected "id" (str id))
@@ -111,7 +111,7 @@
 
     (let [parser (Schema$Parser.)
           avro-edn {:type "long", :name "amount_cents" :namespace "com.fundingcircle"}
-          avro-schema (.parse parser ^String (json/generate-string avro-edn))]
+          avro-schema (.parse parser ^String (json/write-str avro-edn))]
       (is (= 4 (marshall avro-schema (java.lang.Integer. 4)))))))
 
 (deftest marshall-enum-test
@@ -121,7 +121,7 @@
     (let [parser (Schema$Parser.)
           avro-edn {:namespace "com.fundingcircle" :name "industry_code_version"
                     :type "enum" :symbols ["SIC_2003"]}
-          avro-schema (.parse parser ^String (json/generate-string avro-edn))
+          avro-schema (.parse parser ^String (json/write-str avro-edn))
           expected (GenericData$EnumSymbol. avro-schema "SIC_2003")]
       (is (= expected (marshall avro-schema "SIC-2003")))
       (is (= expected (marshall avro-schema "SIC_2003")))
@@ -134,14 +134,14 @@
     (let [parser (Schema$Parser.)
           avro-edn {:namespace "com.fundingcircle" :name "credit_score_guarantors"
                     :type "array" :items "string"}
-          avro-schema (.parse parser ^String (json/generate-string avro-edn))
+          avro-schema (.parse parser ^String (json/write-str avro-edn))
           expected (GenericData$Array. avro-schema ["0.4" "56.7"])]
       (is (= expected (marshall avro-schema ["0.4" "56.7"]))))))
 
 (deftest marshall-map-test
   (testing "marshalling a map returns the map"
     (let [avro-edn {:type "map" :values "long"}
-          avro-schema (.parse (Schema$Parser.) (json/generate-string avro-edn))
+          avro-schema (.parse (Schema$Parser.) (json/write-str avro-edn))
           expected {"foo" 1 "bar" 2}]
       (is (= expected (marshall avro-schema expected))))))
 
@@ -150,7 +150,7 @@
 
     (let [parser (Schema$Parser.)
           avro-edn ["null" "long"]
-          avro-schema (.parse parser ^String (json/generate-string avro-edn))]
+          avro-schema (.parse parser ^String (json/write-str avro-edn))]
       (is (= 1 (marshall avro-schema 1)))
       (is (= nil (marshall avro-schema nil))))))
 
@@ -160,7 +160,7 @@
     (let [parser (Schema$Parser.)
           avro-edn {:type "record", :name "stringtest" :namespace "com.fundingcircle"
                     :fields [{:name "id" :type "string"}]}
-          avro-schema (.parse parser ^String (json/generate-string avro-edn))
+          avro-schema (.parse parser ^String (json/write-str avro-edn))
           generic-record (GenericData$Record. avro-schema)]
       (.put generic-record "id" "test-string")
       (is (= {:id "test-string"} (generic-record->map generic-record)))))
@@ -170,7 +170,7 @@
     (let [parser (Schema$Parser.)
           avro-edn {:type "record", :name "stringtest" :namespace "com.fundingcircle"
                     :fields [{:name "id" :type "string" :logicalType "kafka.serdes.avro.UUID"}]}
-          avro-schema (.parse parser ^String (json/generate-string avro-edn))
+          avro-schema (.parse parser ^String (json/write-str avro-edn))
           generic-record (GenericData$Record. avro-schema)
           id (uuid/v4)]
       (.put generic-record "id" (str id))
@@ -183,7 +183,7 @@
 
     (let [parser (Schema$Parser.)
           avro-edn {:type "enum" :name "industry_code_version" :symbols ["SIC_2003"]}
-          avro-schema (.parse parser ^String (json/generate-string avro-edn))
+          avro-schema (.parse parser ^String (json/write-str avro-edn))
           generic-record (GenericData$EnumSymbol. avro-schema "SIC_2003")]
       (is (= :SIC-2003 (value-unmarshal generic-record))))
 
@@ -191,7 +191,7 @@
           avro-edn {:type "record", :name "enumtest" :namespace "com.fundingcircle"
                     :fields [{:name "industry_code_version"
                               :type {:type "enum" :name "industry_code_version" :symbols ["SIC_2003"]}}]}
-          avro-schema (.parse parser ^String (json/generate-string avro-edn))
+          avro-schema (.parse parser ^String (json/write-str avro-edn))
           generic-record (marshall avro-schema {:industry-code-version :SIC-2003})]
       (is (= {:industry-code-version :SIC-2003} (generic-record->map generic-record))))))
 
@@ -206,7 +206,7 @@
     (let [parser (Schema$Parser.)
           avro-edn {:namespace "com.fundingcircle" :name "credit_score_guarantors"
                     :type "array" :items "string"}
-          avro-schema (.parse parser ^String (json/generate-string avro-edn))
+          avro-schema (.parse parser ^String (json/write-str avro-edn))
           generic-record (GenericData$Array. avro-schema ["0.4" "56.7"])]
       (is (= ["0.4" "56.7"] (value-unmarshal generic-record))))))
 
@@ -215,7 +215,7 @@
 
     (let [parser (Schema$Parser.)
           avro-edn {:namespace "com.fundingcircle" :name "euro" :type "string"}
-          avro-schema (.parse parser ^String (json/generate-string avro-edn))
+          avro-schema (.parse parser ^String (json/write-str avro-edn))
           b (byte-array [0xE2 0x82 0xAC])
           utf8 (Utf8. b)]
       (is (= (String. b) (value-unmarshal utf8))))))
