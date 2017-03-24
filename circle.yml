@@ -16,4 +16,4 @@ deployment:
 test:
   override:
     - mkdir -p $CIRCLE_TEST_REPORTS
-    - lein with-profile +test cloverage -o $CIRCLE_TEST_REPORTS --junit
+    - lein test-all
