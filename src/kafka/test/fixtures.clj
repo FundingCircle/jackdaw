@@ -36,43 +36,39 @@
   "A kafka test fixture.
 
    Start up a kafka broker with the supplied config before running the
-   test `t`"
-  [config]
-  (when-not (get config "log.dirs")
-    (throw (ex-info "Invalid config: missing required field 'log.dirs'"
-                    {:config config})))
-  (fn [t]
-    (let [log-dirs (get config "log.dirs")
-          _ (fs/delete-directories! log-dirs)
-          kafka (broker/start! {:config config})]
-      (try
-        (log/info "Started kafka fixture" kafka)
-        (t)
-        (finally
-          (broker/stop! (merge kafka {:log-dirs log-dirs}))
-          (log/info "Stopped kafka fixture" kafka))))))
+
+   test `t`.
+
+   If the optional `num-brokers` is provided, start up a cluster with that
+   many brokers. Unfortunately there is a bit of a teardown cost to this
+   as when you shutdown a broker, kafka tries to shuffle all it's data
+   across to any remaining live brokers so use this with care. We've found
+   that you don't really need this unless you're trying to test some weird
+   edge case."
+  ([config num-brokers]
+   (fn [t]
+     (let [multi-config (config/multi-config config)
+           configs (map multi-config (range num-brokers))
+           cluster (doall (map (fn [cfg]
+                                 (fs/delete-directories! (get cfg "log.dirs"))
+                                 (assoc (broker/start! {:config cfg})
+                                        :log-dirs (get cfg "log.dirs")))
+                               configs))]
+       (try
+         (log/info "Started multi-broker fixture" cluster)
+         (t)
+         (finally
+           ;; This takes a surprisingly
+           (doseq [node (reverse cluster)]
+             (broker/stop! node))
+           (log/info "Stopped multi-broker fixture" cluster))))))
+  ([config]
+   (broker config 1)))
 
 (defn multi-broker
-  "A multi-broker kafka fixture
-
-   Starts up `n` kafka brokers by generating a vector of configs
-   by invoking the `multi-config` function on each integer up to `n`."
+  "DEPRECATED: prefer use `broker` with the optional `num-brokers` argument"
   [config n]
-  (fn [t]
-    (let [multi-config (config/multi-config config)
-          configs (map multi-config (range n))
-          cluster (doall (map (fn [cfg]
-                                (assoc (broker/start! {:config cfg})
-                                       :log-dirs (get cfg "log.dirs")))
-                              configs))]
-      (try
-        (log/info "Started multi-broker fixture" cluster)
-        (t)
-        (finally
-          ;; This takes a surprisingly
-          (doseq [node (reverse cluster)]
-            (broker/stop! node))
-          (log/info "Stopped multi-broker fixture" cluster))))))
+  (broker config n))
 
 (defn schema-registry
   [config]
@@ -87,8 +83,6 @@
         (finally
           (.stop server)
           (log/info "Stopped schema registry fixture" server))))))
-
-;; fixture composition
 
 (defn identity-fixture
   "They have this already in clojure.test but it is called

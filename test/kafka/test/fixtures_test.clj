@@ -133,7 +133,7 @@
 (deftest multi-broker-test
   (let [fix (join-fixtures
              [(fix/zookeeper test-config/zookeeper)
-              (fix/multi-broker test-config/broker 3)])
+              (fix/broker test-config/broker 3)])
         t (fn []
             (with-open [client (zk/client test-config/broker)]
               (let [utils (zk/utils client)]
@@ -154,7 +154,7 @@
 (deftest schema-registry-with-multi-broker-test
   (let [fix (join-fixtures
              [(fix/zookeeper test-config/broker)
-              (fix/multi-broker test-config/broker 3)
+              (fix/broker test-config/broker 3)
               (fix/schema-registry test-config/schema-registry)])]
     (testing "schema registry with multi broker"
       (fix schema-registry-tests*))))
