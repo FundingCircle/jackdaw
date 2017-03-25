@@ -34,7 +34,7 @@
 
 (defmulti accept? (fn [schema v] (.getType schema)))
 (defmethod accept? Schema$Type/RECORD [_ v] (map? v))
-(defmethod accept? Schema$Type/ARRAY  [_ v] (vector? v))
+(defmethod accept? Schema$Type/ARRAY  [_ v] (sequential? v))
 (defmethod accept? Schema$Type/STRING [s v] (or (string? v)
                                                 (uuid-schema? s)))
 (defmethod accept? Schema$Type/NULL [_ v] (nil? v))
