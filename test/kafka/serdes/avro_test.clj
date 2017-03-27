@@ -5,7 +5,10 @@
             [clojure.test :refer :all]
             [kafka.serdes.avro :as avro]
             [kafka.serdes.avro-schema :as avro-schema])
-  (:import io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient))
+  (:import
+   (io.confluent.kafka.schemaregistry.client MockSchemaRegistryClient)
+   (clojure.lang ExceptionInfo)))
+
 
 (def schema (slurp (io/resource "resources/example_schema.avsc")))
 
@@ -20,4 +23,12 @@
           de (avro/avro-deserializer client schema {"schema.registry.url" "http://localhost:8081"} true)]
       (is (= data
              (->> (.serialize ser topic-name data)
-                  (.deserialize de topic-name)))))))
+                  (.deserialize de topic-name))))))
+
+  (testing "try to write bad data"
+    (let [client (MockSchemaRegistryClient.)
+          ser (avro/avro-serializer client schema {"schema.registry.url" "http://localhost:8081"} true)
+          de (avro/avro-deserializer client schema {"schema.registry.url" "http://localhost:8081"} true)]
+      (let [t (assoc data
+                     :garbage "yolo")]
+        (is (thrown? ExceptionInfo (.serialize ser topic-name t)))))))

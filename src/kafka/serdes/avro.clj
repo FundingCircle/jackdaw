@@ -1,9 +1,11 @@
 (ns kafka.serdes.avro
   (:require [clj-uuid :as uuid]
+            [clojure.data.json :as json]
             [kafka.serdes.avro-schema :as avro-schema]
             [kafka.serdes.registry :as registry]
             [environ.core :as env])
-  (:import [io.confluent.kafka.serializers KafkaAvroDeserializer KafkaAvroSerializer]
+  (:import [org.apache.avro AvroRuntimeException]
+           [io.confluent.kafka.serializers KafkaAvroDeserializer KafkaAvroSerializer]
            [org.apache.kafka.common.serialization Serdes Serializer Deserializer]
            [io.confluent.kafka.schemaregistry.client CachedSchemaRegistryClient]))
 
@@ -17,7 +19,15 @@
   - Primitive types are passed through to the avro serializer."
   [msg schema]
   (cond
-    (map? msg) (avro-schema/map->generic-record schema msg)
+    (map? msg)
+    (try
+      (avro-schema/map->generic-record schema msg)
+      (catch AvroRuntimeException are
+        (throw (ex-info "failed to create avro record"
+                        {:schema (json/read-json schema)
+                         :value msg}
+                        are))))
+
     (and (uuid/uuid? msg)
          (avro-schema/uuid-schema? (avro-schema/parse-schema schema))) (str msg)
     :else msg))
