@@ -23,9 +23,8 @@
 (deftest zookeeper-test
   (let [fix (fix/zookeeper test-config/zookeeper)
         t (fn []
-            (let [client (zk/client test-config/broker)]
-              (is client)
-              (.close client)))]
+            (with-open [client (zk/client test-config/broker)]
+              (is client)))]
     (testing "zookeeper up/down"
       (fix t))
 
@@ -42,9 +41,9 @@
              (fix/zookeeper test-config/zookeeper)
              (fix/broker test-config/broker))
         t (fn []
-            (let [client (zk/client test-config/broker)
-                  utils (zk/utils client)]
-              (is (.pathExists utils "/brokers/ids/0"))))]
+            (with-open [client (zk/client test-config/broker)]
+              (let [utils (zk/utils client)]
+                (is (.pathExists utils "/brokers/ids/0")))))]
     (testing "broker up/down"
       (fix t))
 
