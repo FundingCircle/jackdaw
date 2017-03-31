@@ -23,12 +23,5 @@
           de (avro/avro-deserializer client schema {"schema.registry.url" "http://localhost:8081"} true)]
       (is (= data
              (->> (.serialize ser topic-name data)
-                  (.deserialize de topic-name))))))
+                  (.deserialize de topic-name)))))))
 
-  (testing "try to write bad data"
-    (let [client (MockSchemaRegistryClient.)
-          ser (avro/avro-serializer client schema {"schema.registry.url" "http://localhost:8081"} true)
-          de (avro/avro-deserializer client schema {"schema.registry.url" "http://localhost:8081"} true)]
-      (let [t (assoc data
-                     :garbage "yolo")]
-        (is (thrown? ExceptionInfo (.serialize ser topic-name t)))))))

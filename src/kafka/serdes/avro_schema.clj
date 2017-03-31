@@ -54,11 +54,14 @@
                   fields (fields-for-schema s :value-function get-schema)]
               (f fields)))
 
-          (marshall-for-field [record [k v]]
-            (let [fields (fields-for-schema s)
-                  mangled-key (-> k name mangle)
-                  field-schema (schema-by-field-name k s)]
-              (doto record (.put mangled-key (marshall field-schema v)))))]
+            (marshall-for-field [record [k v]]
+              (let [fields (fields-for-schema s)
+                    mangled-key (-> k name mangle)
+                    field-schema (schema-by-field-name k s)]
+                (assert field-schema (format "Field %s not known in %s"
+                                             mangled-key
+                                             (.getName s)))
+                (doto record (.put mangled-key (marshall field-schema v)))))]
 
       (reduce marshall-for-field record v))))
 
