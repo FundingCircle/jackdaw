@@ -20,13 +20,7 @@
   [msg schema]
   (cond
     (map? msg)
-    (try
-      (avro-schema/map->generic-record schema msg)
-      (catch AvroRuntimeException are
-        (throw (ex-info "failed to create avro record"
-                        {:schema (json/read-json schema)
-                         :value msg}
-                        are))))
+    (avro-schema/map->generic-record schema msg)
 
     (and (uuid/uuid? msg)
          (avro-schema/uuid-schema? (avro-schema/parse-schema schema))) (str msg)
