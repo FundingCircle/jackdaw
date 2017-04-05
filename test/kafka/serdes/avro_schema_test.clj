@@ -145,6 +145,17 @@
           expected {"foo" 1 "bar" 2}]
       (is (= expected (marshall avro-schema expected))))))
 
+(deftest marshall-record-test
+  (testing "marshalling record with unknown field triggers error"
+    (let [parser (Schema$Parser.)
+          avro-edn {:type "record"
+                    :name "Foo"
+                    :fields [{:name "bar" :type "string"}]}
+          avro-schema (.parse parser (json/write-str avro-edn))]
+      (is (thrown-with-msg? AssertionError
+                            #"Field garbage not known in Foo"
+                            (marshall avro-schema {:garbage "yolo"}))))))
+
 (deftest marshall-union-test
   (testing "marshalling a union"
 
