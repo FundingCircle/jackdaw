@@ -44,6 +44,7 @@
   "Shared methods."
   (left-join
     [kstream ktable value-joiner-fn]
+    [kstream ktable value-joiner-fn topic-config]
     "Combine values of this stream with KTable's elements of the same key using Left Join.")
 
   (for-each!

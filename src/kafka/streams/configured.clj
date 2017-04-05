@@ -78,6 +78,12 @@
      config
      (left-join kstream ktable value-joiner-fn)))
 
+  (left-join
+  [_ ktable value-joiner-fn topic-config]
+  (configured-kstream
+    config
+    (left-join kstream ktable value-joiner-fn topic-config)))
+
   (for-each!
     [_ foreach-fn]
     (for-each! kstream foreach-fn))

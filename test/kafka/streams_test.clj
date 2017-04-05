@@ -73,6 +73,23 @@
       (let [result (mock/collect topology)]
         (is (= ["1:[2 1]"] result)))))
 
+  (testing "left-join (with custom serdes)"
+    (let [topology-builder (mock/topology-builder)
+          left-topic (mock/topic "left-topic")
+          right-topic (mock/topic "right-topic")
+          left-kstream (k/kstream topology-builder left-topic)
+          right-ktable (k/ktable topology-builder right-topic)
+          topology (-> left-kstream
+                       (k/left-join right-ktable (fn [v1 v2] [v1 v2]) left-topic)
+                       (mock/build))]
+
+      (-> topology
+          (mock/send right-topic 1 1)
+          (mock/send left-topic 1 2))
+
+      (let [result (mock/collect topology)]
+        (is (= ["1:[2 1]"] result)))))
+
   (testing "for-each!"
     (let [topic-a (mock/topic "topic-a")
           topology-builder (mock/topology-builder)

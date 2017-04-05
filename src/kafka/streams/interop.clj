@@ -102,6 +102,15 @@
                 (ktable* ktable)
                 (value-joiner value-joiner-fn))))
 
+  (left-join
+    [_ ktable value-joiner-fn {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
+    (clj-kstream
+     (.leftJoin kstream
+                (ktable* ktable)
+                (value-joiner value-joiner-fn)
+                key-serde
+                value-serde)))
+
   (for-each!
     [_ foreach-fn]
     (.foreach kstream (foreach-action foreach-fn))
