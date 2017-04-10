@@ -7,10 +7,10 @@
                  [org.clojure/clojure "1.8.0"]
                  [org.clojure/tools.logging "0.3.1"]
                  [com.101tec/zkclient "0.8" :exclusions [log4j org.slf4j/slf4j-log4j12]]
-                 [org.apache.kafka/kafka_2.11 "0.10.1.0-cp2" :exclusions [log4j org.slf4j/slf4j-log4j12 org.slf4j/slf4j-api
+                 [org.apache.kafka/kafka_2.11 "0.10.2.0" :exclusions [log4j org.slf4j/slf4j-log4j12 org.slf4j/slf4j-api
                                                                       com.fasterxml.jackson.core/jackson-annotations
                                                                       com.fasterxml.jackson.core/jackson-core]]
-                 [org.apache.kafka/kafka-clients "0.10.1.0-cp2" :exclusions [log4j org.slf4j/slf4j-log4j12 org.slf4j/slf4j-api
+                 [org.apache.kafka/kafka-clients "0.10.2.0" :exclusions [log4j org.slf4j/slf4j-log4j12 org.slf4j/slf4j-api
                                                                          com.fasterxml.jackson.core/jackson-annotations
                                                                          com.fasterxml.jackson.core/jackson-core]]]
 
