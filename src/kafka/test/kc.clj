@@ -1,6 +1,5 @@
 (ns kafka.test.kc
-  (:import [io.confluent.kafka.schemaregistry.rest SchemaRegistryConfig SchemaRegistryRestApplication]
-           [org.apache.kafka.common.utils SystemTime]
+  (:import [org.apache.kafka.common.utils SystemTime]
            [org.apache.kafka.connect.runtime Connect ConnectorFactory Herder Worker]
            [org.apache.kafka.connect.runtime.rest RestServer]
            [org.apache.kafka.connect.runtime.standalone StandaloneConfig StandaloneHerder]
