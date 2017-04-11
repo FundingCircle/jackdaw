@@ -6,12 +6,12 @@
   :aot :all
   :dependencies [[danlentz/clj-uuid "0.1.6"]
                  [environ "1.1.0"]
-                 [io.confluent/kafka-avro-serializer "3.1.0"]
-                 [io.confluent/kafka-schema-registry-client "3.1.0"
+                 [io.confluent/kafka-avro-serializer "3.2.0"]
+                 [io.confluent/kafka-schema-registry-client "3.2.0"
                   :exclusions [org.slf4j/slf4j-log4j12
                                org.slf4j/slf4j-api
                                com.fasterxml.jackson.core/jackson-databind]]
-                 [org.apache.kafka/kafka-clients "0.10.1.0-cp2"
+                 [org.apache.kafka/kafka-clients "0.10.2.0"
                   :exclusions [log4j org.slf4j/slf4j-log4j12 org.slf4j/slf4j-api
                                com.fasterxml.jackson.core/jackson-annotations
                                com.fasterxml.jackson.core/jackson-core]]
