@@ -40,11 +40,11 @@
   [topology topic-config key message]
   (let [test-driver (-> topology config ::test-driver)
         time (or (-> topology config ::test-driver-time) 0)]
+    (.setTime test-driver time)
     (.process test-driver
               (:topic.metadata/name topic-config)
               key
               message)
-    (.setTime test-driver time)
     (.flushState test-driver)
     (-> topology
         (configure ::test-driver-time (inc time)))))
