@@ -32,21 +32,17 @@
         done? (fn []
                 @live?)
         log (client/log-messages consumer 1000 done?)]
-    (try
-      (let [result (poll-result "foo" [[1 1]
-                                       [2 2]])]
 
-        (testing "can fetch items delivered to a topic"
-          (.put q result)
-          (let [[a b] (take 2 log)]
-            (is (= [1 1] a))
-            (is (= [2 2] b)))))
-        
-      (finally
+    (let [result (poll-result "foo" [[1 1]
+                                     [2 2]])]
+
+      (testing "can fetch items delivered to a topic"
+        (.put q result)
+        (let [[a b] (take 2 log)]
+          (is (= [1 1] a))
+          (is (= [2 2] b))))
+
+      (testing "doall terminates once we are done"
         (reset! live? false)
-        (testing "doall terminates once we are done"
-          (is (= [[1 1]
-                  [2 2]] (doall log))))))))
-
-
-
+        (is (= [[1 1]
+                [2 2]] (doall log)))))))
