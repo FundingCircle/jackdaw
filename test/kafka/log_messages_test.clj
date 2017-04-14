@@ -25,7 +25,7 @@
     (poll [this ms]
       (.poll queue ms TimeUnit/MILLISECONDS))))
 
-(deftest test-log-messages
+(deftest log-messages-test
   (let [q (LinkedBlockingQueue.)
         consumer (mock-consumer "foo" q)
         live? (atom true)

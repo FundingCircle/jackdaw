@@ -23,8 +23,6 @@
                   ["vcs" "commit"]
                   ["vcs" "push"]]
 
-  :profiles {:test {:dependencies [[log4j/log4j "1.2.17"]]}}
-
   :repositories
   {"snapshots" {:url "https://fundingcircle.artifactoryonline.com/fundingcircle/libs-snapshot-local"
                 :username [:gpg :env/artifactory_user]
