@@ -5,7 +5,7 @@
    [clojurewerkz.propertied.properties :as p])
   (:import
    (clojure.lang Reflector)
-   (org.apache.kafka.clients.consumer KafkaConsumer)
+   (org.apache.kafka.clients.consumer KafkaConsumer Consumer)
    (org.apache.kafka.clients.producer Callback
                                       KafkaProducer
                                       ProducerRecord)
@@ -77,17 +77,17 @@
 (defn subscribe
   "Subscribe a consumer to topics. Returns the consumer."
   [consumer & topic-config]
-  (.subscribe ^KafkaConsumer consumer (mapv :topic.metadata/name topic-config))
+  (.subscribe ^Consumer consumer (mapv :topic.metadata/name topic-config))
   consumer)
 
 (defn assign
   "Assign a consumer to specific partitions for specific topics. Returns the consumer."
-  [^KafkaConsumer consumer & topic-partitions]
+  [^Consumer consumer & topic-partitions]
   (.assign consumer topic-partitions)
   consumer)
 
 (defn consumer
-  "Return a KafkaConsumer with the supplied properties."
+  "Return a Consumer with the supplied properties."
   ([config]
    (KafkaConsumer. ^java.util.Properties (p/map->properties config)))
 
@@ -99,26 +99,20 @@
                    (when key-serde (.deserializer ^Serde key-serde))
                    (when value-serde (.deserializer ^Serde value-serde)))))
 
-(defn subscribe
-  "Subscribe a consumer to topics. Returns the consumer."
-  [consumer & topic-configs]
-  (.subscribe ^KafkaConsumer consumer (mapv :topic.metadata/name topic-configs))
-  consumer)
-
 (defn position
-  [^KafkaConsumer consumer topic-partition]
+  [^Consumer consumer topic-partition]
   (.position consumer topic-partition))
 
 (defn- load-assignments
   "Forces the partitions to be assigned and returns them."
-  [^KafkaConsumer consumer]
+  [^Consumer consumer]
   (.poll consumer 0) ;; partition assignment occurs
   (.assignment consumer))
 
 (defn seek-to-end
   "Seeks to the end of all the partitions assigned to the given consumer.
   Returns the consumer."
-  [^KafkaConsumer consumer & topic-partitions]
+  [^Consumer consumer & topic-partitions]
   (let [assigned-partitions (or topic-partitions (load-assignments consumer))]
     (.seekToEnd consumer assigned-partitions)
     (doseq [assigned-partition assigned-partitions]
@@ -162,38 +156,37 @@
                    :topic :toString :value]))
 
 (defn next-records
-  "Polls kafka until a message is received."
-  [^KafkaConsumer consumer poll-timeout-ms fuse-fn]
+  "Polls kafka for any new records provided `fuse-fn` returns a truthy value"
+  [^Consumer consumer poll-timeout-ms fuse-fn]
   (when (fuse-fn)
-    (or (.poll consumer poll-timeout-ms)
-        (recur consumer poll-timeout-ms fuse-fn))))
+    (.poll consumer poll-timeout-ms)))
 
 (defn log-seq
   "Given a consumer, returns a lazy sequence of ConsumerRecords. Stops after
   fuse-fn returns false."
-  ([^KafkaConsumer consumer polling-interval-ms]
+  ([^Consumer consumer polling-interval-ms]
    (log-seq consumer polling-interval-ms (constantly true)))
-  ([^KafkaConsumer consumer polling-interval-ms fuse-fn]
-   (let [records (next-records consumer polling-interval-ms fuse-fn)]
-     (lazy-seq
-      (concat records
-              (log-seq consumer polling-interval-ms fuse-fn))))))
+  ([^Consumer consumer polling-interval-ms fuse-fn]
+   (when (fuse-fn)
+     (lazy-cat
+       (next-records consumer polling-interval-ms fuse-fn)
+       (log-seq consumer polling-interval-ms fuse-fn)))))
 
 (defn log-records
-  "Returns a lazy sequence of clojurized ConsumerRecords from a KafkaConsumer.
+  "Returns a lazy sequence of clojurized ConsumerRecords from a Consumer.
   Stops consuming after timeout-ms."
-  ([^KafkaConsumer consumer polling-interval-ms]
+  ([^Consumer consumer polling-interval-ms]
    (map record (log-seq consumer polling-interval-ms)))
-  ([^KafkaConsumer consumer polling-interval-ms fuse-fn]
+  ([^Consumer consumer polling-interval-ms fuse-fn]
    (map record (log-seq consumer polling-interval-ms fuse-fn))))
 
 (defn log-messages
   "Returns a lazy sequence of the keys and values of the messages from a
-  KafkaConsumer. Stops consuming after consumer-timeout-ms."
-  ([^KafkaConsumer consumer polling-interval-ms]
+  Consumer. Stops consuming after consumer-timeout-ms."
+  ([^Consumer consumer polling-interval-ms]
    (map (fn [rec] [(:key rec) (:value rec)])
         (log-records consumer polling-interval-ms)))
-  ([^KafkaConsumer consumer polling-interval-ms fuse-fn]
+  ([^Consumer consumer polling-interval-ms fuse-fn]
    (map (fn [rec] [(:key rec) (:value rec)])
         (log-records consumer polling-interval-ms fuse-fn))))
 
@@ -212,7 +205,7 @@
 (defn timed-log-messages
   "Same as `log-messages`, but will stop consuming after a specified timeout in
   milliseconds, or `default-fulse-time-ms` if no timeout is specified."
-  ([^KafkaConsumer consumer]
+  ([^Consumer consumer]
    (log-messages consumer default-polling-interval-ms (timeout)))
-  ([^KafkaConsumer consumer fuse-timeout-ms]
+  ([^Consumer consumer fuse-timeout-ms]
    (log-messages consumer default-polling-interval-ms (timeout fuse-timeout-ms))))
