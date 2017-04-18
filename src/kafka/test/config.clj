@@ -31,8 +31,8 @@
                                           "9092")))]
       (assoc base
              "broker.id" (str n)
-             "port" (str port)
-             "advertised.port" (str port)
+             "listeners" (str "PLAINTEXT://localhost:" port)
+             "advertised.listeners" (str "PLAINTEXT://localhost:" port)
              "log.dirs" (str (get base "log.dirs")
                              "-"
                              n)))))
