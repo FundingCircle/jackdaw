@@ -20,7 +20,6 @@
     (.startup broker)
     {:broker broker}))
 
-
 (defn stop!
   "Stops a kafka broker.
 
@@ -29,6 +28,7 @@
   (when broker
     (try
       (.shutdown broker)
+      (.awaitShutdown broker)
       {:broker nil}
       (finally
         (fs/try-delete! (io/file log-dirs))))))

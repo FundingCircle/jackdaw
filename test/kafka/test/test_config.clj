@@ -19,7 +19,8 @@
                                       :host)
    "auto.create.topics.enable"    "true"
    "offsets.topic.num.partitions" "1"
-   "log.dirs"                     (fs/tmp-dir "kafka-log")})
+   "log.dirs"                     (fs/tmp-dir "kafka-log")
+   "controlled.shutdown.enable" "false"})
 
 (def consumer
   {"bootstrap.servers"     (env :bootstrap-servers)
