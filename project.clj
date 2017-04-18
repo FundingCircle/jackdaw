@@ -1,4 +1,4 @@
-(defproject fundingcircle/kafka.client "0.7.0-SNAPSHOT"
+(defproject fundingcircle/kafka.client "0.6.2-SNAPSHOT"
   :description "No frills Clojure wrapper around core kafka APIs"
   :url "http://github.com/FundingCircle/kafka.client"
   :license {:name "Eclipse Public License"
@@ -6,7 +6,6 @@
   :dependencies [[clojurewerkz/propertied "1.2.0"]
                  [org.clojure/clojure "1.8.0"]
                  [org.clojure/tools.logging "0.3.1"]
-                 [com.101tec/zkclient "0.8" :exclusions [log4j org.slf4j/slf4j-log4j12]]
                  [org.apache.kafka/kafka_2.11 "0.10.2.0" :exclusions [log4j org.slf4j/slf4j-log4j12 org.slf4j/slf4j-api
                                                                       com.fasterxml.jackson.core/jackson-annotations
                                                                       com.fasterxml.jackson.core/jackson-core]]
