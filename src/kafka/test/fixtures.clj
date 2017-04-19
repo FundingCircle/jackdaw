@@ -61,7 +61,7 @@
          (t)
          (finally
            ;; This takes a surprisingly
-           (doseq [node (reverse cluster)]
+           (doseq [node cluster]
              (broker/stop! node))
            (log/info "Stopped multi-broker fixture" cluster))))))
   ([config]
