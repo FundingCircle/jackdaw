@@ -22,7 +22,8 @@
     (map? msg)
     (avro-schema/map->generic-record schema msg)
 
-    (and (uuid/uuid? msg)
+    (and (some? msg)
+         (uuid/uuid? msg)
          (avro-schema/uuid-schema? (avro-schema/parse-schema schema))) (str msg)
     :else msg))
 
