@@ -6,10 +6,10 @@
   :dependencies [[clojurewerkz/propertied "1.2.0"]
                  [org.clojure/clojure "1.8.0"]
                  [org.clojure/tools.logging "0.3.1"]
-                 [org.apache.kafka/kafka_2.11 "0.10.2.0" :exclusions [log4j org.slf4j/slf4j-log4j12 org.slf4j/slf4j-api
+                 [org.apache.kafka/kafka_2.11 "0.10.2.1" :exclusions [log4j org.slf4j/slf4j-log4j12 org.slf4j/slf4j-api
                                                                       com.fasterxml.jackson.core/jackson-annotations
                                                                       com.fasterxml.jackson.core/jackson-core]]
-                 [org.apache.kafka/kafka-clients "0.10.2.0" :exclusions [log4j org.slf4j/slf4j-log4j12 org.slf4j/slf4j-api
+                 [org.apache.kafka/kafka-clients "0.10.2.1" :exclusions [log4j org.slf4j/slf4j-log4j12 org.slf4j/slf4j-api
                                                                          com.fasterxml.jackson.core/jackson-annotations
                                                                          com.fasterxml.jackson.core/jackson-core]]]
 
