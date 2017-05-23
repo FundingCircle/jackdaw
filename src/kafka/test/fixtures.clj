@@ -50,7 +50,12 @@
   ([config num-brokers]
    (fn [t]
      (let [multi-config (config/multi-config config)
-           configs (map multi-config (range num-brokers))
+           configs (if (= 1 num-brokers)
+                     ;; no need to rewrite the config if we just have a single
+                     ;; broker and the multi-config stuff can cause problems
+                     ;; if you don't specify a port
+                     [config]
+                     (map multi-config (range num-brokers)))
            cluster (doall (map (fn [cfg]
                                  (fs/delete-directories! (get cfg "log.dirs"))
                                  (assoc (broker/start! {:config cfg})
