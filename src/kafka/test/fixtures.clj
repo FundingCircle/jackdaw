@@ -46,7 +46,11 @@
    as when you shutdown a broker, kafka tries to shuffle all it's data
    across to any remaining live brokers so use this with care. We've found
    that you don't really need this unless you're trying to test some weird
-   edge case."
+   edge case.
+
+   Note that when using num-brokers > 1, you must explicitly set port and
+   it must agree with the port implicit in `listeners` and/or
+   `advertised.listeners`."
   ([config num-brokers]
    (fn [t]
      (let [multi-config (config/multi-config config)

@@ -24,18 +24,20 @@
     port
     advertised.port
     log.dirs
-  "
-  [base]
+
+   Note: unspecified `port` defaults to 9092; `listeners` and `advertised.listeners`
+   will be set based on that and override user-specified values."
+  [{port "port"
+    log-dirs "log.dirs"
+    :or {port "9092"}
+    :as base}]
   (fn [n]
-    (let [port (+ n (Integer/parseInt (or (get base "port")
-                                          "9092")))]
+    (let [port (+ n (Integer/parseInt port))]
       (assoc base
              "broker.id" (str n)
              "listeners" (str "PLAINTEXT://localhost:" port)
              "advertised.listeners" (str "PLAINTEXT://localhost:" port)
-             "log.dirs" (str (get base "log.dirs")
-                             "-"
-                             n)))))
+             "log.dirs" (str log-dirs "-" n)))))
 
 (def db-conf
   {:dbtype "postgresql"
