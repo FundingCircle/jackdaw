@@ -1,4 +1,5 @@
 (ns kafka.serdes.avro-schema
+  (:require [clojure.data.json :as json])
   (:import [org.apache.avro Schema Schema$Parser Schema$Field Schema$Type]
            [org.apache.avro.generic GenericData GenericEnumSymbol GenericData$Record GenericRecord GenericData$Array GenericData$EnumSymbol]
            [org.apache.avro.util Utf8]
@@ -79,14 +80,15 @@
     array))
 
 (defmethod marshall Schema$Type/UNION [s v]
-  (let [inner-types (iterator-seq (.iterator (.getTypes s)))
-        found-value (->> inner-types
+  (let [found-value (->> (.getTypes s)
                          (map #(try
                                  (marshall % v)
                                  (catch Exception _ ::not-valid)))
                          (filter #(not= % ::not-valid)))]
     (if (empty? found-value)
-      (throw (Exception. "Cannot find valid union schema for value " v))
+      (throw (ex-info (str "No matching union schema")
+                      {:schema (json/read-str (str s))
+                       :value v}))
       (first found-value))))
 
 (defmethod marshall Schema$Type/STRING [s v]

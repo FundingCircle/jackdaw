@@ -157,13 +157,18 @@
                             (marshall avro-schema {:garbage "yolo"}))))))
 
 (deftest marshall-union-test
-  (testing "marshalling a union"
+  (let [parser (Schema$Parser.)
+        avro-edn ["null" "long"]
+        avro-schema (.parse parser ^String (json/write-str avro-edn))]
 
-    (let [parser (Schema$Parser.)
-          avro-edn ["null" "long"]
-          avro-schema (.parse parser ^String (json/write-str avro-edn))]
+    (testing "marshalling a union"
       (is (= 1 (marshall avro-schema 1)))
-      (is (= nil (marshall avro-schema nil))))))
+      (is (= nil (marshall avro-schema nil))))
+
+    (testing "marshalling unrecognized union type throws exception"
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                            #"No matching union schema"
+                            (marshall avro-schema "foo"))))))
 
 (deftest unmarshall-string-test
   (testing "unmarshalling a string"
