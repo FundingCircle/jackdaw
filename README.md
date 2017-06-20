@@ -28,9 +28,9 @@ please raise an issue.
 (defn topology [builder]
   (let [table-of-foos (k/ktable builder (demo-topic "foo"))
         stream-of-bars (k/kstream builder (demo-topic "bar"))]
-    (k/join stream-of-bars table-of-foos (fn [bar foo]
-                                           (= (:id bar)
-                                              (:bar-id foo))))))
+    (k/left-join stream-of-bars table-of-foos (fn [bar foo]
+                                                (= (:id bar)
+                                                   (:bar-id foo))))))
 ```
 
 ### transform stream values
