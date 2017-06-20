@@ -8,7 +8,8 @@ Some common scenarios and function signatures are described here. If you don't s
 an example of the API you'd like to use, check the tests. If there isn't one there,
 please raise an issue.
 
-```
+
+```clojure
 (ns kafka-streams-demo
   (:require
     [kafka.streams :as k]
@@ -23,7 +24,7 @@ please raise an issue.
 
 ### kstreams/ktables
 
-```
+```clojure
 (defn topology [builder]
   (let [table-of-foos (k/ktable builder (demo-topic "foo"))
         stream-of-bars (k/kstream builder (demo-topic "bar"))]
@@ -36,7 +37,7 @@ please raise an issue.
 
 Transform the values in a stream while keeping the keys in-tact
 
-```
+```clojure
 (defn transformed [s]
   (k/map-values s (fn [v]
                     (transformed v))))
@@ -46,8 +47,8 @@ Transform the values in a stream while keeping the keys in-tact
 
 Sometimes you need to also update the key
 
-```
-(defn transformer [s]
+```clojure
+(defn transformed [s]
   (k/map s (fn [[k v]]
              [(transformed-key k)
               (transformed-value v)])))
