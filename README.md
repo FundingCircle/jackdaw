@@ -24,9 +24,12 @@ please raise an issue.
 ### kstreams/ktables
 
 ```
-(let [table-of-foos (k/ktable (demo-topic "foo"))
-      stream-of-bars (k/kstream (demo-topic "bar"))]
-  ...)
+(defn topology [builder]
+  (let [table-of-foos (k/ktable builder (demo-topic "foo"))
+        stream-of-bars (k/kstream builder (demo-topic "bar"))]
+    (k/join stream-of-bars table-of-foos (fn [bar foo]
+                                           (= (:id bar)
+                                              (:bar-id foo))))))
 ```
 
 ### transform stream values
@@ -34,9 +37,9 @@ please raise an issue.
 Transform the values in a stream while keeping the keys in-tact
 
 ```
-(defn transformer [s]
-  (k/map-values (fn [v]
-                  (transformed v))))
+(defn transformed [s]
+  (k/map-values s (fn [v]
+                    (transformed v))))
 ```
 
 ### transform keys *and* values
@@ -45,9 +48,9 @@ Sometimes you need to also update the key
 
 ```
 (defn transformer [s]
-  (k/map (fn [[k v]]
-           [(transformed-key k)
-            (transformed-value v)])))
+  (k/map s (fn [[k v]]
+             [(transformed-key k)
+              (transformed-value v)])))
 ```
 
 
