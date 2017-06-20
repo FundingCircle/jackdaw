@@ -2,7 +2,7 @@
   "Wrappers for the Java 'lambda' functions."
   (:import org.apache.kafka.streams.KeyValue
            [org.apache.kafka.streams.kstream Aggregator ForeachAction Initializer KeyValueMapper Predicate Reducer TransformerSupplier ValueJoiner ValueMapper ValueTransformerSupplier]
-           [org.apache.kafka.streams.processor ProcessorSupplier StreamPartitioner]))
+           [org.apache.kafka.streams.processor Processor ProcessorSupplier StreamPartitioner]))
 
 (defn key-value
   "A key-value pair defined for a single Kafka Streams record."
@@ -153,3 +153,14 @@
 (defn value-transformer-supplier
   [value-transformer-supplier-fn]
   (FnValueTransformerSupplier. value-transformer-supplier-fn))
+
+(deftype FnProcessor [context processor-fn]
+  Processor
+  (close [_])
+  (init [_ processor-context]
+    (reset! context processor-context))
+  (process [_ key message]
+    (processor-fn context key message)))
+
+(defn processor [processor-fn]
+  (FnProcessor. (atom nil) processor-fn))
