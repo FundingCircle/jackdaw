@@ -168,7 +168,7 @@
     key using windowed Outer Join." )
 
   (process!
-    [kstream processor-supplier-fn state-store-names]
+    [kstream processor-fn state-store-names]
     "Process all elements in this stream, one element at a time, by applying a
     Processor.")
 

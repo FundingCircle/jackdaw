@@ -125,15 +125,27 @@
   (when stream-partitioner-fn
     (FnStreamPartitioner. stream-partitioner-fn)))
 
+(deftype FnProcessor [context processor-fn]
+  Processor
+  (close [_])
+  (init [_ processor-context]
+    (reset! context processor-context))
+  (process [_ key message]
+    (processor-fn @context key message)))
+
+(defn processor [processor-fn]
+  (FnProcessor. (atom nil) processor-fn))
+
 (deftype FnProcessorSupplier [processor-supplier-fn]
   ProcessorSupplier
   (get [this]
-    (processor-supplier-fn)))
+    processor-supplier-fn))
 
 (defn processor-supplier
   "Packages up a Clojure fn in a kstream processor supplier."
-  [processor-supplier-fn]
-  (FnProcessorSupplier. processor-supplier-fn))
+  [processor-fn]
+  (let [fn-processor (processor processor-fn)]
+    (FnProcessorSupplier. fn-processor)))
 
 (deftype FnTransformerSupplier [transformer-supplier-fn]
   TransformerSupplier
@@ -153,14 +165,3 @@
 (defn value-transformer-supplier
   [value-transformer-supplier-fn]
   (FnValueTransformerSupplier. value-transformer-supplier-fn))
-
-(deftype FnProcessor [context processor-fn]
-  Processor
-  (close [_])
-  (init [_ processor-context]
-    (reset! context processor-context))
-  (process [_ key message]
-    (processor-fn context key message)))
-
-(defn processor [processor-fn]
-  (FnProcessor. (atom nil) processor-fn))
