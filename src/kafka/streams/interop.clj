@@ -4,11 +4,14 @@
   (:require [clojure.string :as str]
             [kafka.streams :refer :all]
             [kafka.streams.lambdas :refer :all])
-  (:import java.util.regex.Pattern
-           org.apache.kafka.common.serialization.Serde
-           org.apache.kafka.streams.KafkaStreams
-           [org.apache.kafka.streams.kstream KGroupedStream KGroupedTable KStream KStreamBuilder KTable Predicate Windows]
-           org.apache.kafka.streams.processor.TopologyBuilder))
+  (:import
+   (java.util.regex Pattern)
+   (org.apache.kafka.common.serialization Serde)
+   (org.apache.kafka.streams KafkaStreams)
+   (org.apache.kafka.streams.kstream KGroupedStream KGroupedTable KStream ValueJoiner
+                                     Initializer Reducer Aggregator
+                                     KStreamBuilder KTable Predicate Windows JoinWindows)
+   (org.apache.kafka.streams.processor TopologyBuilder)))
 
 (set! *warn-on-reflection* true)
 
@@ -246,10 +249,10 @@
   (join-windowed
     [_ other-kstream value-joiner-fn windows]
     (clj-kstream
-     (.join kstream
-            (kstream* other-kstream)
-            (value-joiner value-joiner-fn)
-            windows)))
+     (.join ^KStream kstream
+            ^KStream (kstream* other-kstream)
+            ^ValueJoiner (value-joiner value-joiner-fn)
+            ^JoinWindows windows)))
 
   (join-windowed
     [_ other-kstream value-joiner-fn windows
@@ -267,10 +270,10 @@
   (left-join-windowed
     [_ other-kstream value-joiner-fn windows]
     (clj-kstream
-     (.leftJoin kstream
-                (kstream* other-kstream)
-                (value-joiner-fn)
-                windows)))
+     (.leftJoin ^KStream kstream
+                ^KStream (kstream* other-kstream)
+                ^ValueJoiner (value-joiner-fn)
+                ^JoinWindows windows)))
 
   (left-join-windowed
     [_ other-kstream value-joiner-fn windows
@@ -494,15 +497,16 @@
   (count
     [_ {:keys [topic.metadata/name]}]
     (clj-ktable
-     (.count kgroupedtable name)))
+     (.count ^KGroupedTable kgroupedtable
+             ^String name)))
 
   (reduce
     [_ adder-fn subtractor-fn {:keys [topic.metadata/name]}]
     (clj-ktable
-     (.reduce kgroupedtable
-              (reducer adder-fn)
-              (reducer subtractor-fn)
-              name)))
+     (.reduce ^KGroupedTable kgroupedtable
+              ^Reducer (reducer adder-fn)
+              ^Reducer (reducer subtractor-fn)
+              ^String name)))
 
   IKGroupedTable
   (kgroupedtable*
@@ -519,41 +523,49 @@
   (aggregate
     [_ initializer-fn aggregator-fn {:keys [topic.metadata/name kafka.serdes/value-serde]}]
     (clj-ktable
-     (.aggregate kgroupedstream
-                 (initializer initializer-fn)
-                 (aggregator aggregator-fn)
-                 value-serde
-                 name)))
+     (.aggregate ^KGroupedStream kgroupedstream
+                 ^Initializer (initializer initializer-fn)
+                 ^Aggregator (aggregator aggregator-fn)
+                 ^Serde value-serde
+                 ^String name)))
   (count
     [_ {:keys [topic.metadata/name]}]
     (clj-ktable
-     (.count kgroupedstream name)))
+     (.count ^KGroupedStream kgroupedstream
+             ^String name)))
 
   (reduce
     [_ reducer-fn {:keys [topic.metadata/name]}]
     (clj-ktable
-     (.reduce kgroupedstream (reducer reducer-fn) name)))
+     (.reduce ^KGroupedStream kgroupedstream
+              ^Reducer (reducer reducer-fn)
+              ^String name)))
 
   IKGroupedStream
   (aggregate-windowed
     [_ initializer-fn aggregator-fn windows {:keys [topic.metadata/name kafka.serdes/value-serde]}]
     (clj-ktable
-     (.aggregate kgroupedstream
-                 (initializer initializer-fn)
-                 (aggregator aggregator-fn)
-                 windows
-                 value-serde
-                 name)))
+     (.aggregate ^KGroupedStream kgroupedstream
+                 ^Initializer (initializer initializer-fn)
+                 ^Aggregator (aggregator aggregator-fn)
+                 ^Windows windows
+                 ^Serde value-serde
+                 ^String name)))
 
   (count-windowed
     [_ windows {:keys [topic.metadata/name]}]
     (clj-ktable
-     (.count kgroupedstream windows name)))
+     (.count ^KGroupedStream kgroupedstream
+             ^Windows windows
+             ^String name)))
 
   (reduce-windowed
     [_ reducer-fn windows {:keys [topic.metadata/name]}]
     (clj-ktable
-     (.reduce kgroupedstream (reducer reducer-fn) windows name)))
+     (.reduce ^KGroupedStream kgroupedstream
+              ^Reducer (reducer reducer-fn)
+              ^Windows windows
+              ^String name)))
 
   (kgroupedstream*
     [_]
