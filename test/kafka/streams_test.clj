@@ -472,16 +472,23 @@
         (is (= ["1:[1 nil]" "1:[2 nil]" "2:[1 nil]" "2:[2 nil]"] result)))))
 
   (testing "process!"
-    (let [processor-supplier-fn #(MockProcessorSupplier$MockProcessor. (MockProcessorSupplier.))
+    (let [external-log (atom [])
+          processor-fn (fn [ctx k v]
+                         (swap! external-log conj {:ctx ctx, :k k, :v v}))
           topic-a (mock/topic "topic-a")
           kstream (-> (mock/topology-builder)
                       (k/kstream topic-a))]
 
-      (k/process! kstream processor-supplier-fn [])
+      (k/process! kstream processor-fn [])
 
       (let [topology (mock/build kstream)]
 
         (mock/send topology topic-a 1 1)
+
+        (let [{:keys [ctx k v]} (first @external-log)]
+          (is (instance? org.apache.kafka.test.MockProcessorContext ctx))
+          (is (= k 1))
+          (is (= v 1)))
 
         (let [result (mock/collect topology)]
           (is (= ["1:1"] result))))))
