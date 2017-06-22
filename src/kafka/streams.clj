@@ -31,6 +31,11 @@
     [topology-builder topic-config store-name]
     "Create a KTable instance for the specified topic.")
 
+  (global-ktable
+    [topology-builder topic-config]
+    [topology-builder topic-config store-name]
+    "Create a GlobalKTable instance for the specified topic.")
+
   (source-topics
     [topology-builder]
     "Get the names of topics that are to be consumed by the source nodes created
@@ -204,6 +209,12 @@
     "Create a new KStream instance by applying a ValueTransformer to all values
     in this stream, one element at a time.")
 
+  (join-global
+    [kstream global-kstream kv-mapper joiner])
+
+  (left-join-global
+    [kstream global-kstream kv-mapper joiner])
+
   (kstream*
     [kstream]
     "Return the underlying KStream object."))
@@ -287,6 +298,11 @@ It is an intermediate representation of a KStream before an aggregation is appli
   (kgroupedstream*
     [kgroupedstream]
     "Returns the underlying KGroupedStream object."))
+
+(defprotocol IGlobalKTable
+  (global-ktable*
+    [globalktable]
+    "Returns the underlying GlobalKTable"))
 
 (defn kafka-streams
   "Makes a Kafka Streams object."

@@ -4,7 +4,7 @@
   (:require [kafka.streams :refer :all]
             [kafka.streams.configurable :refer [config IConfigurable]]))
 
-(declare configured-kstream configured-ktable configured-kgroupedtable configured-kgroupedstream)
+(declare configured-kstream configured-ktable configured-global-ktable configured-kgroupedtable configured-kgroupedstream)
 
 (deftype ConfiguredTopologyBuilder [config topology-builder]
   ITopologyBuilder
@@ -47,6 +47,18 @@
     (configured-ktable
      config
      (ktable topology-builder topic-config store-name)))
+
+  (global-ktable
+    [_ topic-config]
+    (configured-global-ktable
+      config
+      (global-ktable topology-builder topic-config)))
+
+  (global-ktable
+    [_ topic-config store-name]
+    (configured-global-ktable
+      config
+      (global-ktable topology-builder topic-config store-name)))
 
   (source-topics
     [_]
@@ -319,6 +331,18 @@
      config
      (transform-values kstream value-transformer-supplier-fn state-store-names)))
 
+  (left-join-global
+    [_ global-ktable kv-mapper joiner]
+    (configured-kstream
+      config
+      (left-join-global kstream global-ktable kv-mapper joiner)))
+
+  (join-global
+    [_ global-ktable kv-mapper joiner]
+    (configured-kstream
+      config
+      (join-global kstream global-ktable kv-mapper joiner)))
+
   (kstream* [_]
     (kstream* kstream))
 
@@ -543,3 +567,23 @@
   "Makes a ConfiguredKGroupedStream object."
   [config kgroupedstream]
   (ConfiguredKGroupedStream. config kgroupedstream))
+
+(deftype ConfiguredGlobalKTable [config global-ktable]
+  IGlobalKTable
+  (global-ktable*
+    [_]
+    (global-ktable* global-ktable))
+
+  IConfigurable
+  (config [_]
+    config)
+
+  (configure [_ key value]
+    (configured-global-ktable
+     (assoc config key value)
+     global-ktable)))
+
+(defn configured-global-ktable
+  "Makes a ConfiguredKTable object."
+  [config global-ktable]
+  (ConfiguredGlobalKTable. config global-ktable))
