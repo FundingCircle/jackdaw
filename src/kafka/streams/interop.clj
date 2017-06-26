@@ -9,13 +9,13 @@
    (org.apache.kafka.common.serialization Serde)
    (org.apache.kafka.streams KafkaStreams)
    (org.apache.kafka.streams.kstream KGroupedStream KGroupedTable KStream ValueJoiner
-                                     Initializer Reducer Aggregator
+                                     Initializer Reducer Aggregator KeyValueMapper GlobalKTable
                                      KStreamBuilder KTable Predicate Windows JoinWindows)
    (org.apache.kafka.streams.processor TopologyBuilder)))
 
 (set! *warn-on-reflection* true)
 
-(declare clj-kstream clj-ktable clj-kgroupedtable clj-kgroupedstream)
+(declare clj-kstream clj-ktable clj-kgroupedtable clj-kgroupedstream clj-global-ktable)
 
 (def ^:private kstream-memo
   "Returns a kstream for the topic, creating a new one if needed."
@@ -83,6 +83,13 @@
   (ktable
     [_ topic-config store-name]
     (ktable-memo topology-builder topic-config store-name))
+
+  (global-ktable [this {:keys [topic.metadata/name] :as topic-config}]
+    (global-ktable this topic-config name))
+
+  (global-ktable [_ {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]} store-name]
+    (clj-global-ktable
+      (.globalTable ^KStreamBuilder topology-builder key-serde value-serde name store-name)))
 
   (source-topics
     [_]
@@ -359,6 +366,22 @@
                        (value-transformer-supplier value-transformer-supplier-fn)
                        (into-array String state-store-names))))
 
+  (join-global
+    [_ global-kstream key-value-mapper-fn joiner-fn]
+    (clj-kstream
+      (.join kstream
+             ^GlobalKTable (global-ktable* global-kstream)
+             ^KeyValueMapper (select-key-value-mapper key-value-mapper-fn)
+             ^ValueJoiner (value-joiner joiner-fn))))
+
+  (left-join-global
+    [_ global-kstream key-value-mapper-fn joiner-fn]
+    (clj-kstream
+      (.leftJoin kstream
+                 ^GlobalKTable (global-ktable* global-kstream)
+                 ^KeyValueMapper (select-key-value-mapper key-value-mapper-fn)
+                 ^ValueJoiner (value-joiner joiner-fn))))
+
   (kstream* [_]
     kstream))
 
@@ -481,6 +504,17 @@
   "Makes a CljKTable object."
   [ktable]
   (CljKTable. ktable))
+
+(deftype CljGlobalKTable [^GlobalKTable global-ktable]
+  IGlobalKTable
+
+  (global-ktable* [_]
+    global-ktable))
+
+(defn clj-global-ktable
+  "Makes a CljKTable object."
+  [global-ktable]
+  (CljGlobalKTable. global-ktable))
 
 (deftype CljKGroupedTable [^KGroupedTable kgroupedtable]
   IKGroupedBase

@@ -922,6 +922,56 @@
       (let [result (mock/collect topology)]
         (is (= ["1:1" "1:2"] result))))))
 
+(deftest GlobalKTableTest
+  (testing "inner global join"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+
+          topology-builder (mock/topology-builder)
+
+          left (k/kstream topology-builder topic-a)
+          right (k/global-ktable topology-builder topic-b "asdf")
+
+          topology (-> left
+                       (k/join-global right
+                                      (fn [[k v]]
+                                        k)
+                                      +)
+                       (mock/build))]
+
+      (-> topology
+          (mock/send topic-b 1 1)
+          (mock/send topic-a 1 2)
+          (mock/send topic-a 2 3))
+
+      (let [result (mock/collect topology)]
+        (is (= ["1:3"] result)))))
+
+  (testing "left global join"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+
+          topology-builder (mock/topology-builder)
+
+          left (k/kstream topology-builder topic-a)
+          right (k/global-ktable topology-builder topic-b "asdf")
+
+          topology (-> left
+                       (k/left-join-global right
+                                           (fn [[k v]]
+                                             k)
+                                           (fn [a b]
+                                             (+ a (or b 0))))
+                       (mock/build))]
+
+      (-> topology
+          (mock/send topic-b 1 1)
+          (mock/send topic-a 1 2)
+          (mock/send topic-a 2 3))
+
+      (let [result (mock/collect topology)]
+        (is (= ["1:3" "2:3"] result))))))
+
 (deftest kafka-streams-test
   (is (instance? org.apache.kafka.streams.KafkaStreams
                  (k/kafka-streams (mock/topology-builder)
