@@ -1,17 +1,13 @@
-(ns kafka.client
+(ns jackdaw.client
   "Clojure wrapper to kafka consumers/producers"
-  (:require
-   [clojure.tools.logging :as log]
-   [clojurewerkz.propertied.properties :as p])
-  (:import
-   (clojure.lang Reflector)
-   (org.apache.kafka.clients.consumer KafkaConsumer Consumer)
-   (org.apache.kafka.clients.producer Callback
-                                      KafkaProducer
-                                      ProducerRecord)
-   (org.apache.kafka.common TopicPartition)
-   (org.apache.kafka.common.serialization Serde)
-   (org.apache.kafka.common.utils Utils)))
+  (:require [clojure.tools.logging :as log]
+            [clojurewerkz.propertied.properties :as p])
+  (:import clojure.lang.Reflector
+           [org.apache.kafka.clients.consumer Consumer KafkaConsumer]
+           [org.apache.kafka.clients.producer Callback KafkaProducer ProducerRecord]
+           org.apache.kafka.common.serialization.Serde
+           org.apache.kafka.common.TopicPartition
+           org.apache.kafka.common.utils.Utils))
 
 (def default-fuse-timeout-ms 30000)
 (def default-polling-interval-ms 1000)

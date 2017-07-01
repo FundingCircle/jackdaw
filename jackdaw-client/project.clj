@@ -1,5 +1,5 @@
-(defproject fundingcircle/jackdaw "0.1.0-SNAPSHOT"
-  :description "No frills Clojure wrapper around Apache Kafka APIs"
+(defproject fundingcircle/jackdaw-client "0.1.0-SNAPSHOT"
+  :description "Clojure wrapper for Apache Kafka Producer and Consumer APIs"
   :url "http://github.com/FundingCircle/jackdaw"
   :dependencies [[clojurewerkz/propertied "1.2.0"]
                  [org.apache.kafka/kafka-clients "0.10.2.1"
@@ -12,8 +12,6 @@
                                com.fasterxml.jackson.core/jackson-core]]
                  [org.clojure/clojure "1.8.0"]
                  [org.clojure/tools.logging "0.3.1"]]
-  :plugins [[lein-sub "0.3.0"]]
-  :sub ["jackdaw-client"]
   :repositories [["releases" {:url ~(str "https://fundingcircle.artifactoryonline.com"
                                          "/fundingcircle/libs-release-local")
                               :username [:gpg :env/artifactory_user]
