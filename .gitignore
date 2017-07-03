@@ -9,6 +9,9 @@
 /jackdaw-client/.lein-*
 /jackdaw-client/.nrepl-port
 /jackdaw-client/target
+/jackdaw-streams/.lein-*
+/jackdaw-streams/.nrepl-port
+/jackdaw-streams/target
 /target
 pom.xml
 pom.xml.asc
