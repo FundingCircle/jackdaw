@@ -6,23 +6,27 @@
                  [fundingcircle/jackdaw-streams "0.1.0-SNAPSHOT"]
                  [org.clojure/clojure "1.8.0"]]
   :plugins [[lein-codox "0.10.3"]
-            [lein-sub "0.3.0"]]
-  :sub ["jackdaw-client"
-        "jackdaw-serdes"
-        "jackdaw-streams"]
+            [lein-modules "0.3.11"]]
   :codox {:output-path "codox"
-          :source-uri "http://github.com/fundingcircle/jackdaw/blob/{version}/{filepath}#L{line}"
-          :source-paths ["jackdaw-client/src"
-                         "jackdaw-serdes/src"
-                         "jackdaw-streams/src"]}
+          :source-uri "http://github.com/fundingcircle/jackdaw/blob/{version}/{filepath}#L{line}"}
   :source-paths ["jackdaw-client/src"
                  "jackdaw-serdes/src"
                  "jackdaw-streams/src"]
-  :test-paths ["jackdaw-client/test"
-               "jackdaw-serdes/test"
-               "jackdaw-streams/test"]
-  :profiles {:dev {:dependencies [[org.apache.kafka/kafka-clients "0.10.2.1" :classifier "test"]
-                                  [org.apache.kafka/kafka-streams "0.10.2.1" :classifier "test"]
-                                  [org.clojure/test.check "0.9.0"]]}}
+  :profiles {:dev {:dependencies [[org.apache.kafka/kafka-clients "_" :classifier "test"]
+                                  [org.apache.kafka/kafka-streams "_" :classifier "test"]
+                                  [org.clojure/test.check "_"]]}
+             :provided {:dependencies [[org.clojure/clojure "_"]]}}
+  :modules {:inherited {:repositories {"confluent" {:url "http://packages.confluent.io/maven/"}}
+                        :url "https://github.com/FundingCircle/jackdaw"
+                        :license {:name "TODO"
+                                  :url "TODO"}}
+            :versions {io.confluent/kafka-avro-serializer "3.2.1"
+                       io.confluent/kafka-schema-registry-client "3.2.1"
+                       org.apache.kafka/kafka_2.11 "0.10.2.1"
+                       org.apache.kafka/kafka-clients "0.10.2.1"
+                       org.apache.kafka/kafka-streams "0.10.2.1"
+                       org.clojure/clojure "1.8.0"
+                       org.clojure/test.check "0.9.0"
+                       org.clojure/tools.logging "0.3.1"}}
   :test-selectors {:default (complement :integration)
                    :integration :integration})
