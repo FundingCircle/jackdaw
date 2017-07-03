@@ -3,6 +3,7 @@
             [jackdaw.client :as client])
   (:import [java.util.concurrent LinkedBlockingQueue TimeUnit]
            [org.apache.kafka.clients.consumer Consumer ConsumerRecord ConsumerRecords]
+           [org.apache.kafka.clients.producer Producer]
            org.apache.kafka.common.TopicPartition))
 
 (def producer-config
@@ -84,3 +85,16 @@
         (reset! live? false)
         (is (= [[1 1]
                 [2 2]] (doall log)))))))
+
+(deftest consumer-test
+(let [config {"bootstrap.servers" "localhost:9092"
+                "key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
+                "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"}]
+    (is (instance? Consumer (client/consumer config)))))
+
+(deftest producer-test
+  (let [config {"bootstrap.servers" "localhost:9092"
+                "key.serializer" "org.apache.kafka.common.serialization.StringSerializer"
+                "value.serializer" "org.apache.kafka.common.serialization.StringSerializer"}]
+    (is (instance? Producer (client/producer config)))))
+
