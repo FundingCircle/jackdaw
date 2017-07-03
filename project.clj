@@ -17,4 +17,12 @@
                          "jackdaw-streams/src"]}
   :source-paths ["jackdaw-client/src"
                  "jackdaw-serdes/src"
-                 "jackdaw-streams/src"])
+                 "jackdaw-streams/src"]
+  :test-paths ["jackdaw-client/test"
+               "jackdaw-serdes/test"
+               "jackdaw-streams/test"]
+  :profiles {:dev {:dependencies [[org.apache.kafka/kafka-clients "0.10.2.1" :classifier "test"]
+                                  [org.apache.kafka/kafka-streams "0.10.2.1" :classifier "test"]
+                                  [org.clojure/test.check "0.9.0"]]}}
+  :test-selectors {:default (complement :integration)
+                   :integration :integration})
