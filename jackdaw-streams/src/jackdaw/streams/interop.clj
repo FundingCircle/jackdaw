@@ -263,8 +263,8 @@
 
   (join-windowed
     [_ other-kstream value-joiner-fn windows
-     {key-serde :kafka.serdes/key-serde this-value-serde :kafka.serdes/value-serde}
-     {other-value-serde :kafka.serdes/value-serde}]
+     {key-serde :jackdaw.serdes/key-serde this-value-serde :jackdaw.serdes/value-serde}
+     {other-value-serde :jackdaw.serdes/value-serde}]
     (clj-kstream
      (.join kstream
             (kstream* other-kstream)
@@ -285,7 +285,7 @@
   (left-join-windowed
     [_ other-kstream value-joiner-fn windows
      {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}
-     {other-value-serde :kafka.serdes/value-serde}]
+     {other-value-serde :jackdaw.serdes/value-serde}]
     (clj-kstream
      (.leftJoin kstream
                 (kstream* other-kstream)
@@ -310,8 +310,8 @@
 
   (outer-join-windowed
     [_ other-kstream value-joiner-fn windows
-     {key-serde :kafka.serdes/key-serde value-serde :kafka.serdes/value-serde}
-     {other-value-serde :kafka.serdes/value-serde}]
+     {key-serde :jackdaw.serdes/key-serde value-serde :jackdaw.serdes/value-serde}
+     {other-value-serde :jackdaw.serdes/value-serde}]
     (clj-kstream
      (.outerJoin kstream
                  (kstream* other-kstream)

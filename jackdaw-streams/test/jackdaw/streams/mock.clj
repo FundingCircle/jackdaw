@@ -62,5 +62,5 @@
   "Helper to create a topic."
   [topic-name]
   {:topic.metadata/name topic-name
-   :kafka.serdes/key-serde (Serdes/Long)
-   :kafka.serdes/value-serde (Serdes/Long)})
+   :jackdaw.serdes/key-serde (Serdes/Long)
+   :jackdaw.serdes/value-serde (Serdes/Long)})

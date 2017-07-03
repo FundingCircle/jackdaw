@@ -18,8 +18,8 @@ please raise an issue.
 
 (defn demo-topic [topic-name]
   {:topic.metadata/name topic-name
-   :kafka.serdes/key-serde (serde/serde :kafka.serde/edn)
-   :kafka.serdes/value-serde (serde/serde :kafka.serde/edn)})
+   :jackdaw.serdes/key-serde (serde/serde :jackdaw.serde/edn)
+   :jackdaw.serdes/value-serde (serde/serde :jackdaw.serde/edn)})
 ```
 
 ### kstreams/ktables
