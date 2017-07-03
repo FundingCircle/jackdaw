@@ -230,7 +230,7 @@
           topology-builder (mock/topology-builder)
           kstream (k/kstream topology-builder topic-a)
           temp-file (java.io.File/createTempFile
-                     "kafka.stream+write-as-text-test"
+                     "jackdaw.stream+write-as-text-test"
                      "txt")]
       (k/write-as-text! kstream (.getPath temp-file))
       (let [topology (mock/build kstream)]
@@ -243,7 +243,7 @@
           topology-builder (mock/topology-builder)
           kstream (k/kstream topology-builder topic-a)
           temp-file (java.io.File/createTempFile
-                     "kafka.stream+write-as-text-test"
+                     "jackdaw.stream+write-as-text-test"
                      "txt")]
       (k/write-as-text! kstream (.getPath temp-file) topic-a)
       (let [topology (mock/build kstream)]
@@ -777,7 +777,7 @@
           topology-builder (mock/topology-builder)
           ktable (k/ktable topology-builder topic-a)
           temp-file (java.io.File/createTempFile
-                     "kafka.stream+write-as-text-test"
+                     "jackdaw.stream+write-as-text-test"
                      "txt")]
       (k/write-as-text! ktable (.getPath temp-file))
       (let [topology (mock/build (k/to-kstream ktable))]
@@ -790,7 +790,7 @@
           topology-builder (mock/topology-builder)
           ktable (k/ktable topology-builder topic-a)
           temp-file (java.io.File/createTempFile
-                     "kafka.stream+write-as-text-test"
+                     "jackdaw.stream+write-as-text-test"
                      "txt")]
       (k/write-as-text! ktable (.getPath temp-file) topic-a)
       (let [topology (mock/build (k/to-kstream ktable))]

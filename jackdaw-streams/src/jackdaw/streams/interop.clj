@@ -21,7 +21,7 @@
   "Returns a kstream for the topic, creating a new one if needed."
   (memoize
    (fn [topology-builder
-        {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
+        {:keys [topic.metadata/name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
      (clj-kstream
       (.stream ^KStreamBuilder topology-builder
                ^Serde key-serde
@@ -32,7 +32,7 @@
   "Returns a kstream for the topic, creating a new one if needed."
   (memoize
    (fn [topology-builder
-        {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}
+        {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}
         topic-pattern]
      (clj-kstream
       (.stream ^KStreamBuilder topology-builder
@@ -44,7 +44,7 @@
   "Returns a ktable for the topic, creating a new one if needed."
   (memoize
    (fn [topology-builder
-        {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}
+        {:keys [topic.metadata/name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}
         store-name]
      (clj-ktable
       (.table ^KStreamBuilder topology-builder key-serde value-serde name store-name)))))
@@ -87,7 +87,7 @@
   (global-ktable [this {:keys [topic.metadata/name] :as topic-config}]
     (global-ktable this topic-config name))
 
-  (global-ktable [_ {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]} store-name]
+  (global-ktable [_ {:keys [topic.metadata/name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]} store-name]
     (clj-global-ktable
       (.globalTable ^KStreamBuilder topology-builder key-serde value-serde name store-name)))
 
@@ -117,7 +117,7 @@
                 (value-joiner value-joiner-fn))))
 
   (left-join
-    [_ ktable value-joiner-fn {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
+    [_ ktable value-joiner-fn {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     (clj-kstream
      (.leftJoin kstream
                 (ktable* ktable)
@@ -146,7 +146,7 @@
      (.groupBy kstream (select-key-value-mapper key-value-mapper-fn))))
 
   (group-by
-    [_ key-value-mapper-fn {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
+    [_ key-value-mapper-fn {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     (clj-kgroupedstream
      (.groupBy kstream
                (select-key-value-mapper key-value-mapper-fn)
@@ -164,27 +164,27 @@
     nil)
 
   (print!
-    [_ {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
+    [_ {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     (.print kstream key-serde value-serde)
     nil)
 
   (through
-    [_ {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
+    [_ {:keys [topic.metadata/name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     (clj-kstream
      (.through kstream key-serde value-serde name)))
 
   (through
-    [_ partition-fn {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
+    [_ partition-fn {:keys [topic.metadata/name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     (clj-kstream
      (.through kstream key-serde value-serde (stream-partitioner partition-fn) name)))
 
   (to!
-    [_ {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
+    [_ {:keys [topic.metadata/name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     (.to kstream key-serde value-serde name)
     nil)
 
   (to!
-    [_ partition-fn {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
+    [_ partition-fn {:keys [topic.metadata/name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     (.to kstream key-serde value-serde (stream-partitioner partition-fn) name)
     nil)
 
@@ -193,7 +193,7 @@
     (.writeAsText kstream file-path))
 
   (write-as-text!
-    [_ file-path {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
+    [_ file-path {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     (.writeAsText kstream file-path key-serde value-serde))
 
   IKStream
@@ -249,7 +249,7 @@
      (.groupByKey kstream)))
 
   (group-by-key
-    [_ {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
+    [_ {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     (clj-kgroupedstream
      (.groupByKey ^KStream kstream key-serde value-serde)))
 
@@ -284,7 +284,7 @@
 
   (left-join-windowed
     [_ other-kstream value-joiner-fn windows
-     {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}
+     {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}
      {other-value-serde :kafka.serdes/value-serde}]
     (clj-kstream
      (.leftJoin kstream
@@ -425,29 +425,29 @@
     nil)
 
   (print!
-    [_ {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
+    [_ {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     (.print ktable key-serde value-serde)
     nil)
 
   (through
-    [_ {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
+    [_ {:keys [topic.metadata/name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     ;; todo add store name
     (clj-ktable
      (.through ktable key-serde value-serde name name)))
 
   (through
-    [_ partition-fn {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
+    [_ partition-fn {:keys [topic.metadata/name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     ;; todo add store name
     (clj-ktable
      (.through ktable key-serde value-serde (stream-partitioner partition-fn) name name)))
 
   (to!
-    [_ {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
+    [_ {:keys [topic.metadata/name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     (.to ktable key-serde value-serde name)
     nil)
 
   (to!
-    [_ partition-fn {:keys [topic.metadata/name kafka.serdes/key-serde kafka.serdes/value-serde]}]
+    [_ partition-fn {:keys [topic.metadata/name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     (.to ktable key-serde value-serde (stream-partitioner partition-fn) name)
     nil)
 
@@ -456,7 +456,7 @@
     (.writeAsText ktable file-path))
 
   (write-as-text!
-    [_ file-path {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
+    [_ file-path {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     (.writeAsText ktable file-path key-serde value-serde))
 
   IKTable
@@ -466,7 +466,7 @@
      (.groupBy ktable (key-value-mapper key-value-mapper-fn))))
 
   (group-by
-    [_ key-value-mapper-fn {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
+    [_ key-value-mapper-fn {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     (clj-kgroupedtable
      (.groupBy ktable
                (key-value-mapper key-value-mapper-fn)
@@ -520,7 +520,7 @@
   IKGroupedBase
   (aggregate
     [_ initializer-fn adder-fn subtractor-fn
-     {:keys [topic.metadata/name kafka.serdes/value-serde]}]
+     {:keys [topic.metadata/name jackdaw.serdes/value-serde]}]
     (clj-ktable
      (.aggregate kgroupedtable
                  (initializer initializer-fn)
@@ -555,7 +555,7 @@
 (deftype CljKGroupedStream [^KGroupedStream kgroupedstream]
   IKGroupedBase
   (aggregate
-    [_ initializer-fn aggregator-fn {:keys [topic.metadata/name kafka.serdes/value-serde]}]
+    [_ initializer-fn aggregator-fn {:keys [topic.metadata/name jackdaw.serdes/value-serde]}]
     (clj-ktable
      (.aggregate ^KGroupedStream kgroupedstream
                  ^Initializer (initializer initializer-fn)
@@ -577,7 +577,7 @@
 
   IKGroupedStream
   (aggregate-windowed
-    [_ initializer-fn aggregator-fn windows {:keys [topic.metadata/name kafka.serdes/value-serde]}]
+    [_ initializer-fn aggregator-fn windows {:keys [topic.metadata/name jackdaw.serdes/value-serde]}]
     (clj-ktable
      (.aggregate ^KGroupedStream kgroupedstream
                  ^Initializer (initializer initializer-fn)
