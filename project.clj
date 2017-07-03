@@ -13,7 +13,7 @@
                  [org.clojure/clojure "1.8.0"]
                  [org.clojure/tools.logging "0.3.1"]]
   :plugins [[lein-sub "0.3.0"]]
-  :sub ["jackdaw-client"]
+  :sub ["jackdaw-client" "jackdaw-streams"]
   :repositories [["releases" {:url ~(str "https://fundingcircle.artifactoryonline.com"
                                          "/fundingcircle/libs-release-local")
                               :username [:gpg :env/artifactory_user]
