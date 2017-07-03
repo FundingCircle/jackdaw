@@ -10,11 +10,11 @@ please raise an issue.
 
 
 ```clojure
-(ns kafka-streams-demo
+(ns jackdaw-streams-demo
   (:require
-    [kafka.streams :as k]
-    [kafka.streams.interop :as interop]
-    [kafka.serdes :as serde]))
+    [jackdaw.streams :as k]
+    [jackdaw.streams.interop :as interop]
+    [jackdaw.serdes :as serde]))
 
 (defn demo-topic [topic-name]
   {:topic.metadata/name topic-name

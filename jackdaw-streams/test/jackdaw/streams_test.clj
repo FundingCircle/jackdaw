@@ -1,11 +1,11 @@
-(ns kafka.streams-test
+(ns jackdaw.streams-test
   "Tests of the kafka streams wrapper."
   (:require [clojure.string :as string]
             [clojure.test :refer :all]
-            [kafka.streams :as k :refer [IKStream IKTable ITopologyBuilder]]
-            [kafka.streams.interop :as interop]
-            [kafka.streams.mock :as mock]
-            [kafka.streams.lambdas :as lambdas :refer [key-value]])
+            [jackdaw.streams :as k :refer [IKStream IKTable ITopologyBuilder]]
+            [jackdaw.streams.interop :as interop]
+            [jackdaw.streams.mock :as mock]
+            [jackdaw.streams.lambdas :as lambdas :refer [key-value]])
   (:import [org.apache.kafka.streams.kstream JoinWindows TimeWindows Transformer ValueTransformer]
            [org.apache.kafka.test MockProcessorSupplier MockProcessorSupplier$MockProcessor]))
 

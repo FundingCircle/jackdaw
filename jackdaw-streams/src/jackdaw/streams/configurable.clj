@@ -1,4 +1,4 @@
-(ns kafka.streams.configurable
+(ns jackdaw.streams.configurable
   "Protocol for a configurable thing.")
 
 (defprotocol IConfigurable

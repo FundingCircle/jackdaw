@@ -1,9 +1,9 @@
-(ns kafka.streams.interop
+(ns jackdaw.streams.interop
   "Clojure wrapper to kafka streams."
   (:refer-clojure :exclude [count map reduce group-by merge filter])
   (:require [clojure.string :as str]
-            [kafka.streams :refer :all]
-            [kafka.streams.lambdas :refer :all])
+            [jackdaw.streams :refer :all]
+            [jackdaw.streams.lambdas :refer :all])
   (:import
    (java.util.regex Pattern)
    (org.apache.kafka.common.serialization Serde)

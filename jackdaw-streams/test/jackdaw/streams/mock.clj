@@ -1,10 +1,10 @@
-(ns kafka.streams.mock
+(ns jackdaw.streams.mock
   "Mocks for testing kafka streams."
   (:refer-clojure :exclude [send])
-  (:require [kafka.streams :as k]
-            [kafka.streams.configurable :refer [config configure]]
-            [kafka.streams.configured :as configured]
-            [kafka.streams.interop :as interop])
+  (:require [jackdaw.streams :as k]
+            [jackdaw.streams.configurable :refer [config configure]]
+            [jackdaw.streams.configured :as configured]
+            [jackdaw.streams.interop :as interop])
   (:import [org.apache.kafka.test KStreamTestDriver MockProcessorSupplier]
            java.nio.file.Files
            java.nio.file.attribute.FileAttribute
