@@ -15,14 +15,4 @@
   :plugins [[lein-sub "0.3.0"]]
   :sub ["jackdaw-client"
         "jackdaw-serdes"
-        "jackdaw-streams"]
-  :repositories [["releases" {:url ~(str "https://fundingcircle.artifactoryonline.com"
-                                         "/fundingcircle/libs-release-local")
-                              :username [:gpg :env/artifactory_user]
-                              :password [:gpg :env/artifactory_password]
-                              :sign-releases false}]
-                 ["snapshots" {:url ~(str "https://fundingcircle.artifactoryonline.com"
-                                          "/fundingcircle/libs-snapshot-local")
-                               :username [:gpg :env/artifactory_user]
-                               :password [:gpg :env/artifactory_password]
-                               :sign-releases false}]])
+        "jackdaw-streams"])

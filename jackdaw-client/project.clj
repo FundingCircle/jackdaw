@@ -11,14 +11,4 @@
                                com.fasterxml.jackson.core/jackson-annotations
                                com.fasterxml.jackson.core/jackson-core]]
                  [org.clojure/clojure "1.8.0"]
-                 [org.clojure/tools.logging "0.3.1"]]
-  :repositories [["releases" {:url ~(str "https://fundingcircle.artifactoryonline.com"
-                                         "/fundingcircle/libs-release-local")
-                              :username [:gpg :env/artifactory_user]
-                              :password [:gpg :env/artifactory_password]
-                              :sign-releases false}]
-                 ["snapshots" {:url ~(str "https://fundingcircle.artifactoryonline.com"
-                                          "/fundingcircle/libs-snapshot-local")
-                               :username [:gpg :env/artifactory_user]
-                               :password [:gpg :env/artifactory_password]
-                               :sign-releases false}]])
+                 [org.clojure/tools.logging "0.3.1"]])
