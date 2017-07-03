@@ -1,0 +1,27 @@
+{
+  "type" : "record",
+  "name" : "PiiAddress",
+  "namespace" : "com.fundingcircle",
+  "fields" : [ {
+    "name" : "customer_id",
+    "type" : {
+      "type" : "string",
+      "logicalType": "kafka.serdes.avro.UUID"},
+    "doc" : "The unique id of the customer"
+  }, {
+    "name" : "address",
+    "type" : {
+      "type" : "record",
+      "name" : "PiiEncryptedField",
+      "fields" : [ {
+        "name" : "value",
+        "type" : "string"
+      }, {
+        "name" : "key_path",
+        "type" : "string"
+      } ]
+    },
+    "doc" : "A string encrypted by Vault"
+  } ],
+  "public_name" : "pii_address"
+}
