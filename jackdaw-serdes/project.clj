@@ -1,4 +1,4 @@
-(defproject fundingcircle/jackdaw.serdes "0.1.0-SNAPSHOT"
+(defproject fundingcircle/jackdaw-serdes "0.1.0-SNAPSHOT"
   :description "Serializers/deserializers for Kafka"
   :url "https://github.com/FundingCircle/jackdaw"
   :license {:name "Eclipse Public License"
