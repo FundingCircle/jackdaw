@@ -1,10 +1,10 @@
-(ns kafka.serdes.edn-test
+(ns jackdaw.serdes.edn-test
   (:require [clojure.test :refer :all]
             [clojure.test.check
              [clojure-test :as ct :refer [defspec]]
              [generators :as gen]
              [properties :as prop]]
-            [kafka.serdes.edn :refer :all]
+            [jackdaw.serdes.edn :refer :all]
             [taoensso.nippy :as nippy]))
 
 (deftest edn-roundtrip-test

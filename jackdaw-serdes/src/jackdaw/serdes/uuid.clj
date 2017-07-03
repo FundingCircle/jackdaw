@@ -1,4 +1,4 @@
-(ns kafka.serdes.uuid
+(ns jackdaw.serdes.uuid
   "Implements UUID serializer, deserializer, and SerDe."
   (:require [clj-uuid :as uuid])
   (:import java.nio.ByteBuffer

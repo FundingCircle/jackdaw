@@ -1,9 +1,9 @@
-(ns kafka.serdes.uuid-test
+(ns jackdaw.serdes.uuid-test
   (:require [clojure.test :refer :all]
             [clojure.test.check.clojure-test :as ct :refer [defspec]]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
-            [kafka.serdes.uuid :refer :all]))
+            [jackdaw.serdes.uuid :refer :all]))
 
 (def uuid-bytes-roundtrip-property
   "A UUID should be the same after serialization and deserialization."

@@ -1,4 +1,4 @@
-(ns kafka.serdes.registry
+(ns jackdaw.serdes.registry
   (:require
    [environ.core :as env])
   (:import

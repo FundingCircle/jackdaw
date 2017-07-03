@@ -1,8 +1,8 @@
-(ns kafka.serdes.avro
+(ns jackdaw.serdes.avro
   (:require [clj-uuid :as uuid]
             [clojure.data.json :as json]
-            [kafka.serdes.avro-schema :as avro-schema]
-            [kafka.serdes.registry :as registry]
+            [jackdaw.serdes.avro-schema :as avro-schema]
+            [jackdaw.serdes.registry :as registry]
             [environ.core :as env])
   (:import [org.apache.avro AvroRuntimeException]
            [io.confluent.kafka.serializers KafkaAvroDeserializer KafkaAvroSerializer]

@@ -1,4 +1,4 @@
-(ns kafka.serdes.avro-schema
+(ns jackdaw.serdes.avro-schema
   (:require [clojure.data.json :as json])
   (:import [org.apache.avro Schema Schema$Parser Schema$Field Schema$Type]
            [org.apache.avro.generic GenericData GenericEnumSymbol GenericData$Record GenericRecord GenericData$Array GenericData$EnumSymbol]
@@ -27,9 +27,9 @@
 
 (defn uuid-schema?
   "Return true if a `Schema` object has a \"logicalType\" property of
-  \"kafka.serdes.avro.UUID\"."
+  \"jackdaw.serdes.avro.UUID\"."
   [s]
-  (= (.getProp s "logicalType") "kafka.serdes.avro.UUID"))
+  (= (.getProp s "logicalType") "jackdaw.serdes.avro.UUID"))
 
 ;; Parser
 

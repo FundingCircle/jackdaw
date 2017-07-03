@@ -1,4 +1,4 @@
-(ns kafka.serdes.json
+(ns jackdaw.serdes.json
   "Implements JSON serializer, deserializer, and SerDe."
   (:require [clojure.data.json :as json]
             [clojure.java.io :as io])

@@ -1,4 +1,4 @@
-(ns kafka.serdes.edn
+(ns jackdaw.serdes.edn
   (:require [clojure.edn :as edn]
             [taoensso.nippy :as nippy])
   (:import

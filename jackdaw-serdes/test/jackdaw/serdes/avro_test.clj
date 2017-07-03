@@ -1,10 +1,10 @@
-(ns kafka.serdes.avro-test
+(ns jackdaw.serdes.avro-test
   "Tests for Avro serialization/deserialization functionality."
   (:require [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.test :refer :all]
-            [kafka.serdes.avro :as avro]
-            [kafka.serdes.avro-schema :as avro-schema])
+            [jackdaw.serdes.avro :as avro]
+            [jackdaw.serdes.avro-schema :as avro-schema])
   (:import
    (io.confluent.kafka.schemaregistry.client MockSchemaRegistryClient)
    (clojure.lang ExceptionInfo)))

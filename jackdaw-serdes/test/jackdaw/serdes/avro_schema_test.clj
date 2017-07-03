@@ -1,12 +1,12 @@
-(ns kafka.serdes.avro-schema-test
+(ns jackdaw.serdes.avro-schema-test
   (:require [clojure.data.json :as json]
             [clojure.edn :as edn]
             [clojure.java.io :as io]
             [clojure.test :refer :all]
             [environ.core :as env]
-            [kafka.serdes.avro :as avro]
-            [kafka.serdes.avro-schema :refer :all]
-            [kafka.serdes.registry :as registry]
+            [jackdaw.serdes.avro :as avro]
+            [jackdaw.serdes.avro-schema :refer :all]
+            [jackdaw.serdes.registry :as registry]
             [clj-uuid :as uuid])
   (:import
     (io.confluent.kafka.schemaregistry.client CachedSchemaRegistryClient MockSchemaRegistryClient)
@@ -87,7 +87,7 @@
 
     (let [parser (Schema$Parser.)
           avro-edn {:type "string" :name "id" :namespace "com.fundingcircle"
-                    :logicalType "kafka.serdes.avro.UUID"}
+                    :logicalType "jackdaw.serdes.avro.UUID"}
           avro-schema (.parse parser ^String (json/write-str avro-edn))
           payload (uuid/v4)]
       (is (= (str payload) (marshall avro-schema payload)))))
@@ -97,7 +97,7 @@
     (let [parser (Schema$Parser.)
           avro-edn {:type "record" :name "recordStringLogicalTypeTest" :namespace "com.fundingcircle"
                     :fields [{:name "id" :namespace "com.fundingcircle"
-                              :type {:type "string" :logicalType "kafka.serdes.avro.UUID"}}]}
+                              :type {:type "string" :logicalType "jackdaw.serdes.avro.UUID"}}]}
           avro-schema (.parse parser ^String (json/write-str avro-edn))
           id (uuid/v4)
           expected (GenericData$Record. avro-schema)]
@@ -185,7 +185,7 @@
 
     (let [parser (Schema$Parser.)
           avro-edn {:type "record", :name "stringtest" :namespace "com.fundingcircle"
-                    :fields [{:name "id" :type "string" :logicalType "kafka.serdes.avro.UUID"}]}
+                    :fields [{:name "id" :type "string" :logicalType "jackdaw.serdes.avro.UUID"}]}
           avro-schema (.parse parser ^String (json/write-str avro-edn))
           generic-record (GenericData$Record. avro-schema)
           id (uuid/v4)]

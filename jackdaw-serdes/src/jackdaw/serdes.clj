@@ -1,8 +1,8 @@
-(ns kafka.serdes
+(ns jackdaw.serdes
   "Some useful serdes."
   (:refer-clojure :exclude [resolve])
   (:require [environ.core :refer [env]]
-            [kafka.serdes
+            [jackdaw.serdes
              [avro :as avro]
              [edn :as edn]
              [json :as json]
