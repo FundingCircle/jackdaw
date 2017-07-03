@@ -19,8 +19,8 @@
              :provided {:dependencies [[org.clojure/clojure "_"]]}}
   :modules {:inherited {:repositories {"confluent" {:url "http://packages.confluent.io/maven/"}}
                         :url "https://github.com/FundingCircle/jackdaw"
-                        :license {:name "TODO"
-                                  :url "TODO"}}
+                        :license {:name "BSD 3-clause"
+                                  :url "http://opensource.org/licenses/BSD-3-Clause"}}
             :versions {io.confluent/kafka-avro-serializer "3.2.1"
                        io.confluent/kafka-schema-registry-client "3.2.1"
                        org.apache.kafka/kafka_2.11 "0.10.2.1"
