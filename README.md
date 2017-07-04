@@ -33,10 +33,6 @@ feedback
 to [`#jackdaw`](https://fundingcircle.slack.com/messages/jackdaw/)
 (or [open an issue](https://github.com/fundingcircle/jackdaw/issues)).
 
-## Known Issues
-
-See the [wiki](https://github.com/FundingCircle/kafka.test/wiki/Known-issues).
-
 ## License
 
 Copyright © 2017 Funding Circle
