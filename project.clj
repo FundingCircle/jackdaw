@@ -1,6 +1,8 @@
 (defproject fundingcircle/jackdaw "0.1.0-SNAPSHOT"
   :description "No frills Clojure wrapper around Apache Kafka APIs"
   :url "http://github.com/FundingCircle/jackdaw"
+  :license {:name "3-Clause BSD License",
+            :url "https://opensource.org/licenses/BSD-3-Clause"}
   :dependencies [[fundingcircle/jackdaw-admin "0.1.0-SNAPSHOT"]
                  [fundingcircle/jackdaw-client "0.1.0-SNAPSHOT"]
                  [fundingcircle/jackdaw-serdes "0.1.0-SNAPSHOT"]
