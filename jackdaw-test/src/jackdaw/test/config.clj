@@ -1,9 +1,6 @@
 (ns jackdaw.test.config
-  (:require
-   [clojure.string :as str]
-   [environ.core :as env]
-   [ragtime.jdbc :as jdbc]
-   [ragtime.repl :as repl]))
+  (:require [clojure.string :as str]
+            [environ.core :as env]))
 
 (defn host-port [host-str]
   (try
@@ -38,21 +35,3 @@
              "listeners" (str "PLAINTEXT://localhost:" port)
              "advertised.listeners" (str "PLAINTEXT://localhost:" port)
              "log.dirs" (str log-dirs "-" n)))))
-
-(def db-conf
-  {:dbtype "postgresql"
-   :host (:db-host env/env)
-   :user (:db-user env/env)
-   :password (:db-password env/env)
-   :dbname (:db-name env/env)
-   :port (:db-port env/env)})
-
-(def ragtime-database-conf
-    {:datastore
-     (jdbc/sql-database
-       db-conf)
-   :migrations (jdbc/load-resources "migrations")})
-
-(defn migrate [] (repl/migrate ragtime-database-conf))
-
-(defn rollback [] (repl/rollback ragtime-database-conf))
