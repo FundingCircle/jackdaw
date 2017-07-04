@@ -1,8 +1,8 @@
-(ns kafka.test.zk
+(ns jackdaw.test.zk
   (:require
    [clojure.java.io :as io]
    [clojure.string :as str]
-   [kafka.test.fs :as fs])
+   [jackdaw.test.fs :as fs])
   (:import
    (java.net InetSocketAddress)
    (kafka.utils ZkUtils)

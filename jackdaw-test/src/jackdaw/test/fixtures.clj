@@ -1,13 +1,13 @@
-(ns kafka.test.fixtures
+(ns jackdaw.test.fixtures
   "Test fixtures for kafka based apps"
   (:require [clojure.java.io :as io]
             [clojure.tools.logging :as log]
             [clojurewerkz.propertied.properties :as p]
-            [kafka.test.config :as config]
-            [kafka.test.kafka :as broker]
-            [kafka.test.kc :as kc]
-            [kafka.test.fs :as fs]
-            [kafka.test.zk :as zk])
+            [jackdaw.test.config :as config]
+            [jackdaw.test.kafka :as broker]
+            [jackdaw.test.kc :as kc]
+            [jackdaw.test.fs :as fs]
+            [jackdaw.test.zk :as zk])
   (:import [io.confluent.kafka.schemaregistry.rest SchemaRegistryConfig SchemaRegistryRestApplication]))
 
 ;; services

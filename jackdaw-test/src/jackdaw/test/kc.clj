@@ -1,4 +1,4 @@
-(ns kafka.test.kc
+(ns jackdaw.test.kc
   (:import [org.apache.kafka.common.utils SystemTime]
            [org.apache.kafka.connect.runtime Connect ConnectorFactory Herder Worker]
            [org.apache.kafka.connect.runtime.rest RestServer]

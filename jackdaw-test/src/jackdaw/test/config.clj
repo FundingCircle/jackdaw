@@ -1,4 +1,4 @@
-(ns kafka.test.config
+(ns jackdaw.test.config
   (:require
    [clojure.string :as str]
    [environ.core :as env]

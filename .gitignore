@@ -7,12 +7,10 @@
 /checkouts
 /classes
 /codox
-/jackdaw-client/.lein-*
-/jackdaw-client/.nrepl-port
-/jackdaw-client/target
-/jackdaw-streams/.lein-*
-/jackdaw-streams/.nrepl-port
-/jackdaw-streams/target
+/jackdaw-[a-z]*/.lein-*
+/jackdaw-[a-z]*/.nrepl-port
+/jackdaw-[a-z]*/checkouts
+/jackdaw-[a-z]*/target
 /target
 pom.xml
 pom.xml.asc

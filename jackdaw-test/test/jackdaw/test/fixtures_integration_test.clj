@@ -1,4 +1,4 @@
-(ns kafka.test.fixtures-integration-test
+(ns jackdaw.test.fixtures-integration-test
   (:require
    [clj-http.client :as http]
    [clj-time.core :as t]
@@ -7,12 +7,11 @@
    [clojure.java.jdbc :as jdbc]
    [clojure.test :refer :all]
    [environ.core :as env]
-   [kafka.client :as client]
-   [kafka.zk :as zk]
-   [kafka.test.config :as config]
-   [kafka.test.fs :as fs]
-   [kafka.test.fixtures :as fix]
-   [kafka.test.test-config :as test-config])
+   [jackdaw.client :as client]
+   [jackdaw.test.config :as config]
+   [jackdaw.test.fs :as fs]
+   [jackdaw.test.fixtures :as fix]
+   [jackdaw.test.test-config :as test-config])
   (:import
    (java.util UUID)))
 
@@ -58,7 +57,7 @@
                             first)]
           (is (= ["1" "bar"] [key val])))))))
 
-(deftest ^:integration kafka-connect-source-connector-test
+#_(deftest ^:integration kafka-connect-source-connector-test
   (let [fix (join-fixtures
               [(fix/kafka-connect test-config/kafka-connect-worker-config )
               (fn [f] (jdbc/execute! config/db-conf ["TRUNCATE kafka_connect_source_data"]) (f))])]

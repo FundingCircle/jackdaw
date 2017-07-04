@@ -1,6 +1,6 @@
-(ns kafka.test.fs-test
+(ns jackdaw.test.fs-test
   (:require
-   [kafka.test.fs :as fs]
+   [jackdaw.test.fs :as fs]
    [clojure.java.io :as io]
    [clojure.test :refer :all]))
 

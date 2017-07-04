@@ -4,6 +4,7 @@
   :dependencies [[fundingcircle/jackdaw-client "0.1.0-SNAPSHOT"]
                  [fundingcircle/jackdaw-serdes "0.1.0-SNAPSHOT"]
                  [fundingcircle/jackdaw-streams "0.1.0-SNAPSHOT"]
+                 [fundingcircle/jackdaw-test "0.1.0-SNAPSHOP"]
                  [org.clojure/clojure "1.8.0"]]
   :plugins [[lein-codox "0.10.3"]
             [lein-modules "0.3.11"]]

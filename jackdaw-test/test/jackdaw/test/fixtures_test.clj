@@ -1,15 +1,14 @@
-(ns kafka.test.fixtures-test
+(ns jackdaw.test.fixtures-test
   (:require
    [clj-http.client :as http]
    [clojure.data.json :as json]
    [clojure.string :as str]
-   [kafka.admin :as admin]
-   [kafka.client :as client]
-   [kafka.zk :as zk]
-   [kafka.test.fs :as fs]
-   [kafka.test.config :as config]
-   [kafka.test.fixtures :as fix]
-   [kafka.test.test-config :as test-config]
+   [jackdaw.client :as client]
+   [jackdaw.test.zk :as zk]
+   [jackdaw.test.fs :as fs]
+   [jackdaw.test.config :as config]
+   [jackdaw.test.fixtures :as fix]
+   [jackdaw.test.test-config :as test-config]
    [clojure.test :refer :all])
   (:import
    (org.apache.kafka.common.serialization Serdes)))

@@ -1,4 +1,4 @@
-(ns kafka.test.fs
+(ns jackdaw.test.fs
   (:require
    [clojure.java.io :as io]))
 

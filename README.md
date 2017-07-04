@@ -8,6 +8,8 @@ streaming platform.
 - jackdaw-client - client library for Apache Kafka Producer and
   Consumer APIs
 - jackdaw-serdes - TODO: add description
+- jackdaw-test - test fixtures for Apache Kafka, Zookeeper, and
+  Confluent Schema Registry
 
 ## Installation
 

@@ -1,10 +1,10 @@
-(ns kafka.test.test-config
+(ns jackdaw.test.test-config
   (:require
    [clojure.test :refer :all]
    [environ.core :refer [env]]
-   [kafka.test.config :as config]
-   [kafka.test.fs :as fs]
-   [kafka.test.fixtures :as fix]))
+   [jackdaw.test.config :as config]
+   [jackdaw.test.fs :as fs]
+   [jackdaw.test.fixtures :as fix]))
 
 (def zk-connect (env :zookeeper-connect))
 

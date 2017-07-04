@@ -1,8 +1,8 @@
-(ns kafka.test.kafka
+(ns jackdaw.test.kafka
   (:require
    [clojure.java.io :as io]
    [clojurewerkz.propertied.properties :as p]
-   [kafka.test.fs :as fs])
+   [jackdaw.test.fs :as fs])
   (:import
    (kafka.server KafkaConfig
                  KafkaServerStartable)))
