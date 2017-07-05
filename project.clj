@@ -1,7 +1,8 @@
 (defproject fundingcircle/jackdaw "0.1.0-SNAPSHOT"
   :description "No frills Clojure wrapper around Apache Kafka APIs"
   :url "http://github.com/FundingCircle/jackdaw"
-  :dependencies [[fundingcircle/jackdaw-client "0.1.0-SNAPSHOT"]
+  :dependencies [[fundingcircle/jackdaw-admin "0.1.0-SNAPSHOT"]
+                 [fundingcircle/jackdaw-client "0.1.0-SNAPSHOT"]
                  [fundingcircle/jackdaw-serdes "0.1.0-SNAPSHOT"]
                  [fundingcircle/jackdaw-streams "0.1.0-SNAPSHOT"]
                  [fundingcircle/jackdaw-test "0.1.0-SNAPSHOP"]
