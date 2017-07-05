@@ -2,7 +2,7 @@
   "Tests of the kafka streams wrapper."
   (:require [clojure.string :as string]
             [clojure.test :refer :all]
-            [jackdaw.streams :as k :refer [IKStream IKTable ITopologyBuilder]]
+            [jackdaw.streams.protocols :as k :refer [IKStream IKTable ITopologyBuilder]]
             [jackdaw.streams.interop :as interop]
             [jackdaw.streams.mock :as mock]
             [jackdaw.streams.lambdas :as lambdas :refer [key-value]])

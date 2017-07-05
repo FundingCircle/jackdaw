@@ -1,7 +1,7 @@
 (ns jackdaw.streams.configured
   "Clojure wrapper to kafka streams."
   (:refer-clojure :exclude [count map reduce group-by merge filter])
-  (:require [jackdaw.streams :refer :all]
+  (:require [jackdaw.streams.protocols :refer :all]
             [jackdaw.streams.configurable :refer [config IConfigurable]]))
 
 (declare configured-kstream configured-ktable configured-global-ktable configured-kgroupedtable configured-kgroupedstream)

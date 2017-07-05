@@ -1,7 +1,7 @@
 (ns jackdaw.streams.mock
   "Mocks for testing kafka streams."
   (:refer-clojure :exclude [send])
-  (:require [jackdaw.streams :as k]
+  (:require [jackdaw.streams.protocols :as k]
             [jackdaw.streams.configurable :refer [config configure]]
             [jackdaw.streams.configured :as configured]
             [jackdaw.streams.interop :as interop])
