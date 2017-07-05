@@ -37,4 +37,4 @@ to [`#jackdaw`](https://fundingcircle.slack.com/messages/jackdaw/)
 
 Copyright © 2017 Funding Circle
 
-Distributed under the MIT license.
+Distributed under the BSD 3-Clause License.
