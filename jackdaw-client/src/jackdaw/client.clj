@@ -1,56 +1,48 @@
 (ns jackdaw.client
   "Clojure wrapper to kafka consumers/producers"
-  (:require [clojure.tools.logging :as log])
-  (:import clojure.lang.Reflector
-           [org.apache.kafka.clients.consumer Consumer KafkaConsumer]
-           [org.apache.kafka.clients.producer Callback KafkaProducer ProducerRecord]
+  (:import [org.apache.kafka.clients.consumer Consumer ConsumerRecord KafkaConsumer]
+           [org.apache.kafka.clients.producer Callback KafkaProducer ProducerRecord RecordMetadata]
            org.apache.kafka.common.serialization.Serde
-           org.apache.kafka.common.TopicPartition
-           org.apache.kafka.common.utils.Utils))
-
-(def default-fuse-timeout-ms 30000)
-(def default-polling-interval-ms 1000)
+           org.apache.kafka.common.TopicPartition))
 
 (set! *warn-on-reflection* true)
 
-;; https://github.com/apache/kafka/blob/41e676d29587042994a72baa5000a8861a075c8c/clients/src/main/java/org/apache/kafka/clients/producer/internals/DefaultPartitioner.java#L67
-;; return Utils.toPositive(Utils.murmur2(keyBytes)) % numPartitions;
-(defn ^Integer default-partition*
-  "Mimics the kafka default partitioner"
-  [^bytes key-bytes ^Integer num-partitions]
-  {:pre [(some? key-bytes) (pos? num-partitions)]}
-  (-> key-bytes Utils/murmur2 Utils/toPositive (mod num-partitions) int))
-
-(defn default-partition
-  "Mimics the kafka default partitioner, given a message key"
-  [{:keys [kafka.serdes/key-serde topic.metadata/name topic.metadata/partitions] :as topic-config}
-   key]
-  (let [key-bytes (.serialize (.serializer ^Serde key-serde) name key)]
-    (default-partition* key-bytes partitions)))
-
 (defn producer-record
   "Creates a kafka ProducerRecord for use with `send!`."
-  ([{:keys [topic.metadata/name]} value] (ProducerRecord. name value))
-  ([{:keys [topic.metadata/name]} key value] (ProducerRecord. name key value))
-  ([{:keys [topic.metadata/name]} partition key value] (ProducerRecord. name partition key value))
-  ([{:keys [topic.metadata/name]} partition timestamp key value] (ProducerRecord. name partition timestamp key value)))
+  ([{:keys [kafka.topic/name]} value] (ProducerRecord. name value))
+  ([{:keys [kafka.topic/name]} key value] (ProducerRecord. name key value))
+  ([{:keys [kafka.topic/name]} partition key value] (ProducerRecord. name partition key value))
+  ([{:keys [kafka.topic/name]} partition timestamp key value] (ProducerRecord. name partition timestamp key value)))
 
 (defn topic-partition
   "Return a TopicPartition"
-  [{:keys [:topic.metadata/name] :as topic-config} partition]
+  [{:keys [:kafka.topic/name] :as topic-config} partition]
   (TopicPartition. name (int partition)))
 
 (defn producer
   "Return a KafkaProducer with the supplied properties"
   ([config]
-   (log/debug "Making producer" {:config config})
-   (KafkaProducer. config))
+   (let [props (java.util.Properties.)]
+     (.putAll props config)
+     (KafkaProducer. props)))
 
   ([config {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
-   (log/debug "Making producer" {:key-serde key-serde :value-serde value-serde})
-   (KafkaProducer. config
-                   (.serializer ^Serde key-serde)
-                   (.serializer ^Serde value-serde))))
+   (let [props (java.util.Properties.)]
+     (.putAll props config)
+     (KafkaProducer. props
+                     (.serializer ^Serde key-serde)
+                     (.serializer ^Serde value-serde)))))
+
+(defn- to-record-metadata
+  "Clojurizes an org.apache.kafka.clients.producer.RecordMetadata."
+  [^RecordMetadata record-metadata]
+  (when record-metadata
+    {:checksum (.checksum record-metadata)
+     :offset (.offset record-metadata)
+     :partition (.partition record-metadata)
+     :serialized-key-size (.serializedKeySize record-metadata)
+     :serialized-value-size (.serializedValueSize record-metadata)
+     :timestamp (.timestamp record-metadata)}))
 
 (defn callback
   "Build a kafka producer callback function out of a normal clojure one
@@ -60,60 +52,35 @@
   [on-completion]
   (reify Callback
     (onCompletion [this record-metadata exception]
-      (on-completion record-metadata exception))))
+      (on-completion (to-record-metadata record-metadata) exception))))
 
 (defn send!
-  "Asynchronously sends a record to a topic."
+  "Asynchronously sends a record to a topic, returning a Future. A callback function
+  can be optionally provided that should expect two parameters: a map of the
+  record metadata, and an exception instance, if an error occurred."
   ([producer record]
    (.send ^KafkaProducer producer record))
   ([producer record callback-fn]
    (.send ^KafkaProducer producer record (callback callback-fn))))
 
-(defn subscribe
-  "Subscribe a consumer to topics. Returns the consumer."
-  [consumer & topic-config]
-  (.subscribe ^Consumer consumer (mapv :topic.metadata/name topic-config))
-  consumer)
-
-(defn assign
-  "Assign a consumer to specific partitions for specific topics. Returns the consumer."
-  [^Consumer consumer & topic-partitions]
-  (.assign consumer topic-partitions)
-  consumer)
-
 (defn consumer
   "Return a Consumer with the supplied properties."
   ([config]
-   (KafkaConsumer. config))
-
+   (let [props (java.util.Properties.)]
+     (.putAll props config)
+     (KafkaConsumer. props)))
   ([config {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
-   (log/debug "Making consumer" {:config config
-                                 :key-serde key-serde
-                                 :value-serde value-serde})
-   (KafkaConsumer. config
-                   (when key-serde (.deserializer ^Serde key-serde))
-                   (when value-serde (.deserializer ^Serde value-serde)))))
+   (let [props (java.util.Properties.)]
+     (.putAll props config)
+     (KafkaConsumer. props
+                     (when key-serde (.deserializer ^Serde key-serde))
+                     (when value-serde (.deserializer ^Serde value-serde))))))
 
-(defn position
-  [^Consumer consumer topic-partition]
-  (.position consumer topic-partition))
-
-(defn- load-assignments
-  "Forces the partitions to be assigned and returns them."
-  [^Consumer consumer]
-  (.poll consumer 0) ;; partition assignment occurs
-  (.assignment consumer))
-
-(defn seek-to-end
-  "Seeks to the end of all the partitions assigned to the given consumer.
-  Returns the consumer."
-  [^Consumer consumer & topic-partitions]
-  (let [assigned-partitions (or topic-partitions (load-assignments consumer))]
-    (.seekToEnd consumer assigned-partitions)
-    (doseq [assigned-partition assigned-partitions]
-      ;; This forces the seek to happen now
-      (.position consumer assigned-partition))
-    consumer))
+(defn subscribe
+  "Subscribe a consumer to topics. Returns the consumer."
+  [consumer & topic-configs]
+  (.subscribe ^Consumer consumer (mapv :kafka.topic/name topic-configs))
+  consumer)
 
 (defn consumer-subscription
   "Returns a consumer that is subscribed to a single topic."
@@ -121,86 +88,21 @@
   (-> (consumer config topic-config)
       (subscribe topic-config)))
 
-(defn select-methods
-  "Like `select-keys` but instead builds a map by invoking the named java methods
-   for the corresponding keys"
-  [object methods]
-  (let [jget (fn [m]
-               (Reflector/invokeInstanceMethod object
-                                               (str (name m)) (into-array [])))]
-    (apply hash-map (->> methods
-                         (map (fn [m]
-                                [m (jget m)]))
-                         (mapcat identity)))))
-
-(defn metadata
-  "Clojurize the ProducerRecord returned from producing a kafka record"
-  [record-meta]
-  (select-methods record-meta
-                  [:checksum :offset :partition
-                   :serializedKeySize :serializedValueSize
-                   :timestamp :topic :toString]))
-
-(defn record
+(defn- consumer-record
   "Clojurize the ConsumerRecord returned from consuming a kafka record"
-  [consumer-record]
-  (select-methods consumer-record
-                  [:checksum :key :offset :partition
-                   :serializedKeySize :serializedValueSize
-                   :timestamp :timestampType
-                   :topic :toString :value]))
+  [^ConsumerRecord consumer-record]
+  (when consumer-record
+    {:checksum (.checksum consumer-record)
+     :key (.key consumer-record)
+     :offset (.offset consumer-record)
+     :partition (.partition consumer-record)
+     :serializedKeySize (.serializedKeySize consumer-record)
+     :serializedValueSize (.serializedValueSize consumer-record)
+     :timestamp (.timestamp consumer-record)
+     :topic (.topic consumer-record)
+     :value (.value consumer-record)}))
 
-(defn next-records
-  "Polls kafka for any new records provided `fuse-fn` returns a truthy value"
-  [^Consumer consumer poll-timeout-ms fuse-fn]
-  (when (fuse-fn)
-    (.poll consumer poll-timeout-ms)))
-
-(defn log-seq
-  "Given a consumer, returns a lazy sequence of ConsumerRecords. Stops after
-  fuse-fn returns false."
-  ([^Consumer consumer polling-interval-ms]
-   (log-seq consumer polling-interval-ms (constantly true)))
-  ([^Consumer consumer polling-interval-ms fuse-fn]
-   (when (fuse-fn)
-     (lazy-cat
-       (next-records consumer polling-interval-ms fuse-fn)
-       (log-seq consumer polling-interval-ms fuse-fn)))))
-
-(defn log-records
-  "Returns a lazy sequence of clojurized ConsumerRecords from a Consumer.
-  Stops consuming after timeout-ms."
-  ([^Consumer consumer polling-interval-ms]
-   (map record (log-seq consumer polling-interval-ms)))
-  ([^Consumer consumer polling-interval-ms fuse-fn]
-   (map record (log-seq consumer polling-interval-ms fuse-fn))))
-
-(defn log-messages
-  "Returns a lazy sequence of the keys and values of the messages from a
-  Consumer. Stops consuming after consumer-timeout-ms."
-  ([^Consumer consumer polling-interval-ms]
-   (map (fn [rec] [(:key rec) (:value rec)])
-        (log-records consumer polling-interval-ms)))
-  ([^Consumer consumer polling-interval-ms fuse-fn]
-   (map (fn [rec] [(:key rec) (:value rec)])
-        (log-records consumer polling-interval-ms fuse-fn))))
-
-(defn timeout
-  "Returns a function that throws an exception when called after some time has
-  passed."
-  ([]
-   (timeout default-fuse-timeout-ms))
-  ([millis]
-   (let [end (+ millis (System/currentTimeMillis))]
-     (fn []
-       (if (< end (System/currentTimeMillis))
-         (throw (ex-info "Timer expired" {:millis millis}))
-         true)))))
-
-(defn timed-log-messages
-  "Same as `log-messages`, but will stop consuming after a specified timeout in
-  milliseconds, or `default-fulse-time-ms` if no timeout is specified."
-  ([^Consumer consumer]
-   (log-messages consumer default-polling-interval-ms (timeout)))
-  ([^Consumer consumer fuse-timeout-ms]
-   (log-messages consumer default-polling-interval-ms (timeout fuse-timeout-ms))))
+(defn poll
+  "Polls kafka for new messages."
+  [^KafkaConsumer consumer timeout]
+  (mapv consumer-record (.poll consumer timeout)))

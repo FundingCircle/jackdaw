@@ -42,12 +42,6 @@
         (.onCompletion cb nil ex)
         (is (= ex @result))))))
 
-(deftest select-methods-test
-  (testing "object methods"
-    (let [o (Object.)]
-      (is (= {:getClass Object}
-             (client/select-methods o [:getClass]))))))
-
 (defn poll-result [topic data]
   (let [partition 1
         offset 1]
@@ -64,30 +58,8 @@
     (poll [this ms]
       (.poll queue ms TimeUnit/MILLISECONDS))))
 
-(deftest log-messages-test
-  (let [q (LinkedBlockingQueue.)
-        consumer (mock-consumer "foo" q)
-        live? (atom true)
-        done? (fn []
-                @live?)
-        log (client/log-messages consumer 1000 done?)]
-
-    (let [result (poll-result "foo" [[1 1]
-                                     [2 2]])]
-
-      (testing "can fetch items delivered to a topic"
-        (.put q result)
-        (let [[a b] (take 2 log)]
-          (is (= [1 1] a))
-          (is (= [2 2] b))))
-
-      (testing "doall terminates once we are done"
-        (reset! live? false)
-        (is (= [[1 1]
-                [2 2]] (doall log)))))))
-
 (deftest consumer-test
-(let [config {"bootstrap.servers" "localhost:9092"
+  (let [config {"bootstrap.servers" "localhost:9092"
                 "key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
                 "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"}]
     (is (instance? Consumer (client/consumer config)))))
