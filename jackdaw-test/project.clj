@@ -1,6 +1,5 @@
 (defproject fundingcircle/jackdaw-test "0.1.0-SNAPSHOT"
   :description "Test fixtures for Kafka, Zookeeper, and Confluent Schema Registry"
-  :url "http://github.com/fundingcircle/jackdaw-test"
   :dependencies [[clojurewerkz/propertied "1.2.0"]
                  [com.fasterxml.jackson.core/jackson-annotations "2.8.7"]
                  [com.fasterxml.jackson.core/jackson-core "2.8.7"]
