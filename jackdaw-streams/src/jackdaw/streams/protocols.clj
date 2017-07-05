@@ -311,13 +311,3 @@ It is an intermediate representation of a KStream before an aggregation is appli
      (.putAll props opts)
      (KafkaStreams. ^TopologyBuilder (topology-builder* builder)
                     ^java.util.Properties props))))
-
-(defn start!
-  "Starts processing."
-  [kafka-streams]
-  (.start ^KafkaStreams kafka-streams))
-
-(defn close!
-  "Stops the kafka streams."
-  [kafka-streams]
-  (.close ^KafkaStreams kafka-streams))
