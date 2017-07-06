@@ -1,6 +1,5 @@
 (ns jackdaw.test.config
-  (:require [clojure.string :as str]
-            [environ.core :as env]))
+  (:require [clojure.string :as str]))
 
 (defn host-port [host-str]
   (try

@@ -1,10 +1,15 @@
 (ns jackdaw.test.test-config
   (:require
    [clojure.test :refer :all]
-   [environ.core :refer [env]]
    [jackdaw.test.config :as config]
    [jackdaw.test.fs :as fs]
    [jackdaw.test.fixtures :as fix]))
+
+(def env {:zookeeper-connect "localhost:2181"
+          :bootstrap-servers "localhost:9092"
+          :schema-registry-url "http://127.0.0.1:8081"
+          :kafka-connect-host "localhost"
+          :kafka-connect-port "8083"})
 
 (def zk-connect (env :zookeeper-connect))
 

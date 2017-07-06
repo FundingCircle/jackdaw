@@ -2,7 +2,6 @@
   "Test fixtures for kafka based apps"
   (:require [clojure.java.io :as io]
             [clojure.tools.logging :as log]
-            [clojurewerkz.propertied.properties :as p]
             [jackdaw.test.config :as config]
             [jackdaw.test.kafka :as broker]
             [jackdaw.test.kc :as kc]
@@ -85,7 +84,7 @@
   [config]
   (fn [t]
     (let [app (SchemaRegistryRestApplication.
-               (SchemaRegistryConfig. (p/map->properties config)))
+               (SchemaRegistryConfig. config))
           server (.createServer app)]
       (try
         (.start server)
