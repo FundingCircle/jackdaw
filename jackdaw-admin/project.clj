@@ -13,10 +13,6 @@
             [lein-marginalia "0.9.0"]
             [lein-modules "0.3.11"]]
 
-  :repl-options {:welcome (prn "Welcome to Kafka administration tool. See `kafka.admin.topic` namespace for more information")
-                 :caught clj-stacktrace.repl/pst+
-                 :init-ns jackdaw.user}
-
   :profiles {:dev [:project/dev :kafka]
              :test [:project/test :kafka]
              :project/test {:resource-paths ["test/resources"]
