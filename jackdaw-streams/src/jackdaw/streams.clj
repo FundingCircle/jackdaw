@@ -10,10 +10,6 @@
     [topology-builder kstreams]
     "Merges another KStream with this one.")
 
-  (new-name
-    [topology-builder prefix]
-    "Returns a unique processor name with the given prefix.")
-
   (kstream
     [topology-builder topic-config]
     [topology-builder topic-config topic-pattern]
@@ -21,7 +17,7 @@
 
   (kstreams
     [topology-builder topic-configs]
-    "Creates KStreams that will consume messages from the specified topics.")
+    "Creates a KStream that will consume messages from the specified topics.")
 
   (ktable
     [topology-builder topic-config]
@@ -43,7 +39,7 @@
     "Returns the underlying KStreamBuilder."))
 
 (defprotocol IKStreamBase
-  "Methods common to KStream & KTable."
+  "Methods common to KStream and KTable."
   (left-join
     [kstream ktable value-joiner-fn]
     [kstream ktable value-joiner-fn topic-config]
@@ -105,13 +101,13 @@
 
   (flat-map
     [kstream key-value-mapper-fn]
-    "Creates a KStream that will consist of the concatentation of messages
+    "Creates a KStream that will consist of the concatenation of messages
     returned by calling `key-value-mapper-fn` on each key/value pair in the
     input stream.")
 
   (flat-map-values
     [kstream value-mapper-fn]
-    "Creates a KStream that will consist of the concatentation of the values
+    "Creates a KStream that will consist of the concatenation of the values
     returned by calling `value-mapper-fn` on each value in the input stream.")
 
   (group-by-key
@@ -183,7 +179,7 @@
   (join
     [ktable other-ktable value-joiner-fn]
     "Combines the values of the two KTables that share the same key using an
-    inner join.") 
+    inner join.")
 
   (outer-join
     [ktable other-ktable value-joiner-fn]
