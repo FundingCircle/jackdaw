@@ -1,9 +1,8 @@
 (ns jackdaw.admin.fixture
   (:require [clojure.test :refer [join-fixtures use-fixtures]]
             [jackdaw.admin.config :as config]
-            [kafka.test
-             [fixtures :as fix]
-             [fs :as fs]]))
+            [jackdaw.test.fixtures :as fix]
+            [jackdaw.test.fs :as fs]))
 
 (def broker-conf
   {"broker.id"                    "1"
