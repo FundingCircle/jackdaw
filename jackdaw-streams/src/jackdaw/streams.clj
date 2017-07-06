@@ -1,7 +1,8 @@
 (ns jackdaw.streams
   "Kafka streams protocols."
   (:refer-clojure :exclude [count map reduce group-by merge filter])
-  (:require [jackdaw.streams.protocols :as p])
+  (:require [jackdaw.streams.interop :as interop]
+            [jackdaw.streams.protocols :as p])
   (:import org.apache.kafka.streams.KafkaStreams
            org.apache.kafka.streams.processor.TopologyBuilder))
 
@@ -301,6 +302,10 @@
   "Returns the underlying GlobalKTable"
   [globalktable]
   (p/global-ktable* globalktable))
+
+(defn topology-builder
+  []
+  (interop/topology-builder))
 
 (defn kafka-streams
   "Makes a Kafka Streams object."

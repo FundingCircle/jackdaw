@@ -4,7 +4,6 @@
             [clojure.test :refer :all]
             [jackdaw.streams.protocols :refer [IKStream IKTable ITopologyBuilder]]
             [jackdaw.streams :as k]
-            [jackdaw.streams.interop :as interop]
             [jackdaw.streams.mock :as mock]
             [jackdaw.streams.lambdas :as lambdas :refer [key-value]])
   (:import [org.apache.kafka.streams.kstream JoinWindows TimeWindows Transformer ValueTransformer]
@@ -50,7 +49,7 @@
                    (k/topology-builder* (mock/topology-builder)))))
 
   (testing "topology-builder"
-    (is (satisfies? ITopologyBuilder (interop/topology-builder)))))
+    (is (satisfies? ITopologyBuilder (k/topology-builder)))))
 
 (deftest KStream
   (testing "left-join"
