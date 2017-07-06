@@ -25,7 +25,8 @@
                         :url "https://github.com/FundingCircle/jackdaw"
                         :license {:name "BSD 3-clause"
                                   :url "http://opensource.org/licenses/BSD-3-Clause"}}
-            :versions {io.confluent/kafka-avro-serializer "3.2.1"
+            :versions {clojure-future-spec "1.9.0-alpha17"
+                       io.confluent/kafka-avro-serializer "3.2.1"
                        io.confluent/kafka-schema-registry-client "3.2.1"
                        org.apache.kafka/kafka_2.11 "0.10.2.1"
                        org.apache.kafka/kafka-clients "0.10.2.1"

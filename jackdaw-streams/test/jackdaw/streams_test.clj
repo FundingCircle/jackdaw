@@ -1,13 +1,18 @@
 (ns jackdaw.streams-test
   "Tests of the kafka streams wrapper."
-  (:require [clojure.string :as string]
+  (:require [clojure.spec.test.alpha :as stest]
+            [clojure.string :as string]
             [clojure.test :refer :all]
             [jackdaw.streams.protocols :refer [IKStream IKTable ITopologyBuilder]]
             [jackdaw.streams :as k]
             [jackdaw.streams.mock :as mock]
-            [jackdaw.streams.lambdas :as lambdas :refer [key-value]])
+            [jackdaw.streams.lambdas :as lambdas :refer [key-value]]
+            jackdaw.streams.lambdas.specs
+            jackdaw.streams.specs)
   (:import [org.apache.kafka.streams.kstream JoinWindows TimeWindows Transformer ValueTransformer]
            [org.apache.kafka.test MockProcessorSupplier MockProcessorSupplier$MockProcessor]))
+
+(stest/instrument)
 
 (deftest TopologyBuilder
   (testing "merge"
