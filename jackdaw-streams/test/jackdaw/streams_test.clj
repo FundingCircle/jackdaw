@@ -2,7 +2,8 @@
   "Tests of the kafka streams wrapper."
   (:require [clojure.string :as string]
             [clojure.test :refer :all]
-            [jackdaw.streams.protocols :as k :refer [IKStream IKTable ITopologyBuilder]]
+            [jackdaw.streams.protocols :as p :refer [IKStream IKTable ITopologyBuilder]]
+            [jackdaw.streams :as k]
             [jackdaw.streams.interop :as interop]
             [jackdaw.streams.mock :as mock]
             [jackdaw.streams.lambdas :as lambdas :refer [key-value]])
@@ -801,6 +802,6 @@
 
 (deftest kafka-streams-test
   (is (instance? org.apache.kafka.streams.KafkaStreams
-                 (k/kafka-streams (mock/topology-builder)
+                 (p/kafka-streams (mock/topology-builder)
                                   {"bootstrap.servers" "localhost:2181"
                                    "application.id" ""}))))

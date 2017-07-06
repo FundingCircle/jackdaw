@@ -2,7 +2,6 @@
   "Clojure wrapper to kafka streams."
   (:refer-clojure :exclude [count map reduce group-by merge filter])
   (:require [clojure.string :as str]
-            [jackdaw.streams :refer :all]
             [jackdaw.streams.protocols :refer :all]
             [jackdaw.streams.lambdas :refer :all])
   (:import
