@@ -1,6 +1,5 @@
 (defproject fundingcircle/jackdaw-admin "0.1.0-SNAPSHOT"
   :description "Tools for kafka administration"
-  :main kafka.admin.core
   :target-path "target/%s"
   :uberjar-name "kafka.admin.jar"
   :dependencies [[org.clojure/tools.logging "_"]
