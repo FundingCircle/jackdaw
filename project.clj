@@ -11,7 +11,8 @@
             [lein-modules "0.3.11"]]
   :codox {:output-path "codox"
           :source-uri "http://github.com/fundingcircle/jackdaw/blob/{version}/{filepath}#L{line}"}
-  :source-paths ["jackdaw-client/src"
+  :source-paths ["jackdaw-admin/src"
+                 "jackdaw-client/src"
                  "jackdaw-admin/src"
                  "jackdaw-serdes/src"
                  "jackdaw-streams/src"]
