@@ -1,15 +1,14 @@
 (ns jackdaw.admin.topic-get-all-topics-test
   (:require [clojure.test :refer :all]
-            [jackdaw.admin
-             [config :as config]
-             [fixture :as fixture]
-             [topic :as topic]
-             [zk :as zk]]))
+            [jackdaw.admin.config :as config]
+            [jackdaw.admin.fixture :as fixture]
+            [jackdaw.admin.topic :as topic]
+            [jackdaw.admin.zk :as zk]))
 
 (fixture/kafka)
 
 (deftest fetch-topic-config-test
-  (with-open [zk-utils (zk/zk-utils (:connect-string config/common))]
+  (with-open [zk-utils (zk/zk-utils (get config/common "zookeeper.connect"))]
     (let [config {"cleanup.policy" "compact"}
           topic-name (str (java.util.UUID/randomUUID))]
       (testing "returns topic config"

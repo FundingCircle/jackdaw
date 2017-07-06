@@ -1,9 +1,8 @@
 (ns jackdaw.admin.topic
   (:require [clojure.tools.logging :as log]
-            [jackdaw.admin
-             [config :as c]
-             [utils :as u :refer [map->properties]]
-             [zk :as zk]])
+            [clojure.walk :refer [stringify-keys]]
+            [environ.core :refer [env]]
+            [jackdaw.admin.zk :as zk])
   (:import kafka.admin.AdminUtils
            kafka.common.TopicAlreadyMarkedForDeletionException
            kafka.server.ConfigType
@@ -15,11 +14,16 @@
   (filter #(= (:topic %) (str topic))
           topics))
 
+(defn- map->properties
+  [m]
+  (doto (java.util.Properties.)
+    (.putAll (stringify-keys m))))
+
 (defn create!
   "Makes a request to create topic and returns topic name.
   Returns topic name"
   [zk-utils topic partitions replication topic-config]
-  (AdminUtils/createTopic zk-utils (name topic) partitions replication (u/map->properties topic-config) nil)
+  (AdminUtils/createTopic zk-utils (name topic) partitions replication (map->properties topic-config) nil)
   (log/info (format "Created topic %s" topic))
   topic)
 
@@ -41,20 +45,23 @@
   [zk-utils topic]
   (AdminUtils/topicExists zk-utils (name topic)))
 
+(def num-retries (env :num-retries 3))
+(def wait-ms 1000)
+
 (defn retry-exists?
   "Returns true if topic exists and retries if topic does not exist (default: num-retries=3).
   If topic does not exists after retries returns `false`."
   ([zk-utils topic]
-   (retry-exists? zk-utils topic c/num-retries))
+   (retry-exists? zk-utils topic num-retries))
   ([zk-utils topic num-retries]
    (cond
      (exists? zk-utils topic) true
      (and
-      (not (exists? zk-utils topic))
-      (= num-retries 0)) false
+       (not (exists? zk-utils topic))
+       (= num-retries 0)) false
      :else (do
              (log/info (format "Retrying time if topic %s exists. (%d retries left)" topic num-retries))
-             (Thread/sleep c/wait-ms)
+             (Thread/sleep wait-ms)
              (retry-exists? zk-utils topic (- num-retries 1))))))
 
 
@@ -62,8 +69,8 @@
   "Returns all topics with list of partition ids of partitions"
   [zk-utils]
   (map
-   #(let [tpl (.asTuple %)] {:topic (._1 tpl) :partition-id (._2 tpl)})
-   (JavaConversions/setAsJavaSet (.getAllPartitions zk-utils))))
+    #(let [tpl (.asTuple %)] {:topic (._1 tpl) :partition-id (._2 tpl)})
+    (JavaConversions/setAsJavaSet (.getAllPartitions zk-utils))))
 
 (defn get-partitions-for-topic
   "Returns list of maps containing partition ids for topic
@@ -89,12 +96,6 @@
                (int partitions)
                (int replication-factor)
                config))))
-
-(defn ensure-topics!
-  "@Deprecated
-  Used for backwards compatibility"
-  [zk-utils topic-metadata]
-  (create-topics! zk-utils topic-metadata))
 
 (defn fetch-config
   [zk-utils topic]

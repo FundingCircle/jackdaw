@@ -6,7 +6,7 @@
 
 (def broker-conf
   {"broker.id"                    "1"
-   "zookeeper.connect"            (:connect-string config/common)
+   "zookeeper.connect"            (get config/common "zookeeper.connect")
    "port"                         "9092"
    "offsets.topic.num.partitions" "1"
    "auto.create.topics.enable"    "true"
@@ -15,7 +15,7 @@
    "log.dirs"                     (fs/tmp-dir "kafka-log")})
 
 (def zk-conf
-  {"zookeeper.connect" (:connect-string config/common)})
+  {"zookeeper.connect" (get config/common "zookeeper.connect")})
 
 (defn kafka
   ([]
