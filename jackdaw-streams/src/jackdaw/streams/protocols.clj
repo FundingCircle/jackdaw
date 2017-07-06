@@ -303,11 +303,3 @@ It is an intermediate representation of a KStream before an aggregation is appli
   (global-ktable*
     [globalktable]
     "Returns the underlying GlobalKTable"))
-
-(defn kafka-streams
-  "Makes a Kafka Streams object."
-  ([builder opts]
-   (let [props (java.util.Properties.)]
-     (.putAll props opts)
-     (KafkaStreams. ^TopologyBuilder (topology-builder* builder)
-                    ^java.util.Properties props))))

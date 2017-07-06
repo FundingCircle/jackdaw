@@ -302,6 +302,14 @@
   [globalktable]
   (p/global-ktable* globalktable))
 
+(defn kafka-streams
+  "Makes a Kafka Streams object."
+  ([builder opts]
+   (let [props (java.util.Properties.)]
+     (.putAll props opts)
+     (KafkaStreams. ^TopologyBuilder (topology-builder* builder)
+                    ^java.util.Properties props))))
+
 (defn start!
   "Starts processing."
   [kafka-streams]
