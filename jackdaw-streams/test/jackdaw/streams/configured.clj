@@ -167,40 +167,10 @@
     (write-as-text! kstream file-path topic-config))
 
   IKStream
-  (aggregate-by-key
-    [_ initializer-fn aggregator-fn topic-config]
-    (configured-ktable
-     config
-     (aggregate-by-key kstream initializer-fn aggregator-fn topic-config)))
-
-  (aggregate-by-key-windowed
-    [_ initializer-fn aggregator-fn windows topic-config]
-    (configured-ktable
-     config
-     (aggregate-by-key-windowed kstream initializer-fn aggregator-fn windows topic-config)))
-
   (branch
     [_ predicate-fns]
      (mapv (partial configured-kstream config)
            (branch kstream predicate-fns)))
-
-  (count-by-key
-    [_ topic-config]
-    (configured-ktable
-     config
-     (count-by-key kstream topic-config)))
-
-  (count-by-key-windowed
-    [_ windows]
-    (configured-ktable
-     config
-     (count-by-key-windowed kstream windows)))
-
-  (count-by-key-windowed
-    [_ windows topic-config]
-    (configured-ktable
-     config
-     (count-by-key-windowed kstream windows topic-config)))
 
   (flat-map
     [_ key-value-mapper-fn]
@@ -292,18 +262,6 @@
   (process!
     [_ processor-supplier-fn state-store-names]
     (process! kstream processor-supplier-fn state-store-names))
-
-  (reduce-by-key
-   [_ reducer-fn topic-config]
-    (configured-ktable
-     config
-     (reduce-by-key kstream reducer-fn topic-config)))
-
-  (reduce-by-key-windowed
-   [_ reducer-fn windows topic-config]
-    (configured-ktable
-     config
-     (reduce-by-key-windowed kstream reducer-fn windows topic-config)))
 
   (select-key
     [_ key-value-mapper-fn]

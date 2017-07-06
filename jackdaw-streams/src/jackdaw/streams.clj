@@ -5,187 +5,146 @@
            org.apache.kafka.streams.processor.TopologyBuilder))
 
 (defprotocol ITopologyBuilder
-  "ITopologyBuilder provides the Kafka Streams DSL for users to specify
-  computational logic and translates the given logic to a
-  org.apache.kafka.streams.processor.internals.ProcessorTopology."
+  "ITopologyBuilder provides the entry points for the Kafka Streams DSL."
   (merge
     [topology-builder kstreams]
-    "Create a new instance of KStream by merging the given streams.")
+    "Merges another KStream with this one.")
 
   (new-name
     [topology-builder prefix]
-    "Create a unique processor name used for translation into the processor
-    topology.")
+    "Returns a unique processor name with the given prefix.")
 
   (kstream
     [topology-builder topic-config]
     [topology-builder topic-config topic-pattern]
-    "Create a KStream instance from the specified topic.")
+    "Creates a KStream that will consume messages from the specified topic.")
 
   (kstreams
     [topology-builder topic-configs]
-    "Create a KStream instance from the specified topics.")
+    "Creates KStreams that will consume messages from the specified topics.")
 
   (ktable
     [topology-builder topic-config]
     [topology-builder topic-config store-name]
-    "Create a KTable instance for the specified topic.")
+    "Creates a KTable that will consist of data from the specified topic.")
 
   (global-ktable
     [topology-builder topic-config]
     [topology-builder topic-config store-name]
-    "Create a GlobalKTable instance for the specified topic.")
+    "Creates a GlobalKTable that will consist of data from the specified
+    topic.")
 
   (source-topics
     [topology-builder]
-    "Get the names of topics that are to be consumed by the source nodes created
-    by this builder.")
+    "Gets the names of source topics for the topology.")
 
   (topology-builder*
     [topology-builder]
-    "Returns the underlying kstream builder."))
+    "Returns the underlying KStreamBuilder."))
 
 (defprotocol IKStreamBase
-  "Shared methods."
+  "Methods common to KStream & KTable."
   (left-join
     [kstream ktable value-joiner-fn]
     [kstream ktable value-joiner-fn topic-config]
-    "Combine values of this stream with KTable's elements of the same key using Left Join.")
+    "Creates a KStream from the result of calling `value-joiner-fn` with
+    each element in the KStream and the value in the KTable with the same
+    key.")
 
   (for-each!
     [kstream foreach-fn]
-    "Perform an action on each element of KStream.")
+    "Performs an action on each element of KStream.")
 
   (filter
     [kstream predicate-fn]
-    "Create a new instance of KStream that consists of all elements of this
-    stream which satisfy a predicate.")
+    "Creates a KStream that consists of all elements that satisfy a
+    predicate.")
 
   (filter-not
     [kstream predicate-fn]
-    "Create a new instance of KStream that consists all elements of this stream
-    which do not satisfy a predicate.")
+    "Creates a KStream that consists of all elements that do not satisfy a
+    predicate.")
 
   (group-by
     [ktable key-value-mapper-fn]
     [ktable key-value-mapper-fn topic-config]
-    "Group the records of this KStream/KTable using the provided key-value-mapper-fn.")
+    "Groups the records of this KStream/KTable using the key-value-mapper-fn.")
 
   (map-values
     [kstream value-mapper-fn]
-    "Create a new instance of KStream by transforming the value of each element
-    in this stream into a new value in the new stream.")
+    "Creates a KStream that is the result of calling `value-mapper-fn` on each
+    element of the input stream.")
 
   (print!
     [kstream]
     [kstream topic-config]
-    "Print the elements of this stream to *out*.")
+    "Prints the elements of the stream to *out*.")
 
   (through
     [kstream topic-config]
     [kstream partition-fn topic-config]
-    "Materialize this stream to a topic, also creates a new instance of KStream
-    from the topic.")
+    "Materializes a stream to a topic, and returns a new KStream that will
+    consume messages from the topic.")
 
   (to!
     [kstream topic-config]
     [kstream partition-fn topic-config]
-    "Materialize this stream to a topic.")
+    "Materializes a stream to a topic.")
 
   (write-as-text!
     [kstream file-path]
     [kstream file-path topic-config]
-    "Write the elements of this stream to a file at the given path."))
+    "Writes the elements of a stream to a file at the given path."))
 
 (defprotocol IKStream
-  "KStream is an abstraction of a record stream of key-value pairs.
-
-  A KStream is either defined from one or multiple Kafka topics that are
-  consumed message by message or the result of a KStream transformation. A
-  KTable can also be converted into a KStream.
-
-  A KStream can be transformed record by record, joined with another KStream or
-  KTable, or can be aggregated into a KTable."
-
-  (aggregate-by-key
-    [kstream initializer-fn aggregator-fn topic-config]
-    "Aggregate values of this stream by key into a new instance of ever-updating KTable.")
-
-  (aggregate-by-key-windowed
-    [kstream initializer-fn aggregator-fn windows topic-config]
-    "Aggregate values of this stream by key on a window basis into a new
-    instance of windowed KTable.")
-
-
+  "A KStream is an abstraction of a stream of key-value pairs."
   (branch
     [kstream predicate-fns]
-    "Creates an array of KStream from this stream by branching the elements in
-    the original stream based on the supplied predicates.")
-
-  (count-by-key
-    [kstream topic-config]
-    "Count number of records of this stream by key into a new instance of
-    ever-updating KTable.")
-
-  (count-by-key-windowed
-    [kstream windows]
-    [kstream windows topic-config]
-    "Count number of records of this stream by key into a new instance of
-    ever-updating KTable.")
+    "Returns a list of KStreams, one for each of the `predicate-fns`
+    provided.")
 
   (flat-map
     [kstream key-value-mapper-fn]
-    "Create a new instance of KStream by transforming each element in this
-    stream into zero or more elements in the new stream.")
+    "Creates a KStream that will consist of the concatentation of messages
+    returned by calling `key-value-mapper-fn` on each key/value pair in the
+    input stream.")
 
   (flat-map-values
     [kstream value-mapper-fn]
-    "Create a new instance of KStream by transforming the value of each element
-    in this stream into zero or more values with the same key in the new
-    stream.")
+    "Creates a KStream that will consist of the concatentation of the values
+    returned by calling `value-mapper-fn` on each value in the input stream.")
 
   (group-by-key
     [kstream]
     [kstream topic-config]
-    "Group the records with the same key into a KGroupedStream while preserving
-    the original values.")
+    "Groups records with the same key into a KGroupedStream.")
 
   (join-windowed
     [kstream other-kstream value-joiner-fn windows]
     [kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config]
-    "Combine element values of this stream with another KStream's elements of
-    the same key using windowed Inner Join." )
+    "Combines the values of two streams that share the same key using a
+    windowed inner join.")
 
   (left-join-windowed
-    [kstream other-ktable value-joiner-fn windows]
-    [kstream other-ktable value-joiner-fn windows this-topic-config other-topic-config]
-    "Combine values of this stream with KTable's elements of the same key using Left Join.")
+    [kstream other-kstream value-joiner-fn windows]
+    [kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config]
+    "Combines the values of two streams that share the same key using a
+    windowed left join.")
 
   (map
     [kstream key-value-mapper-fn]
-    "Create a new instance of KStream by transforming each element in this
-    stream into a different element in the new stream.")
+    "Creates a KStream that consists of the result of applying
+    `key-value-mapper-fn` to each key/value pair in the input stream.")
 
   (outer-join-windowed
     [kstream other-kstream value-joiner-fn windows]
     [kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config]
-    "Combine values of this stream with another KStream's elements of the same
-    key using windowed Outer Join." )
+    "Combines the values of two streams that share the same key using a
+    windowed outer join.")
 
   (process!
     [kstream processor-fn state-store-names]
-    "Process all elements in this stream, one element at a time, by applying a
-    Processor.")
-
-  (reduce-by-key
-    [kstream reducer-fn topic-config]
-    "Combine values of this stream by key into a new instance of ever-updating
-    KTable.")
-
-  (reduce-by-key-windowed
-    [kstream reducer-fn windows topic-config]
-    "Combine values of this stream by key into a new instance of ever-updating
-    KTable.")
+    "Applies `processor-fn` to each item in the input stream.")
 
   (select-key
     [kstream select-key-value-mapper-fn]
@@ -200,14 +159,14 @@
   (transform
     [kstream transformer-supplier-fn]
     [kstream transformer-supplier-fn state-store-names]
-    "Create a new KStream instance by applying a Transformer to all elements in
-    this stream, one element at a time.")
+    "Creates a KStream that consists of the results of applying the transformer
+    to each key/value in the input stream.")
 
   (transform-values
     [kstream value-transformer-supplier-fn]
     [kstream value-transformer-supplier-fn state-store-names]
-    "Create a new KStream instance by applying a ValueTransformer to all values
-    in this stream, one element at a time.")
+    "Creates a KStream that consists of the results of applying the transformer
+    to each value in the input stream.")
 
   (join-global
     [kstream global-kstream kv-mapper joiner])
@@ -217,33 +176,24 @@
 
   (kstream*
     [kstream]
-    "Return the underlying KStream object."))
+    "Returns the underlying KStream object."))
 
 (defprotocol IKTable
-  "KTable is an abstraction of a changelog stream from a primary-keyed table.
-  Each record in this stream is an update on the primary-keyed table with the
-  record key as the primary key.
-
-  A KTable is either defined from one or multiple Kafka topics that are consumed
-  message by message or the result of a KTable transformation. An aggregation of
-  a KStream also yields a KTable.
-
-  A KTable can be transformed record by record, joined with another KTable or
-  KStream, or can be re-partitioned and aggregated into a new KTable."
+  "A Ktable is an abstraction of a changlog stream."
   (join
     [ktable other-ktable value-joiner-fn]
-    "Combine values of this stream with another KTable stream's elements of the
-    same key using Inner Join.")
+    "Combines the values of the two KTables that share the same key using an
+    inner join.") 
 
   (outer-join
     [ktable other-ktable value-joiner-fn]
-    "Combine values of this stream with another KStream's elements of the same
-    key using Outer Join." )
+    "Combines the values of two KTables that share the same key using an outer
+    join." )
 
   (to-kstream
     [ktable]
     [ktable key-value-mapper-fn]
-    "Convert this stream to a new instance of KStream.")
+    "Converts a KTable to a KStream.")
 
   (ktable*
     [ktable]
@@ -254,46 +204,35 @@
   (aggregate
     [kgrouped initializer-fn adder-fn subtractor-fn topic-config]
     [kgrouped initializer-fn aggregator-fn topic-config]
-    "Aggregate updating values of this stream by the selected key into a new
-    instance of KTable.")
+    "Aggregates values by key into a new KTable.")
 
   (count
     [kgrouped name]
-    "Count number of records of this stream by the selected key into a new
-    instance of KTable.")
+    "Counts the number of records by key into a new KTable.")
 
   (reduce
     [kgrouped adder-fn subtractor-fn topic-config]
     [kgrouped reducer-fn topic-config]
-    "Combine updating values of this stream by the selected key into a new
-    instance of KTable."))
+    "Combines values of a stream by key into a new KTable."))
 
 (defprotocol IKGroupedTable
-  "KGroupedTable is an abstraction of a grouped changelog stream from a
-  primary-keyed table, usually on a different grouping key than the original
-  primary key.
-
-  It is an intermediate representation after a re-grouping of a KTable before an
-  aggregation is applied to the new partitions resulting in a new KTable."
+  "KGroupedTable is an abstraction of a grouped changelog stream."
   (kgroupedtable*
     [kgroupedtable]
     "Returns the underlying KGroupedTable object."))
 
 (defprotocol IKGroupedStream
-  "KGroupedStream is an abstraction of a grouped record stream of key-value pairs usually grouped on a different key than the original stream key
-It is an intermediate representation of a KStream before an aggregation is applied to the new partitions resulting in a new KTable."
+  "KGroupedStream is an abstraction of a grouped stream."
   (aggregate-windowed
     [kgroupedstream initializer-fn aggregator-fn windows topic-config])
 
   (count-windowed
     [kgroupedstream windows topic-config]
-    "Count number of records of this stream by the selected key into a new
-    instance of KTable.")
+    "Counts the number of records by key into a new KTable.")
 
   (reduce-windowed
     [kgroupedstream reducer-fn windows topic-config]
-    "Combine updating values of this stream by the selected key into a new
-    instance of KTable.")
+    "Combines values of the stream by key into a new KTable.")
 
   (kgroupedstream*
     [kgroupedstream]

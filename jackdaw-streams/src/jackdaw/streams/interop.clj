@@ -197,41 +197,11 @@
     (.writeAsText kstream file-path key-serde value-serde))
 
   IKStream
-  (aggregate-by-key
-    [this initializer-fn aggregator-fn topic-config]
-    (-> this
-        (group-by-key topic-config)
-        (aggregate initializer-fn aggregator-fn topic-config)))
-
-  (aggregate-by-key-windowed
-    [this initializer-fn aggregator-fn windows topic-config]
-    (-> this
-        (group-by-key topic-config)
-        (aggregate-windowed initializer-fn aggregator-fn windows topic-config)))
-
   (branch
     [_ predicate-fns]
     (mapv clj-kstream
           (->> (into-array Predicate (mapv predicate predicate-fns))
                (.branch kstream))))
-
-  (count-by-key
-    [this topic-config]
-    (-> this
-        (group-by-key topic-config)
-        (count topic-config)))
-
-  (count-by-key-windowed
-    [this windows]
-    (-> this
-        (group-by-key)
-        (count windows)))
-
-  (count-by-key-windowed
-    [this windows topic-config]
-    (-> this
-        (group-by-key topic-config)
-        (count-windowed windows topic-config)))
 
   (flat-map
     [_ key-value-mapper-fn]
@@ -326,18 +296,6 @@
     (.process kstream
               (processor-supplier processor-supplier-fn)
               (into-array String state-store-names)))
-
-  (reduce-by-key
-    [this reducer-fn topic-config]
-    (-> this
-        (group-by-key topic-config)
-        (reduce reducer-fn topic-config)))
-
-  (reduce-by-key-windowed
-    [this reducer-fn windows topic-config]
-    (-> this
-        (group-by-key topic-config)
-        (reduce-windowed reducer-fn windows topic-config)))
 
   (select-key
     [_ select-key-value-mapper-fn]

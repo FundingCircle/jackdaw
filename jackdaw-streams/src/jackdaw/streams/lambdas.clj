@@ -134,6 +134,7 @@
     (processor-fn @context key message)))
 
 (defn processor [processor-fn]
+  "Packages up a Clojure fn as a kstream processor."
   (FnProcessor. (atom nil) processor-fn))
 
 (deftype FnProcessorSupplier [processor-supplier-fn]
@@ -163,5 +164,6 @@
     (value-transformer-supplier-fn)))
 
 (defn value-transformer-supplier
+  "Packages up a Clojure fn in a kstream value transformer supplier."
   [value-transformer-supplier-fn]
   (FnValueTransformerSupplier. value-transformer-supplier-fn))

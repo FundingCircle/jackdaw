@@ -251,60 +251,6 @@
         (let [result (mock/collect topology)]
           (is (= "[KSTREAM-SOURCE-0000000000]: 1 , 2\n" (slurp temp-file)))))))
 
-  (testing "aggregate-by-key"
-    (let [initializer-fn (constantly 0)
-          aggregator-fn (fn [acc [k v]] (+ acc v))
-          topic-a (mock/topic "topic-a")
-          topology (-> (mock/topology-builder)
-                       (k/kstream topic-a)
-                       (k/aggregate-by-key initializer-fn aggregator-fn topic-a)
-                       (k/to-kstream)
-                       (mock/build))]
-      (-> topology
-          (mock/send topic-a 1 1)
-          (mock/send topic-a 1 2)
-          (mock/send topic-a 2 3)
-          (mock/send topic-a 2 4))
-      (let [result (mock/collect topology)]
-        (is (= ["1:1" "1:3" "2:3" "2:7"] result)))))
-
-  (testing "aggregate-by-key-windowed"
-    (let [initializer-fn (constantly 0)
-          aggregator-fn (fn [acc [k v]] (+ acc v))
-          topic-a (mock/topic "topic-a")
-          windows (.. (TimeWindows/of 4)
-                      (advanceBy 2))
-          topology (-> (mock/topology-builder)
-                       (k/kstream topic-a)
-                       (k/aggregate-by-key-windowed initializer-fn
-                                                    aggregator-fn
-                                                    windows
-                                                    topic-a)
-                       (k/to-kstream)
-                       (mock/build))]
-      (-> topology
-          (mock/send topic-a, 0, 0)
-          (mock/send topic-a, 1, 1)
-          (mock/send topic-a, 2, 2)
-          (mock/send topic-a, 3, 3)
-          (mock/send topic-a, 4, 4)
-          (mock/send topic-a, 5, 5)
-          (mock/send topic-a, 6, 6))
-      (let [result (mock/collect topology)]
-        (is (= ["[0@0]:0"
-                "[1@0]:1"
-                "[2@0]:2"
-                "[2@2]:2"
-                "[3@0]:3"
-                "[3@2]:3"
-                "[4@2]:4"
-                "[4@4]:4"
-                "[5@2]:5"
-                "[5@4]:5"
-                "[6@4]:6"
-                "[6@6]:6"]
-               result)))))
-
   (testing "branch"
     (let [topic-a (mock/topic "topic-a")
           predicate (fn [[k v]] (> v 1))
@@ -324,68 +270,6 @@
               (mock/send topic-a 2 2))
           (let [result-b (mock/collect topology-b)]
             (is (= ["1:1"] result-b))))))
-
-  (testing "count-by-key"
-    (let [topic-a (mock/topic "topic-a")
-          topology (-> (mock/topology-builder)
-                       (k/kstream topic-a)
-                       (k/count-by-key topic-a)
-                       (k/to-kstream)
-                       (mock/build))]
-      (-> topology
-          (mock/send topic-a 1 1)
-          (mock/send topic-a 1 2)
-          (mock/send topic-a 2 3)
-          (mock/send topic-a 2 4))
-      (let [result (mock/collect topology)]
-        (is (= ["1:1" "1:2" "2:1" "2:2"] result)))))
-
-  (testing "count-by-key"
-    (let [topic-a (mock/topic "topic-a")
-          topology (-> (mock/topology-builder)
-                       (k/kstream topic-a)
-                       (k/count-by-key topic-a)
-                       (k/to-kstream)
-                       (mock/build))]
-      (-> topology
-          (mock/send topic-a 1 1)
-          (mock/send topic-a 1 2)
-          (mock/send topic-a 2 3)
-          (mock/send topic-a 2 4))
-      (let [result (mock/collect topology)]
-        (is (= ["1:1" "1:2" "2:1" "2:2"] result)))))
-
-  (testing "count-by-key-windowed"
-    (let [topic-a (mock/topic "topic-a")
-          windows (.. (TimeWindows/of 4)
-                      (advanceBy 2))
-          topology (-> (mock/topology-builder)
-                       (k/kstream topic-a)
-                       (k/count-by-key-windowed windows topic-a)
-                       (k/to-kstream)
-                       (mock/build))]
-      (-> topology
-          (mock/send topic-a 0 0)
-          (mock/send topic-a 1 1)
-          (mock/send topic-a 2 2)
-          (mock/send topic-a 3 3)
-          (mock/send topic-a 4 4)
-          (mock/send topic-a 5 5)
-          (mock/send topic-a 6 6))
-      (let [result (mock/collect topology)]
-        (is (= ["[0@0]:1"
-                "[1@0]:1"
-                "[2@0]:1"
-                "[2@2]:1"
-                "[3@0]:1"
-                "[3@2]:1"
-                "[4@2]:1"
-                "[4@4]:1"
-                "[5@2]:1"
-                "[5@4]:1"
-                "[6@4]:1"
-                "[6@6]:1"]
-               result)))))
 
   (testing "flat-map"
     (let [topic-a (mock/topic "topic-a")
@@ -492,59 +376,6 @@
 
         (let [result (mock/collect topology)]
           (is (= ["1:1"] result))))))
-
-  (testing "reduce-by-key"
-    (let [reducer-fn +
-          topic-a (mock/topic "topic-a")
-          topology (-> (mock/topology-builder)
-                       (k/kstream topic-a)
-                       (k/reduce-by-key reducer-fn topic-a)
-                       (k/to-kstream)
-                       (mock/build))]
-
-      (-> topology
-          (mock/send topic-a 1 1)
-          (mock/send topic-a 1 2)
-          (mock/send topic-a 2 3)
-          (mock/send topic-a 2 4))
-
-      (let [result (mock/collect topology)]
-        (is (= ["1:1" "1:3" "2:3" "2:7"] result)))))
-
-  (testing "reduce-by-key-windowed"
-    (let [reducer-fn +
-          windows (.. (TimeWindows/of 4)
-                      (advanceBy 2))
-          topic-a (mock/topic "topic-a")
-          topology (-> (mock/topology-builder)
-                       (k/kstream topic-a)
-                       (k/reduce-by-key-windowed reducer-fn windows topic-a)
-                       (k/to-kstream)
-                       (mock/build))]
-
-      (-> topology
-          (mock/send topic-a 0 0)
-          (mock/send topic-a 1 1)
-          (mock/send topic-a 2 2)
-          (mock/send topic-a 3 3)
-          (mock/send topic-a 4 4)
-          (mock/send topic-a 5 5)
-          (mock/send topic-a 6 6))
-
-      (let [result (mock/collect topology)]
-        (is (= ["[0@0]:0"
-                "[1@0]:1"
-                "[2@0]:2"
-                "[2@2]:2"
-                "[3@0]:3"
-                "[3@2]:3"
-                "[4@2]:4"
-                "[4@4]:4"
-                "[5@2]:5"
-                "[5@4]:5"
-                "[6@4]:6"
-                "[6@6]:6"]
-               result)))))
 
   (testing "select-key"
     (let [topic-a (mock/topic "topic-a")
