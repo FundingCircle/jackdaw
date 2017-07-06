@@ -13,7 +13,6 @@
           :source-uri "http://github.com/fundingcircle/jackdaw/blob/{version}/{filepath}#L{line}"}
   :source-paths ["jackdaw-admin/src"
                  "jackdaw-client/src"
-                 "jackdaw-admin/src"
                  "jackdaw-serdes/src"
                  "jackdaw-streams/src"]
   :profiles {:dev {:dependencies [[org.apache.kafka/kafka-clients "_" :classifier "test"]
