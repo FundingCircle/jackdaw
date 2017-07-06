@@ -57,10 +57,6 @@
      (.merge topology-builder
              (into-array KStream (mapv kstream* kstreams)))))
 
-  (new-name
-    [_ prefix]
-    (.newName topology-builder prefix))
-
   (kstream
     [_ topic-config]
     (kstream-memo topology-builder topic-config))

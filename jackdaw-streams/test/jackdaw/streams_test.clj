@@ -18,10 +18,6 @@
       (is (satisfies? IKStream merged-kstream))
       (is (= #{"topic-a" "topic-b"} (k/source-topics topology-builder)))))
 
-  (testing "new-name"
-    (let [new-name (k/new-name (mock/topology-builder) "foo")]
-      (is (string/starts-with? new-name "foo"))))
-
   (testing "kstream"
     (let [topology-builder (mock/topology-builder)
           kstream-a (-> topology-builder

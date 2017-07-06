@@ -14,10 +14,6 @@
      config
      (merge topology-builder kstreams)))
 
-  (new-name
-    [_ prefix]
-    (new-name topology-builder prefix))
-
   (kstream
     [_ topic-config]
     (configured-kstream
