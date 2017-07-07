@@ -16,12 +16,12 @@
 (def serde? (partial instance? Serde))
 (def topology-builder? (partial satisfies? ITopologyBuilder))
 
-(s/def :topic.metadata/name string?)
+(s/def :jackdaw.topic/topic-name string?)
 (s/def :jackdaw.serdes/key-serde serde?)
 (s/def :jackdaw.serdes/value-serde serde?)
 
 (s/def ::topic-config
-  (s/keys :req [:topic.metadata/name
+  (s/keys :req [:jackdaw.topic/topic-name
                 :jackdaw.serdes/key-serde
                 :jackdaw.serdes/value-serde]))
 (s/def ::topic-configs (s/coll-of ::topic-config))

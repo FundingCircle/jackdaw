@@ -9,10 +9,10 @@
 
 (defn producer-record
   "Creates a kafka ProducerRecord for use with `send!`."
-  ([{:keys [jackdaw.topic/topic-name]} value] (ProducerRecord. name value))
-  ([{:keys [jackdaw.topic/topic-name]} key value] (ProducerRecord. name key value))
-  ([{:keys [jackdaw.topic/topic-name]} partition key value] (ProducerRecord. name partition key value))
-  ([{:keys [jackdaw.topic/topic-name]} partition timestamp key value] (ProducerRecord. name partition timestamp key value)))
+  ([{:keys [jackdaw.topic/topic-name]} value] (ProducerRecord. topic-name value))
+  ([{:keys [jackdaw.topic/topic-name]} key value] (ProducerRecord. topic-name key value))
+  ([{:keys [jackdaw.topic/topic-name]} partition key value] (ProducerRecord. topic-name partition key value))
+  ([{:keys [jackdaw.topic/topic-name]} partition timestamp key value] (ProducerRecord. topic-name partition timestamp key value)))
 
 (defn topic-partition
   "Return a TopicPartition"
@@ -33,7 +33,7 @@
                      (.serializer ^Serde key-serde)
                      (.serializer ^Serde value-serde)))))
 
-(defn- to-record-metadata
+(defn record-metadata
   "Clojurizes an org.apache.kafka.clients.producer.RecordMetadata."
   [^RecordMetadata record-metadata]
   (when record-metadata
@@ -42,7 +42,8 @@
      :partition (.partition record-metadata)
      :serialized-key-size (.serializedKeySize record-metadata)
      :serialized-value-size (.serializedValueSize record-metadata)
-     :timestamp (.timestamp record-metadata)}))
+     :timestamp (.timestamp record-metadata)
+     :topic (.topic record-metadata)}))
 
 (defn callback
   "Build a kafka producer callback function out of a normal clojure one
@@ -51,8 +52,8 @@
    should check for an exception and handle it appropriately."
   [on-completion]
   (reify Callback
-    (onCompletion [this record-metadata exception]
-      (on-completion (to-record-metadata record-metadata) exception))))
+    (onCompletion [this record-meta exception]
+      (on-completion (record-metadata record-meta) exception))))
 
 (defn send!
   "Asynchronously sends a record to a topic, returning a Future. A callback function
@@ -78,8 +79,9 @@
 
 (defn subscribe
   "Subscribe a consumer to topics. Returns the consumer."
-  [consumer topic-config & topic-configs]
-  (.subscribe ^Consumer consumer (mapv :jackdaw.topic/topic-name (cons topic-config topic-configs)))
+  [consumer & topic-configs]
+  (println "Subscribing to topic" {:topic-configs topic-configs :topic (mapv :jackdaw.topic/topic-name topic-configs)})
+  (.subscribe ^Consumer consumer (mapv :jackdaw.topic/topic-name topic-configs))
   consumer)
 
 (defn consumer-subscription

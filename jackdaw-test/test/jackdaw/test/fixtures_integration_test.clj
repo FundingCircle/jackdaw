@@ -110,8 +110,8 @@
                                                             (str "kafka-connect-test-" (UUID/randomUUID))))
                                     (client/subscribe {:jackdaw.topic/topic-name "kafka-connect-source"}))]
 
-             (is (= (str foreign-id) (some-> (client/timed-log-messages consumer 60000)
+             (is (= (str foreign-id) (some-> (client/poll consumer 60000)
                                              first
-                                             last
+                                             :value
                                              (json/read-str)
                                              (get "foreign_id")))))))))))
