@@ -86,7 +86,7 @@
   (doseq [{topic-name :jackdaw.topic/topic-name
            partitions :jackdaw.topic/partitions
            replication-factor :jackdaw.topic/replication-factor
-           config :jackdaw.topic/config}
+           topic-config :jackdaw.topic/topic-config}
           topic-metadata]
     (if (exists? zk-utils topic-name)
       (log/debug (format "Topic %s already exists"
@@ -95,7 +95,7 @@
                topic-name
                (int partitions)
                (int replication-factor)
-               config))))
+               topic-config))))
 
 (defn fetch-config
   [zk-utils topic]
@@ -111,7 +111,7 @@
   ([zk-utils metadata]
    (change-config! zk-utils
                    (:jackdaw.topic/topic-name metadata)
-                   (:jackdaw.topic/config metadata)))
+                   (:jackdaw.topic/topic-config metadata)))
   ([zk-utils topic configs]
    (AdminUtils/changeTopicConfig zk-utils
                                  (name topic)

@@ -15,7 +15,7 @@
    (let [topic-name-key :jackdaw.topic/topic-name
          metadata       {:jackdaw.topic/partitions         1
                          :jackdaw.topic/replication-factor 1
-                         :jackdaw.topic/config             {:jackdaw.topic/cleanup.policy "compact"}}]
+                         :jackdaw.topic/topic-config       {:jackdaw.topic/cleanup.policy "compact"}}]
      (map (fn [topic-name]
             (merge {topic-name-key topic-name} metadata)) topic-names)))
 
@@ -64,7 +64,7 @@
            topics-metadata (build-topics-metadata topic-names)
            cleanup-policy (-> topics-metadata
                               first
-                              :jackdaw.topic/config
+                              :jackdaw.topic/topic-config
                               :jackdaw.topic/cleanup.policy)]
        (testing "creates new topics"
          (with-open [zk-utils (zk/zk-utils (get config/common "zookeeper.connect"))]
