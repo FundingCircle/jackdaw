@@ -13,17 +13,9 @@
    "Receives Vector of topic names and returns topic configs for each topic."
    [topic-names]
    (let [topic-name-key :jackdaw.topic/topic-name
-         metadata       {:jackdaw.topic/status             :pre-release
-                         :jackdaw.topic/record-key         :unique-key
-                         :jackdaw.topic/value-serde        :jackdaw.serdes/json
-                         :jackdaw.topic/partitions         1
-                         :jackdaw.topic/version            2
+         metadata       {:jackdaw.topic/partitions         1
                          :jackdaw.topic/replication-factor 1
-                         :jackdaw.topic/config             {:jackdaw.topic/cleanup.policy "compact"}
-                         :jackdaw.topic/value-schema-name  "loan-unkeyed-pre-release"
-                         :jackdaw.topic/type               :jackdaw.topic/table
-                         :jackdaw.topic/unique-key         "id"
-                         :jackdaw.topic/key-serde          :jackdaw.serdes/string}]
+                         :jackdaw.topic/config             {:jackdaw.topic/cleanup.policy "compact"}}]
      (map (fn [topic-name]
             (merge {topic-name-key topic-name} metadata)) topic-names)))
 
