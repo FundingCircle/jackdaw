@@ -48,54 +48,56 @@
 (defprotocol IKStreamBase
   "Shared methods."
   (left-join
-    [kstream ktable value-joiner-fn]
-    [kstream ktable value-joiner-fn topic-config]
-    "Combine values of this stream with KTable's elements of the same key using Left Join.")
+    [kstream-or-ktable ktable value-joiner-fn]
+    [kstream-or-ktable ktable value-joiner-fn topic-config]
+    "Creates a KStream from the result of calling `value-joiner-fn` with
+    each element in the KStream and the value in the KTable with the same
+    key.")
 
   (for-each!
-    [kstream foreach-fn]
-    "Perform an action on each element of KStream.")
+    [kstream-or-ktable foreach-fn]
+    "Performs an action on each element of KStream.")
 
   (filter
-    [kstream predicate-fn]
-    "Create a new instance of KStream that consists of all elements of this
-    stream which satisfy a predicate.")
+    [kstream-or-ktable predicate-fn]
+    "Creates a KStream that consists of all elements that satisfy a
+    predicate.")
 
   (filter-not
-    [kstream predicate-fn]
-    "Create a new instance of KStream that consists all elements of this stream
-    which do not satisfy a predicate.")
+    [kstream-or-ktable predicate-fn]
+    "Creates a KStream that consists of all elements that do not satisfy a
+    predicate.")
 
   (group-by
-    [ktable key-value-mapper-fn]
-    [ktable key-value-mapper-fn topic-config]
-    "Group the records of this KStream/KTable using the provided key-value-mapper-fn.")
+    [ktable-or-ktable key-value-mapper-fn]
+    [ktable-or-ktable key-value-mapper-fn topic-config]
+    "Groups the records of this KStream/KTable using the key-value-mapper-fn.")
 
   (map-values
-    [kstream value-mapper-fn]
-    "Create a new instance of KStream by transforming the value of each element
-    in this stream into a new value in the new stream.")
+    [kstream-or-ktable value-mapper-fn]
+    "Creates a KStream that is the result of calling `value-mapper-fn` on each
+    element of the input stream.")
 
   (print!
-    [kstream]
-    [kstream topic-config]
-    "Print the elements of this stream to *out*.")
+    [kstream-or-ktable]
+    [kstream-or-ktable topic-config]
+    "Prints the elements of the stream to *out*.")
 
   (through
-    [kstream topic-config]
-    [kstream partition-fn topic-config]
-    "Materialize this stream to a topic, also creates a new instance of KStream
-    from the topic.")
+    [kstream-or-ktable topic-config]
+    [kstream-or-ktable partition-fn topic-config]
+    "Materializes a stream to a topic, and returns a new KStream that will
+    consume messages from the topic.")
 
   (to!
-    [kstream topic-config]
-    [kstream partition-fn topic-config]
-    "Materialize this stream to a topic.")
+    [kstream-or-ktable topic-config]
+    [kstream-or-ktable partition-fn topic-config]
+    "Materializes a stream to a topic.")
 
   (write-as-text!
-    [kstream file-path]
-    [kstream file-path topic-config]
-    "Write the elements of this stream to a file at the given path."))
+    [kstream-or-ktable file-path]
+    [kstream-or-ktable file-path topic-config]
+    "Writes the elements of a stream to a file at the given path."))
 
 (defprotocol IKStream
   "KStream is an abstraction of a record stream of key-value pairs.
@@ -210,10 +212,10 @@
     in this stream, one element at a time.")
 
   (join-global
-    [kstream global-kstream kv-mapper joiner])
+    [kstream global-ktable kv-mapper joiner])
 
   (left-join-global
-    [kstream global-kstream kv-mapper joiner])
+    [kstream global-ktable kv-mapper joiner])
 
   (kstream*
     [kstream]
@@ -258,9 +260,8 @@
     instance of KTable.")
 
   (count
-    [kgrouped name]
-    "Count number of records of this stream by the selected key into a new
-    instance of KTable.")
+    [kgrouped topic-config]
+    "Counts the number of records by key into a new KTable.")
 
   (reduce
     [kgrouped adder-fn subtractor-fn topic-config]
