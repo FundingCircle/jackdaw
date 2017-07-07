@@ -104,5 +104,5 @@
 
 (defn poll
   "Polls kafka for new messages."
-  [^KafkaConsumer consumer timeout]
+  [^Consumer consumer timeout]
   (mapv consumer-record (.poll consumer timeout)))

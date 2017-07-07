@@ -53,7 +53,7 @@
 (defn mock-consumer
   "Returns a consumer that will return the supplied items (as ConsumerRecords)
    in response to successive calls of the `poll` method"
-  [topic queue]
+  [queue]
   (reify Consumer
     (poll [this ms]
       (.poll queue ms TimeUnit/MILLISECONDS))))
@@ -70,3 +70,16 @@
                 "value.serializer" "org.apache.kafka.common.serialization.StringSerializer"}]
     (is (instance? Producer (client/producer config)))))
 
+(deftest poll-test
+  (let [q (LinkedBlockingQueue.)
+        consumer (mock-consumer q)]
+    (.put q (poll-result "test-topic" [[1 1] [2 2]]))
+    (let [results (client/poll consumer 1000)]
+      (are [k v] (first results)
+           :topic "test-topic"
+           :key 1
+           :value 1)
+      (are [k v] (second results)
+           :topic "test-topic"
+           :key 2
+           :value 2))))
