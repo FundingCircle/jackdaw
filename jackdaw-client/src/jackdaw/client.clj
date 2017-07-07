@@ -78,8 +78,8 @@
 
 (defn subscribe
   "Subscribe a consumer to topics. Returns the consumer."
-  [consumer & topic-configs]
-  (.subscribe ^Consumer consumer (mapv :kafka.topic/name topic-configs))
+  [consumer topic-config & topic-configs]
+  (.subscribe ^Consumer consumer (mapv :kafka.topic/name (cons topic-config topic-configs)))
   consumer)
 
 (defn consumer-subscription
