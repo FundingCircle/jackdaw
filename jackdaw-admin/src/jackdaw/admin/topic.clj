@@ -83,10 +83,10 @@
 (defn create-topics!
   "Create topics specified in topic-metadata if they do not exist."
   [zk-utils topic-metadata]
-  (doseq [{topic-name :topic.metadata/name
-           partitions :topic.metadata/partitions
-           replication-factor :topic.metadata/replication-factor
-           config :topic.metadata/config}
+  (doseq [{topic-name :jackdaw.topic/topic-name
+           partitions :jackdaw.topic/partitions
+           replication-factor :jackdaw.topic/replication-factor
+           config :jackdaw.topic/config}
           topic-metadata]
     (if (exists? zk-utils topic-name)
       (log/debug (format "Topic %s already exists"
@@ -110,8 +110,8 @@
   "Changes a topic configuration"
   ([zk-utils metadata]
    (change-config! zk-utils
-                   (:topic.metadata/name metadata)
-                   (:topic.metadata/config metadata)))
+                   (:jackdaw.topic/topic-name metadata)
+                   (:jackdaw.topic/config metadata)))
   ([zk-utils topic configs]
    (AdminUtils/changeTopicConfig zk-utils
                                  (name topic)

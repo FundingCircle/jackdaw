@@ -9,15 +9,15 @@
 
 (defn producer-record
   "Creates a kafka ProducerRecord for use with `send!`."
-  ([{:keys [kafka.topic/name]} value] (ProducerRecord. name value))
-  ([{:keys [kafka.topic/name]} key value] (ProducerRecord. name key value))
-  ([{:keys [kafka.topic/name]} partition key value] (ProducerRecord. name partition key value))
-  ([{:keys [kafka.topic/name]} partition timestamp key value] (ProducerRecord. name partition timestamp key value)))
+  ([{:keys [jackdaw.topic/topic-name]} value] (ProducerRecord. name value))
+  ([{:keys [jackdaw.topic/topic-name]} key value] (ProducerRecord. name key value))
+  ([{:keys [jackdaw.topic/topic-name]} partition key value] (ProducerRecord. name partition key value))
+  ([{:keys [jackdaw.topic/topic-name]} partition timestamp key value] (ProducerRecord. name partition timestamp key value)))
 
 (defn topic-partition
   "Return a TopicPartition"
-  [{:keys [:kafka.topic/name] :as topic-config} partition]
-  (TopicPartition. name (int partition)))
+  [{:keys [:jackdaw.topic/topic-name] :as topic-config} partition]
+  (TopicPartition. topic-name (int partition)))
 
 (defn producer
   "Return a KafkaProducer with the supplied properties"
@@ -26,7 +26,7 @@
      (.putAll props config)
      (KafkaProducer. props)))
 
-  ([config {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
+  ([config {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
    (let [props (java.util.Properties.)]
      (.putAll props config)
      (KafkaProducer. props
@@ -69,7 +69,7 @@
    (let [props (java.util.Properties.)]
      (.putAll props config)
      (KafkaConsumer. props)))
-  ([config {:keys [kafka.serdes/key-serde kafka.serdes/value-serde]}]
+  ([config {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
    (let [props (java.util.Properties.)]
      (.putAll props config)
      (KafkaConsumer. props
@@ -79,7 +79,7 @@
 (defn subscribe
   "Subscribe a consumer to topics. Returns the consumer."
   [consumer topic-config & topic-configs]
-  (.subscribe ^Consumer consumer (mapv :kafka.topic/name (cons topic-config topic-configs)))
+  (.subscribe ^Consumer consumer (mapv :jackdaw.topic/topic-name (cons topic-config topic-configs)))
   consumer)
 
 (defn consumer-subscription

@@ -10,20 +10,20 @@
 (fixture/kafka)
 
 (defn build-topics-metadata
-   "Receives Vector of topic names and returns topic.metadata for the topics"
+   "Receives Vector of topic names and returns topic configs for each topic."
    [topic-names]
-   (let [topic-name-key :topic.metadata/name
-         metadata       {:topic.metadata/status             :pre-release
-                         :topic.metadata/record-key         :unique-key
-                         :topic.metadata/value-serde        :kafka.serdes/json
-                         :topic.metadata/partitions         1
-                         :topic.metadata/version            2
-                         :topic.metadata/replication-factor 1
-                         :topic.metadata/config             {:topic.metadata/cleanup.policy "compact"}
-                         :topic.metadata/value-schema-name  "loan-unkeyed-pre-release"
-                         :topic.metadata/type               :topic.metadata/table
-                         :topic.metadata/unique-key         "id"
-                         :topic.metadata/key-serde          :kafka.serdes/string}]
+   (let [topic-name-key :jackdaw.topic/topic-name
+         metadata       {:jackdaw.topic/status             :pre-release
+                         :jackdaw.topic/record-key         :unique-key
+                         :jackdaw.topic/value-serde        :jackdaw.serdes/json
+                         :jackdaw.topic/partitions         1
+                         :jackdaw.topic/version            2
+                         :jackdaw.topic/replication-factor 1
+                         :jackdaw.topic/config             {:jackdaw.topic/cleanup.policy "compact"}
+                         :jackdaw.topic/value-schema-name  "loan-unkeyed-pre-release"
+                         :jackdaw.topic/type               :jackdaw.topic/table
+                         :jackdaw.topic/unique-key         "id"
+                         :jackdaw.topic/key-serde          :jackdaw.serdes/string}]
      (map (fn [topic-name]
             (merge {topic-name-key topic-name} metadata)) topic-names)))
 
@@ -72,8 +72,8 @@
            topics-metadata (build-topics-metadata topic-names)
            cleanup-policy (-> topics-metadata
                               first
-                              :topic.metadata/config
-                              :topic.metadata/cleanup.policy)]
+                              :jackdaw.topic/config
+                              :jackdaw.topic/cleanup.policy)]
        (testing "creates new topics"
          (with-open [zk-utils (zk/zk-utils (get config/common "zookeeper.connect"))]
            (topic/create-topics! zk-utils topics-metadata)
@@ -94,14 +94,14 @@
          (is (= config (topic/fetch-config zk-utils topic-name)))))))
 
 (deftest change-config-test
-  (testing "without topic metadata"
+  (testing "without topic configs"
     (with-open [zk-utils (zk/zk-utils (get config/common "zookeeper.connect"))]
       (let [config {"cleanup.policy" "compact"}
             topic-name (str (java.util.UUID/randomUUID))]
         (topic/create! zk-utils topic-name 1 1 {})
         (topic/change-config! zk-utils topic-name config)
         (is (= config (AdminUtils/fetchEntityConfig zk-utils (ConfigType/Topic) topic-name))))))
-  (testing "with topic metadata"
+  (testing "with topic configs"
     (with-open [zk-utils (zk/zk-utils (get config/common "zookeeper.connect"))]
       (let [topic-name (str (java.util.UUID/randomUUID))
             config {"cleanup.policy" "compact"}

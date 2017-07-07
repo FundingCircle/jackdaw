@@ -443,10 +443,10 @@
      (aggregate kgroupedtable initializer-fn adder-fn subtractor-fn topic-config)))
 
   (count
-    [_ name]
+    [_ store-name]
     (configured-ktable
      config
-     (count kgroupedtable name)))
+     (count kgroupedtable store-name)))
 
   (reduce
     [_ adder-fn subtractor-fn topic-config]
@@ -482,10 +482,10 @@
      (aggregate kgroupedstream initializer-fn aggregator-fn topic-config)))
 
   (count
-    [_ name]
+    [_ store-name]
     (configured-ktable
      config
-     (count kgroupedstream name)))
+     (count kgroupedstream store-name)))
 
   (reduce
     [_ reducer-fn topic-config]

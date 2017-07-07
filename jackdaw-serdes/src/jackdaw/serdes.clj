@@ -59,8 +59,8 @@
 
 (defn resolve
   "Loads the serdes for a topic spec."
-  [{:keys [topic.metadata/key-serde topic.metadata/key-schema
-           topic.metadata/value-serde topic.metadata/value-schema] :as topic-config}]
+  [{:keys [jackdaw.topic/key-serde jackdaw.topic/key-schema
+           jackdaw.topic/value-serde jackdaw.topic/value-schema] :as topic-config}]
   (assoc topic-config
          ::key-serde (serde (assoc topic-config
                                    ::type key-serde

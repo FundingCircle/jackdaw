@@ -21,12 +21,12 @@
   "Returns a kstream for the topic, creating a new one if needed."
   (memoize
    (fn [topology-builder
-        {:keys [topic.metadata/name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
+        {:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
      (clj-kstream
       (.stream ^KStreamBuilder topology-builder
                ^Serde key-serde
                ^Serde value-serde
-               ^"[Ljava.lang.String;" (into-array String [name]))))))
+               ^"[Ljava.lang.String;" (into-array String [topic-name]))))))
 
 (def ^:private kstream-memo-patterned
   "Returns a kstream for the topic, creating a new one if needed."
@@ -44,10 +44,10 @@
   "Returns a ktable for the topic, creating a new one if needed."
   (memoize
    (fn [topology-builder
-        {:keys [topic.metadata/name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}
+        {:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}
         store-name]
      (clj-ktable
-      (.table ^KStreamBuilder topology-builder key-serde value-serde name store-name)))))
+      (.table ^KStreamBuilder topology-builder key-serde value-serde topic-name store-name)))))
 
 (deftype CljKStreamBuilder [^KStreamBuilder topology-builder]
   ITopologyBuilder
@@ -68,24 +68,24 @@
   (kstreams
     [_ topic-configs]
     (clj-kstream
-     (let [topic-names (clojure.core/map :topic.metadata/name topic-configs)]
+     (let [topic-names (clojure.core/map :jackdaw.topic/topic-name topic-configs)]
        (.stream topology-builder
                 ^"[Ljava.lang.String;" (into-array String topic-names)))))
 
   (ktable
-    [_ {:keys [topic.metadata/name] :as topic-config}]
-    (ktable-memo topology-builder topic-config name))
+    [_ {:keys [jackdaw.topic/topic-name] :as topic-config}]
+    (ktable-memo topology-builder topic-config topic-name))
 
   (ktable
     [_ topic-config store-name]
     (ktable-memo topology-builder topic-config store-name))
 
-  (global-ktable [this {:keys [topic.metadata/name] :as topic-config}]
-    (global-ktable this topic-config name))
+  (global-ktable [this {:keys [jackdaw.topic/topic-name] :as topic-config}]
+    (global-ktable this topic-config topic-name))
 
-  (global-ktable [_ {:keys [topic.metadata/name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]} store-name]
+  (global-ktable [_ {:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]} store-name]
     (clj-global-ktable
-      (.globalTable ^KStreamBuilder topology-builder key-serde value-serde name store-name)))
+      (.globalTable ^KStreamBuilder topology-builder key-serde value-serde topic-name store-name)))
 
   (source-topics
     [_]
@@ -165,23 +165,23 @@
     nil)
 
   (through
-    [_ {:keys [topic.metadata/name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
+    [_ {:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     (clj-kstream
-     (.through kstream key-serde value-serde name)))
+     (.through kstream key-serde value-serde topic-name)))
 
   (through
-    [_ partition-fn {:keys [topic.metadata/name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
+    [_ partition-fn {:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     (clj-kstream
-     (.through kstream key-serde value-serde (stream-partitioner partition-fn) name)))
+     (.through kstream key-serde value-serde (stream-partitioner partition-fn) topic-name)))
 
   (to!
-    [_ {:keys [topic.metadata/name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
-    (.to kstream key-serde value-serde name)
+    [_ {:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
+    (.to kstream key-serde value-serde topic-name)
     nil)
 
   (to!
-    [_ partition-fn {:keys [topic.metadata/name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
-    (.to kstream key-serde value-serde (stream-partitioner partition-fn) name)
+    [_ partition-fn {:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
+    (.to kstream key-serde value-serde (stream-partitioner partition-fn) topic-name)
     nil)
 
   (write-as-text!
@@ -384,25 +384,25 @@
     nil)
 
   (through
-    [_ {:keys [topic.metadata/name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
+    [_ {:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     ;; todo add store name
     (clj-ktable
-     (.through ktable key-serde value-serde name name)))
+     (.through ktable key-serde value-serde topic-name topic-name)))
 
   (through
-    [_ partition-fn {:keys [topic.metadata/name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
+    [_ partition-fn {:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     ;; todo add store name
     (clj-ktable
-     (.through ktable key-serde value-serde (stream-partitioner partition-fn) name name)))
+     (.through ktable key-serde value-serde (stream-partitioner partition-fn) topic-name topic-name)))
 
   (to!
-    [_ {:keys [topic.metadata/name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
-    (.to ktable key-serde value-serde name)
+    [_ {:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
+    (.to ktable key-serde value-serde topic-name)
     nil)
 
   (to!
-    [_ partition-fn {:keys [topic.metadata/name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
-    (.to ktable key-serde value-serde (stream-partitioner partition-fn) name)
+    [_ partition-fn {:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
+    (.to ktable key-serde value-serde (stream-partitioner partition-fn) topic-name)
     nil)
 
   (write-as-text!
@@ -474,27 +474,27 @@
   IKGroupedBase
   (aggregate
     [_ initializer-fn adder-fn subtractor-fn
-     {:keys [topic.metadata/name jackdaw.serdes/value-serde]}]
+     {:keys [jackdaw.topic/topic-name jackdaw.serdes/value-serde]}]
     (clj-ktable
      (.aggregate kgroupedtable
                  (initializer initializer-fn)
                  (aggregator adder-fn)
                  (aggregator subtractor-fn)
                  value-serde
-                 name)))
+                 topic-name)))
   (count
-    [_ {:keys [topic.metadata/name]}]
+    [_ {:keys [jackdaw.topic/topic-name]}]
     (clj-ktable
      (.count ^KGroupedTable kgroupedtable
-             ^String name)))
+             ^String topic-name)))
 
   (reduce
-    [_ adder-fn subtractor-fn {:keys [topic.metadata/name]}]
+    [_ adder-fn subtractor-fn {:keys [jackdaw.topic/topic-name]}]
     (clj-ktable
      (.reduce ^KGroupedTable kgroupedtable
               ^Reducer (reducer adder-fn)
               ^Reducer (reducer subtractor-fn)
-              ^String name)))
+              ^String topic-name)))
 
   IKGroupedTable
   (kgroupedtable*
@@ -509,51 +509,51 @@
 (deftype CljKGroupedStream [^KGroupedStream kgroupedstream]
   IKGroupedBase
   (aggregate
-    [_ initializer-fn aggregator-fn {:keys [topic.metadata/name jackdaw.serdes/value-serde]}]
+    [_ initializer-fn aggregator-fn {:keys [jackdaw.topic/topic-name jackdaw.serdes/value-serde]}]
     (clj-ktable
      (.aggregate ^KGroupedStream kgroupedstream
                  ^Initializer (initializer initializer-fn)
                  ^Aggregator (aggregator aggregator-fn)
                  ^Serde value-serde
-                 ^String name)))
+                 ^String topic-name)))
   (count
-    [_ {:keys [topic.metadata/name]}]
+    [_ {:keys [jackdaw.topic/topic-name]}]
     (clj-ktable
      (.count ^KGroupedStream kgroupedstream
-             ^String name)))
+             ^String topic-name)))
 
   (reduce
-    [_ reducer-fn {:keys [topic.metadata/name]}]
+    [_ reducer-fn {:keys [jackdaw.topic/topic-name]}]
     (clj-ktable
      (.reduce ^KGroupedStream kgroupedstream
               ^Reducer (reducer reducer-fn)
-              ^String name)))
+              ^String topic-name)))
 
   IKGroupedStream
   (aggregate-windowed
-    [_ initializer-fn aggregator-fn windows {:keys [topic.metadata/name jackdaw.serdes/value-serde]}]
+    [_ initializer-fn aggregator-fn windows {:keys [jackdaw.topic/topic-name jackdaw.serdes/value-serde]}]
     (clj-ktable
      (.aggregate ^KGroupedStream kgroupedstream
                  ^Initializer (initializer initializer-fn)
                  ^Aggregator (aggregator aggregator-fn)
                  ^Windows windows
                  ^Serde value-serde
-                 ^String name)))
+                 ^String topic-name)))
 
   (count-windowed
-    [_ windows {:keys [topic.metadata/name]}]
+    [_ windows {:keys [jackdaw.topic/topic-name]}]
     (clj-ktable
      (.count ^KGroupedStream kgroupedstream
              ^Windows windows
-             ^String name)))
+             ^String topic-name)))
 
   (reduce-windowed
-    [_ reducer-fn windows {:keys [topic.metadata/name]}]
+    [_ reducer-fn windows {:keys [jackdaw.topic/topic-name]}]
     (clj-ktable
      (.reduce ^KGroupedStream kgroupedstream
               ^Reducer (reducer reducer-fn)
               ^Windows windows
-              ^String name)))
+              ^String topic-name)))
 
   (kgroupedstream*
     [_]

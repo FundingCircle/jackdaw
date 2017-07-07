@@ -42,7 +42,7 @@
         time (or (-> topology config ::test-driver-time) 0)]
     (.setTime test-driver time)
     (.process test-driver
-              (:topic.metadata/name topic-config)
+              (:jackdaw.topic/topic-name topic-config)
               key
               message)
     (.flushState test-driver)
@@ -61,6 +61,6 @@
 (defn topic
   "Helper to create a topic."
   [topic-name]
-  {:topic.metadata/name topic-name
+  {:jackdaw.topic/topic-name topic-name
    :jackdaw.serdes/key-serde (Serdes/Long)
    :jackdaw.serdes/value-serde (Serdes/Long)})

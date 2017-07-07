@@ -17,7 +17,7 @@ please raise an issue.
     [jackdaw.serdes :as serde]))
 
 (defn demo-topic [topic-name]
-  {:topic.metadata/name topic-name
+  {:jackdaw.topic/topic-name topic-name
    :jackdaw.serdes/key-serde (serde/serde :jackdaw.serde/edn)
    :jackdaw.serdes/value-serde (serde/serde :jackdaw.serde/edn)})
 ```

@@ -50,7 +50,7 @@
         true))))
 
 (deftest ^:integration integration-test
-  (let [topic {:topic.metadata/name "foo"}]
+  (let [topic {:jackdaw.topic/topic-name "foo"}]
     (with-open [producer (client/producer test-config/producer)
                 consumer (-> (client/consumer test-config/consumer)
                              (client/subscribe topic))]
@@ -108,7 +108,7 @@
 
            (with-open [consumer (-> (client/consumer (assoc test-config/consumer "group.id"
                                                             (str "kafka-connect-test-" (UUID/randomUUID))))
-                                    (client/subscribe {:topic.metadata/name "kafka-connect-source"}))]
+                                    (client/subscribe {:jackdaw.topic/topic-name "kafka-connect-source"}))]
 
              (is (= (str foreign-id) (some-> (client/timed-log-messages consumer 60000)
                                              first
