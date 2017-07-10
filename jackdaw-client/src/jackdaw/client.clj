@@ -80,11 +80,10 @@
 (defn subscribe
   "Subscribe a consumer to topics. Returns the consumer."
   [consumer & topic-configs]
-  (println "Subscribing to topic" {:topic-configs topic-configs :topic (mapv :jackdaw.topic/topic-name topic-configs)})
   (.subscribe ^Consumer consumer (mapv :jackdaw.topic/topic-name topic-configs))
   consumer)
 
-(defn consumer-subscription
+(defn subscribed-consumer
   "Returns a consumer that is subscribed to a single topic."
   [config topic-config]
   (-> (consumer config topic-config)
