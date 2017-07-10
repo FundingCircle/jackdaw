@@ -8,6 +8,9 @@
                  [org.apache.kafka/kafka-clients "_"]
                  [org.clojure/data.json "0.2.6"]
                  [com.taoensso/nippy "2.12.2"]]
+  :aot [jackdaw.serdes.json
+        jackdaw.serdes.avro
+        jackdaw.serdes.edn]
   :profiles {:dev {:dependencies [[org.clojure/test.check "_"]]}}
   :test-selectors {:default (complement :integration)
                    :integration :integration})

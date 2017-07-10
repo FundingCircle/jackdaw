@@ -21,7 +21,18 @@
                                   [org.apache.kafka/kafka-streams "_" :classifier "test"]
                                   [org.clojure/test.check "_"]]}
              :provided {:dependencies [[org.clojure/clojure "_"]]}}
-  :modules {:inherited {:repositories {"confluent" {:url "http://packages.confluent.io/maven/"}}
+  :aot [jackdaw.serdes.json
+        jackdaw.serdes.avro
+        jackdaw.serdes.edn]
+  :modules {:inherited {:repositories {"confluent" {:url "http://packages.confluent.io/maven/"}
+                                       "snapshots" {:url "https://fundingcircle.artifactoryonline.com/fundingcircle/libs-snapshot-local"
+                                                    :username [:gpg :env/artifactory_user]
+                                                    :password [:gpg :env/artifactory_password]
+                                                    :sign-releases false}
+                                       "releases" {:url "https://fundingcircle.artifactoryonline.com/fundingcircle/libs-release-local"
+                                                   :username [:gpg :env/artifactory_user]
+                                                   :password [:gpg :env/artifactory_password]
+                                                   :sign-releases false} }
                         :url "https://github.com/FundingCircle/jackdaw"
                         :license {:name "BSD 3-clause"
                                   :url "http://opensource.org/licenses/BSD-3-Clause"}}
