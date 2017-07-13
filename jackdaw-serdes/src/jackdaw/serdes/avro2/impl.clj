@@ -8,7 +8,7 @@
            (io.confluent.kafka.serializers KafkaAvroSerializer KafkaAvroDeserializer)))
 
 (defn logical-type-name [schema]
-  (-> schema (.getFields) (.get "logicalType")))
+  (-> schema (.getProps) (.get "logicalType")))
 
 (defn base-type-name [schema]
   (-> schema (.getType) (.getName)))

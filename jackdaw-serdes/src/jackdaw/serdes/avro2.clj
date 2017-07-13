@@ -2,29 +2,36 @@
   (:require [jackdaw.serdes.avro2.impl :as impl]
             [clojure.future :refer [uuid? boolean? bytes? double?]])
   (:import (org.apache.kafka.common.serialization Serdes)
-           (java.util UUID Map)
-           (org.apache.avro.generic GenericData$Record GenericData$Array)))
+           (java.util UUID Map HashMap)
+           (org.apache.avro.generic GenericData$Record GenericData$Array)
+           (org.apache.avro Schema$ArraySchema)))
 
 (defprotocol SchemaType
   (avro->clj [schema-type avro-data])
   (clj->avro [schema-type clj-data]))
 
-(defmulti schema-type (fn [schema _config]
+(defmulti schema-type (fn [schema]
                         (if-let [logical-type (impl/logical-type-name schema)]
                           {:logical-type logical-type}
                           {:type (impl/base-type-name schema)})))
 
 (defn- primitive-type [matcher]
   (reify SchemaType
-    (avro->clj [_ x] x)
-    (clj->avro [_ x] x)))
+    (avro->clj [_ x]
+      (assert (matcher x))
+      x)
+    (clj->avro [_ x]
+      (assert (matcher x))
+      x)))
 
 (defmethod schema-type {:type "array"} [schema]
   (reify SchemaType
-    (avro->clj [_ ^GenericData$Array avro-data]
-      (mapv #(avro->clj (schema-type (.get (.getFields schema) "items")) %)
-            (.toArray avro-data)))
-    (clj->avro [_ clj-data] clj-data)))
+    (avro->clj [_ java-collection]
+      (let [element-type (.getElementType ^Schema$ArraySchema schema)
+            element-schema (schema-type element-type)]
+        (mapv #(avro->clj element-schema %) java-collection)))
+    (clj->avro [_ clj-seq]
+      clj-seq)))
 
 (defmethod schema-type {:type "boolean"} [_]
   (primitive-type boolean?))
@@ -60,7 +67,7 @@
   (reify SchemaType
     (avro->clj [_ avro-map] avro-map)
     (clj->avro [_ clj-map]
-      (impl/reduce-fields clj-map schema clj->avro (Map.)))))
+      (impl/reduce-fields clj-map schema clj->avro (HashMap.)))))
 
 (defmethod schema-type {:type "null"} [_]
   (primitive-type nil?))
