@@ -7,10 +7,10 @@
            (org.apache.kafka.common.serialization Serdes Serializer Deserializer)
            (io.confluent.kafka.serializers KafkaAvroSerializer KafkaAvroDeserializer)))
 
-(defn get-logical-type-name [schema]
+(defn logical-type-name [schema]
   (-> schema (.getFields) (.get "logicalType")))
 
-(defn get-base-type-name [schema]
+(defn base-type-name [schema]
   (-> schema (.getType) (.getName)))
 
 (defn child-schema [schema key])

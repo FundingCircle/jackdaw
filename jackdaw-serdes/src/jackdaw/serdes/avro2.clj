@@ -10,9 +10,9 @@
   (clj->avro [schema-type clj-data]))
 
 (defmulti schema-type (fn [schema _config]
-                        (if-let [logical-type (impl/get-logical-type-name schema)]
+                        (if-let [logical-type (impl/logical-type-name schema)]
                           {:logical-type logical-type}
-                          {:type (impl/get-base-type-name schema)})))
+                          {:type (impl/base-type-name schema)})))
 
 (defn- primitive-type [matcher]
   (reify SchemaType
