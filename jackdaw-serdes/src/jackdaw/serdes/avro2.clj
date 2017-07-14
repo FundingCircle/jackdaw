@@ -134,9 +134,9 @@
 (defrecord EnumType []
   SchemaType
   (avro->clj [_ avro-enum]
-    avro-enum)
+    (throw (UnsupportedOperationException. "Not implemented")))
   (clj->avro [_ clj-keyword]
-    (name clj-keyword)))
+    (throw (UnsupportedOperationException. "Not implemented"))))
 
 (defmethod schema-type {:type "enum"} [_]
   (EnumType.))
@@ -144,9 +144,9 @@
 (defrecord FixedType []
   SchemaType
   (avro->clj [_ fixed]
-    fixed)
+    (throw (UnsupportedOperationException. "Not implemented")))
   (clj->avro [_ fixed]
-    fixed))
+    (throw (UnsupportedOperationException. "Not implemented"))))
 
 (defmethod schema-type {:type "fixed"} [_]
   (FixedType.))
@@ -175,9 +175,9 @@
 (defrecord UnionType []
   SchemaType
   (avro->clj [_ union]
-    union)
+    (throw (UnsupportedOperationException. "Not implemented")))
   (clj->avro [_ union]
-    union))
+    (throw (UnsupportedOperationException. "Not implemented"))))
 
 (defmethod schema-type {:type "union"} []
   (UnionType.))
