@@ -119,40 +119,68 @@
 
 ;; Complex Types
 
+(defrecord ArrayType [schema]
+  SchemaType
+  (avro->clj [_ java-collection]
+    (let [element-type (.getElementType ^Schema$ArraySchema schema)
+          element-schema (schema-type element-type)]
+      (mapv #(avro->clj element-schema %) java-collection)))
+  (clj->avro [_ clj-seq]
+    clj-seq))
+
 (defmethod schema-type {:type "array"} [schema]
-  (reify SchemaType
-    (avro->clj [_ java-collection]
-      (let [element-type (.getElementType ^Schema$ArraySchema schema)
-            element-schema (schema-type element-type)]
-        (mapv #(avro->clj element-schema %) java-collection)))
-    (clj->avro [_ clj-seq]
-      clj-seq)))
+  (ArrayType. schema))
 
-(defmethod schema-type {:type "enum"} [schema]
-  (reify SchemaType
-    (avro->clj [_ avro-enum] avro-enum)
-    (clj->avro [_ clj-keyword] (name clj-keyword))))
+(defrecord EnumType []
+  SchemaType
+  (avro->clj [_ avro-enum]
+    avro-enum)
+  (clj->avro [_ clj-keyword]
+    (name clj-keyword)))
 
-(defmethod schema-type {:type "fixed"} [schema]
-  (reify SchemaType
-    (avro->clj [_ fixed] fixed)
-    (clj->avro [_ fixed] fixed)))
+(defmethod schema-type {:type "enum"} [_]
+  (EnumType.))
+
+(defrecord FixedType []
+  SchemaType
+  (avro->clj [_ fixed]
+    fixed)
+  (clj->avro [_ fixed]
+    fixed))
+
+(defmethod schema-type {:type "fixed"} [_]
+  (FixedType.))
+
+(defrecord MapType [schema]
+  SchemaType
+  (avro->clj [_ avro-map]
+    avro-map)
+  (clj->avro [_ clj-map]
+    (impl/reduce-fields clj-map schema clj->avro (HashMap.))))
 
 (defmethod schema-type {:type "map"} [schema]
-  (reify SchemaType
-    (avro->clj [_ avro-map] avro-map)
-    (clj->avro [_ clj-map]
-      (impl/reduce-fields clj-map schema clj->avro (HashMap.)))))
+  (MapType. schema))
+
+(defrecord RecordType [schema]
+  SchemaType
+  (avro->clj [_ avro-data]
+   avro-data)
+  (clj->avro [_ clj-data]
+    (let [init (GenericData$Record. schema)]
+      (impl/reduce-fields clj-data schema clj->avro init))))
 
 (defmethod schema-type {:type "record"} [schema]
-  (reify SchemaType
-    (avro->clj [_ avro-data])
-    (clj->avro [_ clj-data]
-      (let [init (GenericData$Record. schema)]
-        (impl/reduce-fields clj-data schema clj->avro init)))))
+  (RecordType. schema))
 
-(defmethod schema-type {:type "union"} [schema]
-  (primitive-type (constantly true)))
+(defrecord UnionType []
+  SchemaType
+  (avro->clj [_ union]
+    union)
+  (clj->avro [_ union]
+    union))
+
+(defmethod schema-type {:type "union"} []
+  (UnionType.))
 
 (defn avro-serde [{:keys [key? schema-str] :as config}]
   (let [schema (impl/parse-schema-str schema-str)
