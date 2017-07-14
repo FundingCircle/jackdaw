@@ -10,10 +10,14 @@
   (avro->clj [schema-type avro-data])
   (clj->avro [schema-type clj-data]))
 
-(defmulti schema-type (fn [schema]
-                        (if-let [logical-type (impl/logical-type-name schema)]
-                          {:logical-type logical-type}
-                          {:type (impl/base-type-name schema)})))
+(defn- dispatch-on-type-fields [schema]
+  (let [base-type (impl/base-type-name schema)
+        logical-type (impl/logical-type-name schema)]
+    (if logical-type
+      {:type base-type :logical-type logical-type}
+      {:type base-type})))
+
+(defmulti schema-type dispatch-on-type-fields)
 
 (defn- primitive-type [matcher]
   (reify SchemaType
