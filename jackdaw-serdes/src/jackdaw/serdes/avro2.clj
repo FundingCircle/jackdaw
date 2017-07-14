@@ -89,11 +89,6 @@
 (defmethod schema-type {:type "union"} [schema]
   (primitive-type (constantly true)))
 
-(defmethod schema-type {:logical-type "jackdaw.serdes.avro.UUID"} [_]
-  (reify SchemaType
-    (avro->clj [_ uuid-str] (UUID/fromString uuid-str))
-    (clj->avro [_ uuid] (str uuid))))
-
 (defn avro-serde [{:keys [key? schema-str] :as config}]
   (let [schema (impl/parse-schema-str schema-str)
         base-opts {:key? (or key? false)
