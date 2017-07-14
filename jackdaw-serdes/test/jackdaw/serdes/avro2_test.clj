@@ -36,13 +36,13 @@
           schema-type (avro2/schema-type avro-schema)
           clj-data "hello"
           avro-data "hello"]
-      (is (= avro-data (avro2/avro->clj schema-type clj-data)))))
+      (is (= clj-data (avro2/avro->clj schema-type avro-data)))))
   (testing "boolean"
     (let [avro-schema (parse-schema {:type "boolean"})
           schema-type (avro2/schema-type avro-schema)
           clj-data true
           avro-data true]
-      (is (= avro-data (avro2/avro->clj schema-type clj-data)))))
+      (is (= clj-data (avro2/avro->clj schema-type avro-data)))))
   (testing "array"
     (let [avro-schema (parse-schema {:type "array", :items "string"})
           schema-type (avro2/schema-type avro-schema)
