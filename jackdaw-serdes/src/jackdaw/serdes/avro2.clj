@@ -48,10 +48,10 @@
 (defrecord DoubleType []
   SchemaType
   (avro->clj [_ x]
-    (assert (double? x))
+    (assert (instance? Double x))
     x)
   (clj->avro [_ x]
-    (assert (double? x))
+    (assert (instance? Double x))
     x))
 
 (defmethod schema-type {:type "double"} [_]
@@ -60,10 +60,10 @@
 (defrecord FloatType []
   SchemaType
   (avro->clj [_ x]
-    (assert (float? x))
+    (assert (instance? Float x))
     x)
   (clj->avro [_ x]
-    (assert (float? x))
+    (assert (instance? Float x))
     x))
 
 (defmethod schema-type {:type "float"} [_]
@@ -84,10 +84,10 @@
 (defrecord LongType []
   SchemaType
   (avro->clj [_ x]
-    (assert (number? x))
+    (assert (instance? Long x))
     x)
   (clj->avro [_ x]
-    (assert (number? x))
+    (assert (instance? Long x))
     x))
 
 (defmethod schema-type {:type "long"} [_]
