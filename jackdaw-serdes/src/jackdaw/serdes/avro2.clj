@@ -19,14 +19,105 @@
 
 (defmulti schema-type dispatch-on-type-fields)
 
-(defn- primitive-type [matcher]
-  (reify SchemaType
-    (avro->clj [_ x]
-      (assert (matcher x))
-      x)
-    (clj->avro [_ x]
-      (assert (matcher x))
-      x)))
+;; Primitive Types
+
+(defrecord BooleanType []
+  SchemaType
+  (avro->clj [_ x]
+    (assert (boolean? x))
+    x)
+  (clj->avro [_ x]
+    (assert (boolean? x))
+    x))
+
+(defmethod schema-type {:type "boolean"} [_]
+  (BooleanType.))
+
+(defrecord BytesType []
+  SchemaType
+  (avro->clj [_ x]
+    (assert (bytes? x))
+    x)
+  (clj->avro [_ x]
+    (assert (bytes? x))
+    x))
+
+(defmethod schema-type {:type "bytes"} [_]
+  (BytesType.))
+
+(defrecord DoubleType []
+  SchemaType
+  (avro->clj [_ x]
+    (assert (double? x))
+    x)
+  (clj->avro [_ x]
+    (assert (double? x))
+    x))
+
+(defmethod schema-type {:type "double"} [_]
+  (DoubleType.))
+
+(defrecord FloatType []
+  SchemaType
+  (avro->clj [_ x]
+    (assert (float? x))
+    x)
+  (clj->avro [_ x]
+    (assert (float? x))
+    x))
+
+(defmethod schema-type {:type "float"} [_]
+  (FloatType.))
+
+(defrecord IntType []
+  SchemaType
+  (avro->clj [_ x]
+    (assert (integer? x))
+    x)
+  (clj->avro [_ x]
+    (assert (integer? x))
+    x))
+
+(defmethod schema-type {:type "int"} [_]
+  (IntType.))
+
+(defrecord LongType []
+  SchemaType
+  (avro->clj [_ x]
+    (assert (number? x))
+    x)
+  (clj->avro [_ x]
+    (assert (number? x))
+    x))
+
+(defmethod schema-type {:type "long"} [_]
+  (LongType.))
+
+(defrecord StringType []
+  SchemaType
+  (avro->clj [_ x]
+    (assert (string? x))
+    x)
+  (clj->avro [_ x]
+    (assert (string? x))
+    x))
+
+(defmethod schema-type {:type "string"} [_]
+  (StringType.))
+
+(defrecord NullType []
+  SchemaType
+  (avro->clj [_ x]
+    (assert (nil? x))
+    x)
+  (clj->avro [_ x]
+    (assert (nil? x))
+    x))
+
+(defmethod schema-type {:type "null"} [_]
+  (NullType.))
+
+;; Complex Types
 
 (defmethod schema-type {:type "array"} [schema]
   (reify SchemaType
@@ -36,17 +127,6 @@
         (mapv #(avro->clj element-schema %) java-collection)))
     (clj->avro [_ clj-seq]
       clj-seq)))
-
-(defmethod schema-type {:type "boolean"} [_]
-  (primitive-type boolean?))
-
-(defmethod schema-type {:type "bytes"} [_]
-  (reify SchemaType
-    (avro->clj [_ bytes] bytes)
-    (clj->avro [_ bytes] bytes)))
-
-(defmethod schema-type {:type "double"} [_]
-  (primitive-type double?))
 
 (defmethod schema-type {:type "enum"} [schema]
   (reify SchemaType
@@ -58,23 +138,11 @@
     (avro->clj [_ fixed] fixed)
     (clj->avro [_ fixed] fixed)))
 
-(defmethod schema-type {:type "float"} [_]
-  (primitive-type float?))
-
-(defmethod schema-type {:type "int"} [_]
-  (primitive-type integer?))
-
-(defmethod schema-type {:type "long"} [_]
-  (primitive-type number?))
-
 (defmethod schema-type {:type "map"} [schema]
   (reify SchemaType
     (avro->clj [_ avro-map] avro-map)
     (clj->avro [_ clj-map]
       (impl/reduce-fields clj-map schema clj->avro (HashMap.)))))
-
-(defmethod schema-type {:type "null"} [_]
-  (primitive-type nil?))
 
 (defmethod schema-type {:type "record"} [schema]
   (reify SchemaType
@@ -82,9 +150,6 @@
     (clj->avro [_ clj-data]
       (let [init (GenericData$Record. schema)]
         (impl/reduce-fields clj-data schema clj->avro init)))))
-
-(defmethod schema-type {:type "string"} [_]
-  (primitive-type string?))
 
 (defmethod schema-type {:type "union"} [schema]
   (primitive-type (constantly true)))
