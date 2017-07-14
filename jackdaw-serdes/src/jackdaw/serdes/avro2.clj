@@ -182,6 +182,8 @@
 (defmethod schema-type {:type "union"} []
   (UnionType.))
 
+;; Serde Factory
+
 (defn avro-serde [{:keys [key? schema-str] :as config}]
   (let [schema (impl/parse-schema-str schema-str)
         base-opts {:key? (or key? false)
