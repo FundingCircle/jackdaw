@@ -3,7 +3,7 @@
             [jackdaw.serdes.avro2 :as avro2]
             [clojure.data.json :as json])
   (:import (org.apache.avro Schema$Parser Schema)
-           (org.apache.avro.generic GenericData$Array GenericData$Record)
+           (org.apache.avro.generic GenericData$Array GenericData$Record GenericData$EnumSymbol)
            (java.util Collection HashMap)))
 
 (defn parse-schema [clj-schema]
@@ -74,6 +74,18 @@
           avro-data (doto (HashMap.)
                       (.put "a" 1)
                       (.put "b" 2))]
+      (is (= clj-data (avro2/avro->clj schema-type avro-data)))
+      (is (= avro-data (avro2/clj->avro schema-type clj-data)))))
+  (testing "enum"
+    (let [avro-schema (parse-schema {:type "enum"
+                                     :name "Suit"
+                                     :symbols ["SPADES"
+                                               "HEARTS"
+                                               "DIAMONDS"
+                                               "CLUBS"]})
+          schema-type (avro2/schema-type avro-schema)
+          clj-data :SPADES
+          avro-data (GenericData$EnumSymbol. avro-schema "SPADES")]
       (is (= clj-data (avro2/avro->clj schema-type avro-data)))
       (is (= avro-data (avro2/clj->avro schema-type clj-data)))))
   (testing "record"

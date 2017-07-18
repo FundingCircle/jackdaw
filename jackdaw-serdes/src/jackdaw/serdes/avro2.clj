@@ -3,7 +3,7 @@
             [clojure.future :refer [uuid? boolean? bytes? double?]])
   (:import (org.apache.kafka.common.serialization Serdes)
            (java.util UUID Map HashMap)
-           (org.apache.avro.generic GenericData$Record GenericData$Array)
+           (org.apache.avro.generic GenericData$Record GenericData$Array GenericData$EnumSymbol)
            (org.apache.avro Schema$ArraySchema Schema)))
 
 (defprotocol SchemaType
@@ -151,15 +151,17 @@
 
 ;;; Enum
 
-(defrecord EnumType []
+(defrecord EnumType [schema]
   SchemaType
   (avro->clj [_ avro-enum]
-    (throw (UnsupportedOperationException. "Not implemented")))
+    (-> (.toString avro-enum)
+        (keyword)))
   (clj->avro [_ clj-keyword]
-    (throw (UnsupportedOperationException. "Not implemented"))))
+    (->> (name clj-keyword)
+         (GenericData$EnumSymbol. schema))))
 
-(defmethod schema-type {:type "enum"} [_]
-  (EnumType.))
+(defmethod schema-type {:type "enum"} [schema]
+  (EnumType. schema))
 
 ;;; Fixed
 
