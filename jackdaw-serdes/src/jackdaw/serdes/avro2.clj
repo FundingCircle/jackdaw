@@ -178,7 +178,9 @@
 (defrecord MapType [schema]
   SchemaType
   (avro->clj [_ avro-map]
-    avro-map)
+    (->> (for [[k v] avro-map]
+           [(keyword k) v])
+         (into {})))
   (clj->avro [_ clj-map]
     (reduce-kv (fn [acc k v]
                  (let [value-type (.getValueType schema)
