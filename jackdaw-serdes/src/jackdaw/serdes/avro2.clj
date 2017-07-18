@@ -4,7 +4,7 @@
   (:import (org.apache.kafka.common.serialization Serdes)
            (java.util UUID Map HashMap)
            (org.apache.avro.generic GenericData$Record GenericData$Array)
-           (org.apache.avro Schema$ArraySchema)))
+           (org.apache.avro Schema$ArraySchema Schema)))
 
 (defprotocol SchemaType
   (avro->clj [schema-type avro-data])
@@ -199,11 +199,26 @@
 
 (defrecord RecordType [schema]
   SchemaType
-  (avro->clj [_ avro-data]
-   avro-data)
-  (clj->avro [_ clj-data]
-    (let [init (GenericData$Record. schema)]
-      (impl/reduce-fields clj-data schema clj->avro init))))
+  (avro->clj [_ avro-record]
+    (let [fields (-> (.getSchema avro-record)
+                     (.getFields))]
+      (->> (for [field fields
+                 :let [name (.name field)
+                       schema (schema-type (.schema field))
+                       value (.get avro-record name)]]
+             [(keyword name) (avro->clj schema value)])
+           (into {}))))
+  (clj->avro [_ clj-map]
+    (reduce-kv (fn [acc k v]
+                 (let [new-k (name k)
+                       child-schema (-> (.getField schema new-k)
+                                        (.schema)
+                                        (schema-type))
+                       new-v (clj->avro child-schema v)]
+                   (.put acc new-k new-v)
+                   acc))
+               (GenericData$Record. schema)
+               clj-map)))
 
 (defmethod schema-type {:type "record"} [schema]
   (RecordType. schema))

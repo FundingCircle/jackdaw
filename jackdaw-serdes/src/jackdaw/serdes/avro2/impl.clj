@@ -13,17 +13,6 @@
 (defn base-type-name [schema]
   (-> schema (.getType) (.getName)))
 
-(defn child-schema [schema key])
-
-(defn reduce-fields [clj-data schema convert-fn init]
-  (reduce-kv (fn [acc k v]
-               (let [new-k (name k)
-                     new-v (convert-fn (child-schema schema k) v)]
-                 (.put acc new-k new-v)
-                 acc))
-             init
-             clj-data))
-
 (def parse-schema-str
   (memoize (fn [schema-str]
              (.parse (Schema$Parser.) ^String schema-str))))
