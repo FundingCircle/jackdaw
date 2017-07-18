@@ -8,20 +8,12 @@
 (defn parse-schema [clj-schema]
   (.parse (Schema$Parser.) ^String (json/write-str clj-schema)))
 
-(deftest clj->avro
+(deftest schema-type
   (testing "string base type"
     (let [avro-schema (parse-schema {:type "string"
                                      :logicalType "jackdaw.serdes.avro.UUID"})
           schema-type (avro2/schema-type avro-schema)
           clj-data #uuid "2d30dd35-8dd1-4044-8bfb-9c810d56c5cb"
           avro-data "2d30dd35-8dd1-4044-8bfb-9c810d56c5cb"]
+      (is (= clj-data (avro2/avro->clj schema-type avro-data)))
       (is (= avro-data (avro2/clj->avro schema-type clj-data))))))
-
-(deftest avro->clj
-  (testing "string base type"
-    (let [avro-schema (parse-schema {:type "string"
-                                     :logicalType "jackdaw.serdes.avro.UUID"})
-          schema-type (avro2/schema-type avro-schema)
-          clj-data #uuid "2d30dd35-8dd1-4044-8bfb-9c810d56c5cb"
-          avro-data "2d30dd35-8dd1-4044-8bfb-9c810d56c5cb"]
-      (is (= clj-data (avro2/avro->clj schema-type avro-data))))))
