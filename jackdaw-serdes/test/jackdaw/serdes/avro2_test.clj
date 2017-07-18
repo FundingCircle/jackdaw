@@ -58,6 +58,14 @@
           clj-data ["hello"]
           avro-data (GenericData$Array. ^Schema avro-schema
                                         ^Collection clj-data)]
+      (is (= avro-data (avro2/clj->avro schema-type clj-data)))))
+  (testing "map"
+    (let [avro-schema (parse-schema {:type "map", :values "long"})
+          schema-type (avro2/schema-type avro-schema)
+          clj-data {:a 1 :b 2}
+          avro-data (doto (HashMap.)
+                      (.put "a" 1)
+                      (.put "b" 2))]
       (is (= avro-data (avro2/clj->avro schema-type clj-data))))))
 
 (deftest avro->clj

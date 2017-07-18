@@ -180,7 +180,15 @@
   (avro->clj [_ avro-map]
     avro-map)
   (clj->avro [_ clj-map]
-    (impl/reduce-fields clj-map schema clj->avro (HashMap.))))
+    (reduce-kv (fn [acc k v]
+                 (let [value-type (.getValueType schema)
+                       value-schema (schema-type value-type)
+                       new-k (name k)
+                       new-v (clj->avro value-schema v)]
+                   (.put acc new-k new-v)
+                   acc))
+               (HashMap.)
+               clj-map)))
 
 (defmethod schema-type {:type "map"} [schema]
   (MapType. schema))
