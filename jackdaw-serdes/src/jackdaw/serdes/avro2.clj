@@ -21,6 +21,8 @@
 
 ;; Primitive Types
 
+;;; Boolean
+
 (defrecord BooleanType []
   SchemaType
   (avro->clj [_ x]
@@ -32,6 +34,8 @@
 
 (defmethod schema-type {:type "boolean"} [_]
   (BooleanType.))
+
+;;; Bytes
 
 (defrecord BytesType []
   SchemaType
@@ -45,6 +49,8 @@
 (defmethod schema-type {:type "bytes"} [_]
   (BytesType.))
 
+;;; Double
+
 (defrecord DoubleType []
   SchemaType
   (avro->clj [_ x]
@@ -56,6 +62,8 @@
 
 (defmethod schema-type {:type "double"} [_]
   (DoubleType.))
+
+;;; Float
 
 (defrecord FloatType []
   SchemaType
@@ -69,6 +77,8 @@
 (defmethod schema-type {:type "float"} [_]
   (FloatType.))
 
+;;; Int
+
 (defrecord IntType []
   SchemaType
   (avro->clj [_ x]
@@ -80,6 +90,8 @@
 
 (defmethod schema-type {:type "int"} [_]
   (IntType.))
+
+;;; Long
 
 (defrecord LongType []
   SchemaType
@@ -93,6 +105,8 @@
 (defmethod schema-type {:type "long"} [_]
   (LongType.))
 
+;;; String
+
 (defrecord StringType []
   SchemaType
   (avro->clj [_ x]
@@ -104,6 +118,8 @@
 
 (defmethod schema-type {:type "string"} [_]
   (StringType.))
+
+;;; Null
 
 (defrecord NullType []
   SchemaType
@@ -119,6 +135,8 @@
 
 ;; Complex Types
 
+;;; Array
+
 (defrecord ArrayType [schema]
   SchemaType
   (avro->clj [_ java-collection]
@@ -131,6 +149,8 @@
 (defmethod schema-type {:type "array"} [schema]
   (ArrayType. schema))
 
+;;; Enum
+
 (defrecord EnumType []
   SchemaType
   (avro->clj [_ avro-enum]
@@ -140,6 +160,8 @@
 
 (defmethod schema-type {:type "enum"} [_]
   (EnumType.))
+
+;;; Fixed
 
 (defrecord FixedType []
   SchemaType
@@ -151,6 +173,8 @@
 (defmethod schema-type {:type "fixed"} [_]
   (FixedType.))
 
+;;; Map
+
 (defrecord MapType [schema]
   SchemaType
   (avro->clj [_ avro-map]
@@ -160,6 +184,8 @@
 
 (defmethod schema-type {:type "map"} [schema]
   (MapType. schema))
+
+;;; Record
 
 (defrecord RecordType [schema]
   SchemaType
@@ -171,6 +197,8 @@
 
 (defmethod schema-type {:type "record"} [schema]
   (RecordType. schema))
+
+;;; Union
 
 (defrecord UnionType []
   SchemaType
