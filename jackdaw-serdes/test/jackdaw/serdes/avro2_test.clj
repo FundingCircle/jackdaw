@@ -76,6 +76,17 @@
                       (.put "b" 2))]
       (is (= clj-data (avro2/avro->clj schema-type avro-data)))
       (is (= avro-data (avro2/clj->avro schema-type clj-data)))))
+  (testing "union"
+    (let [avro-schema (parse-schema ["long" "string"])
+          schema-type (avro2/schema-type avro-schema)
+          clj-data-long 123
+          avro-data-long 123
+          clj-data-string "hello"
+          avro-data-string "hello"]
+      (is (= clj-data-long (avro2/avro->clj schema-type avro-data-long)))
+      (is (= avro-data-long (avro2/clj->avro schema-type clj-data-long)))
+      (is (= clj-data-string (avro2/avro->clj schema-type avro-data-string)))
+      (is (= avro-data-string (avro2/clj->avro schema-type clj-data-string)))))
   (testing "enum"
     (let [avro-schema (parse-schema {:type "enum"
                                      :name "Suit"
