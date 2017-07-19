@@ -1,13 +1,19 @@
 (ns jackdaw.serdes.avro2-test
   (:require [clojure.test :refer [deftest is testing]]
             [jackdaw.serdes.avro2 :as avro2]
-            [clojure.data.json :as json])
+            [clojure.data.json :as json]
+            [jackdaw.serdes.avro2.impl :as impl])
   (:import (org.apache.avro Schema$Parser Schema)
            (org.apache.avro.generic GenericData$Array GenericData$Record GenericData$EnumSymbol)
            (java.util Collection HashMap)))
 
 (defn parse-schema [clj-schema]
   (.parse (Schema$Parser.) ^String (json/write-str clj-schema)))
+
+(comment
+ (-> (parse-schema ["null", "string"])
+     (impl/base-type-name))
+ )
 
 (deftest schema-type
   (testing "boolean"

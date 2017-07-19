@@ -1,10 +1,11 @@
 (ns jackdaw.serdes.avro2
   (:require [jackdaw.serdes.avro2.impl :as impl]
             [clojure.future :refer [uuid? boolean? bytes? double?]])
-  (:import (org.apache.kafka.common.serialization Serdes)
+  (:import (org.apache.kafka.common.serialization Serdes Serializer Deserializer)
            (java.util UUID Map HashMap)
            (org.apache.avro.generic GenericData$Record GenericData$Array GenericData$EnumSymbol)
-           (org.apache.avro Schema$ArraySchema Schema)))
+           (org.apache.avro Schema$ArraySchema Schema Schema$Parser)
+           (io.confluent.kafka.serializers KafkaAvroSerializer KafkaAvroDeserializer)))
 
 (defprotocol SchemaType
   (match-clj? [schema-type clj-data])
@@ -13,8 +14,8 @@
   (clj->avro [schema-type clj-data]))
 
 (defn- dispatch-on-type-fields [schema]
-  (let [base-type (impl/base-type-name schema)
-        logical-type (impl/logical-type-name schema)]
+  (let [base-type (-> schema (.getProps) (.get "logicalType"))
+        logical-type (-> schema (.getType) (.getName))]
     (if logical-type
       {:type base-type :logical-type logical-type}
       {:type base-type})))
@@ -264,18 +265,46 @@
 
 ;; Serde Factory
 
+(def ^:private parse-schema-str
+  (memoize (fn [schema-str]
+             (.parse (Schema$Parser.) ^String schema-str))))
+
+(deftype CljSerializer [base-serializer base-config convert-fn key?]
+  Serializer
+  (close [_]
+    (.close base-serializer))
+  (configure [_ _ _]
+    (.configure base-serializer base-config key?))
+  (serialize [_ topic clj-data]
+    (assert (match-clj? schema-type clj-data))
+    (.serialize base-serializer topic (clj->avro schema-type clj-data))))
+
+(defn new-serializer [{:keys [key? convert-fn registry-client base-config]
+                       :as opts}]
+  (let [base-serializer (KafkaAvroSerializer. registry-client)]
+    (CljSerializer. base-serializer base-config convert-fn key?)))
+
+(deftype CljDeserializer [base-deserializer base-config convert-fn key?]
+  Deserializer
+  (close [_]
+    (.close base-deserializer))
+  (configure [_ _ _]
+    (.configure base-deserializer base-config key?))
+  (deserialize [_ topic raw-data]
+    (let [avro-data (.deserialize base-deserializer topic raw-data)]
+      (assert (match-avro? schema-type avro-data))
+      (avro->clj schema-type avro-data))))
+
+(defn new-deserializer [{:keys [key? convert-fn registry-client base-config]
+                         :as opts}]
+  (let [base-deserializer (KafkaAvroDeserializer. registry-client)]
+    (CljDeserializer. base-deserializer base-config convert-fn key?)))
+
 (defn avro-serde [{:keys [key? schema-str] :as config}]
-  (let [schema (impl/parse-schema-str schema-str)
+  (let [schema-type (schema-type (parse-schema-str schema-str))
         base-opts {:key? (or key? false)
                    :registry-client nil
                    :base-config {"schema.registry.url" nil}}
-        schema-type (schema-type schema config)
-        serializer (impl/new-serializer
-                    (assoc base-opts :convert-fn #(do
-                                                    (assert (match-clj? schema-type %))
-                                                    (clj->avro schema-type %))))
-        deserializer (impl/new-deserializer
-                      (assoc base-opts :convert-fn #(do
-                                                      (assert (match-avro? schema-type %))
-                                                      (avro->clj schema-type %))))]
+        serializer (new-serializer base-opts)
+        deserializer (new-deserializer base-opts)]
     (Serdes/serdeFrom serializer deserializer)))
