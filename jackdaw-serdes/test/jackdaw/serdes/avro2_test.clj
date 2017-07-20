@@ -10,11 +10,6 @@
 (defn parse-schema [clj-schema]
   (.parse (Schema$Parser.) ^String (json/write-str clj-schema)))
 
-(comment
- (-> (parse-schema ["null", "string"])
-     (impl/base-type-name))
- )
-
 (deftest schema-type
   (testing "boolean"
     (let [avro-schema (parse-schema {:type "boolean"})
