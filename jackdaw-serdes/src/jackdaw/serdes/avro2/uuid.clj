@@ -4,11 +4,13 @@
 
 (defrecord StringUUIDType []
   avro/SchemaType
+  (match-clj? [_ uuid]
+    (instance? UUID uuid))
+  (match-avro? [_ uuid-str]
+    (string? uuid-str))
   (avro->clj [_ uuid-str]
-    (assert (string? uuid-str))
     (UUID/fromString uuid-str))
   (clj->avro [_ uuid]
-    (assert (instance? UUID uuid))
     (str uuid)))
 
 (defmethod avro/schema-type
