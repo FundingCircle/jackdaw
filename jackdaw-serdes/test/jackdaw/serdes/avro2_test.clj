@@ -1,10 +1,14 @@
 (ns jackdaw.serdes.avro2-test
   (:require [clojure.test :refer [deftest is testing]]
             [jackdaw.serdes.avro2 :as avro2]
-            [clojure.data.json :as json])
+            [clojure.data.json :as json]
+            [clojure.spec.test.alpha :as stest])
   (:import (org.apache.avro Schema$Parser Schema)
            (org.apache.avro.generic GenericData$Array GenericData$Record GenericData$EnumSymbol)
-           (java.util Collection HashMap)))
+           (java.util Collection HashMap)
+           (org.apache.kafka.common.serialization Serializer Deserializer Serde)))
+
+(stest/instrument)
 
 (defn parse-schema [clj-schema]
   (.parse (Schema$Parser.) ^String (json/write-str clj-schema)))

@@ -8,8 +8,8 @@
     (instance? UUID uuid))
   (match-avro? [_ uuid-str]
     (string? uuid-str))
-  (avro->clj [_ uuid-str]
-    (UUID/fromString uuid-str))
+  (avro->clj [_ uuid-utf8]
+    (UUID/fromString (str uuid-utf8)))
   (clj->avro [_ uuid]
     (str uuid)))
 

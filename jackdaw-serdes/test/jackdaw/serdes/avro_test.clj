@@ -4,10 +4,13 @@
             [clojure.java.io :as io]
             [clojure.test :refer :all]
             [jackdaw.serdes.avro :as avro]
-            [jackdaw.serdes.avro-schema :as avro-schema])
+            [jackdaw.serdes.avro-schema :as avro-schema]
+            [jackdaw.serdes.avro2 :as avro2]
+            [jackdaw.serdes.avro2.uuid])
   (:import
    (io.confluent.kafka.schemaregistry.client MockSchemaRegistryClient)
-   (clojure.lang ExceptionInfo)))
+   (clojure.lang ExceptionInfo)
+   (org.apache.kafka.common.serialization Serde)))
 
 
 (def schema (slurp (io/resource "resources/example_schema.avsc")))
@@ -19,9 +22,13 @@
 (deftest serializer-deserializer-test
   (testing "Serializing and deserializing a map returns the same map"
     (let [client (MockSchemaRegistryClient.)
-          ser (avro/avro-serializer client schema {"schema.registry.url" "http://localhost:8081"} true)
-          de (avro/avro-deserializer client schema {"schema.registry.url" "http://localhost:8081"} true)]
-      (is (= data
-             (->> (.serialize ser topic-name data)
-                  (.deserialize de topic-name)))))))
+          url "http://localhost:8081"
+          config (avro2/serde-config :value {:avro/schema schema
+                                             :schema.registry/client client
+                                             :schema.registry/url url})
+          serde ^Serde (avro2/avro-serde config)
+          ser (.serializer serde)
+          de (.deserializer serde)]
+      (is (= data (->> (.serialize ser topic-name data)
+                       (.deserialize de topic-name)))))))
 
