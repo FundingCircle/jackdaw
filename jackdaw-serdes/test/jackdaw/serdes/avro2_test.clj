@@ -2,16 +2,40 @@
   (:require [clojure.test :refer [deftest is testing]]
             [jackdaw.serdes.avro2 :as avro2]
             [clojure.data.json :as json]
-            [clojure.spec.test.alpha :as stest])
+            [clojure.spec.test.alpha :as stest]
+            [clj-uuid :as uuid]
+            [clojure.java.io :as io])
   (:import (org.apache.avro Schema$Parser Schema)
            (org.apache.avro.generic GenericData$Array GenericData$Record GenericData$EnumSymbol)
            (java.util Collection HashMap)
-           (org.apache.kafka.common.serialization Serializer Deserializer Serde)))
+           (org.apache.kafka.common.serialization Serializer Deserializer Serde)
+           (io.confluent.kafka.schemaregistry.client MockSchemaRegistryClient)))
 
 (stest/instrument)
 
+(def topic-config
+  {:avro/schema (slurp (io/resource "resources/example_schema.avsc"))
+   :avro/is-key false
+   :schema.registry/url "http://localhost:8081"})
+
 (defn parse-schema [clj-schema]
   (.parse (Schema$Parser.) ^String (json/write-str clj-schema)))
+
+(defn with-mock-client [config]
+  (assoc config :schema.registry/client (MockSchemaRegistryClient.)))
+
+(deftest avro-serde
+  (testing "schema can be serialized by registry client"
+    (let [config (avro2/serde-config :value (with-mock-client topic-config))
+          serde (avro2/avro-serde config)]
+      (let [msg {:customer-id (uuid/v4)
+                 :address {:value "foo"
+                           :key-path "foo.bar.baz"}}]
+        (let [serialized (-> (.serializer serde)
+                             (.serialize "foo" msg))
+              deserialized (-> (.deserializer serde)
+                               (.deserialize "foo" serialized))]
+          (is (= deserialized msg)))))))
 
 (deftest schema-type
   (testing "boolean"

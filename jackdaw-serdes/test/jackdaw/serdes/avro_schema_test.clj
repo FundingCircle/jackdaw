@@ -32,7 +32,7 @@
    :avro/is-key false
    :schema.registry/url "http://localhost:8081"})
 
-(deftest map-roundtrip-test
+#_(deftest map-roundtrip-test
   (testing "Map is the same after conversion to generic record and back"
     (is (= record
            (-> (map->generic-record schema record)
