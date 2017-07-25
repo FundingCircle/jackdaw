@@ -178,9 +178,11 @@
     (instance? GenericData$EnumSymbol x))
   (avro->clj [_ avro-enum]
     (-> (.toString avro-enum)
+        (unmangle)
         (keyword)))
   (clj->avro [_ clj-keyword]
     (->> (name clj-keyword)
+         (mangle)
          (GenericData$EnumSymbol. schema))))
 
 (defmethod schema-type {:type "enum"} [schema]
@@ -220,9 +222,8 @@
                        value-schema (schema-type value-type)
                        new-k (mangle (name k))
                        new-v (clj->avro value-schema v)]
-                   (.put acc new-k new-v)
-                   acc))
-               (HashMap.)
+                   (assoc acc new-k new-v)))
+               {}
                clj-map)))
 
 (defmethod schema-type {:type "map"} [schema]
@@ -253,9 +254,11 @@
   (clj->avro [_ clj-map]
     (reduce-kv (fn [acc k v]
                  (let [new-k (mangle (name k))
-                       child-schema (-> (.getField schema new-k)
-                                        (.schema)
-                                        (schema-type))
+                       field (.getField schema new-k)
+                       _ (assert field (format "Field %s not known in %s"
+                                               new-k
+                                               (.getName schema)))
+                       child-schema (schema-type (.schema field))
                        new-v (clj->avro child-schema v)]
                    (.put acc new-k new-v)
                    acc))
@@ -286,7 +289,10 @@
       (avro->clj schema-type avro-data)))
   (clj->avro [_ clj-data]
     (let [schema-type (match-union-type schema #(match-clj? % clj-data))]
-      (clj->avro schema-type clj-data))))
+      (if-not schema-type
+        (throw (ex-info (str "No matching union schema")
+                        {:schema schema :value clj-data}))
+        (clj->avro schema-type clj-data)))))
 
 (defmethod schema-type {:type "union"} [schema]
   (UnionType. schema))
