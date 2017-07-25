@@ -6,32 +6,10 @@
             [clj-uuid :as uuid]
             [clojure.java.io :as io])
   (:import (org.apache.avro Schema$Parser)
-           (org.apache.avro.generic GenericData$Record)
-           (org.apache.kafka.common.serialization Serde)
-           (io.confluent.kafka.schemaregistry.client MockSchemaRegistryClient)))
+           (org.apache.avro.generic GenericData$Record)))
 
 (defn parse-schema [clj-schema]
   (.parse (Schema$Parser.) ^String (json/write-str clj-schema)))
-
-(def topic-config
-  {:avro/schema (slurp (io/resource "resources/example_schema.avsc"))
-   :schema.registry/url "http://localhost:8081"})
-
-(defn with-mock-client [config]
-  (assoc config :schema.registry/client (MockSchemaRegistryClient.)))
-
-(deftest avro-serde
-  (testing "schema can be serialized by registry client"
-    (let [config (avro2/serde-config :value (with-mock-client topic-config))
-          serde ^Serde (avro2/avro-serde config)]
-      (let [msg {:customer-id (uuid/v4)
-                 :address {:value "foo"
-                           :key-path "foo.bar.baz"}}]
-        (let [serialized (-> (.serializer serde)
-                             (.serialize "foo" msg))
-              deserialized (-> (.deserializer serde)
-                               (.deserialize "foo" serialized))]
-          (is (= deserialized msg)))))))
 
 (deftest schema-type
   (testing "string base type"
