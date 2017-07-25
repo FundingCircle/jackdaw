@@ -2,7 +2,6 @@
   (:require [clojure.test :refer [deftest is testing]]
             [jackdaw.serdes.avro :as avro]
             [clojure.data.json :as json]
-            [clojure.spec.test.alpha :as stest]
             [clj-uuid :as uuid]
             [clojure.java.io :as io]
             [environ.core :as env]
@@ -13,8 +12,6 @@
            (org.apache.kafka.common.serialization Serializer Deserializer Serde)
            (io.confluent.kafka.schemaregistry.client MockSchemaRegistryClient)
            (org.apache.avro.util Utf8)))
-
-(stest/instrument)
 
 (defn parse-schema [clj-schema]
   (.parse (Schema$Parser.) ^String (json/write-str clj-schema)))

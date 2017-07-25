@@ -1,25 +1,12 @@
 (ns jackdaw.serdes.avro
-  (:require [clojure.future :refer [uuid? boolean? bytes? double?]]
-            [jackdaw.serdes.registry :as registry]
-            [clojure.spec.alpha :as s])
+  (:refer-clojure :exclude [boolean? bytes?])
+  (:require [jackdaw.serdes.registry :as registry])
   (:import (org.apache.kafka.common.serialization Serdes Serializer Deserializer)
            (java.util UUID Map HashMap)
            (org.apache.avro.generic GenericData$Record GenericData$Array GenericData$EnumSymbol)
            (org.apache.avro Schema$ArraySchema Schema Schema$Parser)
            (io.confluent.kafka.serializers KafkaAvroSerializer KafkaAvroDeserializer)
            (io.confluent.kafka.schemaregistry.client SchemaRegistryClient)))
-
-;; Spec
-
-(s/def ::avro-schema #(instance? Schema %))
-(s/def ::key? boolean?)
-(s/def ::registry-url string?)
-(s/def ::registry-client #(instance? SchemaRegistryClient %))
-(s/def ::serde-config
-  (s/keys :req-un [::avro-schema
-                   ::key?
-                   ::registry-url
-                   ::registry-client]))
 
 ;; Private Helpers
 
@@ -54,6 +41,11 @@
 
 ;;; Boolean
 
+(defn- boolean?
+  "Return true if x is a Boolean"
+  {:added "1.9"}
+  [x] (instance? Boolean x))
+
 (defrecord BooleanType []
   SchemaType
   (match-clj? [_ x] (boolean? x))
@@ -65,6 +57,13 @@
   (BooleanType.))
 
 ;;; Bytes
+
+(defn- bytes?
+  "Return true if x is a byte array"
+  {:added "1.9"}
+  [x] (if (nil? x)
+        false
+        (-> x class .getComponentType (= Byte/TYPE))))
 
 (defrecord BytesType []
   SchemaType
@@ -345,9 +344,6 @@
   (let [serializer (avro-serializer serde-config)
         deserializer (avro-deserializer serde-config)]
     (Serdes/serdeFrom serializer deserializer)))
-
-(s/fdef avro-serde
-        :args (s/cat :serde-config ::serde-config))
 
 (defn serde-config [key-or-value topic-config]
   (let [{:keys [:schema.registry/client :schema.registry/url
