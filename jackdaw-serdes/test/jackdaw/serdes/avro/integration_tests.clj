@@ -1,7 +1,7 @@
-(ns jackdaw.serdes.avro2.integration-tests
+(ns jackdaw.serdes.avro.integration-tests
   (:require [clojure.test :refer [deftest is testing]]
-            [jackdaw.serdes.avro2 :as avro2]
-            [jackdaw.serdes.avro2.uuid]
+            [jackdaw.serdes.avro :as avro]
+            [jackdaw.serdes.avro.uuid]
             [clojure.data.json :as json]
             [clj-uuid :as uuid]
             [clojure.java.io :as io]
@@ -24,8 +24,8 @@
 
 (deftest mock-schema-registry
   (testing "schema can be serialized by registry client"
-    (let [config (avro2/serde-config :value (with-mock-client topic-config))
-          serde ^Serde (avro2/avro-serde config)]
+    (let [config (avro/serde-config :value (with-mock-client topic-config))
+          serde ^Serde (avro/avro-serde config)]
       (let [msg {:customer-id (uuid/v4)
                  :address {:value "foo"
                            :key-path "foo.bar.baz"}}]
@@ -38,8 +38,8 @@
 (deftest ^:integration real-schema-registry
   (testing "schema registry set in environment"
     (with-redefs [env/env {:schema-registry-url "http://localhost:8081"}]
-      (let [config (avro2/serde-config :value (with-real-client topic-config))
-            serde ^Serde (avro2/avro-serde config)]
+      (let [config (avro/serde-config :value (with-real-client topic-config))
+            serde ^Serde (avro/avro-serde config)]
         (let [msg {:customer-id (uuid/v4)
                    :address {:value "foo"
                              :key-path "foo.bar.baz"}}]
@@ -51,8 +51,8 @@
 
   (testing "schema registry set in config"
     (with-redefs [env/env {:schema-registry-url "http://registry.example.com:8081"}]
-      (let [config (avro2/serde-config :value (with-real-client topic-config))
-            serde ^Serde (avro2/avro-serde config)]
+      (let [config (avro/serde-config :value (with-real-client topic-config))
+            serde ^Serde (avro/avro-serde config)]
         (let [msg {:customer-id (uuid/v4)
                    :address {:value "foo"
                              :key-path "foo.bar.baz"}}]

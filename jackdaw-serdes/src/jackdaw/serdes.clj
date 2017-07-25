@@ -4,7 +4,6 @@
   (:require [environ.core :refer [env]]
             [jackdaw.serdes
              [avro :as avro]
-             [avro2 :as avro2]
              [edn :as edn]
              [json :as json]
              [uuid :as uuid]])
@@ -16,13 +15,13 @@
 
 (defmethod serde ::avro-key
   [topic-config]
-  (-> (avro2/serde-config :key topic-config)
-      (avro2/avro-serde)))
+  (-> (avro/serde-config :key topic-config)
+      (avro/avro-serde)))
 
 (defmethod serde ::avro-value
   [topic-config]
-  (-> (avro2/serde-config :value topic-config)
-      (avro2/avro-serde)))
+  (-> (avro/serde-config :value topic-config)
+      (avro/avro-serde)))
 
 (defmethod serde ::edn
   [_]

@@ -1,5 +1,5 @@
-(ns jackdaw.serdes.avro2.uuid
-  (:require [jackdaw.serdes.avro2 :as avro])
+(ns jackdaw.serdes.avro.uuid
+  (:require [jackdaw.serdes.avro :as avro])
   (:import (java.util UUID)))
 
 (defrecord StringUUIDType []
