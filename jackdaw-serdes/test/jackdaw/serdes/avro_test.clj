@@ -166,28 +166,3 @@
       (is (thrown-with-msg? AssertionError
                             #"Field garbage not known in Foo"
                             (avro/clj->avro schema-type {:garbage "yolo"}))))))
-
-#_(deftest ^:integration schema-registry
-  (testing "schema registry set in environment"
-    (with-redefs [env/env {:schema-registry-url "http://localhost:8081"}]
-      (let [serde (avro/avro-serde (with-real-client avro-config) false)]
-        (let [msg {:customer-id (uuid/v4)
-                   :address {:value "foo"
-                             :key-path "foo.bar.baz"}}]
-          (let [serialized (-> (.serializer serde)
-                               (.serialize "foo" msg))
-                deserialized (-> (.deserializer serde)
-                                 (.deserialize "foo" serialized))]
-            (is (= deserialized msg)))))))
-
-  (testing "schema registry set in config"
-    (with-redefs [env/env {:schema-registry-url "http://registry.example.com:8081"}]
-      (let [serde (avro/avro-serde (with-real-client avro-config) false)]
-        (let [msg {:customer-id (uuid/v4)
-                   :address {:value "foo"
-                             :key-path "foo.bar.baz"}}]
-          (let [serialized (-> (.serializer serde)
-                               (.serialize "foo" msg))
-                deserialized (-> (.deserializer serde)
-                                 (.deserialize "foo" serialized))]
-            (is (= deserialized msg))))))))
