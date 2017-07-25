@@ -50,10 +50,12 @@
       (is (= clj-data (avro2/avro->clj schema-type avro-data)))
       (is (= avro-data (avro2/clj->avro schema-type clj-data)))))
   (testing "string"
-    (let [avro-schema (parse-schema {:type "string"})
+    (let [avro-schema (parse-schema {:type "string"
+                                     :name "postcode"
+                                     :namespace "com.fundingcircle"})
           schema-type (avro2/schema-type avro-schema)
-          clj-data "hello"
-          avro-data "hello"]
+          clj-data "test-string"
+          avro-data "test-string"]
       (is (= clj-data (avro2/avro->clj schema-type avro-data)))
       (is (= avro-data (avro2/clj->avro schema-type clj-data)))))
   (testing "null"
