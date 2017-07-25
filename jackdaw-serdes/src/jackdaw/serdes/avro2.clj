@@ -344,10 +344,11 @@
         :args (s/cat :serde-config ::serde-config))
 
 (defn serde-config [key-or-value topic-config]
-  (let [{:keys [:avro/schema]} topic-config]
+  (let [{:keys [:schema.registry/client :schema.registry/url
+                :avro/schema]} topic-config]
     {:avro-schema (parse-schema-str schema)
-     :registry-client (registry/client topic-config 10)
-     :registry-url (registry/url topic-config)
+     :registry-client (or client (registry/client topic-config 10))
+     :registry-url (or url (registry/url topic-config))
      :key? (case key-or-value
              :key true
              :value false)}))
