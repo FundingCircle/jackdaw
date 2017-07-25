@@ -7,11 +7,9 @@
             [environ.core :as env]
             [jackdaw.serdes.avro :as avro])
   (:import (org.apache.avro Schema$Parser Schema)
-           (org.apache.avro.generic GenericData$Array GenericData$Record GenericData$EnumSymbol)
-           (java.util Collection HashMap)
-           (org.apache.kafka.common.serialization Serializer Deserializer Serde)
-           (io.confluent.kafka.schemaregistry.client MockSchemaRegistryClient)
-           (org.apache.avro.util Utf8)))
+           (org.apache.avro.generic GenericData$EnumSymbol GenericData$Record GenericData$Array)
+           (org.apache.avro.util Utf8)
+           (java.util Collection)))
 
 (defn parse-schema [clj-schema]
   (.parse (Schema$Parser.) ^String (json/write-str clj-schema)))

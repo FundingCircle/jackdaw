@@ -2,11 +2,10 @@
   "Some useful serdes."
   (:refer-clojure :exclude [resolve])
   (:require [environ.core :refer [env]]
-            [jackdaw.serdes
-             [avro :as avro]
-             [edn :as edn]
-             [json :as json]
-             [uuid :as uuid]])
+            [jackdaw.serdes.avro :as avro]
+            [jackdaw.serdes.edn :as edn]
+            [jackdaw.serdes.json :as json]
+            [jackdaw.serdes.uuid :as uuid])
   (:import org.apache.kafka.common.serialization.Serdes))
 
 (defmulti serde

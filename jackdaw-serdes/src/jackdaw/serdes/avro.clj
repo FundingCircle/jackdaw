@@ -1,12 +1,11 @@
 (ns jackdaw.serdes.avro
   (:refer-clojure :exclude [boolean? bytes?])
   (:require [jackdaw.serdes.registry :as registry])
-  (:import (org.apache.kafka.common.serialization Serdes Serializer Deserializer)
-           (java.util UUID Map HashMap)
-           (org.apache.avro.generic GenericData$Record GenericData$Array GenericData$EnumSymbol)
-           (org.apache.avro Schema$ArraySchema Schema Schema$Parser)
-           (io.confluent.kafka.serializers KafkaAvroSerializer KafkaAvroDeserializer)
-           (io.confluent.kafka.schemaregistry.client SchemaRegistryClient)))
+  (:import (org.apache.avro Schema$Parser Schema$ArraySchema)
+           (org.apache.avro.generic GenericData$Array GenericData$EnumSymbol GenericData$Record)
+           (java.util Map)
+           (org.apache.kafka.common.serialization Serializer Deserializer Serdes)
+           (io.confluent.kafka.serializers KafkaAvroSerializer KafkaAvroDeserializer)))
 
 ;; Private Helpers
 
