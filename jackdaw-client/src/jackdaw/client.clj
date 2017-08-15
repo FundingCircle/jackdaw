@@ -1,7 +1,7 @@
 (ns jackdaw.client
   "Clojure wrapper to kafka consumers/producers"
   (:import [org.apache.kafka.clients.consumer Consumer ConsumerRecord KafkaConsumer]
-           [org.apache.kafka.clients.producer Callback KafkaProducer ProducerRecord RecordMetadata]
+           [org.apache.kafka.clients.producer Callback KafkaProducer ProducerRecord RecordMetadata Producer]
            org.apache.kafka.common.serialization.Serde
            org.apache.kafka.common.TopicPartition))
 
@@ -60,9 +60,9 @@
   can be optionally provided that should expect two parameters: a map of the
   record metadata, and an exception instance, if an error occurred."
   ([producer record]
-   (.send ^KafkaProducer producer record))
+   (.send ^Producer producer record))
   ([producer record callback-fn]
-   (.send ^KafkaProducer producer record (callback callback-fn))))
+   (.send ^Producer producer record (callback callback-fn))))
 
 (defn consumer
   "Return a Consumer with the supplied properties."
