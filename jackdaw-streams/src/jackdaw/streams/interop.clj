@@ -245,7 +245,7 @@
     (clj-kstream
      (.leftJoin ^KStream kstream
                 ^KStream (kstream* other-kstream)
-                ^ValueJoiner (value-joiner-fn)
+                ^ValueJoiner (value-joiner value-joiner-fn)
                 ^JoinWindows windows)))
 
   (left-join-windowed
