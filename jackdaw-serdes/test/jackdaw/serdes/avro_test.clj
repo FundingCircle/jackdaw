@@ -136,11 +136,11 @@
           clj-data-long 123
           avro-data-long 123
           clj-data-string "hello"
-          avro-data-string "hello"]
+          avro-data-string (Utf8. "hello")]
       (is (= clj-data-long (avro/avro->clj schema-type avro-data-long)))
       (is (= avro-data-long (avro/clj->avro schema-type clj-data-long)))
       (is (= clj-data-string (avro/avro->clj schema-type avro-data-string)))
-      (is (= avro-data-string (avro/clj->avro schema-type clj-data-string)))))
+      (is (= (str avro-data-string) (avro/clj->avro schema-type clj-data-string)))))
   (testing "marshalling unrecognized union type throws exception"
     (let [avro-schema (parse-schema ["null" "long"])
           schema-type (avro/schema-type avro-schema)]

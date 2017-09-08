@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [boolean? bytes?])
   (:require [jackdaw.serdes.registry :as registry])
   (:import (io.confluent.kafka.serializers KafkaAvroSerializer KafkaAvroDeserializer)
+           (java.lang CharSequence)
            (java.util Collection)
            (java.util Map)
            (org.apache.avro Schema$Parser Schema$ArraySchema Schema)
@@ -128,7 +129,7 @@
 (defrecord StringType []
   SchemaType
   (match-clj? [_ x] (string? x))
-  (match-avro? [_ x] (string? x))
+  (match-avro? [_ x] (instance? CharSequence x))
   (avro->clj [_ x] (str x))
   (clj->avro [_ x] x))
 
