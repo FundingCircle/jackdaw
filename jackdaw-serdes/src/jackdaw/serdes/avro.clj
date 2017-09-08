@@ -1,11 +1,12 @@
 (ns jackdaw.serdes.avro
   (:refer-clojure :exclude [boolean? bytes?])
   (:require [jackdaw.serdes.registry :as registry])
-  (:import (org.apache.avro Schema$Parser Schema$ArraySchema)
-           (org.apache.avro.generic GenericData$Array GenericData$EnumSymbol GenericData$Record)
+  (:import (io.confluent.kafka.serializers KafkaAvroSerializer KafkaAvroDeserializer)
+           (java.util Collection)
            (java.util Map)
-           (org.apache.kafka.common.serialization Serializer Deserializer Serdes)
-           (io.confluent.kafka.serializers KafkaAvroSerializer KafkaAvroDeserializer)))
+           (org.apache.avro Schema$Parser Schema$ArraySchema Schema)
+           (org.apache.avro.generic GenericData$Array GenericData$EnumSymbol GenericData$Record)
+           (org.apache.kafka.common.serialization Serializer Deserializer Serdes)))
 
 ;; Private Helpers
 
@@ -161,7 +162,12 @@
           element-schema (schema-type element-type)]
       (mapv #(avro->clj element-schema %) java-collection)))
   (clj->avro [_ clj-seq]
-    clj-seq))
+    (let [element-type (.getElementType ^Schema$ArraySchema schema)
+          element-schema (schema-type element-type)]
+
+      (GenericData$Array. ^Schema schema
+                          ^Collection
+                          (mapv #(clj->avro element-schema %) clj-seq)))))
 
 (defmethod schema-type {:type "array"} [schema]
   (ArrayType. schema))

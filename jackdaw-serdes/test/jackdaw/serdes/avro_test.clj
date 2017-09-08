@@ -87,6 +87,42 @@
                                         ^Collection clj-data)]
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
       (is (= avro-data (avro/clj->avro schema-type clj-data)))))
+  (testing "nested array"
+    (let [nested-schema-json {:name "nestedRecord"
+                              :type "record"
+                              :fields [{:name "a"
+                                        :type "long"}]}
+          nested-schema-parsed (parse-schema nested-schema-json)
+
+          array-schema-json {:name "credit_score_guarantors"
+                             :type "array"
+                             :items nested-schema-json}
+          array-schema-parsed (parse-schema array-schema-json)
+
+          avro-schema (parse-schema {:name "testRecord"
+                                     :type "record"
+                                     :fields [{:name "stringField"
+                                               :type "string"}
+                                              {:name "longField"
+                                               :type "long"}
+                                              {:name "recordField"
+                                               :type array-schema-json}]})
+          schema-type (avro/schema-type avro-schema)
+
+
+          clj-data {:stringField "foo"
+                    :longField 123
+                    :recordField [{:a 1}]}
+          avro-data (doto (GenericData$Record. avro-schema)
+                      (.put "stringField" "foo")
+                      (.put "longField" 123)
+                      (.put "recordField"
+                            (GenericData$Array. ^Schema array-schema-parsed
+                                                ^Collection [(doto (GenericData$Record. nested-schema-parsed)
+                                                               (.put "a" 1))])))]
+
+      (is (= clj-data (avro/avro->clj schema-type avro-data)))
+      (is (= avro-data (avro/clj->avro schema-type clj-data)))))
   (testing "map"
     (let [avro-schema (parse-schema {:type "map", :values "long"})
           schema-type (avro/schema-type avro-schema)
