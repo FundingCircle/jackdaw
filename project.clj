@@ -21,9 +21,10 @@
                                   [org.apache.kafka/kafka-streams "_" :classifier "test"]
                                   [org.clojure/test.check "_"]]}
              :provided {:dependencies [[org.clojure/clojure "_"]]}}
-  :aot [jackdaw.serdes.json
-        jackdaw.serdes.avro
-        jackdaw.serdes.edn]
+  :aot [jackdaw.serdes.avro
+        jackdaw.serdes.edn
+        jackdaw.serdes.json
+        jackdaw.serdes.uuid]
   :modules {:inherited {:repositories {"confluent" {:url "http://packages.confluent.io/maven/"}
                                        "snapshots" {:url "https://fundingcircle.artifactoryonline.com/fundingcircle/libs-snapshot-local"
                                                     :username [:gpg :env/artifactory_user]
