@@ -6,7 +6,8 @@
             [clj-uuid :as uuid]
             [clojure.java.io :as io])
   (:import (org.apache.avro Schema$Parser)
-           (org.apache.avro.generic GenericData$Record)))
+           (org.apache.avro.generic GenericData$Record)
+           (org.apache.avro.util Utf8)))
 
 (defn parse-schema [clj-schema]
   (.parse (Schema$Parser.) ^String (json/write-str clj-schema)))
@@ -19,9 +20,11 @@
                                      :logicalType "jackdaw.serdes.avro.UUID"})
           schema-type (avro/schema-type avro-schema)
           clj-data #uuid "2d30dd35-8dd1-4044-8bfb-9c810d56c5cb"
-          avro-data "2d30dd35-8dd1-4044-8bfb-9c810d56c5cb"]
+          avro-data (Utf8. "2d30dd35-8dd1-4044-8bfb-9c810d56c5cb")]
+      (is (avro/match-clj? schema-type clj-data))
+      (is (avro/match-avro? schema-type avro-data))
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
-      (is (= avro-data (avro/clj->avro schema-type clj-data)))))
+      (is (= (str avro-data) (avro/clj->avro schema-type clj-data)))))
   (testing "a record containing a string with UUID logicalType"
     (let [uuid-schema {:type "string"
                        :logicalType "jackdaw.serdes.avro.UUID"}

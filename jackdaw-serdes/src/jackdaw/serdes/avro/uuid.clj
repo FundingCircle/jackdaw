@@ -7,7 +7,7 @@
   (match-clj? [_ uuid]
     (instance? UUID uuid))
   (match-avro? [_ uuid-str]
-    (string? uuid-str))
+    (instance? CharSequence uuid-str))
   (avro->clj [_ uuid-utf8]
     (UUID/fromString (str uuid-utf8)))
   (clj->avro [_ uuid]
