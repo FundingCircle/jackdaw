@@ -13,7 +13,8 @@
 
 (def parse-schema-str
   (memoize (fn [schema-str]
-             (.parse (Schema$Parser.) ^String schema-str))))
+             (when schema-str
+               (.parse (Schema$Parser.) ^String schema-str)))))
 
 (defn- mangle [^String n]
   (clojure.string/replace n #"-" "_"))
@@ -22,11 +23,12 @@
   (clojure.string/replace n #"_" "-"))
 
 (defn- dispatch-on-type-fields [schema]
-  (let [base-type (-> schema (.getType) (.getName))
-        logical-type (-> schema (.getProps) (.get "logicalType"))]
-    (if logical-type
-      {:type base-type :logical-type logical-type}
-      {:type base-type})))
+  (when schema
+    (let [base-type (-> schema (.getType) (.getName))
+          logical-type (-> schema (.getProps) (.get "logicalType"))]
+      (if logical-type
+        {:type base-type :logical-type logical-type}
+        {:type base-type}))))
 
 ;; Protocols and Multimethods
 
@@ -78,10 +80,13 @@
 
 ;;; Double
 
+(defn double? [x]
+  (instance? Double x))
+
 (defrecord DoubleType []
   SchemaType
-  (match-clj? [_ x] (instance? Double x))
-  (match-avro? [_ x] (instance? Double x))
+  (match-clj? [_ x] (double? x))
+  (match-avro? [_ x] (double? x))
   (avro->clj [_ x] x)
   (clj->avro [_ x] x))
 
@@ -90,10 +95,13 @@
 
 ;;; Float
 
+(defn float? [x]
+  (instance? Float x))
+
 (defrecord FloatType []
   SchemaType
-  (match-clj? [_ x] (instance? Float x))
-  (match-avro? [_ x] (instance? Float x))
+  (match-clj? [_ x] (float? x))
+  (match-avro? [_ x] (float? x))
   (avro->clj [_ x] x)
   (clj->avro [_ x] x))
 
@@ -102,10 +110,13 @@
 
 ;;; Int
 
+(defn int? [x]
+  (instance? Integer x))
+
 (defrecord IntType []
   SchemaType
-  (match-clj? [_ x] (integer? x))
-  (match-avro? [_ x] (integer? x))
+  (match-clj? [_ x] (int? x))
+  (match-avro? [_ x] (int? x))
   (avro->clj [_ x] x)
   (clj->avro [_ x] x))
 
@@ -114,11 +125,24 @@
 
 ;;; Long
 
+(defn long? [x]
+  (instance? Long x))
+
+(defn short? [x]
+  (instance? Short x))
+
+(defn byte? [x]
+  (instance? Byte x))
+
 (defrecord LongType []
   SchemaType
-  (match-clj? [_ x] (instance? Long x))
-  (match-avro? [_ x] (instance? Long x))
-  (avro->clj [_ x] x)
+  (match-clj? [_ x]
+    (or (long? x)
+        (int? x)
+        (short? x)
+        (byte? x)))
+  (match-avro? [_ x] (long? x))
+  (avro->clj [_ x] (long x))
   (clj->avro [_ x] x))
 
 (defmethod schema-type {:type "long"} [_]
@@ -147,6 +171,21 @@
 
 (defmethod schema-type {:type "null"} [_]
   (NullType.))
+
+;; Schemaless
+
+(def primitive? (some-fn nil? string? long? integer? float? double? bytes? boolean?))
+
+(defrecord SchemalessType []
+  SchemaType
+  (match-clj? [_ x] (primitive? x))
+  (match-avro? [_ x]
+    (primitive? x))
+  (avro->clj [_ x] x)
+  (clj->avro [_ x] x))
+
+(defmethod schema-type nil [_]
+  (SchemalessType.))
 
 ;; Complex Types
 
@@ -240,22 +279,40 @@
   SchemaType
   (match-clj? [_ clj-map]
     (let [fields (.getFields schema)]
+      (println "num fields:" (count fields) "vs" (count clj-map))
+      (println "Given fields:" (set (keys clj-map)))
+      (println "Expected fields:" (set (map keyword (map unmangle (map #(.name %) (seq (.getFields schema)))))))
+      #_(println "Missing fields:"
+               (clojure.set/difference
+                 (set (map keyword (map unmangle (map #(.name %) (seq (.getFields schema))))))
+                 (set (keys clj-map))))
       (and
        (= (count fields) (count clj-map))
        (every? (fn [field]
                  (let [field-schema-type (schema-type (.schema field))
                        field-value (get clj-map (keyword (unmangle (.name field))))]
-                   (match-clj? field-schema-type field-value)))
+                   (if (match-clj? field-schema-type field-value)
+                     true
+                     (do
+                       (println "Bad field:" (keyword (unmangle (.name field))) field-value)
+                       false))))
                fields))))
   (match-avro? [_ avro-record]
-    (instance? GenericData$Record avro-record))
+    (or (instance? GenericData$Record avro-record)
+        (nil? avro-record))
+    #_(if (instance? GenericData$Record avro-record)
+      true
+      (do
+        (println "Expected record, got " (class avro-record))
+        false)))
   (avro->clj [_ avro-record]
-    (->> (for [field (.getFields schema)
-               :let [name (.name field)
-                     schema (schema-type (.schema field))
-                     value (.get avro-record name)]]
-           [(keyword (unmangle name)) (avro->clj schema value)])
-         (into {})))
+    (when avro-record
+      (->> (for [field (.getFields schema)
+                 :let [name (.name field)
+                       schema (schema-type (.schema field))
+                       value (.get avro-record name)]]
+             [(keyword (unmangle name)) (avro->clj schema value)])
+           (into {}))))
   (clj->avro [_ clj-map]
     (reduce-kv (fn [acc k v]
                  (let [new-k (mangle (name k))

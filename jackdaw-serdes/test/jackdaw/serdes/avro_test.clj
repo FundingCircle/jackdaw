@@ -15,6 +15,10 @@
   (.parse (Schema$Parser.) ^String (json/write-str clj-schema)))
 
 (deftest schema-type
+  (testing "schemaless"
+    (is (= (avro/clj->avro (avro/schema-type nil) "hello")
+           "hello"))
+    (is (= 1 (avro/avro->clj (avro/schema-type nil) 1))))
   (testing "boolean"
     (let [avro-schema (parse-schema {:type "boolean"})
           schema-type (avro/schema-type avro-schema)
