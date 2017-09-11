@@ -43,10 +43,14 @@
   (testing "int"
     (let [avro-schema (parse-schema {:type "int"})
           schema-type (avro/schema-type avro-schema)
-          clj-data 2
+          clj-data (int 2)
           avro-data 2]
+      (is (avro/match-clj? schema-type clj-data))
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
-      (is (= avro-data (avro/clj->avro schema-type clj-data)))))
+      (is (= avro-data (avro/clj->avro schema-type clj-data)))
+
+      (is (avro/int? (avro/clj->avro schema-type (byte clj-data))))
+      (is (avro/int? (avro/clj->avro schema-type (short clj-data))))))
   (testing "long"
     (let [avro-schema (parse-schema {:type "long"
                                      :name "amount_cents"
@@ -55,7 +59,12 @@
           clj-data 4
           avro-data (Integer. 4)]
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
-      (is (= avro-data (avro/clj->avro schema-type clj-data)))))
+      (is (= avro-data (avro/clj->avro schema-type clj-data)))
+
+      (is (avro/long? (avro/clj->avro schema-type (byte clj-data))))
+      (is (avro/long? (avro/clj->avro schema-type (short clj-data))))
+      (is (avro/long? (avro/clj->avro schema-type (int clj-data))))))
+
   (testing "string"
     (let [avro-schema (parse-schema {:type "string"
                                      :name "postcode"

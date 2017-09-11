@@ -110,15 +110,25 @@
 
 ;;; Int
 
+(defn short? [x]
+  (instance? Short x))
+
+(defn byte? [x]
+  (instance? Byte x))
+
 (defn int? [x]
   (instance? Integer x))
 
 (defrecord IntType []
   SchemaType
-  (match-clj? [_ x] (int? x))
+  (match-clj? [_ x]
+    (or
+      (byte? x)
+      (short? x)
+      (int? x)))
   (match-avro? [_ x] (int? x))
   (avro->clj [_ x] x)
-  (clj->avro [_ x] x))
+  (clj->avro [_ x] (int x)))
 
 (defmethod schema-type {:type "int"} [_]
   (IntType.))
@@ -128,12 +138,6 @@
 (defn long? [x]
   (instance? Long x))
 
-(defn short? [x]
-  (instance? Short x))
-
-(defn byte? [x]
-  (instance? Byte x))
-
 (defrecord LongType []
   SchemaType
   (match-clj? [_ x]
@@ -142,8 +146,8 @@
         (short? x)
         (byte? x)))
   (match-avro? [_ x] (long? x))
-  (avro->clj [_ x] (long x))
-  (clj->avro [_ x] x))
+  (avro->clj [_ x] x)
+  (clj->avro [_ x] (long x)))
 
 (defmethod schema-type {:type "long"} [_]
   (LongType.))
