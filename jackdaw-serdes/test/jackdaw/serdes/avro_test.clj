@@ -89,6 +89,8 @@
           clj-data ["0.4" "56.7"]
           avro-data (GenericData$Array. ^Schema avro-schema
                                         ^Collection clj-data)]
+      (is (avro/match-clj? schema-type clj-data))
+      (is (avro/match-clj? schema-type (seq clj-data)))
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
       (is (= avro-data (avro/clj->avro schema-type clj-data)))))
   (testing "nested array"
@@ -124,6 +126,11 @@
                             (GenericData$Array. ^Schema array-schema-parsed
                                                 ^Collection [(doto (GenericData$Record. nested-schema-parsed)
                                                                (.put "a" 1))])))]
+
+      (is (avro/match-clj? schema-type clj-data))
+      (is (not (avro/match-clj? schema-type {:stringField "foo"
+                                             :longField 123
+                                             :recordField [{:b 1}]})))
 
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
       (is (= avro-data (avro/clj->avro schema-type clj-data)))))

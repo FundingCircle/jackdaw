@@ -194,7 +194,11 @@
 (defrecord ArrayType [schema]
   SchemaType
   (match-clj? [_ x]
-    (seq? x))
+    (let [element-type (.getElementType ^Schema$ArraySchema schema)
+          element-schema (schema-type element-type)]
+      (and
+        (sequential? x)
+        (every? (partial match-clj? element-schema) x))))
   (match-avro? [_ x]
     (instance? GenericData$Array x))
   (avro->clj [_ java-collection]
