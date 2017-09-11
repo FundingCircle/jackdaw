@@ -173,7 +173,8 @@
           avro-data (doto (GenericData$Record. avro-schema)
                       (.put "industry_code_version" avro-enum))]
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
-      (is (= avro-data (avro/clj->avro schema-type clj-data)))))
+      (is (= avro-data (avro/clj->avro schema-type clj-data)))
+      (is (= avro-data (avro/clj->avro schema-type {:industry-code-version "SIC-2003"})))))
   (testing "record"
     (let [nested-schema-json {:name "nestedRecord"
                               :type "record"

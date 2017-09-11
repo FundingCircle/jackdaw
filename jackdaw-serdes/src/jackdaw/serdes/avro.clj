@@ -221,7 +221,9 @@
 (defrecord EnumType [schema]
   SchemaType
   (match-clj? [_ x]
-    (keyword? x))
+    (or
+      (string? x)
+      (keyword? x)))
   (match-avro? [_ x]
     (instance? GenericData$EnumSymbol x))
   (avro->clj [_ avro-enum]
