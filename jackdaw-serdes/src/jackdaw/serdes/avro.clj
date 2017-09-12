@@ -182,7 +182,8 @@
 
 (defrecord SchemalessType []
   SchemaType
-  (match-clj? [_ x] (primitive? x))
+  (match-clj? [_ x]
+    (primitive? x))
   (match-avro? [_ x]
     (primitive? x))
   (avro->clj [_ x] x)
@@ -206,7 +207,7 @@
   (match-avro? [_ x]
     (instance? GenericData$Array x))
   (avro->clj [_ java-collection]
-    (let [element-type (.getElementType ^Schema$ArraySchema schema)
+    (let [element-type (.getElementType ^Schema$ArraySchema (.getSchema java-collection))
           element-schema (schema-type element-type)]
       (mapv #(avro->clj element-schema %) java-collection)))
   (clj->avro [_ clj-seq]
@@ -289,40 +290,25 @@
   SchemaType
   (match-clj? [_ clj-map]
     (let [fields (.getFields schema)]
-      (println "num fields:" (count fields) "vs" (count clj-map))
-      (println "Given fields:" (set (keys clj-map)))
-      (println "Expected fields:" (set (map keyword (map unmangle (map #(.name %) (seq (.getFields schema)))))))
-      #_(println "Missing fields:"
-               (clojure.set/difference
-                 (set (map keyword (map unmangle (map #(.name %) (seq (.getFields schema))))))
-                 (set (keys clj-map))))
       (and
        (= (count fields) (count clj-map))
        (every? (fn [field]
                  (let [field-schema-type (schema-type (.schema field))
                        field-value (get clj-map (keyword (unmangle (.name field))))]
-                   (if (match-clj? field-schema-type field-value)
-                     true
-                     (do
-                       (println "Bad field:" (keyword (unmangle (.name field))) field-value)
-                       false))))
+                   (match-clj? field-schema-type field-value)))
                fields))))
   (match-avro? [_ avro-record]
     (or (instance? GenericData$Record avro-record)
-        (nil? avro-record))
-    #_(if (instance? GenericData$Record avro-record)
-      true
-      (do
-        (println "Expected record, got " (class avro-record))
-        false)))
+        (nil? avro-record)))
   (avro->clj [_ avro-record]
     (when avro-record
-      (->> (for [field (.getFields schema)
-                 :let [name (.name field)
-                       schema (schema-type (.schema field))
-                       value (.get avro-record name)]]
-             [(keyword (unmangle name)) (avro->clj schema value)])
-           (into {}))))
+      (let [record-schema (.getSchema avro-record)]
+        (->> (for [field (.getFields record-schema)
+                   :let [field-name (.name field)
+                         field-schema (schema-type (.schema field))
+                         value (.get avro-record field-name)]]
+               [(keyword (unmangle field-name)) (avro->clj field-schema value)])
+             (into {})))))
   (clj->avro [_ clj-map]
     (reduce-kv (fn [acc k v]
                  (let [new-k (mangle (name k))
