@@ -209,8 +209,8 @@
                                               {:name "longField"
                                                :type "long"}
                                               {:name "optionalField"
-                                               :type "long"
-                                               :default 2}
+                                               :type ["null" "long"]
+                                               :default nil}
                                               {:name "recordField"
                                                :type nested-schema-json}]})
           schema-type (avro/schema-type avro-schema)

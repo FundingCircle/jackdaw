@@ -293,11 +293,9 @@
     (let [fields (.getFields schema)]
       (every? (fn [field]
                 (let [field-schema-type (schema-type (.schema field))
-                      field-value (get clj-map (keyword (unmangle (.name field))) ::missing)]
+                      field-value (get clj-map (keyword (unmangle (.name field))))]
 
-                  (if (= field-value ::missing)
-                    (.defaultValue field)
-                    (match-clj? field-schema-type field-value))))
+                  (match-clj? field-schema-type field-value)))
 
               fields)))
   (match-avro? [_ avro-record]
