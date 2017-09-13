@@ -6,7 +6,7 @@
            (java.util Collection)
            (java.util Map)
            (org.apache.avro Schema$Parser Schema$ArraySchema Schema)
-           (org.apache.avro.generic GenericData$Array GenericData$EnumSymbol GenericData$Record)
+           (org.apache.avro.generic GenericData$Array GenericData$EnumSymbol GenericData$Record GenericRecordBuilder)
            (org.apache.kafka.common.serialization Serializer Deserializer Serdes)))
 
 ;; Private Helpers
@@ -301,9 +301,11 @@
     (let [fields (.getFields schema)]
       (every? (fn [field]
                 (let [field-schema-type (schema-type (.schema field))
-                      field-value (get clj-map (keyword (unmangle (.name field))))]
+                      field-value (get clj-map (keyword (unmangle (.name field))) ::missing)]
 
-                  (match-clj? field-schema-type field-value)))
+                  (if (= field-value ::missing)
+                    (.defaultValue field)
+                    (match-clj? field-schema-type field-value))))
 
               fields)))
   (match-avro? [_ avro-record]
@@ -319,18 +321,19 @@
                [(keyword (unmangle field-name)) (avro->clj field-schema value)])
              (into {})))))
   (clj->avro [_ clj-map]
-    (reduce-kv (fn [acc k v]
-                 (let [new-k (mangle (name k))
-                       field (.getField schema new-k)
-                       _ (assert field (format "Field %s not known in %s"
-                                               new-k
-                                               (.getName schema)))
-                       child-schema (schema-type (.schema field))
-                       new-v (clj->avro child-schema v)]
-                   (.put acc new-k new-v)
-                   acc))
-               (GenericData$Record. schema)
-               clj-map)))
+    (let [record-builder (GenericRecordBuilder. schema)]
+
+      (doseq [[k v] clj-map]
+        (let [new-k (mangle (name k))
+              field (.getField schema new-k)
+              _ (assert field (format "Field %s not known in %s"
+                                      new-k
+                                      (.getName schema)))
+              child-schema (schema-type (.schema field))
+              new-v (clj->avro child-schema v)]
+          (.set record-builder new-k new-v)))
+
+      (.build record-builder))))
 
 (defmethod schema-type {:type "record"} [schema]
   (RecordType. schema))
