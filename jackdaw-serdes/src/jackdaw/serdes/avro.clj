@@ -269,15 +269,14 @@
     (instance? Map x))
   (avro->clj [_ avro-map]
     (->> (for [[k v] avro-map]
-           [(keyword k) v])
+           [(str k) v])
          (into {})))
   (clj->avro [_ clj-map]
     (reduce-kv (fn [acc k v]
                  (let [value-type (.getValueType schema)
                        value-schema (schema-type value-type)
-                       new-k (mangle (name k))
                        new-v (clj->avro value-schema v)]
-                   (assoc acc new-k new-v)))
+                   (assoc acc (name k) new-v)))
                {}
                clj-map)))
 

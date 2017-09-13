@@ -144,12 +144,12 @@
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
       (is (= avro-data (avro/clj->avro schema-type clj-data)))))
   (testing "map"
-    (let [avro-schema (parse-schema {:type "map", :values "long"})
+    (let [avro-schema (parse-schema {:type "map" :values "long"})
           schema-type (avro/schema-type avro-schema)
-          clj-data {:foo 1 :bar 2}
-          avro-data {"foo" 1 "bar" 2}]
+          clj-data {"foo" 1 "bar" 2}
+          avro-data {(Utf8. "foo") 1 (Utf8. "bar") 2}]
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
-      (is (= avro-data (avro/clj->avro schema-type clj-data)))))
+      (is (= clj-data (avro/clj->avro schema-type clj-data)))))
   (testing "union"
     (let [avro-schema (parse-schema ["long" "string"])
           schema-type (avro/schema-type avro-schema)
