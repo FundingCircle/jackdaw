@@ -147,12 +147,22 @@
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
       (is (= avro-data (avro/clj->avro schema-type clj-data)))))
   (testing "map"
-    (let [avro-schema (parse-schema {:type "map" :values "long"})
+    (let [nested-schema-json {:name "nestedRecord"
+                              :type "record"
+                              :fields [{:name "a"
+                                        :type "long"}]}
+          nested-schema-parsed (parse-schema nested-schema-json)
+
+          avro-schema (parse-schema {:type "map" :values nested-schema-json})
           schema-type (avro/schema-type avro-schema)
-          clj-data {"foo" 1 "bar" 2}
-          avro-data {(Utf8. "foo") 1 (Utf8. "bar") 2}]
+          clj-data {"foo" {:a 1} "bar" {:a 2}}
+          avro-data {(Utf8. "foo") (->generic-record nested-schema-parsed {"a" 1}) (Utf8. "bar") (->generic-record nested-schema-parsed {"a" 2})}
+          avro-data-str-keys (reduce-kv (fn [acc k v]
+                                          (assoc acc (str k) v))
+                                        {}
+                                        avro-data)]
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
-      (is (= clj-data (avro/clj->avro schema-type clj-data)))))
+      (is (= avro-data-str-keys (avro/clj->avro schema-type clj-data)))))
   (testing "union"
     (let [avro-schema (parse-schema ["long" "string"])
           schema-type (avro/schema-type avro-schema)

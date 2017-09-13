@@ -268,17 +268,19 @@
   (match-avro? [_ x]
     (instance? Map x))
   (avro->clj [_ avro-map]
-    (->> (for [[k v] avro-map]
-           [(str k) v])
-         (into {})))
+    (let [value-type (.getValueType schema)
+          value-schema (schema-type value-type)]
+      (->> (for [[k v] avro-map]
+             [(str k) (avro->clj value-schema v)])
+           (into {}))))
   (clj->avro [_ clj-map]
-    (reduce-kv (fn [acc k v]
-                 (let [value-type (.getValueType schema)
-                       value-schema (schema-type value-type)
-                       new-v (clj->avro value-schema v)]
-                   (assoc acc (name k) new-v)))
-               {}
-               clj-map)))
+    (let [value-type (.getValueType schema)
+          value-schema (schema-type value-type)]
+      (reduce-kv (fn [acc k v]
+                   (let [new-v (clj->avro value-schema v)]
+                     (assoc acc (name k) new-v)))
+                 {}
+                 clj-map))))
 
 (defmethod schema-type {:type "map"} [schema]
   (MapType. schema))
