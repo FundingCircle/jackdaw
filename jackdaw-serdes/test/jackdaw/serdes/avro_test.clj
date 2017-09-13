@@ -14,6 +14,12 @@
 (defn parse-schema [clj-schema]
   (.parse (Schema$Parser.) ^String (json/write-str clj-schema)))
 
+(defn ->generic-record [avro-schema m]
+  (let [record (GenericData$Record. avro-schema)]
+    (doseq [[k v] m]
+      (.put record k v))
+    record))
+
 (deftest schema-type
   (testing "schemaless"
     (is (= (avro/clj->avro (avro/schema-type nil) "hello")
@@ -128,13 +134,10 @@
           clj-data {:stringField "foo"
                     :longField 123
                     :recordField [{:a 1}]}
-          avro-data (doto (GenericData$Record. avro-schema)
-                      (.put "stringField" "foo")
-                      (.put "longField" 123)
-                      (.put "recordField"
-                            (GenericData$Array. ^Schema array-schema-parsed
-                                                ^Collection [(doto (GenericData$Record. nested-schema-parsed)
-                                                               (.put "a" 1))])))]
+          avro-data (->generic-record avro-schema {"stringField" "foo"
+                                                   "longField" 123
+                                                   "recordField" (GenericData$Array. ^Schema array-schema-parsed
+                                                                                     ^Collection [(->generic-record nested-schema-parsed {"a" 1})])})]
 
       (is (avro/match-clj? schema-type clj-data))
       (is (not (avro/match-clj? schema-type {:stringField "foo"
@@ -179,8 +182,7 @@
           schema-type (avro/schema-type avro-schema)
           clj-data {:industry-code-version :SIC-2003}
           avro-enum (GenericData$EnumSymbol. avro-schema "SIC_2003")
-          avro-data (doto (GenericData$Record. avro-schema)
-                      (.put "industry_code_version" avro-enum))]
+          avro-data (->generic-record avro-schema {"industry_code_version" avro-enum})]
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
       (is (= avro-data (avro/clj->avro schema-type clj-data)))
       (is (= avro-data (avro/clj->avro schema-type {:industry-code-version "SIC-2003"})))))
@@ -202,12 +204,9 @@
           clj-data {:stringField "foo"
                     :longField 123
                     :recordField {:a 1}}
-          avro-data (doto (GenericData$Record. avro-schema)
-                      (.put "stringField" "foo")
-                      (.put "longField" 123)
-                      (.put "recordField"
-                            (doto (GenericData$Record. nested-schema-parsed)
-                              (.put "a" 1))))]
+          avro-data (->generic-record avro-schema {"stringField" "foo"
+                                                   "longField" 123
+                                                   "recordField" (->generic-record nested-schema-parsed {"a" 1})})]
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
       (is (= avro-data (avro/clj->avro schema-type clj-data)))))
   (testing "marshalling record with unknown field triggers error"
