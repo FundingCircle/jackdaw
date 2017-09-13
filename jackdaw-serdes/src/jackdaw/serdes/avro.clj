@@ -119,13 +119,24 @@
 (defn int? [x]
   (instance? Integer x))
 
+(defn long? [x]
+  (instance? Long x))
+
+(defn int-range? [x]
+  (<= Integer/MIN_VALUE x Integer/MAX_VALUE))
+
+(defn int-castable? [x]
+  (or
+    (byte? x)
+    (short? x)
+    (int? x)
+    (and (long? x)
+         (int-range? x))))
+
 (defrecord IntType []
   SchemaType
   (match-clj? [_ x]
-    (or
-      (byte? x)
-      (short? x)
-      (int? x)))
+    (int-castable? x))
   (match-avro? [_ x] (int? x))
   (avro->clj [_ x] x)
   (clj->avro [_ x] (int x)))
@@ -134,9 +145,6 @@
   (IntType.))
 
 ;;; Long
-
-(defn long? [x]
-  (instance? Long x))
 
 (defrecord LongType []
   SchemaType
