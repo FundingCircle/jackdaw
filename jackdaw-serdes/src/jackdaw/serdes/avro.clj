@@ -291,13 +291,15 @@
   SchemaType
   (match-clj? [_ clj-map]
     (let [fields (.getFields schema)]
-      (and
-       (= (count fields) (count clj-map))
-       (every? (fn [field]
-                 (let [field-schema-type (schema-type (.schema field))
-                       field-value (get clj-map (keyword (unmangle (.name field))))]
-                   (match-clj? field-schema-type field-value)))
-               fields))))
+      (every? (fn [field]
+                (let [field-schema-type (schema-type (.schema field))
+                      field-value (get clj-map (keyword (unmangle (.name field))) ::missing)]
+
+                  (if (= field-value ::missing)
+                    (.defaultValue field)
+                    (match-clj? field-schema-type field-value))))
+
+              fields)))
   (match-avro? [_ avro-record]
     (or (instance? GenericData$Record avro-record)
         (nil? avro-record)))

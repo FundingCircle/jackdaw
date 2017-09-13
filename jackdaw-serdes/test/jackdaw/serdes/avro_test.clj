@@ -208,6 +208,9 @@
                                                :type "string"}
                                               {:name "longField"
                                                :type "long"}
+                                              {:name "optionalField"
+                                               :type "long"
+                                               :default 2}
                                               {:name "recordField"
                                                :type nested-schema-json}]})
           schema-type (avro/schema-type avro-schema)
@@ -217,7 +220,9 @@
           avro-data (->generic-record avro-schema {"stringField" "foo"
                                                    "longField" 123
                                                    "recordField" (->generic-record nested-schema-parsed {"a" 1})})]
-      (is (= clj-data (avro/avro->clj schema-type avro-data)))
+      (is (avro/match-clj? schema-type clj-data))
+      (is (avro/match-clj? schema-type (assoc clj-data :optionalField 4)))
+      (is (= (assoc clj-data :optionalField nil) (avro/avro->clj schema-type avro-data)))
       (is (= avro-data (avro/clj->avro schema-type clj-data)))))
   (testing "marshalling record with unknown field triggers error"
     (let [avro-schema (parse-schema {:type "record"
