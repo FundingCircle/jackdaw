@@ -1,10 +1,14 @@
 (ns jackdaw.client
   "Clojure wrapper to kafka consumers/producers"
-  (:require [clojurewerkz.propertied.properties :as p])
   (:import [org.apache.kafka.clients.consumer Consumer ConsumerRecord KafkaConsumer]
            [org.apache.kafka.clients.producer Callback KafkaProducer ProducerRecord RecordMetadata Producer]
+           java.util.Properties
            org.apache.kafka.common.serialization.Serde
            org.apache.kafka.common.TopicPartition))
+
+(defn- map->properties [config]
+  (doto (java.util.Properties.)
+    (.putAll config)))
 
 (set! *warn-on-reflection* true)
 
@@ -23,10 +27,10 @@
 (defn producer
   "Return a KafkaProducer with the supplied properties"
   ([config]
-   (KafkaProducer. (p/map->properties config)))
+   (KafkaProducer. ^Properties (map->properties config)))
 
   ([config {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
-   (KafkaProducer. (p/map->properties config)
+   (KafkaProducer. ^Properties (map->properties config)
                    (.serializer ^Serde key-serde)
                    (.serializer ^Serde value-serde))))
 
@@ -64,9 +68,9 @@
 (defn consumer
   "Return a Consumer with the supplied properties."
   ([config]
-   (KafkaConsumer. (p/map->properties config)))
+   (KafkaConsumer. ^Properties (map->properties config)))
   ([config {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
-   (KafkaConsumer. (p/map->properties config)
+   (KafkaConsumer. ^Properties (map->properties config)
                    (when key-serde (.deserializer ^Serde key-serde))
                    (when value-serde (.deserializer ^Serde value-serde)))))
 
