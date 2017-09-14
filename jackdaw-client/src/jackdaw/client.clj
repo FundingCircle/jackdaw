@@ -104,3 +104,31 @@
   "Polls kafka for new messages."
   [^Consumer consumer timeout]
   (mapv consumer-record (.poll consumer timeout)))
+
+(defn seek-to-end
+  "Seek to the last offset for the given topic/partitions"
+  [^Consumer consumer topic-partitions]
+  (.seekToEnd consumer topic-partitions)
+  consumer)
+
+(defn seek-to-beginning
+  "Seek to the last offset for the given topic/partitions"
+  [^Consumer consumer topic-partitions]
+  (.seekToBeginning consumer topic-partitions)
+  consumer)
+
+(defn position
+  "Get the offset of the next record that will be fetched"
+  [^Consumer consumer ^TopicPartition topic-partition]
+  (.position consumer topic-partition))
+
+(defn assignment
+  "Get the partitions currently assigned to this consumer"
+  [^Consumer consumer]
+  (set (.assignment consumer)))
+
+(defn assign
+  "Assign a consumer to specific partitions for specific topics. Returns the consumer."
+  [^Consumer consumer & topic-partitions]
+  (.assign consumer topic-partitions)
+  consumer)
