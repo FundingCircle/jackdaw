@@ -6,9 +6,12 @@
            org.apache.kafka.common.serialization.Serde
            org.apache.kafka.common.TopicPartition))
 
-(defn- map->properties [config]
-  (doto (java.util.Properties.)
-    (.putAll config)))
+(defn- map->properties
+  [m]
+  (let [props (java.util.Properties.)]
+    (when m
+      (.putAll (stringify-keys m)))
+    props))
 
 (set! *warn-on-reflection* true)
 
