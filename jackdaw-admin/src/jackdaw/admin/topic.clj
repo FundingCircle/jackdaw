@@ -16,8 +16,10 @@
 
 (defn- map->properties
   [m]
-  (doto (java.util.Properties.)
-    (.putAll (stringify-keys m))))
+  (let [props (java.util.Properties.)]
+    (when m
+      (.putAll (stringify-keys m)))
+    props))
 
 (defn create!
   "Makes a request to create topic and returns topic name.
