@@ -1,5 +1,6 @@
 (ns jackdaw.client
   "Clojure wrapper to kafka consumers/producers"
+  (:require [clojure.walk :refer [stringify-keys]])
   (:import [org.apache.kafka.clients.consumer Consumer ConsumerRecord KafkaConsumer]
            [org.apache.kafka.clients.producer Callback KafkaProducer ProducerRecord RecordMetadata Producer]
            java.util.Properties
@@ -10,7 +11,7 @@
   [m]
   (let [props (java.util.Properties.)]
     (when m
-      (.putAll (stringify-keys m)))
+      (.putAll props (stringify-keys m)))
     props))
 
 (set! *warn-on-reflection* true)

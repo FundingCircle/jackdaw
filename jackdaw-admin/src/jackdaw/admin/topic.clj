@@ -18,7 +18,7 @@
   [m]
   (let [props (java.util.Properties.)]
     (when m
-      (.putAll (stringify-keys m)))
+      (.putAll props (stringify-keys m)))
     props))
 
 (defn create!
