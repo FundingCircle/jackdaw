@@ -1,4 +1,4 @@
-(defproject fundingcircle/jackdaw-test "0.1.0-SNAPSHOT"
+(defproject fundingcircle/jackdaw-test "0.2.0"
   :description "Test fixtures for Kafka, Zookeeper, and Confluent Schema Registry"
   :plugins [[lein-modules "0.3.11"]]
   :dependencies [[io.confluent/kafka-connect-avro-converter "_"]
@@ -13,7 +13,7 @@
                                   [environ "1.1.0"]
                                   [org.clojure/data.json "0.2.6"]
                                   [org.clojure/tools.nrepl "0.2.12"]
-                                  [fundingcircle/jackdaw-client "0.1.0-SNAPSHOT"]
+                                  [fundingcircle/jackdaw-client "0.2.0"]
                                   [org.clojure/java.jdbc "0.7.0-beta2"]
                                   [org.xerial/sqlite-jdbc "3.19.3"]]
                    :resource-paths ["test/resources"]}})

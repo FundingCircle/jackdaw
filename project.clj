@@ -1,13 +1,13 @@
-(defproject fundingcircle/jackdaw "0.1.0-SNAPSHOT"
+(defproject fundingcircle/jackdaw "0.2.0"
   :description "No frills Clojure wrapper around Apache Kafka APIs"
   :url "http://github.com/FundingCircle/jackdaw"
   :license {:name "3-Clause BSD License",
             :url "https://opensource.org/licenses/BSD-3-Clause"}
-  :dependencies [[fundingcircle/jackdaw-admin "0.1.0-SNAPSHOT"]
-                 [fundingcircle/jackdaw-client "0.1.0-SNAPSHOT"]
-                 [fundingcircle/jackdaw-serdes "0.1.0-SNAPSHOT"]
-                 [fundingcircle/jackdaw-streams "0.1.0-SNAPSHOT"]
-                 [fundingcircle/jackdaw-test "0.1.0-SNAPSHOP"]
+  :dependencies [[fundingcircle/jackdaw-admin "0.2.0"]
+                 [fundingcircle/jackdaw-client "0.2.0"]
+                 [fundingcircle/jackdaw-serdes "0.2.0"]
+                 [fundingcircle/jackdaw-streams "0.2.0"]
+                 [fundingcircle/jackdaw-test "0.2.0"]
                  [org.clojure/clojure "1.8.0"]]
   :plugins [[lein-codox "0.10.3"]
             [lein-modules "0.3.11"]]
