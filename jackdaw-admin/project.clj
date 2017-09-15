@@ -1,4 +1,4 @@
-(defproject fundingcircle/jackdaw-admin "0.2.0"
+(defproject fundingcircle/jackdaw-admin "0.2.1"
   :description "Tools for kafka administration"
   :dependencies [[org.clojure/tools.logging "_"]
                  [org.apache.kafka/kafka_2.11 "_"]]
@@ -13,5 +13,5 @@
                             :dependencies [[environ "1.1.0" :exclusions [org.clojure/clojure]]]}
              :project/dev {:env {:zookeeper-address "127.0.0.1:2181"
                                  :bootstrap-servers "127.0.0.1:9092"}}
-             :kafka {:dependencies [[fundingcircle/jackdaw-test "0.2.0"]
-                                    [fundingcircle/jackdaw-client "0.2.0"]]}})
+             :kafka {:dependencies [[fundingcircle/jackdaw-test "0.2.1"]
+                                    [fundingcircle/jackdaw-client "0.2.1"]]}})
