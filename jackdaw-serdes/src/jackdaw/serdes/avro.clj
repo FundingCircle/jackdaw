@@ -1,5 +1,5 @@
 (ns jackdaw.serdes.avro
-  (:refer-clojure :exclude [boolean? bytes?])
+  (:refer-clojure :exclude [boolean? bytes? float?])
   (:require [jackdaw.serdes.registry :as registry])
   (:import (io.confluent.kafka.serializers KafkaAvroSerializer KafkaAvroDeserializer)
            (java.lang CharSequence)
