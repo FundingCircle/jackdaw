@@ -5,6 +5,10 @@ machine:
     GIT_AUTHOR_NAME: CircleCI
     GIT_AUTHOR_EMAIL: circleci@circleci.com
 
+test:
+  override:
+    - lein modules test
+
 deployment:
   snapshot:
     branch: /.*-SNAPSHOT/
