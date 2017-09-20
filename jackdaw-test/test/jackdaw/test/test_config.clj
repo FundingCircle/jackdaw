@@ -46,6 +46,12 @@
    "kafkastore.connection.url" (env :zookeeper-connect)
    "kafkastore.topic"          "_schemas"})
 
+(defn parse-int [x]
+  (Integer/parseInt x 10))
+
+(def kafka-connect-port (or (some-> (env :kafka-connect-port) parse-int) (int 48484)))
+(def kafka-connect-host (or (env :kafka-connect-host) "localhost"))
+
 (def kafka-connect-worker-config
   {"bootstrap.servers" (env :bootstrap-servers)
    "group.id" "kafka.test"
@@ -54,9 +60,9 @@
    "value.converter" "org.apache.kafka.connect.json.JsonConverter"
    "value.converter.schemas.enable" false
    "rest.host.name" "0.0.0.0"
-   "rest.port" (Integer. (env :kafka-connect-port))
-   "rest.advertised.port" (Integer. (env :kafka-connect-port))
-   "rest.advertised.host.name" (env :kafka-connect-host)
+   "rest.port" kafka-connect-port
+   "rest.advertised.port" kafka-connect-port
+   "rest.advertised.host.name" kafka-connect-host
    "internal.key.converter" "org.apache.kafka.connect.json.JsonConverter"
    "internal.value.converter" "org.apache.kafka.connect.json.JsonConverter"
    "internal.key.converter.schemas.enable" false

@@ -96,8 +96,8 @@
                                      :topics "kafka-connect-source"}}]
 
            (http/post (format "http://%s:%s/connectors"
-                              (:kafka-connect-host env/env)
-                              (:kafka-connect-port env/env))
+                              test-config/kafka-connect-host
+                              test-config/kafka-connect-port)
                       {:content-type :json
                        :body (json/write-str task-config)})
 
