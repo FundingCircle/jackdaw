@@ -198,14 +198,12 @@
 
 ;; Schemaless
 
-(def primitive? (some-fn nil? string? long? integer? float? double? bytes? boolean?))
-
 (defrecord SchemalessType []
   SchemaType
   (match-clj? [_ x]
-    (primitive? x))
+    true)
   (match-avro? [_ x]
-    (primitive? x))
+    true)
   (avro->clj [_ x] x)
   (clj->avro [_ x] x))
 

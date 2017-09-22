@@ -324,3 +324,32 @@
                  (round-trip serde
                              "bananas"
                              (assoc valid-map :map-field {"banana" {:color "yellow" :eaten true}}))))))
+
+(deftest schemaless-test
+  (let [serde (->serde nil)]
+    (is (= (round-trip serde "bananas" "hello")
+           "hello"))
+
+    (is (= (round-trip serde "bananas" 1)
+           1))
+
+    (is (= (round-trip serde "bananas" (int 3))
+           (int 3)))
+
+    (is (= (round-trip serde "bananas" nil)
+           nil))
+
+    (is (= (round-trip serde "bananas" true)
+           true))
+
+    (is (= (round-trip serde "bananas" (float 0.34))
+           (float 0.34)))
+
+    (is (= (round-trip serde "bananas" 0.34)
+           0.34))
+
+    (is (= (String. (round-trip serde "bananas" (.getBytes "hello")))
+           "hello"))
+
+    (is (thrown? org.apache.kafka.common.errors.SerializationException
+                 (round-trip serde "bananas" {:hello 3})))))
