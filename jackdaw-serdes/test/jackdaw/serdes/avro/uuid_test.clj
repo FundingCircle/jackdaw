@@ -24,7 +24,7 @@
       (is (avro/match-clj? schema-type clj-data))
       (is (avro/match-avro? schema-type avro-data))
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
-      (is (= (str avro-data) (avro/clj->avro schema-type clj-data)))))
+      (is (= (str avro-data) (avro/clj->avro schema-type clj-data [])))))
   (testing "a record containing a string with UUID logicalType"
     (let [uuid-schema {:type "string"
                        :logicalType "jackdaw.serdes.avro.UUID"}
@@ -40,4 +40,8 @@
           avro-data (doto (GenericData$Record. record-schema)
                       (.put "id" (str id)))]
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
-      (is (= avro-data (avro/clj->avro schema-type clj-data))))))
+      (is (= avro-data (avro/clj->avro schema-type clj-data [])))
+      (is (thrown-with-msg?
+            clojure.lang.ExceptionInfo
+            #"java.lang.String is not a valid type for uuid \(\[:id\]\)"
+            (avro/clj->avro schema-type (update clj-data :id str) []))))))

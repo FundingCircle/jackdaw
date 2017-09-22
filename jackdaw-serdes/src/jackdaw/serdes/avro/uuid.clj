@@ -10,7 +10,9 @@
     (instance? CharSequence uuid-str))
   (avro->clj [_ uuid-utf8]
     (UUID/fromString (str uuid-utf8)))
-  (clj->avro [_ uuid]
+  (clj->avro [this uuid path]
+    (avro/validate-clj! this uuid path "uuid")
+
     (str uuid)))
 
 (defmethod avro/schema-type

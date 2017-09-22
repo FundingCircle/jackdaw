@@ -40,7 +40,7 @@
 
 (deftest schema-type
   (testing "schemaless"
-    (is (= (avro/clj->avro (avro/schema-type nil) "hello")
+    (is (= (avro/clj->avro (avro/schema-type nil) "hello" [])
            "hello"))
     (is (= 1 (avro/avro->clj (avro/schema-type nil) 1))))
   (testing "boolean"
@@ -49,21 +49,21 @@
           clj-data true
           avro-data true]
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
-      (is (= avro-data (avro/clj->avro schema-type clj-data)))))
+      (is (= avro-data (avro/clj->avro schema-type clj-data [])))))
   (testing "double"
     (let [avro-schema (parse-schema {:type "double"})
           schema-type (avro/schema-type avro-schema)
           clj-data 2.0
           avro-data 2.0]
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
-      (is (= avro-data (avro/clj->avro schema-type clj-data)))))
+      (is (= avro-data (avro/clj->avro schema-type clj-data [])))))
   (testing "float"
     (let [avro-schema (parse-schema {:type "float"})
           schema-type (avro/schema-type avro-schema)
           clj-data (float 2)
           avro-data (float 2)]
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
-      (is (= avro-data (avro/clj->avro schema-type clj-data)))))
+      (is (= avro-data (avro/clj->avro schema-type clj-data [])))))
   (testing "int"
     (let [avro-schema (parse-schema {:type "int"})
           schema-type (avro/schema-type avro-schema)
@@ -71,10 +71,10 @@
           avro-data 2]
       (is (avro/match-clj? schema-type clj-data))
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
-      (is (= avro-data (avro/clj->avro schema-type clj-data)))
+      (is (= avro-data (avro/clj->avro schema-type clj-data [])))
 
-      (is (avro/int? (avro/clj->avro schema-type (byte clj-data))))
-      (is (avro/int? (avro/clj->avro schema-type (short clj-data))))))
+      (is (avro/int? (avro/clj->avro schema-type (byte clj-data) [])))
+      (is (avro/int? (avro/clj->avro schema-type (short clj-data) [])))))
   (testing "long"
     (let [avro-schema (parse-schema {:type "long"
                                      :name "amount_cents"
@@ -83,11 +83,11 @@
           clj-data 4
           avro-data (Integer. 4)]
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
-      (is (= avro-data (avro/clj->avro schema-type clj-data)))
+      (is (= avro-data (avro/clj->avro schema-type clj-data [])))
 
-      (is (avro/long? (avro/clj->avro schema-type (byte clj-data))))
-      (is (avro/long? (avro/clj->avro schema-type (short clj-data))))
-      (is (avro/long? (avro/clj->avro schema-type (int clj-data))))))
+      (is (avro/long? (avro/clj->avro schema-type (byte clj-data) [])))
+      (is (avro/long? (avro/clj->avro schema-type (short clj-data) [])))
+      (is (avro/long? (avro/clj->avro schema-type (int clj-data) [])))))
 
   (testing "string"
     (let [avro-schema (parse-schema {:type "string"
@@ -97,7 +97,7 @@
           clj-data "test-string"
           avro-data "test-string"]
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
-      (is (= avro-data (avro/clj->avro schema-type clj-data)))))
+      (is (= avro-data (avro/clj->avro schema-type clj-data [])))))
   (testing "unmarshalling a utf8 character set"
     (let [avro-schema (parse-schema {:namespace "com.fundingcircle"
                                      :name "euro"
@@ -112,7 +112,7 @@
           clj-data nil
           avro-data nil]
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
-      (is (= avro-data (avro/clj->avro schema-type clj-data)))))
+      (is (= avro-data (avro/clj->avro schema-type clj-data [])))))
   (testing "array"
     (let [avro-schema (parse-schema {:namespace "com.fundingcircle"
                                      :name "credit_score_guarantors"
@@ -125,7 +125,7 @@
       (is (avro/match-clj? schema-type clj-data))
       (is (avro/match-clj? schema-type (seq clj-data)))
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
-      (is (= avro-data (avro/clj->avro schema-type clj-data)))))
+      (is (= avro-data (avro/clj->avro schema-type clj-data [])))))
   (testing "nested array"
     (let [nested-schema-json {:name "nestedRecord"
                               :type "record"
@@ -158,12 +158,12 @@
                                                                                      ^Collection [(->generic-record nested-schema-parsed {"a" 1})])})]
 
       (is (avro/match-clj? schema-type clj-data))
-      (is (not (avro/match-clj? schema-type {:stringField "foo"
-                                             :longField 123
-                                             :recordField [{:b 1}]})))
+      (is (avro/match-clj? schema-type {:stringField "foo"
+                                        :longField 123
+                                        :recordField [{:b 1}]}))
 
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
-      (is (= avro-data (avro/clj->avro schema-type clj-data)))))
+      (is (= avro-data (avro/clj->avro schema-type clj-data [])))))
   (testing "map"
     (let [nested-schema-json {:name "nestedRecord"
                               :type "record"
@@ -180,7 +180,7 @@
                                         {}
                                         avro-data)]
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
-      (is (= avro-data-str-keys (avro/clj->avro schema-type clj-data)))))
+      (is (= avro-data-str-keys (avro/clj->avro schema-type clj-data [])))))
   (testing "union"
     (let [avro-schema (parse-schema ["long" "string"])
           schema-type (avro/schema-type avro-schema)
@@ -189,15 +189,15 @@
           clj-data-string "hello"
           avro-data-string (Utf8. "hello")]
       (is (= clj-data-long (avro/avro->clj schema-type avro-data-long)))
-      (is (= avro-data-long (avro/clj->avro schema-type clj-data-long)))
+      (is (= avro-data-long (avro/clj->avro schema-type clj-data-long [])))
       (is (= clj-data-string (avro/avro->clj schema-type avro-data-string)))
-      (is (= (str avro-data-string) (avro/clj->avro schema-type clj-data-string)))))
+      (is (= (str avro-data-string) (avro/clj->avro schema-type clj-data-string [])))))
   (testing "marshalling unrecognized union type throws exception"
     (let [avro-schema (parse-schema ["null" "long"])
           schema-type (avro/schema-type avro-schema)]
       (is (thrown-with-msg? clojure.lang.ExceptionInfo
-                            #"No matching union schema"
-                            (avro/clj->avro schema-type "foo")))))
+                            #"java.lang.String is not a valid type for union \[NULL, LONG\] \(\)"
+                            (avro/clj->avro schema-type "foo" [])))))
   (testing "enum"
     (let [enum-schema {:type "enum"
                        :name "industry_code_version"
@@ -212,8 +212,8 @@
           avro-enum (GenericData$EnumSymbol. avro-schema "SIC_2003")
           avro-data (->generic-record avro-schema {"industry_code_version" avro-enum})]
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
-      (is (= avro-data (avro/clj->avro schema-type clj-data)))
-      (is (= avro-data (avro/clj->avro schema-type {:industry-code-version "SIC-2003"})))))
+      (is (= avro-data (avro/clj->avro schema-type clj-data [])))
+      (is (= avro-data (avro/clj->avro schema-type {:industry-code-version "SIC-2003"} [])))))
   (testing "record"
     (let [nested-schema-json {:name "nestedRecord"
                               :type "record"
@@ -248,16 +248,16 @@
       (is (not (avro/match-clj? schema-type (assoc clj-data-opt :optionalField (inc (long Integer/MAX_VALUE))))))
       (is (not (avro/match-clj? schema-type (assoc clj-data-opt :optionalField (dec (long Integer/MIN_VALUE))))))
       (is (= (assoc clj-data :optionalField nil :defaultField 1) (avro/avro->clj schema-type avro-data)))
-      (is (= avro-data (avro/clj->avro schema-type clj-data)))
-      (is (instance? Integer (.get (avro/clj->avro schema-type clj-data-opt) "optionalField")))))
+      (is (= avro-data (avro/clj->avro schema-type clj-data [])))
+      (is (instance? Integer (.get (avro/clj->avro schema-type clj-data-opt []) "optionalField")))))
   (testing "marshalling record with unknown field triggers error"
     (let [avro-schema (parse-schema {:type "record"
                                      :name "Foo"
                                      :fields [{:name "bar" :type "string"}]})
           schema-type (avro/schema-type avro-schema)]
-      (is (thrown-with-msg? AssertionError
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo
                             #"Field garbage not known in Foo"
-                            (avro/clj->avro schema-type {:garbage "yolo"}))))))
+                            (avro/clj->avro schema-type {:garbage "yolo"} []))))))
 
 (def bananas-schema
   {:type "record"
@@ -275,6 +275,8 @@
             {:name "optional_field"
              :type ["null" "int"]
              :default nil}
+            {:name "nil_field"
+             :type "null"}
             {:name "default_field"
              :type "long"
              :default 1}
@@ -285,12 +287,12 @@
                     :name "weird_values"
                     :symbols ["a_1" "B3"]}}
             {:name "map_field"
-             :type {:type "map"
-                    :values bananas-schema}}
+             :type ["null" {:type "map"
+                            :values bananas-schema}]}
             {:name "array_field"
-             :type {:name "subrecords"
-                    :type "array"
-                    :items "banana"}}]})
+             :type ["null" {:name "subrecords"
+                            :type "array"
+                            :items "banana"}]}]})
 
 (def complex-schema-str (json/write-str complex-schema))
 
@@ -299,6 +301,7 @@
         valid-map {:string-field "hello"
                    :long-field 3
                    :default-field 1
+                   :nil-field nil
                    :bytes-field (ByteBuffer/wrap (.getBytes "hello"))
                    :map-field {"banana" {:color "yellow"}
                                "ripe b4nana$" {:color "yellow-green"}}
@@ -313,6 +316,7 @@
            {:string-field "hello"
             :long-field 3
             :default-field 1
+            :nil-field nil
             :bytes-field "hello"
             :map-field {"banana" {:color "yellow"}
                         "ripe b4nana$" {:color "yellow-green"}}
@@ -320,10 +324,60 @@
             :optional-field 3
             :array-field [{:color "yellow"}]}))
 
-    (is (thrown? java.lang.AssertionError
-                 (round-trip serde
-                             "bananas"
-                             (assoc valid-map :map-field {"banana" {:color "yellow" :eaten true}}))))))
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"java.lang.Long is not a valid type for string \(\[:map-field\]\[banana\]\[:color\]\)"
+                          (round-trip serde
+                                      "bananas"
+                                      (assoc valid-map :map-field {"banana" {:color 3}}))))
+
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"Field tasty not known in banana at \[:map-field\]\[banana\]"
+                          (round-trip serde
+                                      "bananas"
+                                      (assoc valid-map :map-field {"banana" {:color "yellow" :tasty true}}))))
+
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"Field color type:STRING pos:0 not set and has no default value at \[:map-field\]\[bad banana\]"
+                          (round-trip serde
+                                      "bananas"
+                                      (assoc valid-map :map-field {"bad banana" {}
+                                                                   "good banana" {:color "yellow"}}))))
+
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"clojure.lang.Keyword \(:invalid-key\) is not a valid map key type, only string keys are supported \(\[:map-field\]\)"
+                          (round-trip serde
+                                      "bananas"
+                                      (assoc valid-map :map-field {:invalid-key {:color "yellow"}}))))
+
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"java\.lang\.Long is not a valid type for string \(\[:array-field\]\[0\]\[:color\]\)"
+                          (round-trip serde
+                                      "bananas"
+                                      (assoc valid-map :array-field [{:color 3}]))))
+
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"java\.lang\.Long is not a valid type for record \(\[:array-field\]\[1\]\)"
+                          (round-trip (->serde complex-schema-str)
+                                      "bananas"
+                                      (assoc valid-map :array-field [{:color "yellow"} 3]))))
+
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"nil is not a valid type for string \(\[:array-field\]\[0\]\[:color\]\)"
+                          (round-trip (->serde complex-schema-str)
+                                      "bananas"
+                                      (assoc valid-map :array-field [{:color nil}]))))
+
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"java.lang.Long is not a valid type for nil \(\[:nil-field\]\)"
+                          (round-trip (->serde complex-schema-str)
+                                      "bananas"
+                                      (assoc valid-map :nil-field 3))))
+
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"java\.lang\.String is not a valid type for union \[NULL, ARRAY\] \(\[:array-field\]\)"
+                          (round-trip (->serde complex-schema-str)
+                                      "bananas"
+                                      (assoc valid-map :array-field "string"))))))
 
 (deftest schemaless-test
   (let [serde (->serde nil)]

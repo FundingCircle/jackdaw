@@ -1,6 +1,7 @@
 (ns jackdaw.serdes.avro
   (:refer-clojure :exclude [boolean? bytes? float?])
-  (:require [jackdaw.serdes.registry :as registry])
+  (:require [clojure.string :as str]
+            [jackdaw.serdes.registry :as registry])
   (:import (io.confluent.kafka.serializers KafkaAvroSerializer KafkaAvroDeserializer)
            (java.lang CharSequence)
            (java.nio ByteBuffer)
@@ -18,10 +19,10 @@
                (.parse (Schema$Parser.) ^String schema-str)))))
 
 (defn- mangle [^String n]
-  (clojure.string/replace n #"-" "_"))
+  (str/replace n #"-" "_"))
 
 (defn- unmangle [^String n]
-  (clojure.string/replace n #"_" "-"))
+  (str/replace n #"_" "-"))
 
 (defn- dispatch-on-type-fields [schema]
   (when schema
@@ -31,15 +32,40 @@
         {:type base-type :logical-type logical-type}
         {:type base-type}))))
 
+(defn path->str [path]
+  (str/join (map #(str "[" % "]") path)))
+
 ;; Protocols and Multimethods
 
 (defprotocol SchemaType
   (match-clj? [schema-type clj-data])
   (match-avro? [schema-type avro-data])
   (avro->clj [schema-type avro-data])
-  (clj->avro [schema-type clj-data]))
+  (clj->avro [schema-type clj-data path]))
 
 (defmulti schema-type dispatch-on-type-fields)
+
+;; Validation
+
+(defn class-name
+  "Returns a human readable description of x's type"
+  [x]
+  ;; nil does not have a class
+  (if x
+    (.getCanonicalName (class x))
+    "nil"))
+
+(defn serialization-error-msg [x expected-type path]
+  (format "%s is not a valid type for %s (%s)"
+          (class-name x)
+          expected-type
+          (path->str path)))
+
+(defn validate-clj! [this x path expected-type]
+  (when-not (match-clj? this x)
+    (throw (ex-info (serialization-error-msg x expected-type path)
+                    {:path path
+                     :data x}))))
 
 ;; Primitive Types
 
@@ -55,7 +81,10 @@
   (match-clj? [_ x] (boolean? x))
   (match-avro? [_ x] (boolean? x))
   (avro->clj [_ x] x)
-  (clj->avro [_ x] x))
+  (clj->avro [this x path]
+    (validate-clj! this x path "bool")
+
+    x))
 
 (defmethod schema-type {:type "boolean"} [_]
   (BooleanType.))
@@ -85,7 +114,10 @@
   (match-clj? [_ x] (avro-bytes? x))
   (match-avro? [_ x] (avro-bytes? x))
   (avro->clj [_ x] x)
-  (clj->avro [_ x] x))
+  (clj->avro [this x path]
+    (validate-clj! this x path "bytes")
+
+    x))
 
 (defmethod schema-type {:type "bytes"} [_]
   (BytesType.))
@@ -100,7 +132,10 @@
   (match-clj? [_ x] (double? x))
   (match-avro? [_ x] (double? x))
   (avro->clj [_ x] x)
-  (clj->avro [_ x] x))
+  (clj->avro [this x path]
+    (validate-clj! this x path "double")
+
+    x))
 
 (defmethod schema-type {:type "double"} [_]
   (DoubleType.))
@@ -115,7 +150,10 @@
   (match-clj? [_ x] (float? x))
   (match-avro? [_ x] (float? x))
   (avro->clj [_ x] x)
-  (clj->avro [_ x] x))
+  (clj->avro [this x path]
+    (validate-clj! this x path "float")
+
+    x))
 
 (defmethod schema-type {:type "float"} [_]
   (FloatType.))
@@ -151,7 +189,10 @@
     (int-castable? x))
   (match-avro? [_ x] (int? x))
   (avro->clj [_ x] x)
-  (clj->avro [_ x] (int x)))
+  (clj->avro [this x path]
+    (validate-clj! this x path "int")
+
+    (int x)))
 
 (defmethod schema-type {:type "int"} [_]
   (IntType.))
@@ -167,7 +208,10 @@
         (byte? x)))
   (match-avro? [_ x] (long? x))
   (avro->clj [_ x] x)
-  (clj->avro [_ x] (long x)))
+  (clj->avro [this x path]
+    (validate-clj! this x path "long")
+
+    (long x)))
 
 (defmethod schema-type {:type "long"} [_]
   (LongType.))
@@ -179,7 +223,10 @@
   (match-clj? [_ x] (string? x))
   (match-avro? [_ x] (instance? CharSequence x))
   (avro->clj [_ x] (str x))
-  (clj->avro [_ x] x))
+  (clj->avro [this x path]
+    (validate-clj! this x path "string")
+
+    x))
 
 (defmethod schema-type {:type "string"} [_]
   (StringType.))
@@ -191,7 +238,10 @@
   (match-clj? [_ x] (nil? x))
   (match-avro? [_ x] (nil? x))
   (avro->clj [_ x] x)
-  (clj->avro [_ x] x))
+  (clj->avro [this x path]
+    (validate-clj! this x path "nil")
+
+    x))
 
 (defmethod schema-type {:type "null"} [_]
   (NullType.))
@@ -205,7 +255,7 @@
   (match-avro? [_ x]
     true)
   (avro->clj [_ x] x)
-  (clj->avro [_ x] x))
+  (clj->avro [_ x path] x))
 
 (defmethod schema-type nil [_]
   (SchemalessType.))
@@ -217,24 +267,24 @@
 (defrecord ArrayType [schema]
   SchemaType
   (match-clj? [_ x]
-    (let [element-type (.getElementType ^Schema$ArraySchema schema)
-          element-schema (schema-type element-type)]
-      (and
-        (sequential? x)
-        (every? (partial match-clj? element-schema) x))))
+    (sequential? x))
   (match-avro? [_ x]
     (instance? GenericData$Array x))
   (avro->clj [_ java-collection]
     (let [element-type (.getElementType ^Schema$ArraySchema (.getSchema java-collection))
           element-schema (schema-type element-type)]
       (mapv #(avro->clj element-schema %) java-collection)))
-  (clj->avro [_ clj-seq]
+  (clj->avro [this clj-seq path]
+    (validate-clj! this clj-seq path "array")
+
     (let [element-type (.getElementType ^Schema$ArraySchema schema)
           element-schema (schema-type element-type)]
 
       (GenericData$Array. ^Schema schema
                           ^Collection
-                          (mapv #(clj->avro element-schema %) clj-seq)))))
+                          (map-indexed (fn [i x]
+                                         (clj->avro element-schema x (conj path i)))
+                                       clj-seq)))))
 
 (defmethod schema-type {:type "array"} [schema]
   (ArrayType. schema))
@@ -253,7 +303,9 @@
     (-> (.toString avro-enum)
         (unmangle)
         (keyword)))
-  (clj->avro [_ clj-keyword]
+  (clj->avro [this clj-keyword path]
+    (validate-clj! this clj-keyword path "enum")
+
     (->> (name clj-keyword)
          (mangle)
          (GenericData$EnumSymbol. schema))))
@@ -271,7 +323,7 @@
     false)
   (avro->clj [_ fixed]
     (throw (UnsupportedOperationException. "Not implemented")))
-  (clj->avro [_ fixed]
+  (clj->avro [_ fixed path]
     (throw (UnsupportedOperationException. "Not implemented"))))
 
 (defmethod schema-type {:type "fixed"} [_]
@@ -291,12 +343,21 @@
       (->> (for [[k v] avro-map]
              [(str k) (avro->clj value-schema v)])
            (into {}))))
-  (clj->avro [_ clj-map]
+  (clj->avro [this clj-map path]
+    (validate-clj! this clj-map path "map")
+
     (let [value-type (.getValueType schema)
           value-schema (schema-type value-type)]
       (reduce-kv (fn [acc k v]
-                   (let [new-v (clj->avro value-schema v)]
-                     (assoc acc (name k) new-v)))
+                   (when-not (string? k)
+                     (throw (ex-info (format "%s (%s) is not a valid map key type, only string keys are supported (%s)"
+                                             (class-name k)
+                                             k
+                                             (path->str path))
+                                     {})))
+
+                   (let [new-v (clj->avro value-schema v (conj path k))]
+                     (assoc acc k new-v)))
                  {}
                  clj-map))))
 
@@ -330,20 +391,29 @@
                          value (.get avro-record field-name)]]
                [(keyword (unmangle field-name)) (avro->clj field-schema value)])
              (into {})))))
-  (clj->avro [_ clj-map]
+  (clj->avro [_ clj-map path]
+    (when-not (map? clj-map)
+      (throw (ex-info (serialization-error-msg clj-map "record" path) {})))
+
     (let [record-builder (GenericRecordBuilder. schema)]
 
       (doseq [[k v] clj-map]
         (let [new-k (mangle (name k))
               field (.getField schema new-k)
-              _ (assert field (format "Field %s not known in %s"
+              _ (when-not field
+                  (throw (ex-info (format "Field %s not known in %s at %s"
                                       new-k
-                                      (.getName schema)))
+                                      (.getName schema)
+                                      (path->str path))
+                                  {})))
               child-schema (schema-type (.schema field))
-              new-v (clj->avro child-schema v)]
+              new-v (clj->avro child-schema v (conj path k))]
           (.set record-builder new-k new-v)))
 
-      (.build record-builder))))
+      (try
+        (.build record-builder)
+        (catch org.apache.avro.AvroRuntimeException e
+          (throw (ex-info (str (.getMessage e) " at " (path->str path)) {} e)))))))
 
 (defmethod schema-type {:type "record"} [schema]
   (RecordType. schema))
@@ -354,6 +424,11 @@
   (->> (.getTypes union-schema)
        (map schema-type)
        (into #{})))
+
+(defn union-types-str [union-schema]
+  (->> (.getTypes union-schema)
+       (map #(.getType %))
+       (str/join ", ")))
 
 (defn- match-union-type [schema pred]
   (some #(when (pred %) %) (union-types schema)))
@@ -367,12 +442,14 @@
   (avro->clj [_ avro-data]
     (let [schema-type (match-union-type schema #(match-avro? % avro-data))]
       (avro->clj schema-type avro-data)))
-  (clj->avro [_ clj-data]
+  (clj->avro [_ clj-data path]
     (let [schema-type (match-union-type schema #(match-clj? % clj-data))]
-      (if-not schema-type
-        (throw (ex-info (str "No matching union schema")
-                        {:schema schema :value clj-data}))
-        (clj->avro schema-type clj-data)))))
+      (when-not schema-type
+        (throw (ex-info (serialization-error-msg clj-data
+                                                 (format "union [%s]" (union-types-str schema)) path)
+                        {})))
+
+      (clj->avro schema-type clj-data path))))
 
 (defmethod schema-type {:type "union"} [schema]
   (UnionType. schema))
@@ -387,8 +464,7 @@
     (.configure base-serializer base-config key?))
   (serialize [_ topic clj-data]
     (let [schema-type (schema-type avro-schema)]
-      (assert (match-clj? schema-type clj-data))
-      (.serialize base-serializer topic (clj->avro schema-type clj-data)))))
+      (.serialize base-serializer topic (clj->avro schema-type clj-data [])))))
 
 (defn- base-config [registry-url]
   {"schema.registry.url" registry-url})
