@@ -3,6 +3,7 @@
   (:require [jackdaw.serdes.registry :as registry])
   (:import (io.confluent.kafka.serializers KafkaAvroSerializer KafkaAvroDeserializer)
            (java.lang CharSequence)
+           (java.nio ByteBuffer)
            (java.util Collection)
            (java.util Map)
            (org.apache.avro Schema$Parser Schema$ArraySchema Schema)
@@ -61,6 +62,10 @@
 
 ;;; Bytes
 
+(defn- byte-buffer?
+  [x]
+  (instance? ByteBuffer x))
+
 (defn- bytes?
   "Return true if x is a byte array"
   {:added "1.9"}
@@ -68,10 +73,17 @@
         false
         (-> x class .getComponentType (= Byte/TYPE))))
 
+(def avro-bytes?
+  "Returns true if the object is compatible with Avro bytes, false otherwise
+
+  * byte[] - Valid only as a top level schema type
+  * java.nio.ByteBuffer - Valid only as a nested type"
+  (some-fn byte-buffer? bytes?))
+
 (defrecord BytesType []
   SchemaType
-  (match-clj? [_ x] (bytes? x))
-  (match-avro? [_ x] (bytes? x))
+  (match-clj? [_ x] (avro-bytes? x))
+  (match-avro? [_ x] (avro-bytes? x))
   (avro->clj [_ x] x)
   (clj->avro [_ x] x))
 

@@ -1,15 +1,17 @@
 (ns jackdaw.serdes.avro-test
   (:require [clojure.test :refer [deftest is testing]]
-            [jackdaw.serdes.avro :as avro]
-            [clojure.data.json :as json]
             [clj-uuid :as uuid]
+            [clojure.data.json :as json]
             [clojure.java.io :as io]
             [environ.core :as env]
-            [jackdaw.serdes.avro :as avro])
-  (:import (org.apache.avro Schema$Parser Schema)
+            [jackdaw.serdes.avro :as avro]
+            [jackdaw.serdes.avro :as avro]
+            [jackdaw.serdes.registry :as reg])
+  (:import (java.nio ByteBuffer)
+           (java.util Collection)
+           (org.apache.avro Schema$Parser Schema)
            (org.apache.avro.generic GenericData$EnumSymbol GenericData$Record GenericData$Array)
-           (org.apache.avro.util Utf8)
-           (java.util Collection)))
+           (org.apache.avro.util Utf8)))
 
 (defn parse-schema [clj-schema]
   (.parse (Schema$Parser.) ^String (json/write-str clj-schema)))
@@ -19,6 +21,22 @@
     (doseq [[k v] m]
       (.put record k v))
     record))
+
+(defn ->serde [schema-str]
+  (let [config {:schema.registry/client (reg/mock-client)
+                :schema.registry/url "localhost:8081" ; Not actually used
+                :avro/schema schema-str}]
+    (-> (avro/serde-config :value config)
+        (avro/avro-serde))))
+
+(defn round-trip [serde topic x]
+  (let [serializer (.serializer serde)
+        deserializer (.deserializer serde)]
+    (.deserialize deserializer topic
+                  (.serialize serializer topic x))))
+
+(defn byte-buffer->string [^ByteBuffer buffer]
+  (String. (.array buffer)))
 
 (deftest schema-type
   (testing "schemaless"
@@ -240,3 +258,69 @@
       (is (thrown-with-msg? AssertionError
                             #"Field garbage not known in Foo"
                             (avro/clj->avro schema-type {:garbage "yolo"}))))))
+
+(def bananas-schema
+  {:type "record"
+   :name "banana"
+   :fields [{:name "color"
+             :type "string"}]})
+
+(def complex-schema
+  {:name "testRecord"
+   :type "record"
+   :fields [{:name "string_field"
+             :type "string"}
+            {:name "long_field"
+             :type "long"}
+            {:name "optional_field"
+             :type ["null" "int"]
+             :default nil}
+            {:name "default_field"
+             :type "long"
+             :default 1}
+            {:name "bytes_field"
+             :type "bytes"}
+            {:name "enum_field"
+             :type {:type "enum"
+                    :name "weird_values"
+                    :symbols ["a_1" "B3"]}}
+            {:name "map_field"
+             :type {:type "map"
+                    :values bananas-schema}}
+            {:name "array_field"
+             :type {:name "subrecords"
+                    :type "array"
+                    :items "banana"}}]})
+
+(def complex-schema-str (json/write-str complex-schema))
+
+(deftest record-serde-test
+  (let [serde (->serde complex-schema-str)
+        valid-map {:string-field "hello"
+                   :long-field 3
+                   :default-field 1
+                   :bytes-field (ByteBuffer/wrap (.getBytes "hello"))
+                   :map-field {"banana" {:color "yellow"}
+                               "ripe b4nana$" {:color "yellow-green"}}
+                   :enum-field :a-1
+                   :optional-field 3
+                   :array-field [{:color "yellow"}]}]
+    (is (= (update (round-trip serde
+                               "bananas"
+                               valid-map)
+                   :bytes-field byte-buffer->string)
+
+           {:string-field "hello"
+            :long-field 3
+            :default-field 1
+            :bytes-field "hello"
+            :map-field {"banana" {:color "yellow"}
+                        "ripe b4nana$" {:color "yellow-green"}}
+            :enum-field :a-1
+            :optional-field 3
+            :array-field [{:color "yellow"}]}))
+
+    (is (thrown? java.lang.AssertionError
+                 (round-trip serde
+                             "bananas"
+                             (assoc valid-map :map-field {"banana" {:color "yellow" :eaten true}}))))))
