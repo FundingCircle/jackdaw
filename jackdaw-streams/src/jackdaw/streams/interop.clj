@@ -11,7 +11,7 @@
    (org.apache.kafka.streams.kstream KGroupedStream KGroupedTable KStream ValueJoiner
                                      Initializer Reducer Aggregator KeyValueMapper GlobalKTable
                                      KStreamBuilder KTable Predicate Windows JoinWindows)
-   (org.apache.kafka.streams.processor TopologyBuilder)))
+   (org.apache.kafka.streams.processor TopologyBuilder StreamPartitioner)))
 
 (set! *warn-on-reflection* true)
 
@@ -47,7 +47,7 @@
         {:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}
         store-name]
      (clj-ktable
-      (.table ^KStreamBuilder topology-builder key-serde value-serde topic-name store-name)))))
+      (.table ^KStreamBuilder topology-builder ^Serde key-serde ^Serde value-serde ^String topic-name ^String store-name)))))
 
 (deftype CljKStreamBuilder [^KStreamBuilder topology-builder]
   ITopologyBuilder
@@ -85,7 +85,7 @@
 
   (global-ktable [_ {:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]} store-name]
     (clj-global-ktable
-      (.globalTable ^KStreamBuilder topology-builder key-serde value-serde topic-name store-name)))
+      (.globalTable ^KStreamBuilder topology-builder ^Serde key-serde ^Serde value-serde ^String topic-name ^String store-name)))
 
   (source-topics
     [_]
@@ -387,13 +387,13 @@
     [_ {:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     ;; todo add store name
     (clj-ktable
-     (.through ktable key-serde value-serde topic-name topic-name)))
+     (.through ktable ^Serde key-serde ^Serde value-serde ^String topic-name ^String topic-name)))
 
   (through
     [_ partition-fn {:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     ;; todo add store name
     (clj-ktable
-     (.through ktable key-serde value-serde (stream-partitioner partition-fn) topic-name topic-name)))
+     (.through ktable ^Serde key-serde ^Serde value-serde ^StreamPartitioner (stream-partitioner partition-fn) ^String topic-name ^String topic-name)))
 
   (to!
     [_ {:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]

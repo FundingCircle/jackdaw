@@ -3,16 +3,23 @@
   (:require [clojure.spec.test.alpha :as stest]
             [clojure.string :as string]
             [clojure.test :refer :all]
-            [jackdaw.streams.protocols :refer [IKStream IKTable ITopologyBuilder]]
             [jackdaw.streams :as k]
-            [jackdaw.streams.mock :as mock]
+            [jackdaw.streams.configurable :as cfg]
             [jackdaw.streams.lambdas :as lambdas :refer [key-value]]
-            jackdaw.streams.lambdas.specs
-            jackdaw.streams.specs)
+            [jackdaw.streams.lambdas.specs]
+            [jackdaw.streams.mock :as mock]
+            [jackdaw.streams.protocols :refer [IKStream IKTable ITopologyBuilder]]
+            [jackdaw.streams.specs])
   (:import [org.apache.kafka.streams.kstream JoinWindows TimeWindows Transformer ValueTransformer]
            [org.apache.kafka.test MockProcessorSupplier MockProcessorSupplier$MockProcessor]))
 
 (stest/instrument)
+
+(defn close-test-driver [cfg-topology]
+  (-> cfg-topology
+      (cfg/config)
+      (:jackdaw.streams.mock/test-driver)
+      (.close)))
 
 (deftest TopologyBuilder
   (testing "merge"
@@ -155,7 +162,7 @@
         (let [topology (mock/build kstream)]
           (mock/send topology topic-a 1 2)
           (let [result (mock/collect topology)]
-            (is (= "[KSTREAM-SOURCE-0000000000]: 1 , 2\n" (.toString mock-out)))))
+            (is (= "[KSTREAM-SOURCE-0000000000]: 1, 2\n" (.toString mock-out)))))
         (finally
           (System/setOut std-out)))))
 
@@ -172,7 +179,7 @@
         (let [topology (mock/build kstream)]
           (mock/send topology topic-a 1 2)
           (let [result (mock/collect topology)]
-            (is (= "[KSTREAM-SOURCE-0000000000]: 1 , 2\n" (.toString mock-out)))))
+            (is (= "[KSTREAM-SOURCE-0000000000]: 1, 2\n" (.toString mock-out)))))
         (finally
           (System/setOut std-out)))))
 
@@ -236,8 +243,8 @@
       (k/write-as-text! kstream (.getPath temp-file))
       (let [topology (mock/build kstream)]
         (mock/send topology topic-a 1 2)
-        (let [result (mock/collect topology)]
-          (is (=  "[KSTREAM-SOURCE-0000000000]: 1 , 2\n" (slurp temp-file)))))))
+        (close-test-driver topology)
+        (is (= "[KSTREAM-SOURCE-0000000000]: 1, 2\n" (slurp temp-file))))))
 
   (testing "write-as-text! (with custom serdes)"
     (let [topic-a (mock/topic "topic-a")
@@ -249,8 +256,8 @@
       (k/write-as-text! kstream (.getPath temp-file) topic-a)
       (let [topology (mock/build kstream)]
         (mock/send topology topic-a 1 2)
-        (let [result (mock/collect topology)]
-          (is (= "[KSTREAM-SOURCE-0000000000]: 1 , 2\n" (slurp temp-file)))))))
+        (close-test-driver topology)
+        (is (= "[KSTREAM-SOURCE-0000000000]: 1, 2\n" (slurp temp-file))))))
 
   (testing "branch"
     (let [topic-a (mock/topic "topic-a")
@@ -531,7 +538,7 @@
         (let [topology (mock/build (k/to-kstream ktable))]
           (mock/send topology topic-a 1 2)
           (let [result (mock/collect topology)]
-            (is (= "[KTABLE-SOURCE-0000000001]: 1 , (2<-null)\n" (.toString mock-out)))))
+            (is (= "[KTABLE-SOURCE-0000000001]: 1, (2<-null)\n" (.toString mock-out)))))
         (finally
           (System/setOut std-out)))))
 
@@ -548,7 +555,7 @@
         (let [topology (mock/build (k/to-kstream ktable))]
           (mock/send topology topic-a 1 2)
           (let [result (mock/collect topology)]
-            (is (= "[KTABLE-SOURCE-0000000001]: 1 , (2<-null)\n" (.toString mock-out)))))
+            (is (= "[KTABLE-SOURCE-0000000001]: 1, (2<-null)\n" (.toString mock-out)))))
         (finally
           (System/setOut std-out)))))
 
@@ -614,8 +621,8 @@
       (k/write-as-text! ktable (.getPath temp-file))
       (let [topology (mock/build (k/to-kstream ktable))]
         (mock/send topology topic-a 1 2)
-        (let [result (mock/collect topology)]
-          (is (= "[KTABLE-SOURCE-0000000001]: 1 , (2<-null)\n" (slurp temp-file)))))))
+        (close-test-driver topology)
+        (is (= "[KTABLE-SOURCE-0000000001]: 1, (2<-null)\n" (slurp temp-file))))))
 
   (testing "write-as-text! (with custom serdes)"
     (let [topic-a (mock/topic "topic-a")
@@ -627,8 +634,8 @@
       (k/write-as-text! ktable (.getPath temp-file) topic-a)
       (let [topology (mock/build (k/to-kstream ktable))]
         (mock/send topology topic-a 1 2)
-        (let [result (mock/collect topology)]
-          (is (= "[KTABLE-SOURCE-0000000001]: 1 , (2<-null)\n" (slurp temp-file)))))))
+        (close-test-driver topology)
+        (is (= "[KTABLE-SOURCE-0000000001]: 1, (2<-null)\n" (slurp temp-file))))))
 
   (testing "group-by"
     (let [topic-a (mock/topic "topic-a")

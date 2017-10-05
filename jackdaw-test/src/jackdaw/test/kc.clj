@@ -1,6 +1,7 @@
 (ns jackdaw.test.kc
   (:import [org.apache.kafka.common.utils SystemTime]
-           [org.apache.kafka.connect.runtime Connect ConnectorFactory Herder Worker]
+           [org.apache.kafka.connect.runtime Connect Herder Worker]
+           [org.apache.kafka.connect.runtime.isolation Plugins]
            [org.apache.kafka.connect.runtime.rest RestServer]
            [org.apache.kafka.connect.runtime.standalone StandaloneConfig StandaloneHerder]
            [org.apache.kafka.connect.storage FileOffsetBackingStore]))
@@ -13,13 +14,12 @@
   [{:keys [config]}]
   (let [tmp-dir (java.nio.file.Files/createTempDirectory
                   "embedded-kafka-connect-config-" (into-array java.nio.file.attribute.FileAttribute []))
-        connector-factory (ConnectorFactory.)
         standalone-config (StandaloneConfig. (assoc config
                                                     "offset.storage.file.filename" (format "%s/worker-offsets" tmp-dir)))
         rest-server (RestServer. standalone-config)
         advertised-url (.advertisedUrl rest-server)
         worker-id (str (.getHost advertised-url) ":" (.getPort advertised-url))
-        worker (Worker. worker-id (SystemTime.) connector-factory standalone-config (FileOffsetBackingStore.))
+        worker (Worker. worker-id (SystemTime.) (Plugins. {}) standalone-config (FileOffsetBackingStore.))
         herder (StandaloneHerder. worker)
         connect (Connect. herder rest-server)]
 
