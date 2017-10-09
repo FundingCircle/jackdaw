@@ -16,11 +16,11 @@ streaming platform.
 To include one of the above libraries, for example `jackdaw-client`
 add the following to your `:dependencies`:
 
-    [fundingcircle/jackdaw-client "0.2.2"]
+    [fundingcircle/jackdaw-client "0.3.0"]
 
 To include all of them:
 
-    [fundingcircle/jackdaw "0.2.2"]
+    [fundingcircle/jackdaw "0.3.0"]
 
 ## Documentation
 
