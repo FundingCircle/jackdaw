@@ -1,7 +1,7 @@
-(defproject fundingcircle/jackdaw-serdes "0.3.0"
+(defproject fundingcircle/jackdaw-serdes "0.3.1"
   :description "Serializers/deserializers for Kafka"
   :plugins [[lein-modules "0.3.11"]]
-  :dependencies [[danlentz/clj-uuid "0.1.6"]
+  :dependencies [[danlentz/clj-uuid "0.1.7"]
                  [environ "1.1.0"]
                  [io.confluent/kafka-avro-serializer "_"]
                  [io.confluent/kafka-schema-registry-client "_"]
