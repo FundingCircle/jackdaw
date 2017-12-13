@@ -7,9 +7,9 @@
    (java.net InetSocketAddress)
    (java.util.concurrent CountDownLatch)
    (kafka.utils ZkUtils)
-   (org.apache.zookeeper.server FCShutdownHandler
+   (org.apache.zookeeper.server JackdawShutdownHandler
+                                JackdawZooKeeperServer
                                 ServerCnxnFactory
-                                FCZooKeeperServer
                                 ZooKeeperServer
                                 ZooKeeperServerShutdownHandler)
    (org.apache.zookeeper KeeperException$NoNodeException)
@@ -62,11 +62,11 @@
 
 (defn start! [{:keys [config snapshot-dir log-dir]}]
   (let [tick-time 500
-        zk        (FCZooKeeperServer. (io/file snapshot-dir)
-                                      (io/file log-dir)
-                                      tick-time
-                                      (FCShutdownHandler.
-                                       (CountDownLatch. 1)))
+        zk        (JackdawZooKeeperServer. (io/file snapshot-dir)
+                                           (io/file log-dir)
+                                           tick-time
+                                           (JackdawShutdownHandler.
+                                            (CountDownLatch. 1)))
         factory   (doto (ServerCnxnFactory/createFactory)
                     (.configure (-> (port (get config "zookeeper.connect"))
                                     (InetSocketAddress.)) 0))]

@@ -14,8 +14,8 @@ import org.apache.zookeeper.server.ZooKeeperServerShutdownHandler;
  *
  *  log errors.
  */
-public class FCShutdownHandler extends ZooKeeperServerShutdownHandler {
-    public FCShutdownHandler(CountDownLatch shutdownLatch) {
+public class JackdawShutdownHandler extends ZooKeeperServerShutdownHandler {
+    public JackdawShutdownHandler(CountDownLatch shutdownLatch) {
         super(shutdownLatch);
     }
 }
