@@ -19,13 +19,6 @@ import org.apache.zookeeper.server.persistence.FileTxnSnapLog;
  *  log errors.
  */
 public class FCZooKeeperServer extends ZooKeeperServer {
-
-    public FCZooKeeperServer(File snapDir, File logDir, int tickTime)
-        throws IOException {
-        super(new FileTxnSnapLog(snapDir, logDir),
-              tickTime, new ZooKeeperServer.BasicDataTreeBuilder());
-    }
-
     public FCZooKeeperServer(File snapDir, File logDir, int tickTime,
                              FCShutdownHandler zkShutdownHandler)
         throws IOException {
