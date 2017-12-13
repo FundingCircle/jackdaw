@@ -1,4 +1,4 @@
-(defproject fundingcircle/jackdaw "0.3.0"
+(defproject fundingcircle/jackdaw "0.3.1-SNAPSHOT"
   :description "No frills Clojure wrapper around Apache Kafka APIs"
   :url "http://github.com/FundingCircle/jackdaw"
   :license {:name "3-Clause BSD License",
@@ -7,7 +7,7 @@
                  [fundingcircle/jackdaw-client "0.3.0"]
                  [fundingcircle/jackdaw-serdes "0.3.0"]
                  [fundingcircle/jackdaw-streams "0.3.0"]
-                 [fundingcircle/jackdaw-test "0.3.0"]
+                 [fundingcircle/jackdaw-test "0.3.1-SNAPSHOT"]
                  [org.clojure/clojure "1.8.0"]]
   :plugins [[lein-codox "0.10.3"]
             [lein-modules "0.3.11"]]
@@ -25,7 +25,7 @@
         jackdaw.serdes.edn
         jackdaw.serdes.json
         jackdaw.serdes.uuid]
-  :modules {:inherited {:repositories {"confluent" {:url "http://packages.confluent.io/maven/"}
+  :modules {:inherited {:repositories {"confluent" {:url "https://packages.confluent.io/maven/"}
                                        "snapshots" {:url "https://fundingcircle.artifactoryonline.com/fundingcircle/libs-snapshot-local"
                                                     :username [:gpg :env/artifactory_user]
                                                     :password [:gpg :env/artifactory_password]
