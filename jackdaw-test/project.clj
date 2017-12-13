@@ -1,5 +1,7 @@
-(defproject fundingcircle/jackdaw-test "0.3.0"
+(defproject fundingcircle/jackdaw-test "0.3.1"
   :description "Test fixtures for Kafka, Zookeeper, and Confluent Schema Registry"
+  :source-paths      ["src/clj"]
+  :java-source-paths ["src/jvm"]
   :plugins [[lein-modules "0.3.11"]]
   :dependencies [[io.confluent/kafka-connect-avro-converter "_"]
                  [io.confluent/kafka-connect-jdbc "_"]

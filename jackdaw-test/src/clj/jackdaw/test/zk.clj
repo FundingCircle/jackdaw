@@ -5,9 +5,13 @@
    [jackdaw.test.fs :as fs])
   (:import
    (java.net InetSocketAddress)
+   (java.util.concurrent CountDownLatch)
    (kafka.utils ZkUtils)
-   (org.apache.zookeeper.server ServerCnxnFactory
-                                ZooKeeperServer)
+   (org.apache.zookeeper.server FCShutdownHandler
+                                ServerCnxnFactory
+                                FCZooKeeperServer
+                                ZooKeeperServer
+                                ZooKeeperServerShutdownHandler)
    (org.apache.zookeeper KeeperException$NoNodeException)
    (org.I0Itec.zkclient ZkClient
                         ZkConnection)))
@@ -58,16 +62,17 @@
 
 (defn start! [{:keys [config snapshot-dir log-dir]}]
   (let [tick-time 500
-        zk           (ZooKeeperServer. (io/file snapshot-dir)
-                                       (io/file log-dir)
-                                       tick-time)
-        factory      (doto (ServerCnxnFactory/createFactory)
-                       (.configure (-> (port (get config "zookeeper.connect"))
-                                       (InetSocketAddress.)) 0))]
-
+        zk        (FCZooKeeperServer. (io/file snapshot-dir)
+                                      (io/file log-dir)
+                                      tick-time
+                                      (FCShutdownHandler.
+                                       (CountDownLatch. 1)))
+        factory   (doto (ServerCnxnFactory/createFactory)
+                    (.configure (-> (port (get config "zookeeper.connect"))
+                                    (InetSocketAddress.)) 0))]
     (.startup factory zk)
 
-    {:zk zk
+    {:zk      zk
      :factory factory}))
 
 
