@@ -12,7 +12,6 @@
     (UUID/fromString (str uuid-utf8)))
   (clj->avro [this uuid path]
     (avro/validate-clj! this uuid path "uuid")
-
     (str uuid)))
 
 (defmethod avro/schema-type

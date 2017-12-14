@@ -7,7 +7,7 @@
            (java.nio ByteBuffer)
            (java.util Collection)
            (java.util Map)
-           (org.apache.avro Schema$Parser Schema$ArraySchema Schema)
+           (org.apache.avro Schema$Parser Schema$ArraySchema Schema Schema$Field)
            (org.apache.avro.generic GenericData$Array GenericData$EnumSymbol GenericData$Record GenericRecordBuilder)
            (org.apache.kafka.common.serialization Serializer Deserializer Serdes)))
 
@@ -18,13 +18,13 @@
              (when schema-str
                (.parse (Schema$Parser.) ^String schema-str)))))
 
-(defn- mangle [^String n]
+(defn- ^String mangle [^String n]
   (str/replace n #"-" "_"))
 
-(defn- unmangle [^String n]
+(defn- ^String unmangle [^String n]
   (str/replace n #"_" "-"))
 
-(defn- dispatch-on-type-fields [schema]
+(defn- dispatch-on-type-fields [^Schema schema]
   (when schema
     (let [base-type (-> schema (.getType) (.getName))
           logical-type (-> schema (.getProps) (.get "logicalType"))]
@@ -83,7 +83,6 @@
   (avro->clj [_ x] x)
   (clj->avro [this x path]
     (validate-clj! this x path "bool")
-
     x))
 
 (defmethod schema-type {:type "boolean"} [_]
@@ -116,7 +115,6 @@
   (avro->clj [_ x] x)
   (clj->avro [this x path]
     (validate-clj! this x path "bytes")
-
     x))
 
 (defmethod schema-type {:type "bytes"} [_]
@@ -134,7 +132,6 @@
   (avro->clj [_ x] x)
   (clj->avro [this x path]
     (validate-clj! this x path "double")
-
     x))
 
 (defmethod schema-type {:type "double"} [_]
@@ -152,7 +149,6 @@
   (avro->clj [_ x] x)
   (clj->avro [this x path]
     (validate-clj! this x path "float")
-
     x))
 
 (defmethod schema-type {:type "float"} [_]
@@ -191,7 +187,6 @@
   (avro->clj [_ x] x)
   (clj->avro [this x path]
     (validate-clj! this x path "int")
-
     (int x)))
 
 (defmethod schema-type {:type "int"} [_]
@@ -210,7 +205,6 @@
   (avro->clj [_ x] x)
   (clj->avro [this x path]
     (validate-clj! this x path "long")
-
     (long x)))
 
 (defmethod schema-type {:type "long"} [_]
@@ -225,7 +219,6 @@
   (avro->clj [_ x] (str x))
   (clj->avro [this x path]
     (validate-clj! this x path "string")
-
     x))
 
 (defmethod schema-type {:type "string"} [_]
@@ -240,7 +233,6 @@
   (avro->clj [_ x] x)
   (clj->avro [this x path]
     (validate-clj! this x path "nil")
-
     x))
 
 (defmethod schema-type {:type "null"} [_]
@@ -264,14 +256,14 @@
 
 ;;; Array
 
-(defrecord ArrayType [schema]
+(defrecord ArrayType [^Schema schema]
   SchemaType
   (match-clj? [_ x]
     (sequential? x))
   (match-avro? [_ x]
     (instance? GenericData$Array x))
   (avro->clj [_ java-collection]
-    (let [element-type (.getElementType ^Schema$ArraySchema (.getSchema java-collection))
+    (let [element-type (.getElementType ^Schema$ArraySchema (.getSchema ^GenericData$Array java-collection))
           element-schema (schema-type element-type)]
       (mapv #(avro->clj element-schema %) java-collection)))
   (clj->avro [this clj-seq path]
@@ -331,7 +323,7 @@
 
 ;;; Map
 
-(defrecord MapType [schema]
+(defrecord MapType [^Schema schema]
   SchemaType
   (match-clj? [_ x]
     (map? x))
@@ -366,26 +358,26 @@
 
 ;;; Record
 
-(defrecord RecordType [schema]
+(defrecord RecordType [^Schema schema]
   SchemaType
   (match-clj? [_ clj-map]
     (let [fields (.getFields schema)]
-      (every? (fn [field]
+      (every? (fn [^Schema$Field field]
                 (let [field-schema-type (schema-type (.schema field))
                       field-value (get clj-map (keyword (unmangle (.name field))) ::missing)]
 
                   (if (= field-value ::missing)
                     (.defaultValue field)
                     (match-clj? field-schema-type field-value))))
-
               fields)))
   (match-avro? [_ avro-record]
     (or (instance? GenericData$Record avro-record)
         (nil? avro-record)))
   (avro->clj [_ avro-record]
     (when avro-record
-      (let [record-schema (.getSchema avro-record)]
-        (->> (for [field (.getFields record-schema)
+      (let [avro-record ^GenericData$Record avro-record
+            record-schema (.getSchema ^GenericData$Record avro-record)]
+        (->> (for [^Schema$Field field (.getFields record-schema)
                    :let [field-name (.name field)
                          field-schema (schema-type (.schema field))
                          value (.get avro-record field-name)]]
@@ -420,14 +412,15 @@
 
 ;;; Union
 
-(defn- union-types [union-schema]
+(defn- union-types [^Schema union-schema]
   (->> (.getTypes union-schema)
        (map schema-type)
        (into #{})))
 
-(defn union-types-str [union-schema]
+(defn union-types-str [^Schema union-schema]
   (->> (.getTypes union-schema)
-       (map #(.getType %))
+       (map (fn [^Schema s]
+              (.getType s)))
        (str/join ", ")))
 
 (defn- match-union-type [schema pred]
@@ -456,7 +449,7 @@
 
 ;; Serde Factory
 
-(deftype CljSerializer [base-serializer avro-schema]
+(deftype CljSerializer [^KafkaAvroSerializer base-serializer avro-schema]
   Serializer
   (close [_]
     (.close base-serializer))
@@ -476,7 +469,7 @@
     (.configure clj-serializer (base-config registry-url) key?)
     clj-serializer))
 
-(deftype CljDeserializer [base-deserializer avro-schema]
+(deftype CljDeserializer [^KafkaAvroDeserializer base-deserializer avro-schema]
   Deserializer
   (close [_]
     (.close base-deserializer))

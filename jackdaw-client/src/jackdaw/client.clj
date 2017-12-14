@@ -28,7 +28,7 @@
   [{:keys [:jackdaw.topic/topic-name] :as topic-config} partition]
   (TopicPartition. topic-name (int partition)))
 
-(defn producer
+(defn ^KafkaProducer producer
   "Return a KafkaProducer with the supplied properties"
   ([config]
    (KafkaProducer. ^Properties (map->properties config)))
@@ -69,7 +69,7 @@
   ([producer record callback-fn]
    (.send ^Producer producer record (callback callback-fn))))
 
-(defn consumer
+(defn ^KafkaConsumer consumer
   "Return a Consumer with the supplied properties."
   ([config]
    (KafkaConsumer. ^Properties (map->properties config)))
@@ -78,13 +78,13 @@
                    (when key-serde (.deserializer ^Serde key-serde))
                    (when value-serde (.deserializer ^Serde value-serde)))))
 
-(defn subscribe
+(defn ^KafkaConsumer subscribe
   "Subscribe a consumer to topics. Returns the consumer."
-  [consumer & topic-configs]
-  (.subscribe ^Consumer consumer (mapv :jackdaw.topic/topic-name topic-configs))
+  [^KafkaConsumer consumer & topic-configs]
+  (.subscribe consumer (mapv :jackdaw.topic/topic-name topic-configs))
   consumer)
 
-(defn subscribed-consumer
+(defn ^KafkaConsumer subscribed-consumer
   "Returns a consumer that is subscribed to a single topic."
   [config topic-config]
   (-> (consumer config topic-config)
