@@ -11,6 +11,7 @@
            (org.apache.avro.generic GenericData$Array GenericData$EnumSymbol GenericData$Record GenericRecordBuilder)
            (org.apache.kafka.common.serialization Serializer Deserializer Serdes)))
 
+(set! *warn-on-reflection* true)
 ;; Private Helpers
 
 (def parse-schema-str
