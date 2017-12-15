@@ -35,6 +35,7 @@
                                                    :password [:gpg :env/artifactory_password]
                                                    :sign-releases false} }
                         :url "https://github.com/FundingCircle/jackdaw"
+                        :subprocess nil
                         :license {:name "BSD 3-clause"
                                   :url "http://opensource.org/licenses/BSD-3-Clause"}}
             :versions {clojure-future-spec "1.9.0-alpha17"
@@ -53,4 +54,14 @@
                        org.clojure/test.check "0.9.0"
                        org.clojure/tools.logging "0.3.1"}}
   :test-selectors {:default (complement :integration)
-                   :integration :integration})
+                   :integration :integration}
+  :release-tasks [["vcs" "assert-committed"]
+                  ["change" "version" "leiningen.release/bump-version" "release"]
+                  ["modules" "change" "version" "leiningen.release/bump-version" "release"]
+                  ["vcs" "commit"]
+                  ["vcs" "tag"]
+                  ["modules" "deploy"]
+                  ["change" "version" "leiningen.release/bump-version"]
+                  ["modules" "change" "version" "leiningen.release/bump-version"]
+                  ["vcs" "commit"]
+                  ["vcs" "push"]])
