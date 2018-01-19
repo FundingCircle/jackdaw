@@ -5,9 +5,12 @@ machine:
     GIT_AUTHOR_NAME: CircleCI
     GIT_AUTHOR_EMAIL: circleci@circleci.com
 
-test:
+dependencies:
   override:
     - lein modules install
+
+test:
+  override:
     - lein modules test
 
 deployment:
