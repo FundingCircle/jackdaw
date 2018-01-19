@@ -2,6 +2,7 @@
   "Test fixtures for kafka based apps"
   (:require [clojure.java.io :as io]
             [clojure.tools.logging :as log]
+            [jackdaw.client :as jc]
             [jackdaw.test.config :as config]
             [jackdaw.test.kafka :as broker]
             [jackdaw.test.kc :as kc]
@@ -28,9 +29,8 @@
         (log/info "Started zookeeper fixture" zk)
         (t)
         (finally
-          (zk/stop! (assoc zk
-                           :snapshot-dir snapshot-dir
-                           :log-dir      log-dir))
+          (log/info "Stopping zookeeper")
+          (zk/stop! zk)
           (log/info "Stopped zookeeper fixture" zk))))))
 
 (defn broker
@@ -61,13 +61,13 @@
                      (map multi-config (range num-brokers)))
            cluster (doall (map (fn [cfg]
                                  (fs/delete-directories! (get cfg "log.dirs"))
-                                 (assoc (broker/start! {:config cfg})
-                                        :log-dirs (get cfg "log.dirs")))
+                                 (broker/start! {:config cfg}))
                                configs))]
        (try
-         (log/info "Started multi-broker fixture" cluster)
+         (log/info "Started " (if (> num-brokers 1) "multi" "single") "broker fixture" cluster)
          (t)
          (finally
+           (log/info "Stopping kafka")
            ;; This takes a surprisingly
            (doseq [node cluster]
              (broker/stop! node))
@@ -84,7 +84,7 @@
   [config]
   (fn [t]
     (let [app (SchemaRegistryRestApplication.
-               (SchemaRegistryConfig. config))
+               (SchemaRegistryConfig. (jc/map->properties config)))
           server (.createServer app)]
       (try
         (.start server)

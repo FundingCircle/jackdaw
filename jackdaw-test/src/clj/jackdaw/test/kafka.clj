@@ -35,7 +35,8 @@
                      (KafkaConfig.)
                      (KafkaServerStartable.))]
       (.startup broker)
-      {:broker broker})))
+      {:broker broker
+       :config config})))
 
 (defn stop!
   "Stops a kafka broker.
@@ -48,4 +49,4 @@
       (.awaitShutdown broker)
       {:broker nil}
       (finally
-        (fs/try-delete! (io/file log-dirs))))))
+        (fs/try-delete! (-> config (get "log.dirs") (io/file)))))))

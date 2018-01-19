@@ -18,6 +18,7 @@
         (.getPath))))
 
 (defn delete-directory [d]
+  {:pre [d]}
   "Delete directory recursively
 
    If `d` is a file, just delete it. If it is a directory, first delete
@@ -31,12 +32,13 @@
 (defn try-delete!
   "Recursively delete everything under `dir` and then delete `dir`"
   [dir]
+  {:pre [dir]}
   (try
     (delete-directory dir)
     (catch Exception e
       (throw (ex-info "Failed to cleanup test state due to exception"
-                      {:dir dir
-                       :exception e})))))
+                      {:dir dir}
+                      e)))))
 
 (defn delete-directories!
   "Deletes existing directories, skips if directory does not exists"

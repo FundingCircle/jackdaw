@@ -29,8 +29,8 @@
                         (get config key default)
                         key)
             context {:config config
-                       :key key
-                       :default default}]
+                     :key key
+                     :default default}]
         (throw (ex-info msg context e))))))
 
 (defn- ensure-connect-string
@@ -73,13 +73,12 @@
     (.startup factory zk)
 
     {:zk      zk
-     :factory factory}))
-
+     :factory factory
+     :snapshot-dir snapshot-dir
+     :log-dir log-dir}))
 
 (defn stop! [{:keys [zk config factory snapshot-dir log-dir]}]
   (try
-    (-> (org.apache.zookeeper.jmx.MBeanRegistry/getInstance)
-        (.unregisterAll))
     (when factory
       (.shutdown factory))
 

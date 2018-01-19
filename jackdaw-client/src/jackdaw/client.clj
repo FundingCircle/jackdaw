@@ -7,7 +7,7 @@
            org.apache.kafka.common.serialization.Serde
            org.apache.kafka.common.TopicPartition))
 
-(defn- map->properties
+(defn map->properties
   [m]
   (let [props (java.util.Properties.)]
     (when m

@@ -58,7 +58,6 @@
                    (int replication-factor)
                    topic-config)))
 
-;; (defn topics-exist? [])
 (defn topics-ready?
   "Waits until all topics and partitions are ready (have a leader, in-sync-replicas)"
   [client names]

@@ -16,8 +16,10 @@
 (defn kstream
   "Creates a KStream that will consume messages from the specified topic."
   ([topology-builder topic-config]
+   {:pre [(map? topic-config)]}
    (p/kstream topology-builder topic-config))
   ([topology-builder topic-config topic-pattern]
+   {:pre [(map? topic-config)]}
    (p/kstream topology-builder topic-config topic-pattern)))
 
 (defn kstreams
