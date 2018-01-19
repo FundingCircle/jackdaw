@@ -3,11 +3,11 @@
   :url "http://github.com/FundingCircle/jackdaw"
   :license {:name "3-Clause BSD License",
             :url "https://opensource.org/licenses/BSD-3-Clause"}
-  :dependencies [[fundingcircle/jackdaw-admin "0.3.5-SNAPSHOT"]
-                 [fundingcircle/jackdaw-client "0.3.5-SNAPSHOT"]
-                 [fundingcircle/jackdaw-serdes "0.3.5-SNAPSHOT"]
-                 [fundingcircle/jackdaw-streams "0.3.5-SNAPSHOT"]
-                 [fundingcircle/jackdaw-test "0.3.5-SNAPSHOT"]
+  :dependencies [[fundingcircle/jackdaw-admin "_"]
+                 [fundingcircle/jackdaw-client "_"]
+                 [fundingcircle/jackdaw-serdes "_"]
+                 [fundingcircle/jackdaw-streams "_"]
+                 [fundingcircle/jackdaw-test "_"]
                  [org.clojure/clojure "1.8.0"]]
   :plugins [[lein-codox "0.10.3"]
             [lein-modules "0.3.11"]]
@@ -39,6 +39,11 @@
                         :license {:name "BSD 3-clause"
                                   :url "http://opensource.org/licenses/BSD-3-Clause"}}
             :versions {clojure-future-spec "1.9.0-alpha17"
+                       fundingcircle/jackdaw-admin "0.3.5-SNAPSHOT"
+                       fundingcircle/jackdaw-client "0.3.5-SNAPSHOT"
+                       fundingcircle/jackdaw-serdes "0.3.5-SNAPSHOT"
+                       fundingcircle/jackdaw-streams "0.3.5-SNAPSHOT"
+                       fundingcircle/jackdaw-test "0.3.5-SNAPSHOT"
                        io.confluent/kafka-connect-avro-converter "3.2.1"
                        io.confluent/kafka-connect-jdbc "3.2.1"
                        io.confluent/kafka-schema-registry "3.2.1"
