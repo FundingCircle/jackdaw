@@ -15,7 +15,7 @@
                                   [environ "1.1.0"]
                                   [org.clojure/data.json "0.2.6"]
                                   [org.clojure/tools.nrepl "0.2.12"]
-                                  [fundingcircle/jackdaw-client]
+                                  [fundingcircle/jackdaw-client "0.3.5-SNAPSHOT"]
                                   [org.clojure/java.jdbc "0.7.0-beta2"]
                                   [org.xerial/sqlite-jdbc "3.19.3"]]
                    :resource-paths ["test/resources"]}})

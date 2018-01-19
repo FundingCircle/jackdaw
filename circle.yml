@@ -7,6 +7,7 @@ machine:
 
 test:
   override:
+    - lein modules install
     - lein modules test
 
 deployment:
