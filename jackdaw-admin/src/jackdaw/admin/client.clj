@@ -1,10 +1,11 @@
 (ns jackdaw.admin.client
   (:require [clojure.tools.logging :as log]
             [jackdaw.client :as jc])
-  (:import (org.apache.kafka.clients.admin AdminClient
-                                           DescribeTopicsOptions
-                                           DescribeTopicsResult
-                                           NewTopic)))
+  (:import [org.apache.kafka.clients.admin
+            AdminClient
+            DescribeTopicsOptions
+            DescribeTopicsResult
+            NewTopic]))
 
 (defn client [kafka-config]
   {:pre [(get kafka-config "bootstrap.servers")]}
@@ -14,21 +15,20 @@
   (instance? AdminClient x))
 
 (defn describe-topics [client names]
-  (-> client
-      (.describeTopics names (DescribeTopicsOptions.))
-      .all
-      deref
-      (->>
-       (map (fn [[name topic-description]]
-              (let [bean-part-info (fn [part-info]
-                                     {:isr (.isr part-info)
-                                      :leader (.leader part-info)
-                                      :partition (.partition part-info)
-                                      :replicas (.replicas part-info)})]
-                [name {:is-internal? (.isInternal topic-description)
-                       :partition-info (map bean-part-info (.partitions topic-description))}])
-              ))
-       (into {}))))
+  (as-> client %
+      (.describeTopics % names (DescribeTopicsOptions.))
+      (.all %)
+      (deref %)
+      (map (fn [[name topic-description]]
+             [name {:is-internal? (.isInternal topic-description)
+                    :partition-info (map (fn [part-info]
+                                           {:isr (.isr part-info)
+                                            :leader (.leader part-info)
+                                            :partition (.partition part-info)
+                                            :replicas (.replicas part-info)})
+                                         (.partitions topic-description))}])
+           %)
+      (into {} %)))
 
 (defn existing-topic-names [client]
   (-> client .listTopics .names deref))
@@ -42,7 +42,7 @@
     (.configs topic (jc/map->properties topic-config))
     (-> client
         (.createTopics [topic])
-        (.all)
+        .all
         deref))
   (log/info (format "Created topic %s" topic-name)))
 
@@ -65,4 +65,5 @@
        (every? (fn [topic]
                  (every? (fn [part-info]
                            (and (boolean (:leader part-info))
-                                (seq (:isr part-info)))) (:partition-info topic))))))
+                                (seq (:isr part-info))))
+                         (:partition-info topic))))))
