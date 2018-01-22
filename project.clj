@@ -38,26 +38,13 @@
                         :subprocess nil
                         :license {:name "BSD 3-clause"
                                   :url "http://opensource.org/licenses/BSD-3-Clause"}}
-            :versions {clojure-future-spec "1.9.0-alpha17"
-                       fundingcircle/jackdaw-admin "0.3.5-SNAPSHOT"
-                       fundingcircle/jackdaw-client "0.3.5-SNAPSHOT"
-                       fundingcircle/jackdaw-serdes "0.3.5-SNAPSHOT"
-                       fundingcircle/jackdaw-streams "0.3.5-SNAPSHOT"
-                       fundingcircle/jackdaw-test "0.3.5-SNAPSHOT"
-                       io.confluent/kafka-connect-avro-converter "3.2.1"
-                       io.confluent/kafka-connect-jdbc "3.2.1"
-                       io.confluent/kafka-schema-registry "3.2.1"
-                       io.confluent/kafka-avro-serializer "3.2.1"
-                       io.confluent/kafka-schema-registry-client "3.2.1"
-                       org.apache.kafka/connect-api "0.11.0.1"
-                       org.apache.kafka/connect-json "0.11.0.1"
-                       org.apache.kafka/connect-runtime "0.11.0.1"
-                       org.apache.kafka/kafka_2.11 "0.11.0.1"
-                       org.apache.kafka/kafka-clients "0.11.0.1"
-                       org.apache.kafka/kafka-streams "0.11.0.1"
+            :versions {fundingcircle :version
+                       io.confluent "3.2.1"
+                       org.apache.kafka "0.11.0.1"
                        org.clojure/clojure "1.8.0"
                        org.clojure/test.check "0.9.0"
-                       org.clojure/tools.logging "0.3.1"}}
+                       org.clojure/tools.logging "0.3.1"
+                       clojure-future-spec "1.9.0-alpha17"}}
   :test-selectors {:default (complement :integration)
                    :integration :integration}
   :release-tasks [["vcs" "assert-committed"]
