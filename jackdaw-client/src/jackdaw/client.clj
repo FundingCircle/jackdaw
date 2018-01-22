@@ -1,15 +1,22 @@
 (ns jackdaw.client
   "Clojure wrapper to kafka consumers/producers"
   (:require [clojure.walk :refer [stringify-keys]])
-  (:import [org.apache.kafka.clients.consumer Consumer ConsumerRecord KafkaConsumer]
-           [org.apache.kafka.clients.producer Callback KafkaProducer ProducerRecord RecordMetadata Producer]
+  (:import [org.apache.kafka.clients.consumer
+            Consumer
+            ConsumerRecord
+            KafkaConsumer]
+           [org.apache.kafka.clients.producer
+            Callback
+            KafkaProducer
+            ProducerRecord
+            RecordMetadata
+            Producer]
            java.util.Properties
            org.apache.kafka.common.serialization.Serde
            org.apache.kafka.common.TopicPartition))
 
-(defn map->properties
-  [m]
-  (let [props (java.util.Properties.)]
+(defn map->properties [m]
+  (let [props (Properties.)]
     (when m
       (.putAll props (stringify-keys m)))
     props))
@@ -18,10 +25,14 @@
 
 (defn producer-record
   "Creates a kafka ProducerRecord for use with `send!`."
-  ([{:keys [jackdaw.topic/topic-name]} value] (ProducerRecord. topic-name value))
-  ([{:keys [jackdaw.topic/topic-name]} key value] (ProducerRecord. topic-name key value))
-  ([{:keys [jackdaw.topic/topic-name]} partition key value] (ProducerRecord. topic-name partition key value))
-  ([{:keys [jackdaw.topic/topic-name]} partition timestamp key value] (ProducerRecord. ^String topic-name ^Integer partition ^Long timestamp key value)))
+  ([{:keys [jackdaw.topic/topic-name]} value]
+   (ProducerRecord. topic-name value))
+  ([{:keys [jackdaw.topic/topic-name]} key value]
+   (ProducerRecord. topic-name key value))
+  ([{:keys [jackdaw.topic/topic-name]} partition key value]
+   (ProducerRecord. topic-name partition key value))
+  ([{:keys [jackdaw.topic/topic-name]} partition timestamp key value]
+   (ProducerRecord. ^String topic-name ^Integer partition ^Long timestamp key value)))
 
 (defn topic-partition
   "Return a TopicPartition"
@@ -32,7 +43,6 @@
   "Return a KafkaProducer with the supplied properties"
   ([config]
    (KafkaProducer. ^Properties (map->properties config)))
-
   ([config {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
    (KafkaProducer. ^Properties (map->properties config)
                    (.serializer ^Serde key-serde)
