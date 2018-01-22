@@ -13,5 +13,5 @@
                             :dependencies [[environ "1.1.0" :exclusions [org.clojure/clojure]]]}
              :project/dev {:env {:zookeeper-address "127.0.0.1:2181"
                                  :bootstrap-servers "127.0.0.1:9092"}}
-             :kafka {:dependencies [[fundingcircle/jackdaw-test "0.3.0"]
-                                    [fundingcircle/jackdaw-client "0.3.0"]]}})
+             :kafka {:dependencies [[fundingcircle/jackdaw-test "_"]
+                                    [fundingcircle/jackdaw-client "_"]]}})

@@ -7,7 +7,7 @@
                  [io.confluent/kafka-schema-registry-client "_"]
                  [org.apache.kafka/kafka-clients "_"]
                  [org.clojure/data.json "0.2.6"]
-                 [com.taoensso/nippy "2.12.2"]]
+                 [com.taoensso/nippy "2.14.0"]]
   :aot [jackdaw.serdes.avro
         jackdaw.serdes.edn
         jackdaw.serdes.json

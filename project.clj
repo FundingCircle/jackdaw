@@ -13,18 +13,10 @@
             [lein-modules "0.3.11"]]
   :codox {:output-path "codox"
           :source-uri "http://github.com/fundingcircle/jackdaw/blob/{version}/{filepath}#L{line}"}
-  :source-paths ["jackdaw-admin/src"
-                 "jackdaw-client/src"
-                 "jackdaw-serdes/src"
-                 "jackdaw-streams/src"]
   :profiles {:dev {:dependencies [[org.apache.kafka/kafka-clients "_" :classifier "test"]
                                   [org.apache.kafka/kafka-streams "_" :classifier "test"]
                                   [org.clojure/test.check "_"]]}
              :provided {:dependencies [[org.clojure/clojure "_"]]}}
-  :aot [jackdaw.serdes.avro
-        jackdaw.serdes.edn
-        jackdaw.serdes.json
-        jackdaw.serdes.uuid]
   :modules {:inherited {:repositories {"confluent" {:url "https://packages.confluent.io/maven/"}
                                        "snapshots" {:url "https://fundingcircle.artifactoryonline.com/fundingcircle/libs-snapshot-local"
                                                     :username [:gpg :env/artifactory_user]
