@@ -43,5 +43,5 @@
       (is (= avro-data (avro/clj->avro schema-type clj-data [])))
       (is (thrown-with-msg?
             clojure.lang.ExceptionInfo
-            #"java.lang.String is not a valid type for uuid \(\[:id\]\)"
+            #"java.lang.String is not a valid type for uuid"
             (avro/clj->avro schema-type (update clj-data :id str) []))))))

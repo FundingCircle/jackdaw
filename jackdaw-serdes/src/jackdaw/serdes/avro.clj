@@ -33,9 +33,6 @@
         {:type base-type :logical-type logical-type}
         {:type base-type}))))
 
-(defn path->str [path]
-  (str/join (map #(str "[" % "]") path)))
-
 ;; Protocols and Multimethods
 
 (defprotocol SchemaType
@@ -56,15 +53,14 @@
     (.getCanonicalName (class x))
     "nil"))
 
-(defn serialization-error-msg [x expected-type path]
-  (format "%s is not a valid type for %s (%s)"
+(defn serialization-error-msg [x expected-type]
+  (format "%s is not a valid type for %s"
           (class-name x)
-          expected-type
-          (path->str path)))
+          expected-type))
 
 (defn validate-clj! [this x path expected-type]
   (when-not (match-clj? this x)
-    (throw (ex-info (serialization-error-msg x expected-type path)
+    (throw (ex-info (serialization-error-msg x expected-type)
                     {:path path
                      :data x}))))
 
@@ -343,11 +339,11 @@
           value-schema (schema-type value-type)]
       (reduce-kv (fn [acc k v]
                    (when-not (string? k)
-                     (throw (ex-info (format "%s (%s) is not a valid map key type, only string keys are supported (%s)"
+                     (throw (ex-info (format "%s (%s) is not a valid map key type, only string keys are supported"
                                              (class-name k)
-                                             k
-                                             (path->str path))
-                                     {})))
+                                             k)
+                                     {:path path
+                                      :clj-data clj-map})))
 
                    (let [new-v (clj->avro value-schema v (conj path k))]
                      (assoc acc k new-v)))
@@ -386,7 +382,8 @@
              (into {})))))
   (clj->avro [_ clj-map path]
     (when-not (map? clj-map)
-      (throw (ex-info (serialization-error-msg clj-map "record" path) {})))
+      (throw (ex-info (serialization-error-msg clj-map "record") {:path path
+                                                                  :clj-data clj-map})))
 
     (let [record-builder (GenericRecordBuilder. schema)]
 
@@ -394,11 +391,11 @@
         (let [new-k (mangle (name k))
               field (.getField schema new-k)
               _ (when-not field
-                  (throw (ex-info (format "Field %s not known in %s at %s"
-                                      new-k
-                                      (.getName schema)
-                                      (path->str path))
-                                  {})))
+                  (throw (ex-info (format "Field %s not known in %s"
+                                          new-k
+                                          (.getName schema))
+                                  {:path path
+                                   :clj-data clj-map})))
               child-schema (schema-type (.schema field))
               new-v (clj->avro child-schema v (conj path k))]
           (.set record-builder new-k new-v)))
@@ -406,7 +403,7 @@
       (try
         (.build record-builder)
         (catch org.apache.avro.AvroRuntimeException e
-          (throw (ex-info (str (.getMessage e) " at " (path->str path)) {} e)))))))
+          (throw (ex-info (str (.getMessage e)) {:path path :clj-data clj-map} e)))))))
 
 (defmethod schema-type {:type "record"} [schema]
   (RecordType. schema))
@@ -440,8 +437,9 @@
     (let [schema-type (match-union-type schema #(match-clj? % clj-data))]
       (when-not schema-type
         (throw (ex-info (serialization-error-msg clj-data
-                                                 (format "union [%s]" (union-types-str schema)) path)
-                        {})))
+                                                 (format "union [%s]" (union-types-str schema)))
+                        {:path path
+                         :clj-data clj-data})))
 
       (clj->avro schema-type clj-data path))))
 

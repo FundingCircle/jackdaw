@@ -1,8 +1,10 @@
 (ns jackdaw.serdes.avro-test
-  (:require [clojure.test :refer [deftest is testing]]
+  (:require [clojure.test :refer [deftest is testing] :as test]
             [clj-uuid :as uuid]
+            [clojure.data :refer [diff]]
             [clojure.data.json :as json]
             [clojure.java.io :as io]
+            [clojure.pprint :refer [pprint]]
             [environ.core :as env]
             [jackdaw.serdes.avro :as avro]
             [jackdaw.serdes.avro :as avro]
@@ -37,6 +39,27 @@
 
 (defn byte-buffer->string [^ByteBuffer buffer]
   (String. (.array buffer)))
+
+(defmethod test/assert-expr 'thrown-with-msg-and-data? [msg form]
+  (let [klass (nth form 1)
+        re (nth form 2)
+        data (nth form 3)
+        body (nthnext form 4)]
+    `(try ~@body
+          (test/do-report {:type :fail, :message ~msg, :expected '~form, :actual nil})
+          (catch ~klass e#
+            (let [m# (.getMessage e#)
+                  data# (ex-data e#)]
+              (if (re-find ~re m#)
+                (if (= ~data data#)
+                  (test/do-report {:type :pass, :message ~msg,
+                                   :expected '~form, :actual e#})
+                  (test/do-report {:type :fail, :message ~msg,
+                                   :expected '~data, :actual data#
+                                   :diff (diff ~data data#)}))
+                (test/do-report {:type :fail, :message ~msg,
+                                 :expected '~form, :actual e#})))
+            e#))))
 
 (deftest schema-type
   (testing "schemaless"
@@ -196,7 +219,7 @@
     (let [avro-schema (parse-schema ["null" "long"])
           schema-type (avro/schema-type avro-schema)]
       (is (thrown-with-msg? clojure.lang.ExceptionInfo
-                            #"java.lang.String is not a valid type for union \[NULL, LONG\] \(\)"
+                            #"java.lang.String is not a valid type for union \[NULL, LONG\]"
                             (avro/clj->avro schema-type "foo" [])))))
   (testing "enum"
     (let [enum-schema {:type "enum"
@@ -307,7 +330,14 @@
                                "ripe b4nana$" {:color "yellow-green"}}
                    :enum-field :a-1
                    :optional-field 3
-                   :array-field [{:color "yellow"}]}]
+                   :array-field [{:color "yellow"}]}
+        test-round-trip (fn [re {:keys [topic clj-data] :as data}]
+                          (is (thrown-with-msg-and-data? clojure.lang.ExceptionInfo
+                                                         re
+                                                         data
+                                                         (round-trip (->serde complex-schema-str)
+                                                                     topic
+                                                                     clj-data))))]
     (is (= (update (round-trip serde
                                "bananas"
                                valid-map)
@@ -324,60 +354,55 @@
             :optional-field 3
             :array-field [{:color "yellow"}]}))
 
-    (is (thrown-with-msg? clojure.lang.ExceptionInfo
-                          #"java.lang.Long is not a valid type for string \(\[:map-field\]\[banana\]\[:color\]\)"
-                          (round-trip serde
-                                      "bananas"
-                                      (assoc valid-map :map-field {"banana" {:color 3}}))))
+    (test-round-trip #"java.lang.Long is not a valid type for string"
+                     {:path [:map-field "banana" :color]
+                      :topic "bananas"
+                      :data 3
+                      :clj-data (assoc valid-map :map-field {"banana" {:color 3}})})
 
-    (is (thrown-with-msg? clojure.lang.ExceptionInfo
-                          #"Field tasty not known in banana at \[:map-field\]\[banana\]"
-                          (round-trip serde
-                                      "bananas"
-                                      (assoc valid-map :map-field {"banana" {:color "yellow" :tasty true}}))))
+    (test-round-trip #"Field tasty not known in banana"
+                     {:path [:map-field "banana"]
+                      :topic "bananas"
+                      :clj-data (assoc valid-map :map-field {"banana" {:color "yellow" :tasty true}})})
 
-    (is (thrown-with-msg? clojure.lang.ExceptionInfo
-                          #"Field color type:STRING pos:0 not set and has no default value at \[:map-field\]\[bad banana\]"
-                          (round-trip serde
-                                      "bananas"
-                                      (assoc valid-map :map-field {"bad banana" {}
-                                                                   "good banana" {:color "yellow"}}))))
+    (test-round-trip #"Field color type:STRING pos:0 not set and has no default value"
+                     {:path [:map-field "bad banana"]
+                      :topic "bananas"
+                      :clj-data (assoc valid-map :map-field {"bad banana" {}
+                                                             "good banana" {:color "yellow"}})})
 
-    (is (thrown-with-msg? clojure.lang.ExceptionInfo
-                          #"clojure.lang.Keyword \(:invalid-key\) is not a valid map key type, only string keys are supported \(\[:map-field\]\)"
-                          (round-trip serde
-                                      "bananas"
-                                      (assoc valid-map :map-field {:invalid-key {:color "yellow"}}))))
+    (test-round-trip #"clojure.lang.Keyword \(:invalid-key\) is not a valid map key type, only string keys are supported"
+                     {:path [:map-field]
+                      :topic "bananas"
+                      :clj-data (assoc valid-map :map-field {:invalid-key {:color "yellow"}})})
 
-    (is (thrown-with-msg? clojure.lang.ExceptionInfo
-                          #"java\.lang\.Long is not a valid type for string \(\[:array-field\]\[0\]\[:color\]\)"
-                          (round-trip serde
-                                      "bananas"
-                                      (assoc valid-map :array-field [{:color 3}]))))
+    (test-round-trip #"java\.lang\.Long is not a valid type for string"
+                     {:path [:array-field 0 :color]
+                      :data 3
+                      :topic "bananas"
+                      :clj-data (assoc valid-map :array-field [{:color 3}])})
 
-    (is (thrown-with-msg? clojure.lang.ExceptionInfo
-                          #"java\.lang\.Long is not a valid type for record \(\[:array-field\]\[1\]\)"
-                          (round-trip (->serde complex-schema-str)
-                                      "bananas"
-                                      (assoc valid-map :array-field [{:color "yellow"} 3]))))
+    (test-round-trip #"java\.lang\.Long is not a valid type for record"
+                     {:path [:array-field 1]
+                      :topic "bananas"
+                      :clj-data (assoc valid-map :array-field [{:color "yellow"} 3])})
 
-    (is (thrown-with-msg? clojure.lang.ExceptionInfo
-                          #"nil is not a valid type for string \(\[:array-field\]\[0\]\[:color\]\)"
-                          (round-trip (->serde complex-schema-str)
-                                      "bananas"
-                                      (assoc valid-map :array-field [{:color nil}]))))
+    (test-round-trip #"nil is not a valid type for string"
+                     {:path [:array-field 0 :color]
+                      :data nil
+                      :topic "bananas"
+                      :clj-data (assoc valid-map :array-field [{:color nil}])})
 
-    (is (thrown-with-msg? clojure.lang.ExceptionInfo
-                          #"java.lang.Long is not a valid type for nil \(\[:nil-field\]\)"
-                          (round-trip (->serde complex-schema-str)
-                                      "bananas"
-                                      (assoc valid-map :nil-field 3))))
+    (test-round-trip #"java.lang.Long is not a valid type for nil"
+                     {:path [:nil-field]
+                      :data 3
+                      :topic "bananas"
+                      :clj-data (assoc valid-map :nil-field 3)})
 
-    (is (thrown-with-msg? clojure.lang.ExceptionInfo
-                          #"java\.lang\.String is not a valid type for union \[NULL, ARRAY\] \(\[:array-field\]\)"
-                          (round-trip (->serde complex-schema-str)
-                                      "bananas"
-                                      (assoc valid-map :array-field "string"))))))
+    (test-round-trip #"java\.lang\.String is not a valid type for union \[NULL, ARRAY\]"
+                     {:path [:array-field]
+                      :topic "bananas"
+                      :clj-data (assoc valid-map :array-field "string")})))
 
 (deftest schemaless-test
   (let [serde (->serde nil)]
