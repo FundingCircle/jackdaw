@@ -458,7 +458,11 @@
     (.configure base-serializer base-config key?))
   (serialize [_ topic clj-data]
     (let [schema-type (schema-type avro-schema)]
-      (.serialize base-serializer topic (clj->avro schema-type clj-data [])))))
+      (try
+        (.serialize base-serializer topic (clj->avro schema-type clj-data []))
+        (catch clojure.lang.ExceptionInfo e
+          (throw (ex-info "Serialization error:" {:topic topic
+                                                  :clj-data clj-data} e)))))))
 
 (defn- base-config [registry-url]
   {"schema.registry.url" registry-url})
