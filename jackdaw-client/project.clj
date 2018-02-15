@@ -1,4 +1,4 @@
-(defproject fundingcircle/jackdaw-client "0.3.6-SNAPSHOT"
+(defproject fundingcircle/jackdaw-client "0.3.6"
   :description "Clojure wrapper for Apache Kafka Producer and Consumer APIs"
   :plugins [[lein-modules "0.3.11"]]
   :dependencies [[org.apache.kafka/kafka-clients "_"]
