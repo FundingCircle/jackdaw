@@ -9,9 +9,7 @@
                  [org.clojure/data.json "0.2.6"]
                  [com.taoensso/nippy "2.12.2"]]
   :aot [jackdaw.serdes.avro
-        jackdaw.serdes.json
-        jackdaw.serdes.fn
-        jackdaw.serdes.uuid]
+        jackdaw.serdes.fn]
   :profiles {:dev {:dependencies [[org.clojure/test.check "_"]]}}
   :test-selectors {:default (complement :integration)
                    :integration :integration})

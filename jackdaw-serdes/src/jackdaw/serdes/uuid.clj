@@ -1,38 +1,22 @@
 (ns jackdaw.serdes.uuid
   "Implements UUID serializer, deserializer, and SerDe."
-  (:require [clj-uuid :as uuid])
+  (:require [clj-uuid :as uuid]
+            [jackdaw.serdes.fn :as sfn])
   (:import java.nio.ByteBuffer
            java.util.UUID
            [org.apache.kafka.common.serialization Deserializer Serdes Serializer]))
 
-(set! *warn-on-reflection* true)
-
-(deftype UUIDSerializer []
-  Serializer
-  (close [this])
-  (configure [this configs key?])
-  (serialize [this _topic data]
-    (when data
-      (uuid/to-byte-array data))))
-
-(deftype UUIDDeserializer []
-  Deserializer
-  (close [this])
-  (configure [this configs key?])
-  (deserialize [this _topic data]
-    (when data
-      (let [bb (ByteBuffer/wrap data)]
-        (UUID. (.getLong bb) (.getLong bb))))))
 
 (defn uuid-serializer
   "Create a UUID serializer."
   []
-  (->UUIDSerializer))
+  (sfn/->FnSerializer uuid/to-byte-array))
 
 (defn uuid-deserializer
   "Create a UUID deserializer."
   []
-  (->UUIDDeserializer))
+  (sfn/->FnDeserializer #(let [bb (ByteBuffer/wrap %)]
+                           (UUID. (.getLong bb) (.getLong bb)))))
 
 (defn uuid-serde
   "Create a UUID serde"
