@@ -1,7 +1,8 @@
 (ns jackdaw.serdes.json
   "Implements JSON serializer, deserializer, and SerDe."
   (:require [clojure.data.json :as json]
-            [clojure.java.io :as io])
+            [clojure.java.io :as io]
+            [jackdaw.serdes.fn :as sfn])
   (:import java.nio.charset.StandardCharsets
            [org.apache.kafka.common.serialization Deserializer Serdes Serializer]))
 
@@ -17,33 +18,19 @@
   [data]
   (.getBytes ^String data StandardCharsets/UTF_8))
 
-(deftype JsonSerializer []
-  Serializer
-  (close [this])
-  (configure [this configs key?])
-  (serialize [this _topic data]
-    (when data
-      (-> (json/write-str data)
-          (string-to-bytes)))))
-
 (defn json-serializer
   "Create a JSON serializer"
   []
-  (JsonSerializer.))
-
-(deftype JsonDeserializer []
-  Deserializer
-  (close [this])
-  (configure [this configs key?])
-  (deserialize [this _topic data]
-    (when data
-      (-> (bytes-to-string data)
-          (json/read-str :key-fn keyword)))))
+  (sfn/->FnSerializer #(-> %
+                           json/write-str
+                           string-to-bytes)))
 
 (defn json-deserializer
   "Create a JSON deserializer"
   []
-  (JsonDeserializer.))
+  (sfn/->FnDeserializer #(-> %
+                           bytes-to-string
+                           (json/read-str :key-fn keyword))))
 
 (defn json-serde
   "Create a JSON serde."
