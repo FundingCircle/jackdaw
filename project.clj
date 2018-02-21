@@ -43,7 +43,7 @@
                   ["change" "version" "leiningen.release/bump-version" "release"]
                   ["modules" "change" "version" "leiningen.release/bump-version" "release"]
                   ["vcs" "commit"]
-                  ["vcs" "tag"] ;; GPG errors???
+                  ["vcs" "tag"]
                   ["modules" "deploy"]
                   ["change" "version" "leiningen.release/bump-version"]
                   ["modules" "change" "version" "leiningen.release/bump-version"]
