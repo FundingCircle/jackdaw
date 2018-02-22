@@ -163,12 +163,8 @@
   (<= Integer/MIN_VALUE x Integer/MAX_VALUE))
 
 (defn int-castable? [x]
-  (or
-    (byte? x)
-    (short? x)
-    (int? x)
-    (and (long? x)
-         (int-range? x))))
+  (and (int? x)
+       (int-range? x)))
 
 (defrecord IntType []
   SchemaType
