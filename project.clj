@@ -45,6 +45,7 @@
                   ["vcs" "commit"]
                   ["vcs" "tag"]
                   ["modules" "deploy"]
+                  ["deploy"]
                   ["change" "version" "leiningen.release/bump-version"]
                   ["modules" "change" "version" "leiningen.release/bump-version"]
                   ["vcs" "commit"]
