@@ -94,10 +94,7 @@
           avro-data 2]
       (is (avro/match-clj? schema-type clj-data))
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
-      (is (= avro-data (avro/clj->avro schema-type clj-data [])))
-
-      (is (avro/int? (avro/clj->avro schema-type (byte clj-data) [])))
-      (is (avro/int? (avro/clj->avro schema-type (short clj-data) [])))))
+      (is (= avro-data (avro/clj->avro schema-type clj-data [])))))
   (testing "long"
     (let [avro-schema (parse-schema {:type "long"
                                      :name "amount_cents"

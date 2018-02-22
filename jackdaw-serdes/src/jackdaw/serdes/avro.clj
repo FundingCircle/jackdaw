@@ -119,9 +119,6 @@
 
 ;;; Double
 
-(defn double? [x]
-  (instance? Double x))
-
 (defrecord DoubleType []
   SchemaType
   (match-clj? [_ x] (double? x))
@@ -158,9 +155,6 @@
 
 (defn byte? [x]
   (instance? Byte x))
-
-(defn int? [x]
-  (instance? Integer x))
 
 (defn long? [x]
   (instance? Long x))

@@ -8,7 +8,7 @@
                  [fundingcircle/jackdaw-serdes "_"]
                  [fundingcircle/jackdaw-streams "_"]
                  [fundingcircle/jackdaw-test "_"]
-                 [org.clojure/clojure "1.8.0"]]
+                 [org.clojure/clojure "_"]]
   :plugins [[lein-codox "0.10.3"]
             [lein-modules "0.3.11"]]
   :codox {:output-path "codox"
@@ -33,10 +33,9 @@
             :versions {fundingcircle :version
                        io.confluent "3.2.1"
                        org.apache.kafka "0.11.0.1"
-                       org.clojure/clojure "1.8.0"
+                       org.clojure/clojure "1.9.0"
                        org.clojure/test.check "0.9.0"
-                       org.clojure/tools.logging "0.3.1"
-                       clojure-future-spec "1.9.0-alpha17"}}
+                       org.clojure/tools.logging "0.3.1"}}
   :test-selectors {:default (complement :integration)
                    :integration :integration}
   :release-tasks [["vcs" "assert-committed"]
