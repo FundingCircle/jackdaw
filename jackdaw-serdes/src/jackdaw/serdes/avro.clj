@@ -1,12 +1,11 @@
 (ns jackdaw.serdes.avro
-  (:refer-clojure :exclude [boolean? bytes? float?])
   (:require [clojure.string :as str]
-            [jackdaw.serdes.registry :as registry])
+            [jackdaw.serdes.registry :as registry]
+            [jackdaw.serdes.fn :as fn])
   (:import (io.confluent.kafka.serializers KafkaAvroSerializer KafkaAvroDeserializer)
            (java.lang CharSequence)
            (java.nio ByteBuffer)
-           (java.util Collection)
-           (java.util Map)
+           (java.util Collection Map UUID)
            (org.apache.avro Schema$Parser Schema$ArraySchema Schema Schema$Field)
            (org.apache.avro.generic GenericData$Array GenericData$EnumSymbol GenericData$Record GenericRecordBuilder)
            (org.apache.kafka.common.serialization Serializer Deserializer Serdes)))
@@ -68,11 +67,6 @@
 
 ;;; Boolean
 
-(defn- boolean?
-  "Return true if x is a Boolean"
-  {:added "1.9"}
-  [x] (instance? Boolean x))
-
 (defrecord BooleanType []
   SchemaType
   (match-clj? [_ x] (boolean? x))
@@ -90,13 +84,6 @@
 (defn- byte-buffer?
   [x]
   (instance? ByteBuffer x))
-
-(defn- bytes?
-  "Return true if x is a byte array"
-  {:added "1.9"}
-  [x] (if (nil? x)
-        false
-        (-> x class .getComponentType (= Byte/TYPE))))
 
 (def avro-bytes?
   "Returns true if the object is compatible with Avro bytes, false otherwise
@@ -121,8 +108,8 @@
 
 (defrecord DoubleType []
   SchemaType
-  (match-clj? [_ x] (double? x))
-  (match-avro? [_ x] (double? x))
+  (match-clj? [_ x] (float? x))
+  (match-avro? [_ x] (float? x))
   (avro->clj [_ x] x)
   (clj->avro [this x path]
     (validate-clj! this x path "double")
@@ -131,33 +118,10 @@
 (defmethod schema-type {:type "double"} [_]
   (DoubleType.))
 
-;;; Float
-
-(defn float? [x]
-  (instance? Float x))
-
-(defrecord FloatType []
-  SchemaType
-  (match-clj? [_ x] (float? x))
-  (match-avro? [_ x] (float? x))
-  (avro->clj [_ x] x)
-  (clj->avro [this x path]
-    (validate-clj! this x path "float")
-    x))
-
 (defmethod schema-type {:type "float"} [_]
-  (FloatType.))
+  (DoubleType.))
 
 ;;; Int
-
-(defn short? [x]
-  (instance? Short x))
-
-(defn byte? [x]
-  (instance? Byte x))
-
-(defn long? [x]
-  (instance? Long x))
 
 (defn int-range? [x]
   (<= Integer/MIN_VALUE x Integer/MAX_VALUE))
@@ -184,11 +148,8 @@
 (defrecord LongType []
   SchemaType
   (match-clj? [_ x]
-    (or (long? x)
-        (int? x)
-        (short? x)
-        (byte? x)))
-  (match-avro? [_ x] (long? x))
+    (int? x))
+  (match-avro? [_ x] (int? x))
   (avro->clj [_ x] x)
   (clj->avro [this x path]
     (validate-clj! this x path "long")
@@ -438,48 +399,61 @@
 
 ;; Serde Factory
 
-(deftype CljSerializer [^KafkaAvroSerializer base-serializer avro-schema]
-  Serializer
-  (close [_]
-    (.close base-serializer))
-  (configure [_ base-config key?]
-    (.configure base-serializer base-config key?))
-  (serialize [_ topic clj-data]
-    (let [schema-type (schema-type avro-schema)]
-      (try
-        (.serialize base-serializer topic (clj->avro schema-type clj-data []))
-        (catch clojure.lang.ExceptionInfo e
-          (let [data (-> e
-                         ex-data
-                         (assoc :topic topic :clj-data clj-data))]
-            (throw (ex-info (.getMessage e) data))))))))
-
 (defn- base-config [registry-url]
   {"schema.registry.url" registry-url})
 
 (defn- avro-serializer [serde-config]
   (let [{:keys [registry-client registry-url avro-schema key?]} serde-config
         base-serializer (KafkaAvroSerializer. registry-client)
-        clj-serializer (CljSerializer. base-serializer avro-schema)]
+        methods {:close (fn [_]
+                          (.close base-serializer))
+                 :configure (fn [_ base-config key?]
+                              (.configure base-serializer base-config key?))
+                 :serialize (fn [_ topic data]
+                              (let [schema-type (schema-type avro-schema)]
+                                (try
+                                  (.serialize base-serializer topic (clj->avro schema-type data []))
+                                  (catch clojure.lang.ExceptionInfo e
+                                    (let [data (-> e
+                                                   ex-data
+                                                   (assoc :topic topic :clj-data data))]
+                                      (throw (ex-info (.getMessage e) data)))))))}
+
+        clj-serializer (fn/new-serializer methods)]
     (.configure clj-serializer (base-config registry-url) key?)
     clj-serializer))
 
-(deftype CljDeserializer [^KafkaAvroDeserializer base-deserializer avro-schema]
-  Deserializer
-  (close [_]
-    (.close base-deserializer))
-  (configure [_ base-config key?]
-    (.configure base-deserializer base-config key?))
-  (deserialize [_ topic raw-data]
-    (let [schema-type (schema-type avro-schema)
-          avro-data (.deserialize base-deserializer topic raw-data)]
-      (assert (match-avro? schema-type avro-data))
-      (avro->clj schema-type avro-data))))
+(defrecord StringUUIDType []
+  SchemaType
+  (match-clj? [_ uuid]
+    (uuid? uuid))
+  (match-avro? [_ uuid-str]
+    (instance? CharSequence uuid-str))
+  (avro->clj [_ uuid-utf8]
+    (UUID/fromString (str uuid-utf8)))
+  (clj->avro [this uuid path]
+    (validate-clj! this uuid path "uuid")
+    (str uuid)))
+
+(defmethod schema-type
+  {:type "string" :logical-type "jackdaw.serdes.avro.UUID"}
+  [_]
+  (StringUUIDType.))
 
 (defn- avro-deserializer [serde-config]
   (let [{:keys [registry-client registry-url avro-schema key?]} serde-config
         base-deserializer (KafkaAvroDeserializer. registry-client)
-        clj-deserializer (CljDeserializer. base-deserializer avro-schema)]
+        methods {:close (fn [_]
+                          (.close base-deserializer))
+                 :configure (fn [_ base-config key?]
+                              (.configure base-deserializer base-config key?))
+                 :deserialize (fn [_ topic raw-data]
+                                (let [schema-type (schema-type avro-schema)
+                                      avro-data (.deserialize base-deserializer topic raw-data)]
+                                  (assert (match-avro? schema-type avro-data))
+                                  (avro->clj schema-type avro-data)))}
+
+        clj-deserializer (fn/new-deserializer methods)]
     (.configure clj-deserializer (base-config registry-url) key?)
     clj-deserializer))
 

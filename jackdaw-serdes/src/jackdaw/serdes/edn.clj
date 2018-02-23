@@ -1,18 +1,21 @@
 (ns jackdaw.serdes.edn
   (:require [taoensso.nippy :as nippy]
             [jackdaw.serdes.fn :as sfn])
-  (:import
-   [org.apache.kafka.common.serialization Deserializer Serdes Serializer]))
+  (:import [org.apache.kafka.common.serialization Serdes]))
 
 (defn edn-serializer
   "EDN serializer."
   []
-  (sfn/->FnSerializer nippy/freeze))
+  (sfn/new-serializer {:serialize (fn [_ _ data]
+                                    (when data
+                                      (nippy/freeze data)))}))
 
 (defn edn-deserializer
   "EDN deserializer."
   []
-  (sfn/->FnDeserializer nippy/thaw))
+  (sfn/new-deserializer {:deserialize (fn [_ _ data]
+                                        (when data
+                                          (nippy/thaw data)))}))
 
 (defn edn-serde
   "EDN serde."

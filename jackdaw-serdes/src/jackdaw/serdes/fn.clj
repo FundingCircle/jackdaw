@@ -1,27 +1,24 @@
 (ns jackdaw.serdes.fn
-  (:import
-   [org.apache.kafka.common.serialization Deserializer
-    Serdes
-    Serializer]))
+  (:require [clojure.spec.alpha :as s]
+            [jackdaw.serdes.fn-impl :as fn-impl])
+  (:import [org.apache.kafka.common.serialization Deserializer Serializer]))
 
-;; we're going to AOT this ns, so it's very important that it doesn't
-;; :require anything, because AOT'ing other peoples code is a Bad
-;; Idea.
+(s/def ::serialize fn?)
+(s/def ::close fn?)
+(s/def ::configure fn?)
 
-(deftype FnSerializer [f]
-  Serializer
-  (close [this])
-  (configure [this configs key?])
-  (serialize [this _topic data]
-    (when data
-      (f data))))
+(s/fdef new-serializer :args (s/cat :args (s/keys :req-un [::serialize]
+                                                  :opt-un [::close
+                                                           ::configure])))
 
-(deftype FnDeserializer [f]
-  Deserializer
-  (close [this])
-  (configure [this configs key?])
-  (deserialize [this _topic data]
-    (when data
-      (f data))))
+(defn new-serializer ^Serializer [args]
+  (fn-impl/map->FnSerializer args))
 
+(s/def ::deserialize fn?)
+(s/fdef new-deserializer :args (s/cat :args (s/keys :req-un [::deserialize]
+                                                    :opt-un [::close
+                                                             ::configure])))
+
+(defn new-deserializer ^Deserializer [args]
+  (fn-impl/map->FnDeserializer args))
 

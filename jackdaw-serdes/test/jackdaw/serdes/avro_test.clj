@@ -105,9 +105,9 @@
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
       (is (= avro-data (avro/clj->avro schema-type clj-data [])))
 
-      (is (avro/long? (avro/clj->avro schema-type (byte clj-data) [])))
-      (is (avro/long? (avro/clj->avro schema-type (short clj-data) [])))
-      (is (avro/long? (avro/clj->avro schema-type (int clj-data) [])))))
+      (is (int? (avro/clj->avro schema-type (byte clj-data) [])))
+      (is (int? (avro/clj->avro schema-type (short clj-data) [])))
+      (is (int? (avro/clj->avro schema-type (int clj-data) [])))))
 
   (testing "string"
     (let [avro-schema (parse-schema {:type "string"

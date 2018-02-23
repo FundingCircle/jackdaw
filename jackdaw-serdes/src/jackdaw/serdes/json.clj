@@ -21,16 +21,20 @@
 (defn json-serializer
   "Create a JSON serializer"
   []
-  (sfn/->FnSerializer #(-> %
-                           json/write-str
-                           string-to-bytes)))
+  (sfn/new-serializer {:serialize (fn [_ _ data]
+                                    (when data
+                                      (-> data
+                                          json/write-str
+                                          string-to-bytes)))}))
 
 (defn json-deserializer
   "Create a JSON deserializer"
   []
-  (sfn/->FnDeserializer #(-> %
-                           bytes-to-string
-                           (json/read-str :key-fn keyword))))
+  (sfn/new-deserializer {:deserialize (fn [_ _ data]
+                                        (when data
+                                          (-> data
+                                              bytes-to-string
+                                              (json/read-str :key-fn keyword))))}))
 
 (defn json-serde
   "Create a JSON serde."

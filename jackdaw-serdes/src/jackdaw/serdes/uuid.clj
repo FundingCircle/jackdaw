@@ -10,13 +10,17 @@
 (defn uuid-serializer
   "Create a UUID serializer."
   []
-  (sfn/->FnSerializer uuid/to-byte-array))
+  (sfn/new-serializer {:serialize (fn [_ _ data]
+                                    (when data
+                                      (uuid/to-byte-array data)))}))
 
 (defn uuid-deserializer
   "Create a UUID deserializer."
   []
-  (sfn/->FnDeserializer #(let [bb (ByteBuffer/wrap %)]
-                           (UUID. (.getLong bb) (.getLong bb)))))
+  (sfn/new-deserializer {:deserialize (fn [_ _ data]
+                                        (when data
+                                          (let [bb (ByteBuffer/wrap data)]
+                                            (UUID. (.getLong bb) (.getLong bb)))))}))
 
 (defn uuid-serde
   "Create a UUID serde"
