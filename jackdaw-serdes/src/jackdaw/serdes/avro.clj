@@ -118,8 +118,22 @@
 (defmethod schema-type {:type "double"} [_]
   (DoubleType.))
 
+;;; Float
+
+(defn float? [x]
+  (instance? Float x))
+
+(defrecord FloatType []
+  SchemaType
+  (match-clj? [_ x] (float? x))
+  (match-avro? [_ x] (float? x))
+  (avro->clj [_ x] x)
+  (clj->avro [this x path]
+    (validate-clj! this x path "float")
+    x))
+
 (defmethod schema-type {:type "float"} [_]
-  (DoubleType.))
+  (FloatType.))
 
 ;;; Int
 
