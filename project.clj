@@ -1,4 +1,4 @@
-(defproject fundingcircle/jackdaw "0.3.9"
+(defproject fundingcircle/jackdaw "0.3.10-SNAPSHOT"
   :description "No frills Clojure wrapper around Apache Kafka APIs"
   :url "http://github.com/FundingCircle/jackdaw"
   :license {:name "3-Clause BSD License",
@@ -20,12 +20,10 @@
   :modules {:inherited {:repositories {"confluent" {:url "https://packages.confluent.io/maven/"}
                                        "snapshots" {:url "https://fundingcircle.artifactoryonline.com/fundingcircle/libs-snapshot-local"
                                                     :username [:gpg :env/artifactory_user]
-                                                    :password [:gpg :env/artifactory_password]
-                                                    :sign-releases false}
+                                                    :password [:gpg :env/artifactory_password]}
                                        "releases" {:url "https://fundingcircle.artifactoryonline.com/fundingcircle/libs-release-local"
                                                    :username [:gpg :env/artifactory_user]
-                                                   :password [:gpg :env/artifactory_password]
-                                                   :sign-releases false} }
+                                                   :password [:gpg :env/artifactory_password]}}
                         :url "https://github.com/FundingCircle/jackdaw"
                         :subprocess nil
                         :license {:name "BSD 3-clause"
