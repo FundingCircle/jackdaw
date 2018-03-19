@@ -5,8 +5,6 @@
             [jackdaw.admin.topic :as topic]
             [jackdaw.admin.zk :as zk]))
 
-(fixture/kafka)
-
 (deftest fetch-topic-config-test
   (with-open [zk-utils (zk/zk-utils (get config/common "zookeeper.connect"))]
     (let [config {"cleanup.policy" "compact"}
@@ -15,4 +13,3 @@
         (topic/create! zk-utils topic-name 1 1 config)
         (topic/retry-exists? zk-utils topic-name)
         (is (= config (topic/fetch-config zk-utils topic-name)))))))
-

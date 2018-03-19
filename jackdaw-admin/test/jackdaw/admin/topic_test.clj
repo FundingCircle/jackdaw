@@ -7,8 +7,6 @@
   (:import kafka.admin.AdminUtils
            kafka.server.ConfigType))
 
-(fixture/kafka)
-
 (defn build-topics-metadata
    "Receives Vector of topic names and returns topic configs for each topic."
    [topic-names]
