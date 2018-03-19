@@ -6,6 +6,7 @@
                  [io.confluent/kafka-avro-serializer "_"]
                  [io.confluent/kafka-schema-registry-client "_"]
                  [org.apache.kafka/kafka-clients "_"]
+                 [org.clojure/clojure "_"]
                  [org.clojure/data.json "0.2.6"]
                  [com.taoensso/nippy "2.12.2"]]
   :aot [jackdaw.serdes.fn]

@@ -10,13 +10,13 @@
                  [fundingcircle/jackdaw-test "_"]
                  [org.clojure/clojure "_"]]
   :plugins [[lein-codox "0.10.3"]
-            [lein-modules "0.3.11"]]
+            [fundingcircle/lein-modules "0.3.13-SNAPSHOT"]]
   :codox {:output-path "codox"
           :source-uri "http://github.com/fundingcircle/jackdaw/blob/{version}/{filepath}#L{line}"}
   :profiles {:dev {:dependencies [[org.apache.kafka/kafka-clients "_" :classifier "test"]
                                   [org.apache.kafka/kafka-streams "_" :classifier "test"]
-                                  [org.clojure/test.check "_"]]}
-             :provided {:dependencies [[org.clojure/clojure "_"]]}}
+                                  [org.clojure/test.check "_"]
+                                  [org.clojure/clojure "_"]]}}
   :modules {:inherited {:repositories {"confluent" {:url "https://packages.confluent.io/maven/"}
                                        "snapshots" {:url "https://fundingcircle.artifactoryonline.com/fundingcircle/libs-snapshot-local"
                                                     :username [:gpg :env/artifactory_user]
