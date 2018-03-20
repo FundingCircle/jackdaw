@@ -17,6 +17,16 @@ jobs:
             - libs-cache-
 
       - run:
+          command: wget http://packages.confluent.io/archive/4.0/confluent-oss-4.0.0-2.11.tar.gz; tar xzf confluent-oss-4.0.0-2.11.tar.gz; sudo mv confluent-4.0.0 /usr/local/
+      - run:
+          command: echo 'export PATH=/usr/local/confluent-4.0.0/bin:$PATH' >> $BASH_ENV
+      - run:
+          command: ls -l /usr/local/confluent-4.0.0
+      - run:
+          command: echo "$PATH"
+      - run:
+          command: confluent status
+      - run:
           command: lein modules do with-profile +dev,+test deps, install
       - save_cache:
           key: libs-cache-{{ checksum "project.clj" }}-{{ checksum ".circleci/config.yml" }}
