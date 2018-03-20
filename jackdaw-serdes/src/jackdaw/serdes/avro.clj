@@ -247,7 +247,7 @@
 
 ;;; Enum
 
-(defrecord EnumType [schema]
+(defrecord EnumType [^Schema schema]
   SchemaType
   (match-clj? [_ x]
     (or
