@@ -21,13 +21,11 @@ jobs:
       - run:
           command: echo 'export PATH=/usr/local/confluent-4.0.0/bin:$PATH' >> $BASH_ENV
       - run:
-          command: ls -l /usr/local/confluent-4.0.0
-      - run:
-          command: echo "$PATH"
-      - run:
-          command: confluent status
+          command: confluent start
       - run:
           command: lein modules do with-profile +dev,+test deps, install
+      - run:
+          command: confluent status
       - save_cache:
           key: libs-cache-{{ checksum "project.clj" }}-{{ checksum ".circleci/config.yml" }}
           paths:

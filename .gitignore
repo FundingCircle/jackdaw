@@ -2,7 +2,6 @@
 *.jar
 .hg/
 .hgignore
-/.lein-*
 /.nrepl-port
 /checkouts
 /classes

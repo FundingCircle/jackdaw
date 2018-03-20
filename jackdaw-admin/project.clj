@@ -12,14 +12,6 @@
              {:dependencies [[fundingcircle/jackdaw-test "_"]
                              [fundingcircle/jackdaw-client "_"]]}
 
-             :dev
-             [{:env {:zookeeper-address "127.0.0.1:2181"
-                     :bootstrap-servers "127.0.0.1:9092"}}
-              :kafka]
+             :dev [:kafka]
 
-             :test
-             [{:resource-paths ["test/resources"]
-               :env {;; confluent packages have ports xxx9 to prevent conflict with local env
-                     :zookeeper-address "127.0.0.1:2189"
-                     :bootstrap-servers "127.0.0.1:9099"}}
-              :kafka]})
+             :test [{:resource-paths ["test/resources"]} :kafka]})
