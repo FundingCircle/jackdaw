@@ -1,8 +1,11 @@
 (defproject fundingcircle/jackdaw-test "0.3.11-SNAPSHOT"
   :description "Test fixtures for Kafka, Zookeeper, and Confluent Schema Registry"
-  :source-paths      ["src/clj"]
+
+  :source-paths ["src/clj"]
   :java-source-paths ["src/java"]
-  :plugins [[lein-modules "0.3.11"]]
+
+  :plugins [[fundingcircle/lein-modules "0.3.13-SNAPSHOT"]]
+
   :dependencies [[io.confluent/kafka-connect-avro-converter "_"]
                  [io.confluent/kafka-connect-jdbc "_"]
                  [io.confluent/kafka-schema-registry "_"]
@@ -10,12 +13,13 @@
                  [org.apache.kafka/connect-json "_"]
                  [org.apache.kafka/connect-runtime "_"]
                  [org.clojure/tools.logging "_"]]
-  :profiles {:dev {:dependencies [[clj-http "2.3.0"]
-                                  [clj-time "0.13.0"]
-                                  [environ "1.1.0"]
-                                  [org.clojure/data.json "0.2.6"]
-                                  [org.clojure/tools.nrepl "0.2.12"]
-                                  [fundingcircle/jackdaw-client "_"]
-                                  [org.clojure/java.jdbc "0.7.0-beta2"]
-                                  [org.xerial/sqlite-jdbc "3.19.3"]]
-                   :resource-paths ["test/resources"]}})
+
+  :profiles {:test {:resource-paths ["test/resources"]
+                    :dependencies   [[clj-http "_"]
+                                     [clj-time "_"]
+                                     [environ "_"]
+                                     [org.clojure/data.json "_"]
+                                     [org.clojure/tools.nrepl "_"]
+                                     [fundingcircle/jackdaw-client "_"]
+                                     [org.clojure/java.jdbc "_"]
+                                     [org.xerial/sqlite-jdbc "_"]]}})
