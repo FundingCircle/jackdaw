@@ -36,14 +36,15 @@
                  :password [:gpg :env/artifactory_password]}]]
 
               :dependencies
-              [[org.clojure/clojure "_"]]
-
-              :test-selectors {:default (complement :integration)
-                               :integration :integration}}
+              [[org.clojure/clojure "_"]]}
 
              ;; The dev profile - non-deployment configuration
              :dev
-             {:codox
+             {:test-selectors
+              {:default (complement :integration)
+               :integration :integration}
+
+              :codox
               {:output-path "codox"
                :source-uri "http://github.com/fundingcircle/jackdaw/blob/{version}/{filepath}#L{line}"}
 
