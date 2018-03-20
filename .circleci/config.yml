@@ -17,11 +17,15 @@ jobs:
             - libs-cache-
 
       - run:
-          command: wget http://packages.confluent.io/archive/4.0/confluent-oss-4.0.0-2.11.tar.gz; tar xzf confluent-oss-4.0.0-2.11.tar.gz; sudo mv confluent-4.0.0 /usr/local/
+          command: wget -qO - https://packages.confluent.io/deb/4.0/archive.key | sudo apt-key add -
       - run:
-          command: echo 'export PATH=/usr/local/confluent-4.0.0/bin:$PATH' >> $BASH_ENV
+          command: sudo apt-get install software-properties-common apt-transport-https less
       - run:
-          command: confluent start
+          command: sudo add-apt-repository "deb [arch=amd64] https://packages.confluent.io/deb/4.0 stable main"
+      - run:
+          command: sudo apt-get update && sudo apt-get install confluent-platform-oss-2.11
+      - run:
+          command: nohup confluent start
       - run:
           command: lein modules do with-profile +dev,+test deps, install
       - run:
@@ -32,6 +36,10 @@ jobs:
             - ~/.m2/
       - run:
           command: lein modules test
+      - run:
+          command: confluent status
+          when: on_fail
+
   deploy-staging:
     docker:
       - image: circleci/clojure:latest
