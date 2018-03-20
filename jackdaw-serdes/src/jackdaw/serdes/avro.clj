@@ -106,6 +106,8 @@
 
 ;;; Double
 
+;; Note that clojure.core/float? recognizes both single and double precision floating point values.
+
 (defrecord DoubleType []
   SchemaType
   (match-clj? [_ x] (float? x))
@@ -120,13 +122,13 @@
 
 ;;; Float
 
-(defn float? [x]
+(defn single-float? [x]
   (instance? Float x))
 
 (defrecord FloatType []
   SchemaType
-  (match-clj? [_ x] (float? x))
-  (match-avro? [_ x] (float? x))
+  (match-clj? [_ x] (single-float? x))
+  (match-avro? [_ x] (single-float? x))
   (avro->clj [_ x] x)
   (clj->avro [this x path]
     (validate-clj! this x path "float")
