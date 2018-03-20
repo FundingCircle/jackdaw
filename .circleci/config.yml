@@ -23,7 +23,7 @@ jobs:
           paths:
             - ~/.m2/
       - run:
-          command: lein with-profile dev,test modules test
+          command: lein modules test
   deploy-staging:
     docker:
       - image: circleci/clojure:latest
