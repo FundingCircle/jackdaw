@@ -17,7 +17,7 @@ jobs:
             - libs-cache-
 
       - run:
-          command: lein with-profile dev,test modules install
+          command: lein modules do with-profile +dev,+test deps, install
       - save_cache:
           key: libs-cache-{{ checksum "project.clj" }}-{{ checksum ".circleci/config.yml" }}
           paths:
