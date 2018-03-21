@@ -80,4 +80,16 @@
              danlentz/clj-uuid "0.1.7"
              environ "1.1.0"
              clj-time "0.13.0"
-             clj-http "2.3.0"}})
+             clj-http "2.3.0"}}
+
+  :release-tasks [["vcs" "assert-committed"]
+                  ["change" "version" "leiningen.release/bump-version" "release"]
+                  ["modules" "change" "version" "leiningen.release/bump-version" "release"]
+                  ["vcs" "commit"]
+                  ; ["vcs" "tag"]
+                  ["modules" "deploy"]
+                  ["deploy"]
+                  ["change" "version" "leiningen.release/bump-version"]
+                  ["modules" "change" "version" "leiningen.release/bump-version"]
+                  ["vcs" "commit"]
+                  ["vcs" "push"]])
