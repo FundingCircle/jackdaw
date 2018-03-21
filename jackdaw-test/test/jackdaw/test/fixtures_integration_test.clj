@@ -1,5 +1,6 @@
 (ns jackdaw.test.fixtures-integration-test
   (:require
+   [circle.wait-for :refer [wait-for]]
    [clj-http.client :as http]
    [clj-time.core :as t]
    [clj-time.coerce :as c]
@@ -29,11 +30,6 @@
     (jdbc/execute! db-spec ["drop table if exists kafka_connect_source_data"])
     (jdbc/execute! db-spec [table-ddl])
     (f)))
-
-(use-fixtures :once
-  (join-fixtures [(fix/zookeeper test-config/zookeeper)
-                  (fix/broker test-config/broker)
-                  (fix/schema-registry test-config/schema-registry)]))
 
 (use-fixtures :each kafka-connect-source-data-table)
 
@@ -110,8 +106,11 @@
                                                             (str "kafka-connect-test-" (UUID/randomUUID))))
                                     (client/subscribe {:jackdaw.topic/topic-name "kafka-connect-source"}))]
 
-             (is (= (str foreign-id) (some-> (client/poll consumer 60000)
-                                             first
-                                             :value
-                                             (json/read-str)
-                                             (get "foreign_id")))))))))))
+             (is (wait-for {:sleep (t/seconds 1)
+                            :timeout (t/seconds 60)}
+                           #(some-> (client/poll consumer 60000)
+                                    first
+                                    :value
+                                    (json/read-str)
+                                    (get "foreign_id")
+                                    (= (str foreign-id))))))))))))

@@ -26,11 +26,12 @@
     (.process (k/kstream* topology)
               processor-supplier
               (into-array String []))
-    (let [test-driver (KStreamTestDriver. (-> topology config ::topology-builder)
-                                          (.toFile
-                                           (Files/createTempDirectory
-                                            "kstream-test-driver"
-                                            (into-array FileAttribute []))))]
+    (let [test-driver (doto (KStreamTestDriver.)
+                        (.setUp (-> topology config ::topology-builder)
+                                (.toFile
+                                 (Files/createTempDirectory
+                                  "kstream-test-driver"
+                                  (into-array FileAttribute [])))))]
       (-> topology
           (configure ::test-driver test-driver)
           (configure ::processor-supplier processor-supplier)))))

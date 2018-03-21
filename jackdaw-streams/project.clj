@@ -7,4 +7,5 @@
 
   :profiles {:dev {:dependencies
                    [[org.apache.kafka/kafka-clients "_" :classifier "test"]
-                    [org.apache.kafka/kafka-streams "_" :classifier "test"]]}})
+                    [org.apache.kafka/kafka-streams "_" :classifier "test"]
+                    [junit "_"]]}})

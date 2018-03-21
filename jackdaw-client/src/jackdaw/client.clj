@@ -11,7 +11,7 @@
             ProducerRecord
             RecordMetadata
             Producer]
-           java.util.Properties
+           [java.util Properties List]
            org.apache.kafka.common.serialization.Serde
            org.apache.kafka.common.TopicPartition))
 
@@ -91,7 +91,7 @@
 (defn ^KafkaConsumer subscribe
   "Subscribe a consumer to topics. Returns the consumer."
   [^KafkaConsumer consumer & topic-configs]
-  (.subscribe consumer (mapv :jackdaw.topic/topic-name topic-configs))
+  (.subscribe consumer ^List (mapv :jackdaw.topic/topic-name topic-configs))
   consumer)
 
 (defn ^KafkaConsumer subscribed-consumer

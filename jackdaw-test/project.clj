@@ -13,9 +13,9 @@
                  [org.apache.kafka/connect-json "_"]
                  [org.apache.kafka/connect-runtime "_"]
                  [org.clojure/tools.logging "_"]]
-
   :profiles {:test {:resource-paths ["test/resources"]
-                    :dependencies   [[clj-http "_"]
+                    :dependencies   [[arohner/wait-for "_"]
+                                     [clj-http "_"]
                                      [clj-time "_"]
                                      [environ "_"]
                                      [org.clojure/data.json "_"]

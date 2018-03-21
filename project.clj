@@ -66,8 +66,9 @@
             ;; Shared pinned library versions
             :versions
             {fundingcircle :version
-             io.confluent "3.2.1"
-             org.apache.kafka "0.11.0.1"
+             io.confluent "4.0.0"
+             junit "4.12"
+             org.apache.kafka "1.0.1"
              org.clojure/clojure "1.9.0"
              org.clojure/test.check "0.9.0"
              org.clojure/tools.logging "0.3.1"
@@ -79,16 +80,4 @@
              danlentz/clj-uuid "0.1.7"
              environ "1.1.0"
              clj-time "0.13.0"
-             clj-http "2.3.0"}}
-
-  :release-tasks [["vcs" "assert-committed"]
-                  ["change" "version" "leiningen.release/bump-version" "release"]
-                  ["modules" "change" "version" "leiningen.release/bump-version" "release"]
-                  ["vcs" "commit"]
-                  ; ["vcs" "tag"]
-                  ["modules" "deploy"]
-                  ["deploy"]
-                  ["change" "version" "leiningen.release/bump-version"]
-                  ["modules" "change" "version" "leiningen.release/bump-version"]
-                  ["vcs" "commit"]
-                  ["vcs" "push"]])
+             clj-http "2.3.0"}})
