@@ -67,8 +67,8 @@
             :versions
             {fundingcircle :version
              io.confluent "4.0.0"
-             junit "4.12"
              org.apache.kafka "1.0.1"
+             arohner/wait-for "1.0.2"
              org.clojure/clojure "1.9.0"
              org.clojure/test.check "0.9.0"
              org.clojure/tools.logging "0.3.1"
@@ -79,6 +79,7 @@
              com.taoensso/nippy "2.12.2"
              danlentz/clj-uuid "0.1.7"
              environ "1.1.0"
+             junit "4.12"
              clj-time "0.13.0"
              clj-http "2.3.0"}}
 
