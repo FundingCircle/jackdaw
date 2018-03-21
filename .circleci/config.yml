@@ -36,9 +36,6 @@ jobs:
             - ~/.m2/
       - run:
           command: lein modules test
-      - run:
-          command: confluent status
-          when: on_fail
 
   deploy-staging:
     docker:
