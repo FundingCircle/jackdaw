@@ -5,7 +5,10 @@
             AdminClient
             DescribeTopicsOptions
             DescribeTopicsResult
-            NewTopic]))
+            NewTopic]
+           [org.apache.kafka.common.config
+            ConfigResource
+            ConfigResource$Type]))
 
 (defn client [kafka-config]
   {:pre [(get kafka-config "bootstrap.servers")]}
@@ -67,3 +70,45 @@
                            (and (boolean (:leader part-info))
                                 (seq (:isr part-info))))
                          (:partition-info topic))))))
+
+
+
+(defn node->map [node]
+  {:host (.host node)
+   :port (.port node)
+   :id (.id node)
+   :rack (.rack node)})
+
+(defn describe-cluster [client]
+  (let [result (-> client
+                   (.describeCluster))]
+    {:cluster-id (-> result .clusterId .get)
+     :controller (-> result .controller .get)
+     :nodes (-> result .nodes .get (->> (map node->map) vec))}))
+
+(defn config->map [config]
+  (-> config
+      .entries
+      seq
+      (->>
+       (map (fn [e]
+              [(.name e) {:value (.value e)
+                          :default? (.isDefault e)
+                          :read-only? (.isReadOnly e)
+                          :sensitive? (.isSensitive e)}]))
+       (into {}))))
+
+(defn get-broker-config
+  "Returns the broker config as a map.
+
+  Broker-id is an int, typically 0-2, get the list of valid broker ids
+  using describe-cluster"
+  [client broker-id]
+  {:pre [(client? client)]}
+  (-> client
+      (.describeConfigs [(ConfigResource. ConfigResource$Type/BROKER (str broker-id))])
+      .all
+      .get
+      vals
+      first
+      config->map))
