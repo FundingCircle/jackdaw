@@ -1,4 +1,4 @@
-(defproject fundingcircle/jackdaw-streams "0.3.12"
+(defproject fundingcircle/jackdaw-streams "0.3.13-SNAPSHOT"
   :description "Kafka streams clojure wrapper"
 
   :plugins [[lein-modules "0.3.11"]]
