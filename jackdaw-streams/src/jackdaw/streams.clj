@@ -1,9 +1,11 @@
 (ns jackdaw.streams
   "Kafka streams protocols."
   (:refer-clojure :exclude [count map reduce group-by merge filter])
-  (:require [jackdaw.streams.interop :as interop]
+  (:require [clojure.string :as str]
+            [jackdaw.streams.interop :as interop]
             [jackdaw.streams.protocols :as p])
   (:import org.apache.kafka.streams.KafkaStreams
+           org.apache.kafka.streams.KafkaStreams$State
            org.apache.kafka.streams.processor.TopologyBuilder))
 
 ;; ITopologyBuilder
@@ -326,3 +328,9 @@
   "Stops the kafka streams."
   [kafka-streams]
   (.close ^KafkaStreams kafka-streams))
+
+(defn state->keyword [^KafkaStreams$State state]
+  (-> state .name str/lower-case (str/replace #"_" "-") keyword))
+
+(defn state [^KafkaStreams k-streams]
+  (-> k-streams .state state->keyword))
