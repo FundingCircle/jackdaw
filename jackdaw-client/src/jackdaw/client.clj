@@ -140,17 +140,26 @@
 
 (defn seek-to-end
   "Seek to the last offset for all assigned partitions"
-  [^Consumer consumer]
-  (.poll consumer 0)
-  (.seekToEnd consumer (assignment consumer))
-  consumer)
+  ([^Consumer consumer]
+   (.poll consumer 0)
+   (.seekToEnd consumer [])
+   consumer)
+  ([^Consumer consumer topic-partitions]
+   (.poll consumer 0)
+   (.seekToEnd consumer topic-partitions)
+   consumer))
 
 (defn seek-to-beginning
   "Seek to the last offset for the given topic/partitions"
-  [^Consumer consumer topic-partitions]
-  (.poll consumer 0)
-  (.seekToBeginning consumer topic-partitions)
-  consumer)
+  ([^Consumer consumer]
+   (.poll consumer 0)
+   (.seekToBeginning consumer [])
+   consumer)
+  ([^Consumer consumer topic-partitions]
+   (.poll consumer 0)
+   (.seekToBeginning consumer topic-partitions)
+   consumer)
+  )
 
 (defn position
   "Get the offset of the next record that will be fetched"
