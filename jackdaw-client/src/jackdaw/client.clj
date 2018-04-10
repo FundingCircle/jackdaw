@@ -94,6 +94,25 @@
   (.subscribe consumer ^List (mapv :jackdaw.topic/topic-name topic-configs))
   consumer)
 
+(defn subscription [^KafkaConsumer consumer]
+  (.subscription consumer))
+
+(defn assignment [^KafkaConsumer consumer]
+  (.assignment consumer))
+
+(defn assignment-for-every-sub? [consumer]
+  {:post [(do (println "assignment for every sub?" (subscription consumer) (assignment consumer) %) true)]}
+  (let [assignments (set (assignment consumer))]
+    (every? (fn [s]
+              (contains? assignments s)) (subscription consumer))))
+
+(defn wait-for-assignments
+  "Block until a consumer has assignments for each subscribed topic"
+  [^KafkaConsumer consumer]
+  (while (and (seq (subscription consumer))
+              (not (assignment-for-every-sub? consumer)))
+    (Thread/sleep 50)))
+
 (defn ^KafkaConsumer subscribed-consumer
   "Returns a consumer that is subscribed to a single topic."
   [config topic-config]
@@ -120,14 +139,16 @@
   (mapv consumer-record (.poll consumer timeout)))
 
 (defn seek-to-end
-  "Seek to the last offset for the given topic/partitions"
-  [^Consumer consumer topic-partitions]
-  (.seekToEnd consumer topic-partitions)
+  "Seek to the last offset for all assigned partitions"
+  [^Consumer consumer]
+  (.poll consumer 0)
+  (.seekToEnd consumer (assignment consumer))
   consumer)
 
 (defn seek-to-beginning
   "Seek to the last offset for the given topic/partitions"
   [^Consumer consumer topic-partitions]
+  (.poll consumer 0)
   (.seekToBeginning consumer topic-partitions)
   consumer)
 
