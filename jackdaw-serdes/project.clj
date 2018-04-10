@@ -1,7 +1,7 @@
 (defproject fundingcircle/jackdaw-serdes "0.3.11-SNAPSHOT"
   :description "Serializers/deserializers for Kafka"
 
-  :plugins [[fundingcircle/lein-modules "0.3.13-SNAPSHOT"]]
+  :plugins [[fundingcircle/lein-modules "[0.3.0,0.4.0)"]]
 
   :dependencies [[danlentz/clj-uuid "_"]
                  [environ "_"]

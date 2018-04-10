@@ -5,7 +5,7 @@
                  [org.apache.kafka/kafka_2.11 "_"]
                  [environ "_"]]
 
-  :plugins [[fundingcircle/lein-modules "0.3.13-SNAPSHOT"]
+  :plugins [[fundingcircle/lein-modules "[0.3.0,0.4.0)"]
             [lein-environ "1.1.0"]]
 
   :profiles {:kafka
