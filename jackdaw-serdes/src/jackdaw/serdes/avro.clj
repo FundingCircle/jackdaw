@@ -456,6 +456,11 @@
   [_]
   (StringUUIDType.))
 
+(defmethod schema-type
+  {:type "string" :logical-type "uuid"}
+  [_]
+  (StringUUIDType.))
+
 (defn- avro-deserializer [serde-config]
   (let [{:keys [registry-client registry-url avro-schema key?]} serde-config
         base-deserializer (KafkaAvroDeserializer. registry-client)
