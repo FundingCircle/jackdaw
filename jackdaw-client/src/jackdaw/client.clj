@@ -88,36 +88,23 @@
                    (when key-serde (.deserializer ^Serde key-serde))
                    (when value-serde (.deserializer ^Serde value-serde)))))
 
-(defn ^KafkaConsumer subscribe
-  "Subscribe a consumer to topics. Returns the consumer."
-  [^KafkaConsumer consumer & topic-configs]
-  (.subscribe consumer ^List (mapv :jackdaw.topic/topic-name topic-configs))
-  consumer)
-
 (defn subscription [^KafkaConsumer consumer]
   (.subscription consumer))
 
 (defn assignment [^KafkaConsumer consumer]
   (.assignment consumer))
 
-(defn assignment-for-every-sub? [consumer]
-  {:post [(do (println "assignment for every sub?" (subscription consumer) (assignment consumer) %) true)]}
-  (let [assignments (set (assignment consumer))]
-    (every? (fn [s]
-              (contains? assignments s)) (subscription consumer))))
-
-(defn wait-for-assignments
-  "Block until a consumer has assignments for each subscribed topic"
-  [^KafkaConsumer consumer]
-  (while (and (seq (subscription consumer))
-              (not (assignment-for-every-sub? consumer)))
-    (Thread/sleep 50)))
+(defn ^KafkaConsumer subscribe
+  "Subscribe a consumer to topics. Returns the consumer."
+  [^KafkaConsumer consumer & topic-configs]
+  (.subscribe consumer ^List (mapv :jackdaw.topic/topic-name topic-configs))
+  consumer)
 
 (defn ^KafkaConsumer subscribed-consumer
   "Returns a consumer that is subscribed to a single topic."
-  [config topic-config]
-  (-> (consumer config topic-config)
-      (subscribe topic-config)))
+  [config & topic-configs]
+  (-> (consumer config (first topic-configs))
+      (#(apply subscribe % topic-configs))))
 
 (defn- consumer-record
   "Clojurize the ConsumerRecord returned from consuming a kafka record"
@@ -138,38 +125,44 @@
   [^Consumer consumer timeout]
   (mapv consumer-record (.poll consumer timeout)))
 
-(defn seek-to-end
-  "Seek to the last offset for all assigned partitions"
-  ([^Consumer consumer]
-   (.poll consumer 0)
-   (.seekToEnd consumer [])
-   consumer)
-  ([^Consumer consumer topic-partitions]
-   (.poll consumer 0)
-   (.seekToEnd consumer topic-partitions)
-   consumer))
-
-(defn seek-to-beginning
-  "Seek to the last offset for the given topic/partitions"
-  ([^Consumer consumer]
-   (.poll consumer 0)
-   (.seekToBeginning consumer [])
-   consumer)
-  ([^Consumer consumer topic-partitions]
-   (.poll consumer 0)
-   (.seekToBeginning consumer topic-partitions)
-   consumer)
-  )
+(defn assignment
+  "Get the partitions currently assigned to this consumer"
+  [^Consumer consumer]
+  (set (.assignment consumer)))
 
 (defn position
   "Get the offset of the next record that will be fetched"
   [^Consumer consumer ^TopicPartition topic-partition]
   (.position consumer topic-partition))
 
-(defn assignment
-  "Get the partitions currently assigned to this consumer"
-  [^Consumer consumer]
-  (set (.assignment consumer)))
+(defn position-all
+  "Call position on every assigned partition, to force laziness from .seekToEnd/.seekToBeginning"
+  [consumer]
+  (->>
+   (for [part (assignment consumer)]
+     (position consumer part))
+   (doall)))
+
+(defn seek-to-end
+  "Seek to the last offset for all assigned partitions. Not lazy."
+  ([^Consumer consumer]
+   (seek-to-end consumer []))
+  ([^Consumer consumer topic-partitions]
+   (.poll consumer 0) ;; load assignments
+   (.seekToEnd consumer topic-partitions)
+   (position-all consumer)
+   consumer))
+
+(defn seek-to-beginning
+  "Seek to the first offset for the given topic/partitions. Not lazy"
+  ([^Consumer consumer]
+   (seek-to-beginning consumer [])
+   consumer)
+  ([^Consumer consumer topic-partitions]
+   (.poll consumer 0)
+   (.seekToBeginning consumer topic-partitions)
+   (position-all consumer)
+   consumer))
 
 (defn assign
   "Assign a consumer to specific partitions for specific topics. Returns the consumer."
