@@ -92,6 +92,7 @@
   (.subscription consumer))
 
 (defn assignment [^KafkaConsumer consumer]
+  "Get the partitions currently assigned to this consumer"
   (.assignment consumer))
 
 (defn ^KafkaConsumer subscribe
@@ -125,11 +126,6 @@
   [^Consumer consumer timeout]
   (mapv consumer-record (.poll consumer timeout)))
 
-(defn assignment
-  "Get the partitions currently assigned to this consumer"
-  [^Consumer consumer]
-  (set (.assignment consumer)))
-
 (defn position
   "Get the offset of the next record that will be fetched"
   [^Consumer consumer ^TopicPartition topic-partition]
@@ -143,23 +139,27 @@
      (position consumer part))
    (doall)))
 
-(defn seek-to-end
-  "Seek to the last offset for all assigned partitions. Not lazy."
+(defn seek-to-end-eager
+  "Seek to the last offset for all assigned partitions, and force positioning.
+
+When no partitions are passed, seek on all assigned partitions"
   ([^Consumer consumer]
-   (seek-to-end consumer []))
+   (seek-to-end-eager consumer []))
   ([^Consumer consumer topic-partitions]
-   (.poll consumer 0) ;; load assignments
+   (poll consumer 0) ;; load assignments
    (.seekToEnd consumer topic-partitions)
    (position-all consumer)
    consumer))
 
-(defn seek-to-beginning
-  "Seek to the first offset for the given topic/partitions. Not lazy"
+(defn seek-to-beginning-eager
+  "Seek to the first offset for the given topic/partitions and force positioning.
+
+When no partitions are passed, seek on all assigned partitions"
   ([^Consumer consumer]
-   (seek-to-beginning consumer [])
+   (seek-to-beginning-eager consumer [])
    consumer)
   ([^Consumer consumer topic-partitions]
-   (.poll consumer 0)
+   (poll consumer 0)
    (.seekToBeginning consumer topic-partitions)
    (position-all consumer)
    consumer))
