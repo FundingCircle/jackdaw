@@ -23,14 +23,14 @@
 
 (set! *warn-on-reflection* true)
 
-(defn producer-record
+(defn ^ProducerRecord producer-record
   "Creates a kafka ProducerRecord for use with `send!`."
   ([{:keys [jackdaw.topic/topic-name]} value]
-   (ProducerRecord. topic-name value))
+   (ProducerRecord. ^String topic-name value))
   ([{:keys [jackdaw.topic/topic-name]} key value]
-   (ProducerRecord. topic-name key value))
+   (ProducerRecord. ^String topic-name key value))
   ([{:keys [jackdaw.topic/topic-name]} partition key value]
-   (ProducerRecord. topic-name partition key value))
+   (ProducerRecord. ^String topic-name ^Integer partition key value))
   ([{:keys [jackdaw.topic/topic-name]} partition timestamp key value]
    (ProducerRecord. ^String topic-name ^Integer partition ^Long timestamp key value)))
 
@@ -60,7 +60,7 @@
      :timestamp (.timestamp record-metadata)
      :topic (.topic record-metadata)}))
 
-(defn callback
+(defn ^Callback callback
   "Build a kafka producer callback function out of a normal clojure one
    The function should expect two parameters, the first being the record
    metadata, the second being an exception if there was one. The function
@@ -75,9 +75,9 @@
   can be optionally provided that should expect two parameters: a map of the
   record metadata, and an exception instance, if an error occurred."
   ([producer record]
-   (.send ^Producer producer record))
+   (.send ^Producer producer ^ProducerRecord record))
   ([producer record callback-fn]
-   (.send ^Producer producer record (callback callback-fn))))
+   (.send ^Producer producer ^ProducerRecord record ^Callback (callback callback-fn))))
 
 (defn ^KafkaConsumer consumer
   "Return a Consumer with the supplied properties."

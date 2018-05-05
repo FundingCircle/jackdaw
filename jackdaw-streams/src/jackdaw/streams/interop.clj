@@ -47,7 +47,11 @@
         {:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}
         store-name]
      (clj-ktable
-      (.table ^KStreamBuilder topology-builder ^Serde key-serde ^Serde value-serde ^String topic-name ^String store-name)))))
+      (.table ^KStreamBuilder topology-builder
+              ^Serde key-serde
+              ^Serde value-serde
+              ^String topic-name
+              ^String store-name)))))
 
 (deftype CljKStreamBuilder [^KStreamBuilder topology-builder]
   ITopologyBuilder
@@ -85,7 +89,11 @@
 
   (global-ktable [_ {:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]} store-name]
     (clj-global-ktable
-      (.globalTable ^KStreamBuilder topology-builder ^Serde key-serde ^Serde value-serde ^String topic-name ^String store-name)))
+      (.globalTable ^KStreamBuilder topology-builder
+                    ^Serde key-serde
+                    ^Serde value-serde
+                    ^String topic-name
+                    ^String store-name)))
 
   (source-topics
     [_]
@@ -116,10 +124,10 @@
     [_ ktable value-joiner-fn {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     (clj-kstream
      (.leftJoin kstream
-                (ktable* ktable)
-                (value-joiner value-joiner-fn)
-                key-serde
-                value-serde)))
+                ^KTable (ktable* ktable)
+                ^ValueJoiner (value-joiner value-joiner-fn)
+                ^Serde key-serde
+                ^Serde value-serde)))
 
   (for-each!
     [_ foreach-fn]
@@ -145,9 +153,9 @@
     [_ key-value-mapper-fn {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
     (clj-kgroupedstream
      (.groupBy kstream
-               (select-key-value-mapper key-value-mapper-fn)
-               key-serde
-               value-serde)))
+               ^KeyValueMapper (select-key-value-mapper key-value-mapper-fn)
+               ^Serde key-serde
+               ^Serde value-serde)))
 
   (map-values
     [_ value-mapper-fn]
@@ -161,7 +169,7 @@
 
   (print!
     [_ {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
-    (.print kstream key-serde value-serde)
+    (.print kstream ^Serde key-serde ^Serde  value-serde)
     nil)
 
   (through
@@ -190,7 +198,7 @@
 
   (write-as-text!
     [_ file-path {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
-    (.writeAsText kstream file-path key-serde value-serde))
+    (.writeAsText kstream ^String file-path ^Serde key-serde ^Serde value-serde))
 
   IKStream
   (branch
