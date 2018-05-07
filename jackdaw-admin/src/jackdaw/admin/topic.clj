@@ -99,6 +99,7 @@
                (int replication-factor)
                topic-config))))
 
+;;; WARNING these methods do not work in Kafka 1.1 and greater.
 (defn fetch-config
   [zk-utils topic]
   (AdminUtils/fetchEntityConfig zk-utils (ConfigType/Topic) topic))

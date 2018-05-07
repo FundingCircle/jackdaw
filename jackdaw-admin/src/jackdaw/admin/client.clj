@@ -1,8 +1,11 @@
 (ns jackdaw.admin.client
   (:require [clojure.tools.logging :as log]
-            [jackdaw.client :as jc])
+            [jackdaw.client :as jc]
+            [clojure.spec.alpha :as s])
   (:import [org.apache.kafka.clients.admin
             AdminClient
+            Config
+            ConfigEntry
             DescribeTopicsOptions
             DescribeTopicsResult
             NewTopic]
@@ -16,6 +19,12 @@
 
 (defn client? [x]
   (instance? AdminClient x))
+
+(defn list-topics [client]
+  (-> client
+      .listTopics
+      .names
+      .get))
 
 (defn describe-topics [client names]
   (as-> client %
@@ -32,6 +41,50 @@
                                          (.partitions topic-description))}])
            %)
       (into {} %)))
+
+(defn config-resource? [x]
+  (instance? ConfigResource x))
+
+(s/def :config.resource/value? any?)
+(s/def :config.resource/default? boolean?)
+(s/def :config.resource/read-only? boolean?)
+
+(s/fdef config->map-all :args (s/cat :cr config-resource?) :ret (s/map-of string? (s/keys :req-un [:config.resource/value? :config.resource/default? :config.resource/read-only?])))
+(defn config->map-all [^ConfigResource config]
+  (-> config
+      .entries
+      seq
+      (->>
+       (map (fn [^ConfigEntry e]
+              [(.name e) {:value (.value e)
+                          :default? (.isDefault e)
+                          :read-only? (.isReadOnly e)
+                          :sensitive? (.isSensitive e)}]))
+       (into {}))))
+
+(s/fdef config->map-values :args (s/cat :cr config-resource?) :ret (s/map-of string? :config.resource/value?))
+(defn config->map-values [^ConfigResource config]
+  (-> config
+      .entries
+      seq
+      (->>
+       (map (fn [^ConfigEntry e]
+              [(.name e) (.value e)]))
+       (into {}))))
+
+(s/fdef describe-topic-config :args (s/cat :client client? :topic-name string?) :ret (s/map-of string? string?))
+
+(defn describe-topic-config [client topic-name]
+  (-> client
+      (.describeConfigs [(ConfigResource. ConfigResource$Type/TOPIC topic-name)])
+      .all
+      deref
+      vals
+      first
+      config->map-values))
+
+(s/fdef change-config! :args (s/cat :ac :client? :name :topic/name :properties (s/map-of string? string?)))
+(defn change-config! [client topic-name properties])
 
 (defn existing-topic-names [client]
   (-> client .listTopics .names deref))
@@ -71,7 +124,19 @@
                                 (seq (:isr part-info))))
                          (:partition-info topic))))))
 
+(s/fdef map->config :args (s/cat :m (s/map-of string? string?)))
+(defn map->config
+  [config-map]
+  (->> config-map
+       (mapv (fn [[k v]]
+               (ConfigEntry. k v)))
+       (Config. )))
 
+(defn alter-topic-config! [client topic-name config]
+  (-> client
+      (.alterConfigs {(ConfigResource. ConfigResource$Type/TOPIC topic-name) (map->config config)})
+      .all
+      deref))
 
 (defn node->map [node]
   {:host (.host node)
@@ -86,18 +151,6 @@
      :controller (-> result .controller .get)
      :nodes (-> result .nodes .get (->> (map node->map) vec))}))
 
-(defn config->map [config]
-  (-> config
-      .entries
-      seq
-      (->>
-       (map (fn [e]
-              [(.name e) {:value (.value e)
-                          :default? (.isDefault e)
-                          :read-only? (.isReadOnly e)
-                          :sensitive? (.isSensitive e)}]))
-       (into {}))))
-
 (defn get-broker-config
   "Returns the broker config as a map.
 
@@ -111,4 +164,4 @@
       .get
       vals
       first
-      config->map))
+      config->map-all))

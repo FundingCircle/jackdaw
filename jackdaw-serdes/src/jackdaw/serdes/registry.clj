@@ -21,4 +21,3 @@
 (defn mock-client
   []
   (MockSchemaRegistryClient.))
-  
