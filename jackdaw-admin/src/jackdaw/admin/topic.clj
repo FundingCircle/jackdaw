@@ -102,6 +102,7 @@
 ;;; WARNING these methods do not work in Kafka 1.1 and greater.
 (defn fetch-config
   [zk-utils topic]
+  "DEPRECATED. Does not work in kafka 1.1+"
   (AdminUtils/fetchEntityConfig zk-utils (ConfigType/Topic) topic))
 
 (defn get-all-topics
@@ -110,8 +111,11 @@
   (set (JavaConversions/seqAsJavaList (.getAllTopics zk-utils))))
 
 (defn change-config!
-  "Changes a topic configuration"
+  "DEPRECATED. Does not work in kafka 1.1+
+
+Changes a topic configuration."
   ([zk-utils metadata]
+
    (change-config! zk-utils
                    (:jackdaw.topic/topic-name metadata)
                    (:jackdaw.topic/topic-config metadata)))
