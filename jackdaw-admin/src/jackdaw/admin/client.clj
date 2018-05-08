@@ -83,9 +83,6 @@
       first
       config->map-values))
 
-(s/fdef change-config! :args (s/cat :ac :client? :name :topic/name :properties (s/map-of string? string?)))
-(defn change-config! [client topic-name properties])
-
 (defn existing-topic-names [client]
   (-> client .listTopics .names deref))
 
@@ -132,6 +129,7 @@
                (ConfigEntry. k v)))
        (Config. )))
 
+(s/fdef alter-topic-config! :args (s/cat :ac :client? :name :topic/name :config (s/map-of string? string?)))
 (defn alter-topic-config! [client topic-name config]
   (-> client
       (.alterConfigs {(ConfigResource. ConfigResource$Type/TOPIC topic-name) (map->config config)})
