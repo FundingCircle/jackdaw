@@ -49,20 +49,29 @@
 (s/def :config.resource/default? boolean?)
 (s/def :config.resource/read-only? boolean?)
 
-(s/fdef config->map-all :args (s/cat :cr config-resource?) :ret (s/map-of string? (s/keys :req-un [:config.resource/value? :config.resource/default? :config.resource/read-only?])))
-(defn config->map-all [^ConfigResource config]
-  (-> config
-      .entries
-      seq
-      (->>
-       (map (fn [^ConfigEntry e]
-              [(.name e) {:value (.value e)
-                          :default? (.isDefault e)
-                          :read-only? (.isReadOnly e)
-                          :sensitive? (.isSensitive e)}]))
-       (into {}))))
+(s/fdef config->map-all
+  :args (s/cat :cr config-resource?)
+  :ret (s/map-of string?
+                 (s/keys :req-un [:config.resource/value?
+                                  :config.resource/default?
+                                  :config.resource/read-only?])))
 
-(s/fdef config->map-values :args (s/cat :cr config-resource?) :ret (s/map-of string? :config.resource/value?))
+(defn config->map-all [^ConfigResource config]
+  (->> config
+       .entries
+       seq
+      (map (fn [^ConfigEntry e]
+             [(.name e)
+              {:value (.value e)
+               :default? (.isDefault e)
+               :read-only? (.isReadOnly e)
+               :sensitive? (.isSensitive e)}]))
+      (into {})))
+
+(s/fdef config->map-values
+  :args (s/cat :cr config-resource?)
+  :ret (s/map-of string? :config.resource/value?))
+
 (defn config->map-values [^ConfigResource config]
   (-> config
       .entries
@@ -72,7 +81,9 @@
               [(.name e) (.value e)]))
        (into {}))))
 
-(s/fdef describe-topic-config :args (s/cat :client client? :topic-name string?) :ret (s/map-of string? string?))
+(s/fdef describe-topic-config
+  :args (s/cat :client client? :topic-name string?)
+  :ret (s/map-of string? string?))
 
 (defn describe-topic-config [client topic-name]
   (-> client
