@@ -38,10 +38,11 @@
     ;; will be two but the IDs could be 1 and 4.
     ;;
     ;; Consequently, we scan over ALL THE POSSIBLE IDS until we have the broker
-    ;; count we expect.
+    ;; count we expect. Or we hit 100, because that's silly.
     (reduce (fn [acc i]
               (if (= (count acc) (.size %))
                 (reduced acc)
-                (if-let [broker (.getBroker % i)]
-                  (assoc acc i broker) acc)))
-            {} (range))))
+                (if-let [^kafka.cluster.Broker broker (.get ^scala.Some (.getBroker ^kafka.cluster.Cluster % i))]
+                  (assoc acc i broker)
+                  acc)))
+            {} (range 100))))
