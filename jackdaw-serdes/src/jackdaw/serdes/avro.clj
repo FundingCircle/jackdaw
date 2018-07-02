@@ -1,5 +1,6 @@
 (ns jackdaw.serdes.avro
-  (:require [clojure.string :as str]
+  (:require [clojure.tools.logging :as log]
+            [clojure.string :as str]
             [jackdaw.serdes.registry :as registry]
             [jackdaw.serdes.fn :as fn])
   (:import (io.confluent.kafka.serializers KafkaAvroSerializer KafkaAvroDeserializer)
@@ -469,10 +470,15 @@
                  :configure (fn [_ base-config key?]
                               (.configure base-deserializer base-config key?))
                  :deserialize (fn [_ topic raw-data]
-                                (let [schema-type (schema-type avro-schema)
-                                      avro-data (.deserialize base-deserializer topic raw-data)]
-                                  (assert (match-avro? schema-type avro-data))
-                                  (avro->clj schema-type avro-data)))}
+                                (try
+                                  (let [schema-type (schema-type avro-schema)
+                                        avro-data (.deserialize base-deserializer topic raw-data)]
+                                    (assert (match-avro? schema-type avro-data))
+                                    (avro->clj schema-type avro-data))
+                                  (catch Exception e
+                                    (let [msg "[Jackdaw] Deserialization error"]
+                                      (log/info (str msg " for " topic))
+                                      (throw (ex-info msg {:topic topic} e))))))}
 
         clj-deserializer (fn/new-deserializer methods)]
     (.configure clj-deserializer (base-config registry-url) key?)
