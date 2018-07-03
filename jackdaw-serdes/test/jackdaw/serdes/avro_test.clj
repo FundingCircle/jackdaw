@@ -31,6 +31,18 @@
     (-> (avro/serde-config :value config)
         (avro/avro-serde))))
 
+(defn deserialize [serde topic x]
+  (let [deserializer (.deserializer serde)]
+    (.deserialize deserializer
+                  topic
+                  x)))
+
+(defn serialize [serde topic x]
+  (let [serializer (.serializer serde)]
+    (.serialize serializer
+                topic
+                x)))
+
 (defn round-trip [serde topic x]
   (let [serializer (.serializer serde)
         deserializer (.deserializer serde)]
@@ -277,7 +289,16 @@
           schema-type (avro/schema-type avro-schema)]
       (is (thrown-with-msg? clojure.lang.ExceptionInfo
                             #"Field garbage not known in Foo"
-                            (avro/clj->avro schema-type {:garbage "yolo"} []))))))
+                            (avro/clj->avro schema-type {:garbage "yolo"} [])))))
+  (testing "uuid"
+    (let [avro-schema (parse-schema {:type "string",
+                                     :logicalType "uuid"})
+          schema-type (avro/schema-type avro-schema)
+          clj-data uuid/+null+
+          avro-data (uuid/to-string uuid/+null+)]
+      (is (avro/match-clj? schema-type clj-data))
+      (is (= clj-data (avro/avro->clj schema-type avro-data)))
+      (is (= avro-data (avro/clj->avro schema-type clj-data []))))))
 
 (def bananas-schema
   {:type "record"
@@ -312,7 +333,10 @@
             {:name "array_field"
              :type ["null" {:name "subrecords"
                             :type "array"
-                            :items "banana"}]}]})
+                            :items "banana"}]}
+            {:name "uuid_field"
+             :type {:type "string",
+                    :logicalType "uuid"}}]})
 
 (def complex-schema-str (json/write-str complex-schema))
 
@@ -327,7 +351,8 @@
                                "ripe b4nana$" {:color "yellow-green"}}
                    :enum-field :a-1
                    :optional-field 3
-                   :array-field [{:color "yellow"}]}
+                   :array-field [{:color "yellow"}]
+                   :uuid-field uuid/+null+}
         test-round-trip (fn [re {:keys [topic clj-data] :as data}]
                           (is (thrown-with-msg-and-data? clojure.lang.ExceptionInfo
                                                          re
@@ -349,7 +374,8 @@
                         "ripe b4nana$" {:color "yellow-green"}}
             :enum-field :a-1
             :optional-field 3
-            :array-field [{:color "yellow"}]}))
+            :array-field [{:color "yellow"}]
+            :uuid-field uuid/+null+}))
 
     (test-round-trip #"java.lang.Long is not a valid type for string"
                      {:path [:map-field "banana" :color]
@@ -399,7 +425,27 @@
     (test-round-trip #"java\.lang\.String is not a valid type for union \[NULL, ARRAY\]"
                      {:path [:array-field]
                       :topic "bananas"
-                      :clj-data (assoc valid-map :array-field "string")})))
+                      :clj-data (assoc valid-map :array-field "string")})
+    (test-round-trip #"java\.lang\.String is not a valid type for uuid"
+                     {:path [:uuid-field]
+                      :data "foo"
+                      :topic "bananas"
+                      :clj-data (assoc valid-map :uuid-field "foo")})
+
+    (testing "deseralization errors should contain the topic"
+      (is (thrown-with-msg-and-data? clojure.lang.ExceptionInfo
+                                     #"Deserialization error"
+                                     {:topic "topic"}
+                                     (deserialize (->serde
+                                                   (json/write-str
+                                                    {:type "string",
+                                                     :logicalType "uuid"}))
+                                                  "topic"
+                                                  (serialize (->serde
+                                                              (json/write-str
+                                                               {:type "string"}))
+                                                             "topic"
+                                                             (uuid/to-string uuid/+null+))))))))
 
 (deftest schemaless-test
   (let [serde (->serde nil)]
