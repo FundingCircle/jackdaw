@@ -477,7 +477,7 @@
                                     (avro->clj schema-type avro-data))
                                   (catch Exception e
                                     (let [msg "Deserialization error"]
-                                      (log/info (str msg " for " topic))
+                                      (log/error (str msg " for " topic))
                                       (throw (ex-info msg {:topic topic} e))))))}
 
         clj-deserializer (fn/new-deserializer methods)]
