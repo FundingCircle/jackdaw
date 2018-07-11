@@ -134,6 +134,11 @@
     (.foreach kstream (foreach-action foreach-fn))
     nil)
 
+  (peek
+    [_ peek-fn]
+    (clj-kstream
+     (.peek kstream (foreach-action peek-fn))))
+
   (filter
     [_ predicate-fn]
     (clj-kstream

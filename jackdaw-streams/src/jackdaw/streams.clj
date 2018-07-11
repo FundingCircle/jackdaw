@@ -87,6 +87,12 @@
   ([ktable key-value-mapper-fn topic-config]
    (p/group-by ktable key-value-mapper-fn topic-config)))
 
+(defn peek
+  "Creates a KStream that is the result of calling `value-mapper-fn` on each
+  element of the input stream."
+  [kstream value-mapper-fn]
+  (p/peek kstream peek-fn))
+
 (defn map-values
   "Creates a KStream that is the result of calling `value-mapper-fn` on each
   element of the input stream."

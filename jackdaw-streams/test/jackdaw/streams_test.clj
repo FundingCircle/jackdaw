@@ -149,6 +149,19 @@
       (let [result (mock/collect topology)]
         (is (= ["1:new-2"] result)))))
 
+  (testing "peek"
+    (let [topic-a (mock/topic "topic-a")
+          sentinel (atom false)
+          topology (-> (mock/topology-builder)
+                       (k/kstream topic-a)
+                       (k/peek (fn [_] (reset! sentinel true)))
+                       (mock/build))]
+
+      (mock/send topology topic-a 1 2)
+      (mock/collect topology) ;; Make sure the topology has actually run
+      (is @sentinel)))
+
+
   (testing "print!"
     (let [topic-a (mock/topic "topic-a")
           topology-builder (mock/topology-builder)

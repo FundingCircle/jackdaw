@@ -93,6 +93,12 @@
                      :topic-config (s/? ::topic-config))
         :ret ::kgroupedstream-or-kgroupedtable)
 
+(s/fdef k/peek
+  :args (s/cat :kstream-or-ktable ::kstream-or-ktable
+               :peek-fn ifn?)
+  :ret ::kstream-or-ktable)
+
+
 (s/fdef k/map-values
         :args (s/cat :kstream-or-ktable ::kstream-or-ktable
                      :value-mapper-fn ifn?)

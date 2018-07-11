@@ -73,6 +73,10 @@
     [ktable-or-ktable key-value-mapper-fn topic-config]
     "Groups the records of this KStream/KTable using the key-value-mapper-fn.")
 
+  (peek
+    [kstream-or-ktable peek-fn]
+    "Performs `peek-fn` on each element of the input stream.")
+
   (map-values
     [kstream-or-ktable value-mapper-fn]
     "Creates a KStream that is the result of calling `value-mapper-fn` on each
