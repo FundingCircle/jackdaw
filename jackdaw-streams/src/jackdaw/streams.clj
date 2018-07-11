@@ -90,7 +90,7 @@
 (defn peek
   "Creates a KStream that is the result of calling `value-mapper-fn` on each
   element of the input stream."
-  [kstream value-mapper-fn]
+  [kstream peek-fn]
   (p/peek kstream peek-fn))
 
 (defn map-values

@@ -120,6 +120,12 @@
      config
      (group-by kstream key-value-mapper-fn topic-config)))
 
+  (peek
+    [_ peek-fn]
+    (configured-kstream
+     config
+     (peek kstream peek-fn)))
+
   (map-values
     [_ value-mapper-fn]
     (configured-kstream
