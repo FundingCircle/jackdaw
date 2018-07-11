@@ -1,4 +1,4 @@
-(defproject fundingcircle/jackdaw-test "0.3.19"
+(defproject fundingcircle/jackdaw-test "0.3.20-SNAPSHOT"
   :description "Test fixtures for Kafka, Zookeeper, and Confluent Schema Registry"
 
   :source-paths ["src/clj"]
