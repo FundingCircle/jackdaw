@@ -161,7 +161,6 @@
       (mock/collect topology) ;; Make sure the topology has actually run
       (is @sentinel)))
 
-
   (testing "print!"
     (let [topic-a (mock/topic "topic-a")
           topology-builder (mock/topology-builder)
