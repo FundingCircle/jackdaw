@@ -64,11 +64,11 @@ jobs:
       - checkout
       - *restore-cache
       - run:
-        command: git config --global user.name $GIT_AUTHOR_NAME
+          command: git config --global user.name $GIT_AUTHOR_NAME
       - run:
-        command: git config --global user.email $GIT_AUTHOR_EMAIL
+          command: git config --global user.email $GIT_AUTHOR_EMAIL
       - run:
-        command: lein deploy
+          command: lein deploy
 
 workflows:
   version: 2
