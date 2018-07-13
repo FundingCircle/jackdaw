@@ -1,6 +1,6 @@
 (ns jackdaw.streams
   "Kafka streams protocols."
-  (:refer-clojure :exclude [count map reduce group-by merge filter])
+  (:refer-clojure :exclude [count map reduce group-by merge filter peek])
   (:require [clojure.string :as str]
             [jackdaw.streams.interop :as interop]
             [jackdaw.streams.protocols :as p])
