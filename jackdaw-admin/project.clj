@@ -1,4 +1,4 @@
-(defproject fundingcircle/jackdaw-admin "0.3.21-SNAPSHOT"
+(defproject fundingcircle/jackdaw-admin "0.3.21"
   :description "Tools for kafka administration"
 
   :dependencies [[org.clojure/tools.logging "_"]
