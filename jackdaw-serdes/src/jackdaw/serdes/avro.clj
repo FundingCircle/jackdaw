@@ -447,7 +447,10 @@
   (match-avro? [_ uuid-str]
     (instance? CharSequence uuid-str))
   (avro->clj [_ uuid-utf8]
-    (UUID/fromString (str uuid-utf8)))
+    (try
+      (UUID/fromString (str uuid-utf8))
+      (catch Exception e
+        (str uuid-utf8))))
   (clj->avro [this uuid path]
     (validate-clj! this uuid path "uuid")
     (str uuid)))
