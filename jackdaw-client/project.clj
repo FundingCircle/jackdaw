@@ -3,5 +3,8 @@
 
   :plugins [[fundingcircle/lein-modules "[0.3.0,0.4.0)"]]
 
-  :dependencies [[org.apache.kafka/kafka-clients "_"]
-                 [org.apache.kafka/kafka_2.11 "_"]])
+  :dependencies [[fundingcircle/jackdaw-serdes "_"]
+                 [org.clojure/tools.logging "_"]
+                 [org.apache.kafka/kafka-clients "_"]
+                 [org.apache.kafka/kafka_2.11 "_"]
+                 [org.apache.kafka/kafka-streams "_"]])

@@ -91,8 +91,9 @@
 (defn subscription [^KafkaConsumer consumer]
   (.subscription consumer))
 
-(defn assignment [^KafkaConsumer consumer]
+(defn assignment
   "Get the partitions currently assigned to this consumer"
+  [^KafkaConsumer consumer]
   (.assignment consumer))
 
 (defn ^KafkaConsumer subscribe

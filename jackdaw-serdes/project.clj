@@ -10,7 +10,7 @@
                  [org.apache.kafka/kafka-clients "_"]
                  [org.clojure/clojure "_"]
                  [org.clojure/data.json "_"]
-                 [org.clojure/tools.logging "_"] 
+                 [org.clojure/tools.logging "_"]
                  [com.taoensso/nippy "_"]]
 
   :aot [jackdaw.serdes.fn])

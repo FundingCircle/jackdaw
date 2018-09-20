@@ -6,6 +6,8 @@
   :dependencies [[org.apache.kafka/kafka-streams "_"]]
 
   :profiles {:dev {:dependencies
-                   [[org.apache.kafka/kafka-clients "_" :classifier "test"]
+                   [[clj-time "_"]
+                    [org.apache.kafka/kafka-clients "_" :classifier "test"]
                     [org.apache.kafka/kafka-streams "_" :classifier "test"]
+                    [org.clojure/tools.logging "_"]
                     [junit "_"]]}})
