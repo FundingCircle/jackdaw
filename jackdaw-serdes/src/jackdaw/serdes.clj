@@ -8,64 +8,111 @@
             [jackdaw.serdes.uuid :as uuid])
   (:import org.apache.kafka.common.serialization.Serdes))
 
-(defmulti serde
-  "Returns a serde."
-  (fn [topic-config] (or (::type topic-config) topic-config)))
+(def
+  ^{:const true
+    :doc "A registry of keys to functions of a topic config to a SerDe instance.
 
-(defmethod serde ::avro-key
-  [topic-config]
-  (-> (avro/serde-config :key topic-config)
-      (avro/avro-serde)))
+  This registry is deliberately somewhat incomplete, as users are intended to
+  call `#'resolve` with their own mappings as required. This mapping is not
+  intended to be exhaustive, merely introductory and useful."}
+  +default-serdes+
 
-(defmethod serde ::avro-value
-  [topic-config]
-  (-> (avro/serde-config :value topic-config)
-      (avro/avro-serde)))
+  {::avro-key    #(-> (avro/serde-config :key %)
+                      (avro/avro-serde))
+   ::avro-value  #(-> (avro/serde-config :value %)
+                      (avro/avro-serde))
+   ::edn         (fn [_] (edn/edn-serde))
+   ::json        (fn [_] (json/json-serde))
+   ::uuid        (fn [_] (uuid/uuid-serde))
+   ::byte-array  (fn [_] (Serdes/ByteArray))
+   ::byte-buffer (fn [_] (Serdes/ByteBuffer))
+   ::double      (fn [_] (Serdes/Double))
+   ::integer     (fn [_] (Serdes/Integer))
+   ::long        (fn [_] (Serdes/Long))
+   ::string      (fn [_] (Serdes/String))})
 
-(defmethod serde ::edn
-  [_]
-  (edn/edn-serde))
+(defn serde
+  "Accepts an optional serde ctor `mapping`, a topic configuration
+  specifying a serde or a keyword naming a serde, and an optional
+  `default-ctor` serde constructor.
 
-(defmethod serde ::json
-  [_]
-  (json/json-serde))
+  Looks a serde constructor up out of the mapping and applies the
+  constructor to the given topic configuration (or keyword), returning
+  its result - presumably a serde.
 
-(defmethod serde ::uuid
-  [_]
-  (uuid/uuid-serde))
+  If no mapping is provided, `#'+default-serdes+` is used.
+  
+  If no serde constructor is found in the active mapping, the
+  `default-ctor` is invoked.
 
-(defmethod serde ::byte-array
-  [_]
-  (Serdes/ByteArray))
+  If no `default-ctor` is provided, a function which simply throws
+  `ex-info` indicating a failure to resolve a serde is used."
 
-(defmethod serde ::byte-buffer
-  [_]
-  (Serdes/ByteBuffer))
+  ([topic-or-kw]
+   (serde +default-serdes+
+          topic-or-kw))
 
-(defmethod serde ::double
-  [_]
-  (Serdes/Double))
+  ([mapping topic-or-kw]
+   (serde mapping
+          topic-or-kw
+          (fn [t]
+            (throw (ex-info "Unable to resolve serde for topic"
+                            {:topic topic-or-kw})))))
 
-(defmethod serde ::integer
-  [_]
-  (Serdes/Integer))
-
-(defmethod serde ::long
-  [_]
-  (Serdes/Long))
-
-(defmethod serde ::string
-  [_]
-  (Serdes/String))
+  ([mapping topic-or-kw default-ctor]
+   (let [key (or (::type topic-or-kw)
+                 topic-or-kw)]
+     (when-not (keyword? key)
+       (throw (ex-info "Failed to find a legal mapping `key` for `topic-or-kw`"
+                       {:topic-or-kw topic-or-kw
+                        :key key})))
+     (-> (get mapping key default-ctor)
+         ;; Could also be (apply <> topic-or-kw nil)
+         (.invoke topic-or-kw)))))
 
 (defn resolve
-  "Loads the serdes for a topic spec."
-  [{:keys [jackdaw.topic/key-serde jackdaw.topic/key-schema
-           jackdaw.topic/value-serde jackdaw.topic/value-schema] :as topic-config}]
-  (assoc topic-config
-         ::key-serde (serde (assoc topic-config
-                                   ::type key-serde
-                                   :avro/schema key-schema))
-         ::value-serde (serde (assoc topic-config
-                                     ::type value-serde
-                                     :avro/schema value-schema))))
+  "Loads the key and value serdes for a topic spec, returning an extended topic spec.
+
+  By default, serdes are resolved from `#'+default-serdes+`. The
+  registry is deliberately read-only. Users wanting to override the
+  default registry serdes, or to otherwise bring their own serdes
+  should simply use the 2-arity and provide a serde ctor registry
+  suiting their needs.
+
+  This is done so that no global coherence property is required on
+  serde instances, as it's impossible to enforce such a contract.
+
+  `topic-config` structs are expected to have
+  `:jackdaw.topic/key-serde` and `:jackdaw.topic/value-serde`, both of
+  which should be keywords present in the provided (or default) serde
+  registry mappings.
+
+  In order to support Avro serdes, which are parameterized on the
+  concrete schema to use, `:jackdaw.topic/value-schema` and
+  `:jackdaw.topics/key-schema` may be provided."
+
+  ([topic-config]
+   (resolve +default-serdes+ topic-config))
+  ([registry topic-config]
+   (let [{:keys [jackdaw.topic/key-serde
+                 jackdaw.topic/value-serde]} topic-config]
+
+     (if-not key-serde
+       (throw
+        (IllegalArgumentException.
+         ":jackdaw.topic/key-serde is required in the topic config.")))
+
+     (if-not value-serde
+       (throw
+        (IllegalArgumentException.
+         ":jackdaw.topic/value-serde is required in the topic config.")))
+
+     (assoc topic-config
+            ::key-serde
+            (serde registry
+                   (assoc topic-config
+                          ::type key-serde))
+            ::value-serde
+            (serde registry
+                   (assoc topic-config
+                          ::type value-serde))))))
