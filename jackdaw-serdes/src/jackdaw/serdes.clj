@@ -108,6 +108,12 @@
          ":jackdaw.topic/value-serde is required in the topic config.")))
 
      (assoc topic-config
+            ;; FIXME (reid.mckenzie 2018-09-24):
+            ;;
+            ;;   Passing the desired serde through with `::type` and implicitly
+            ;;   parameterizing the ctor on the thus altered topic config is
+            ;;   fairly janky. There's probably a better way to generally
+            ;;   parameterize serdes, but leaving this as is for now.
             ::key-serde
             (serde registry
                    (assoc topic-config
