@@ -495,11 +495,17 @@
     (Serdes/serdeFrom serializer deserializer)))
 
 (defn serde-config [key-or-value topic-config]
-  (let [{:keys [:schema.registry/client :schema.registry/url
-                :avro/schema]} topic-config]
-    {:avro-schema (parse-schema-str schema)
+  (let [{:keys [schema.registry/client
+                schema.registry/url
+                jackdaw.topic/key-schema
+                jackdaw.topic/value-schema
+                avro/schema]} topic-config
+        key? (case key-or-value
+               :key true
+               :value false)]
+    {:key? key?
      :registry-client (or client (registry/client topic-config 10))
      :registry-url (or url (registry/url topic-config))
-     :key? (case key-or-value
-             :key true
-             :value false)}))
+     :avro-schema (parse-schema-str
+                   (or schema
+                       (if key? key-schema value-schema)))}))
