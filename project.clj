@@ -68,7 +68,7 @@
             :versions
             {fundingcircle :version
              io.confluent "4.0.0"
-             org.apache.kafka "1.0.1"
+             org.apache.kafka "2.0.0"
              arohner/wait-for "1.0.2"
              org.clojure/clojure "1.9.0"
              org.clojure/test.check "0.9.0"

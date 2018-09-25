@@ -53,7 +53,7 @@
    in response to successive calls of the `poll` method"
   [queue]
   (reify Consumer
-    (poll [this ms]
+    (^ConsumerRecords poll [this ^long ms]
       (.poll queue ms TimeUnit/MILLISECONDS))))
 
 (deftest poll-test

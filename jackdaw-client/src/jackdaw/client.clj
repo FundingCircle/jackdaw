@@ -11,6 +11,7 @@
             ProducerRecord
             RecordMetadata
             Producer]
+           java.time.Duration
            [java.util Properties List]
            org.apache.kafka.common.serialization.Serde
            org.apache.kafka.common.TopicPartition))
@@ -125,7 +126,10 @@
 (defn poll
   "Polls kafka for new messages."
   [^Consumer consumer timeout]
-  (mapv consumer-record (.poll consumer timeout)))
+  (let [records (if (int? timeout)
+                  (.poll consumer ^long timeout)
+                  (.poll consumer ^Duration timeout))]
+    (mapv consumer-record records)))
 
 (defn position
   "Get the offset of the next record that will be fetched"
