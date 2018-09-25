@@ -13,8 +13,9 @@
     :doc "A registry of keys to functions of a topic config to a SerDe instance.
 
   This registry is deliberately somewhat incomplete, as users are intended to
-  call `#'resolve` with their own mappings as required. This mapping is not
-  intended to be exhaustive, merely introductory and useful."}
+  call `#'resolve` or `#'serde` as appropriate with their own mappings.
+
+  This mapping is not intended to be exhaustive, merely introductory and useful."}
   +default-serdes+
 
   {::avro-key    #(-> (avro/serde-config :key %)
