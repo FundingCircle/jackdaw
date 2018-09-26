@@ -36,14 +36,6 @@
       (map (fn [[k v]]
              (ConsumerRecord. topic partition offset k v)) data)})))
 
-(defn mock-consumer
-  "Returns a consumer that will return the supplied items (as ConsumerRecords)
-   in response to successive calls of the `poll` method"
-  [queue]
-  (reify Consumer
-    (poll [this ms]
-      (.poll queue ms TimeUnit/MILLISECONDS))))
-
 (deftest consumer-test
   (let [config {"bootstrap.servers" "localhost:9092"
                 "key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
@@ -55,6 +47,14 @@
                 "key.serializer" "org.apache.kafka.common.serialization.StringSerializer"
                 "value.serializer" "org.apache.kafka.common.serialization.StringSerializer"}]
     (is (instance? Producer (client/producer config)))))
+
+(defn mock-consumer
+  "Returns a consumer that will return the supplied items (as ConsumerRecords)
+   in response to successive calls of the `poll` method"
+  [queue]
+  (reify Consumer
+    (poll [this ms]
+      (.poll queue ms TimeUnit/MILLISECONDS))))
 
 (deftest poll-test
   (let [q (LinkedBlockingQueue.)
