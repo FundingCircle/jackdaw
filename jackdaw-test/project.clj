@@ -6,7 +6,8 @@
 
   :plugins [[fundingcircle/lein-modules "[0.3.0,0.4.0)"]]
 
-  :dependencies [[io.confluent/kafka-connect-avro-converter "_"]
+  :dependencies [[fundingcircle/jackdaw-client "_"]
+                 [io.confluent/kafka-connect-avro-converter "_"]
                  [io.confluent/kafka-connect-jdbc "_"]
                  [io.confluent/kafka-schema-registry "_"]
                  [org.apache.kafka/connect-api "_"]
@@ -20,6 +21,5 @@
                                      [environ "_"]
                                      [org.clojure/data.json "_"]
                                      [org.clojure/tools.nrepl "_"]
-                                     [fundingcircle/jackdaw-client "_"]
                                      [org.clojure/java.jdbc "_"]
                                      [org.xerial/sqlite-jdbc "_"]]}})
