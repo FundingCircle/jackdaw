@@ -9,8 +9,7 @@
             [lein-environ "1.1.0"]]
 
   :profiles {:kafka
-             {:dependencies [[fundingcircle/jackdaw-test "_"]
-                             [fundingcircle/jackdaw-client "_"]]}
+             {:dependencies [[fundingcircle/jackdaw-test "_"]]}
 
              :dev [:kafka]
 

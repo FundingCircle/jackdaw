@@ -7,4 +7,6 @@
                  [org.clojure/tools.logging "_"]
                  [org.apache.kafka/kafka-clients "_"]
                  [org.apache.kafka/kafka_2.11 "_"]
-                 [org.apache.kafka/kafka-streams "_"]])
+                 [org.apache.kafka/kafka-streams "_"]]
+  :profiles {:kafka {:dependencies [[fundingcircle/jackdaw-admin "_"]]}
+             :test [:kafka]})
