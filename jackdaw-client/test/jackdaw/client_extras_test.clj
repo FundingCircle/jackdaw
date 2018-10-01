@@ -45,15 +45,34 @@
   {topic-key (arbitrary-string)
    :testother (arbitrary-string)})
 
-(deftest ^:integration record-map-test
-  (testing "record-map predicts the correct partition"
-    (let [topic-key :testkey
-          topic-name  (str "jackdaw-client-extras-test-" (arbitrary-string))
-          topic (test-topic topic-key topic-name)
-          messages (repeatedly 10 #(random-message topic-key))
-          zk (zk/zk-utils zk-connect)]
+(def ^:dynamic *topic-info*
+  {})
+
+(defn generated-topic-and-schema-fixture
+  "used to isolate topic, schema, serdes etc. scaffolding from the thing being  tested"
+  [tests-fn]
+  (let
+    [topic-key :testkey
+     topic-name  (str "jackdaw-client-extras-test-" (arbitrary-string))
+     topic (test-topic topic-key topic-name)
+     zk (zk/zk-utils zk-connect)]
+    (binding [*topic-info*
+              {:topic-key topic-key
+               :topic-name topic-name
+               :topic topic}]
       (topic/create! zk topic-name (:jackdaw.topic/partitions topic) 1 {})
       (try
+       (tests-fn)
+       (finally (topic/delete! zk topic-name))))))
+
+(use-fixtures
+ :once
+ generated-topic-and-schema-fixture)
+
+(deftest ^:integration record-map-test
+  (testing "record-map predicts the correct partition"
+    (let [{:keys [topic-key topic-name topic]} *topic-info*
+          messages (repeatedly 10 #(random-message topic-key))]
        (with-open [p (jc/producer producer-config topic)]
          (doseq [m messages
                  :let [metadata (->> (jc/producer-record topic (topic-key m) m)
@@ -65,6 +84,5 @@
                                           (:partition metadata)
                                           (topic-key m)
                                           m)]]
-           (is (= expected-envelope (jce/record-map topic m)))))
-       (finally (topic/delete! zk topic-name))))))
+           (is (= expected-envelope (jce/record-map topic m))))))))
 
