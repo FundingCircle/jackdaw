@@ -1,7 +1,9 @@
 (ns jackdaw.admin.client
   (:require [clojure.tools.logging :as log]
-            [clojure.spec.alpha :as s])
-  (:import [org.apache.kafka.clients.admin
+            [clojure.spec.alpha :as s]
+            [clojure.walk :refer [stringify-keys]])
+  (:import java.util.Properties
+           [org.apache.kafka.clients.admin
             AdminClient
             Config
             ConfigEntry
