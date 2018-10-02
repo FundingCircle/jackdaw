@@ -5,10 +5,10 @@
            [jackdaw.admin.zk :as zk]
            [jackdaw.client :as jc]
            [jackdaw.client.extras :as jce]
+           [jackdaw.serdes :as serdes]
            [jackdaw.serdes.avro :as avro])
  (:import java.util.UUID
           org.apache.avro.Schema$Parser
-          org.apache.kafka.common.serialization.Serdes$StringSerde
           io.confluent.kafka.schemaregistry.client.MockSchemaRegistryClient))
 
 (def zk-connect "localhost:2181")
@@ -35,7 +35,7 @@
                                         topic-config)]
     {:jackdaw.topic/topic-name topic-name
      :jackdaw.topic/record-key :partition-key
-     :jackdaw.serdes/key-serde (Serdes$StringSerde.)
+     :jackdaw.serdes/key-serde (serdes/serde ::serdes/string)
      :jackdaw.serdes/value-serde (avro/avro-serde serde-config)
      :jackdaw.topic/partition-key test-key
      :jackdaw.topic/partitions 15}))
