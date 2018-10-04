@@ -116,8 +116,8 @@
 
 (deftype FnStreamPartitioner [stream-partitioner-fn]
   StreamPartitioner
-  (partition [this key val partition-count]
-    (stream-partitioner-fn key val partition-count)))
+  (partition [this topic-name key val partition-count]
+    (stream-partitioner-fn topic-name key val partition-count)))
 
 (defn stream-partitioner
   "Packages up a Clojure fn in a kstream partitioner."

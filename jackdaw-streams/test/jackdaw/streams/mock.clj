@@ -8,16 +8,19 @@
   (:import [org.apache.kafka.test KStreamTestDriver MockProcessorSupplier]
            java.nio.file.Files
            java.nio.file.attribute.FileAttribute
-           org.apache.kafka.common.serialization.Serdes))
+           org.apache.kafka.streams.TopologyTestDriver
+           java.util.Properties
+           org.apache.kafka.streams.test.ConsumerRecordFactory
+           [org.apache.kafka.common.serialization Serdes Serializer]))
 
-(defn topology-builder
-  "Creates a mock topology-builder."
+(defn streams-builder
+  "Creates a mock streams-builder."
   ([]
-   (topology-builder (interop/topology-builder)))
-  ([topology-builder]
-   (configured/topology-builder
-    {::topology-builder (k/topology-builder* topology-builder)}
-    topology-builder)))
+   (streams-builder (interop/streams-builder)))
+  ([streams-builder]
+   (configured/streams-builder
+    {::streams-builder (k/streams-builder* streams-builder)}
+    streams-builder)))
 
 (defn build
   "Builds the topology."
@@ -27,7 +30,7 @@
               processor-supplier
               (into-array String []))
     (let [test-driver (doto (KStreamTestDriver.)
-                        (.setUp (-> topology config ::topology-builder)
+                        (.setUp (-> topology config ::streams-builder)
                                 (.toFile
                                  (Files/createTempDirectory
                                   "kstream-test-driver"
@@ -35,6 +38,12 @@
       (-> topology
           (configure ::test-driver test-driver)
           (configure ::processor-supplier processor-supplier)))))
+
+(defn streams-builder->test-driver [streams-builder]
+  (let [topology (-> streams-builder config :jackdaw.streams.mock/streams-builder .build)]
+    (TopologyTestDriver. topology (doto (Properties.)
+                                    (.put "bootstrap.servers" "fake")
+                                    (.put "application.id" (str (java.util.UUID/randomUUID)))))))
 
 (defn send
   "Publishes message to a topic."
@@ -53,11 +62,38 @@
 (defn collect
   "Collects the test results. The test driver returns a list of messages with
   each message formatted like \"key:value\""
-  [topology-builder]
-  (let [processor-supplier (-> topology-builder config ::processor-supplier)
+  [streams-builder]
+  (let [processor-supplier (-> streams-builder config ::processor-supplier)
         processed (into [] (.processed processor-supplier))]
     (.clear (.processed processor-supplier))
     processed))
+
+(defn producer [test-driver {:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
+  (let [record-factory (ConsumerRecordFactory. topic-name
+                                               ^Serializer (.serializer key-serde)
+                                               ^Serializer (.serializer value-serde))]
+    (fn produce!
+      ([[k v]]
+       (.pipeInput test-driver
+                   (.create record-factory k v)))
+      ([[k v] time-ms]
+       (.pipeInput test-driver
+                   (.create record-factory k v time-ms))))))
+
+(defn producer-record [x]
+  [(.key x) (.value x)])
+
+(defn consume [test-driver {:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
+  (let [record (.readOutput test-driver topic-name
+                            (.deserializer key-serde)
+                            (.deserializer value-serde))]
+    (when record
+      (producer-record record))))
+
+(defn build-driver [f]
+  (let [builder (streams-builder)]
+    (f builder)
+    (streams-builder->test-driver builder)))
 
 (defn topic
   "Helper to create a topic."

@@ -1,22 +1,10 @@
 (ns jackdaw.streams.protocols
   "Kafka streams protocols."
-  (:refer-clojure :exclude [count map reduce group-by merge filter peek])
+  (:refer-clojure :exclude [count map merge reduce group-by filter peek])
   (:import org.apache.kafka.streams.KafkaStreams
-           org.apache.kafka.streams.processor.TopologyBuilder))
+           org.apache.kafka.streams.StreamsBuilder))
 
-(defprotocol ITopologyBuilder
-  "ITopologyBuilder provides the Kafka Streams DSL for users to specify
-  computational logic and translates the given logic to a
-  org.apache.kafka.streams.processor.internals.ProcessorTopology."
-  (merge
-    [topology-builder kstreams]
-    "Create a new instance of KStream by merging the given streams.")
-
-  (new-name
-    [topology-builder prefix]
-    "Create a unique processor name used for translation into the processor
-    topology.")
-
+(defprotocol IStreamsBuilder
   (kstream
     [topology-builder topic-config]
     [topology-builder topic-config topic-pattern]
@@ -33,17 +21,17 @@
 
   (global-ktable
     [topology-builder topic-config]
-    [topology-builder topic-config store-name]
-    "Create a GlobalKTable instance for the specified topic.")
+    "Creates a GlobalKTable that will consist of data from the specified
+    topic.")
 
   (source-topics
     [topology-builder]
     "Get the names of topics that are to be consumed by the source nodes created
     by this builder.")
 
-  (topology-builder*
-    [topology-builder]
-    "Returns the underlying kstream builder."))
+  (streams-builder*
+    [streams-builder]
+    "Returns the underlying KStreamBuilder."))
 
 (defprotocol IKStreamBase
   "Shared methods."
@@ -53,10 +41,6 @@
     "Creates a KStream from the result of calling `value-joiner-fn` with
     each element in the KStream and the value in the KTable with the same
     key.")
-
-  (for-each!
-    [kstream-or-ktable foreach-fn]
-    "Performs an action on each element of KStream.")
 
   (filter
     [kstream-or-ktable predicate-fn]
@@ -81,22 +65,6 @@
     [kstream-or-ktable value-mapper-fn]
     "Creates a KStream that is the result of calling `value-mapper-fn` on each
     element of the input stream.")
-
-  (print!
-    [kstream-or-ktable]
-    [kstream-or-ktable topic-config]
-    "Prints the elements of the stream to *out*.")
-
-  (through
-    [kstream-or-ktable topic-config]
-    [kstream-or-ktable partition-fn topic-config]
-    "Materializes a stream to a topic, and returns a new KStream that will
-    consume messages from the topic.")
-
-  (to!
-    [kstream-or-ktable topic-config]
-    [kstream-or-ktable partition-fn topic-config]
-    "Materializes a stream to a topic.")
 
   (write-as-text!
     [kstream-or-ktable file-path]
@@ -150,6 +118,23 @@
     in this stream into zero or more values with the same key in the new
     stream.")
 
+  (for-each!
+    [kstream foreach-fn]
+    "Performs an action on each element of KStream.")
+
+  (print!
+    [kstream]
+    "Prints the elements of the stream to *out*.")
+
+  (through
+    [kstream topic-config]
+    "Materializes a stream to a topic, and returns a new KStream that will
+    consume messages from the topic.")
+
+  (to!
+    [kstream topic-config]
+    "Materializes a stream to a topic.")
+
   (group-by-key
     [kstream]
     [kstream topic-config]
@@ -171,6 +156,10 @@
     [kstream key-value-mapper-fn]
     "Create a new instance of KStream by transforming each element in this
     stream into a different element in the new stream.")
+
+  (merge
+    [kstream other]
+    "Creates a KStream that has the records from both streams.")
 
   (outer-join-windowed
     [kstream other-kstream value-joiner-fn windows]
@@ -285,20 +274,8 @@
     "Returns the underlying KGroupedTable object."))
 
 (defprotocol IKGroupedStream
-  "KGroupedStream is an abstraction of a grouped record stream of key-value pairs usually grouped on a different key than the original stream key
-It is an intermediate representation of a KStream before an aggregation is applied to the new partitions resulting in a new KTable."
-  (aggregate-windowed
-    [kgroupedstream initializer-fn aggregator-fn windows topic-config])
-
-  (count-windowed
-    [kgroupedstream windows topic-config]
-    "Count number of records of this stream by the selected key into a new
-    instance of KTable.")
-
-  (reduce-windowed
-    [kgroupedstream reducer-fn windows topic-config]
-    "Combine updating values of this stream by the selected key into a new
-    instance of KTable.")
+  "KGroupedStream is an abstraction of a grouped stream."
+  (windowed-by [kgroupedstream window])
 
   (kgroupedstream*
     [kgroupedstream]

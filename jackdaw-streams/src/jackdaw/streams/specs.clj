@@ -3,7 +3,7 @@
             [jackdaw.streams :as k]
             [jackdaw.streams.lambdas :as lambdas]
             [jackdaw.streams.protocols
-             :refer [IGlobalKTable IKGroupedTable IKGroupedStream IKStream IKTable ITopologyBuilder]])
+             :refer [IStreamsBuilder IGlobalKTable IKGroupedTable IKGroupedStream IKStream IKTable]])
   (:import org.apache.kafka.common.serialization.Serde
            org.apache.kafka.streams.kstream.JoinWindows))
 
@@ -14,7 +14,7 @@
 (def kstream? (partial satisfies? IKStream))
 (def ktable? (partial satisfies? IKTable))
 (def serde? (partial instance? Serde))
-(def topology-builder? (partial satisfies? ITopologyBuilder))
+(def streams-builder? (partial satisfies? IStreamsBuilder))
 
 (s/def :jackdaw.topic/topic-name string?)
 (s/def :jackdaw.serdes/key-serde serde?)
@@ -33,36 +33,36 @@
   (s/or :kgroupedstream kgroupedstream?
         :kgroupedtable kgroupedtable?))
 
-;; ITopologyBuilder
+;; IStreamsBuilder
 
 (s/fdef k/kstreams
-        :args (s/cat :topology-builder topology-builder?
+        :args (s/cat :streams-builder streams-builder?
                      :topic-configs ::topic-configs)
         :ret kstream?)
 
 (s/fdef k/merge
-        :args (s/cat :topology-builder topology-builder?
+        :args (s/cat :streams-builder streams-builder?
                      :kstreams ::kstreams)
         :ret kstream?)
 
 (s/fdef k/ktable
-        :args (s/cat :topology-builder topology-builder?
+        :args (s/cat :streams-builder streams-builder?
                      :topic-config ::topic-config)
         :ret ktable?)
 
 (s/fdef k/global-ktable
-        :args (s/cat :topology-builder topology-builder?
+        :args (s/cat :streams-builder streams-builder?
                      :topic-config ::topic-config
                      :store-name (s/? string?))
         :ret global-ktable?)
 
 (s/fdef k/source-topics
-        :args (s/cat :topology-builder topology-builder?)
+        :args (s/cat :streams-builder streams-builder?)
         :ret (s/coll-of string? :kind set?))
 
-(s/fdef k/topology-builder*
-        :args (s/cat :topology-builder topology-builder?)
-        :ret topology-builder?)
+(s/fdef k/streams-builder*
+        :args (s/cat :streams-builder streams-builder?)
+        :ret streams-builder?)
 
 ;; IKStreamBase
 
@@ -104,26 +104,6 @@
                      :value-mapper-fn ifn?)
         :ret ::kstream-or-ktable)
 
-(s/fdef k/print!
-        :args (s/cat :kstream-or-ktable ::kstream-or-ktable
-                     :topic-config (s/? ::topic-config)))
-
-(s/fdef k/through
-        :args (s/cat :kstream-or-ktable ::kstream-or-ktable
-                     :partition-fn (s/? ifn?)
-                     :topic-config ::topic-config)
-        :ret ::kstream-or-ktable)
-
-(s/fdef k/to!
-        :args (s/cat :kstream-or-ktable ::kstream-or-ktable
-                     :partition-fn (s/? ifn?)
-                     :topic-config ::topic-config))
-
-(s/fdef k/write-as-text!
-        :args (s/cat :kstream-or-ktable ::kstream-or-ktable
-                     :file-path string?
-                     :topic-config (s/? ::topic-config)))
-
 ;; IKStream
 
 (s/fdef k/branch
@@ -135,6 +115,19 @@
         :args (s/cat :kstream kstream?
                      :key-value-mapper-fn ifn?)
         :ret kstream?)
+
+(s/fdef k/print!
+        :args (s/cat :kstream kstream?
+                     :topic-config (s/? ::topic-config)))
+
+(s/fdef k/through
+        :args (s/cat :kstream kstream?
+                     :topic-config ::topic-config)
+        :ret kstream?)
+
+(s/fdef k/to!
+        :args (s/cat :kstream kstream?
+                     :topic-config ::topic-config))
 
 (s/fdef k/flat-map-values
         :args (s/cat :kstream kstream?
@@ -247,7 +240,7 @@
         :args (s/cat :kgrouped ::kgroupedstream-or-kgroupedtable
                      :initializer-fn ::lambdas/initializer-fn
                      :adder-fn ::lambdas/aggregator-fn
-                     :subtractor-fn ::lambdas/aggregator-fn
+                     :subtractor-fn (s/? ::lambdas/aggregator-fn)
                      :topic-config ::topic-config)
         :ret ktable?)
 
@@ -258,7 +251,6 @@
 
 (s/fdef k/reduce
         :args (s/cat ::kgrouped ::kgroupedstream-or-kgroupedtable
-                     :initializer-fn ::lambdas/initializer-fn
                      :adder-or-reducer-fn ifn?
                      :subtractor-fn (s/? ifn?)
                      :topic-config ::topic-config)

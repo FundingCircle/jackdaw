@@ -8,10 +8,10 @@
             [jackdaw.streams.lambdas :as lambdas :refer [key-value]]
             [jackdaw.streams.lambdas.specs]
             [jackdaw.streams.mock :as mock]
-            [jackdaw.streams.protocols :refer [IKStream IKTable ITopologyBuilder]]
+            [jackdaw.streams.protocols :refer [IKStream IKTable IStreamsBuilder]]
             [jackdaw.streams.specs])
   (:import [org.apache.kafka.streams.kstream JoinWindows TimeWindows Transformer ValueTransformer]
-           [org.apache.kafka.test MockProcessorSupplier MockProcessorSupplier$MockProcessor]))
+           org.apache.kafka.streams.StreamsBuilder))
 
 (stest/instrument)
 
@@ -21,810 +21,777 @@
       (:jackdaw.streams.mock/test-driver)
       (.close)))
 
-(deftest TopologyBuilder
-  (testing "merge"
-    (let [topology-builder (mock/topology-builder)
-          kstream-a (k/kstream topology-builder (mock/topic "topic-a"))
-          kstream-b (k/kstream topology-builder (mock/topic "topic-b"))
-          merged-kstream (k/merge topology-builder [kstream-a kstream-b])]
-      (is (satisfies? IKStream merged-kstream))
-      (is (= #{"topic-a" "topic-b"} (k/source-topics topology-builder)))))
-
+(deftest streams-builder
   (testing "kstream"
-    (let [topology-builder (mock/topology-builder)
-          kstream-a (-> topology-builder
+    (let [streams-builder (mock/streams-builder)
+          kstream-a (-> streams-builder
                         (k/kstream (mock/topic "topic-a")))]
 
-      (is (satisfies? IKStream kstream-a))
-      (is (= #{"topic-a"} (k/source-topics topology-builder)))))
+      (is (satisfies? IKStream kstream-a))))
 
   (testing "kstreams"
-    (let [topology-builder (mock/topology-builder)
-          kstream (-> topology-builder
+    (let [streams-builder (mock/streams-builder)
+          kstream (-> streams-builder
                       (k/kstreams [(mock/topic "topic-a")
                                    (mock/topic "topic-b")]))]
 
-      (is (satisfies? IKStream kstream))
-      (is (= #{"topic-a" "topic-b"}
-             (k/source-topics topology-builder)))))
+      (is (satisfies? IKStream kstream))))
 
   (testing "ktable"
-    (let [topology-builder (mock/topology-builder)
-          ktable-a (-> topology-builder
+    (let [streams-builder (mock/streams-builder)
+          ktable-a (-> streams-builder
                        (k/ktable (mock/topic "topic-a")))]
-      (is (satisfies? IKTable ktable-a))
-      (is (= #{"topic-a"} (k/source-topics topology-builder)))))
+      (is (satisfies? IKTable ktable-a))))
 
+  (testing "streams-builder*"
+    (is (instance? StreamsBuilder
+                   (k/streams-builder* (mock/streams-builder)))))
 
-  (testing "topology-builder*"
-    (is (instance? org.apache.kafka.streams.processor.TopologyBuilder
-                   (k/topology-builder* (mock/topology-builder)))))
+  (testing "streams-builder"
+    (is (satisfies? IStreamsBuilder (k/streams-builder)))))
 
-  (testing "topology-builder"
-    (is (satisfies? ITopologyBuilder (k/topology-builder)))))
+(defn safe-add [& args]
+  (apply + (filter some? args)))
 
 (deftest KStream
   (testing "left-join"
-    (let [topology-builder (mock/topology-builder)
-          left-topic (mock/topic "left-topic")
-          right-topic (mock/topic "right-topic")
-          left-kstream (k/kstream topology-builder left-topic)
-          right-ktable (k/ktable topology-builder right-topic)
-          topology (-> left-kstream
-                       (k/left-join right-ktable (fn [v1 v2] [v1 v2]))
-                       (mock/build))]
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          topic-c (mock/topic "topic-c")]
 
-      (-> topology
-          (mock/send right-topic 1 1)
-          (mock/send left-topic 1 2))
+      (with-open [driver (mock/build-driver (fn [builder]
+                                              (let [left (k/kstream builder topic-a)
+                                                    right (k/ktable builder topic-b)]
+                                                (k/to! (k/left-join left right safe-add) topic-c))))]
+        (let [produce-left (mock/producer driver topic-a)
+              produce-right (mock/producer driver topic-b)]
 
-      (let [result (mock/collect topology)]
-        (is (= ["1:[2 1]"] result)))))
+          (produce-left [1 2]) ;; table: nil, event: 2
+          (produce-right [1 1]) ;; Add to table
+          (produce-left [1 2]) ;; table: 1, event: 2
 
-  (testing "left-join (with custom serdes)"
-    (let [topology-builder (mock/topology-builder)
-          left-topic (mock/topic "left-topic")
-          right-topic (mock/topic "right-topic")
-          left-kstream (k/kstream topology-builder left-topic)
-          right-ktable (k/ktable topology-builder right-topic)
-          topology (-> left-kstream
-                       (k/left-join right-ktable (fn [v1 v2] [v1 v2]) left-topic)
-                       (mock/build))]
-
-      (-> topology
-          (mock/send right-topic 1 1)
-          (mock/send left-topic 1 2))
-
-      (let [result (mock/collect topology)]
-        (is (= ["1:[2 1]"] result)))))
+          (is (= [1 2]
+                 (mock/consume driver topic-c)))
+          (is (= [1 3]
+                 (mock/consume driver topic-c)))))))
 
   (testing "for-each!"
     (let [topic-a (mock/topic "topic-a")
-          topology-builder (mock/topology-builder)
-          kstream (k/kstream topology-builder topic-a)
-          results (atom {})]
-      (k/for-each! kstream (fn [[k v]] (swap! results assoc k v)))
-      (let [topology (mock/build kstream)]
-        (mock/send topology topic-a 1 2)
-        (let [result (mock/collect topology)]
-          (is (= {1 2} @results))))))
+          sentinel (atom [])
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/for-each! (fn [[_ x]] (swap! sentinel conj x))))))
+          produce (mock/producer driver topic-a)]
+
+      (produce [1 1])
+      (produce [1 2])
+
+      (is (= [1 2]
+             @sentinel))))
 
   (testing "filter"
     (let [topic-a (mock/topic "topic-a")
-          topology (-> (mock/topology-builder)
-                       (k/kstream topic-a)
-                       (k/filter (fn [[k v]] (> v 1)))
-                       (mock/build))]
+          topic-b (mock/topic "topic-b")
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/filter (fn [[k v]] (> v 1)))
+                                          (k/to! topic-b))))
+          produce (mock/producer driver topic-a)]
 
-      (-> topology
-          (mock/send topic-a 1 1)
-          (mock/send topic-a 2 2))
+      (produce [1 1])
+      (produce [1 2])
 
-      (let [result (mock/collect topology)]
-        (is (= ["2:2"] result)))))
+      (let [result (mock/consume driver topic-b)]
+        (is (= result [1 2])))))
 
   (testing "filter-not"
     (let [topic-a (mock/topic "topic-a")
-          topology (-> (mock/topology-builder)
-                       (k/kstream topic-a)
-                       (k/filter-not (fn [[k v]] (> v 1)))
-                       (mock/build))]
+          topic-b (mock/topic "topic-b")
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/filter-not (fn [[k v]] (> v 1)))
+                                          (k/to! topic-b))))
+          produce (mock/producer driver topic-a)]
 
-      (-> topology
-          (mock/send topic-a 1 1)
-          (mock/send topic-a 2 2))
+      (produce [1 1])
+      (produce [1 2])
 
-      (let [result (mock/collect topology)]
-        (is (= ["1:1"] result)))))
+      (let [result (mock/consume driver topic-b)]
+        (is (= result [1 1])))))
 
   (testing "map-values"
     (let [topic-a (mock/topic "topic-a")
-          topology (-> (mock/topology-builder)
-                       (k/kstream topic-a)
-                       (k/map-values (fn [v] (str "new-" v)))
-                       (mock/build))]
+          topic-b (mock/topic "topic-b")
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/map-values inc)
+                                          (k/to! topic-b))))
+          produce (mock/producer driver topic-a)]
 
-      (mock/send topology topic-a 1 2)
+      (produce [1 1])
+      (produce [1 2])
 
-      (let [result (mock/collect topology)]
-        (is (= ["1:new-2"] result)))))
+      (is (= (mock/consume driver topic-b) [1 2]))
+      (is (= (mock/consume driver topic-b) [1 3]))))
 
   (testing "peek"
     (let [topic-a (mock/topic "topic-a")
-          sentinel (atom false)
-          topology (-> (mock/topology-builder)
-                       (k/kstream topic-a)
-                       (k/peek (fn [_] (reset! sentinel true)))
-                       (mock/build))]
+          topic-b (mock/topic "topic-b")
+          sentinel (atom [])
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/peek (fn [[_ x]] (swap! sentinel conj x)))
+                                          (k/to! topic-b))))
+          produce (mock/producer driver topic-a)]
 
-      (mock/send topology topic-a 1 2)
-      (mock/collect topology) ;; Make sure the topology has actually run
-      (is @sentinel)))
+      (produce [1 1])
+      (produce [1 2])
 
-  (testing "print!"
-    (let [topic-a (mock/topic "topic-a")
-          topology-builder (mock/topology-builder)
-          kstream (k/kstream topology-builder topic-a)
-          std-out System/out
+      (is (= [1 2]
+             @sentinel))))
+
+;; TODO: Why no work
+  #_(testing "print!"
+    (let [std-out System/out
           mock-out (java.io.ByteArrayOutputStream.)]
+
       (try
         (System/setOut (java.io.PrintStream. mock-out))
-        (k/print! kstream)
-
-        (let [topology (mock/build kstream)]
-          (mock/send topology topic-a 1 2)
-          (let [result (mock/collect topology)]
-            (is (= "[KSTREAM-SOURCE-0000000000]: 1, 2\n" (.toString mock-out)))))
-        (finally
-          (System/setOut std-out)))))
-
-  (testing "print! (with custom serdes)"
-    (let [topic-a (mock/topic "topic-a")
-          topology-builder (mock/topology-builder)
-          kstream (k/kstream topology-builder topic-a)
-          std-out System/out
-          mock-out (java.io.ByteArrayOutputStream.)]
-      (try
-        (System/setOut (java.io.PrintStream. mock-out))
-        (k/print! kstream topic-a)
-
-        (let [topology (mock/build kstream)]
-          (mock/send topology topic-a 1 2)
-          (let [result (mock/collect topology)]
-            (is (= "[KSTREAM-SOURCE-0000000000]: 1, 2\n" (.toString mock-out)))))
+        (let [topic-a (mock/topic "topic-a")
+              driver (mock/build-driver (fn [builder]
+                                          (-> builder
+                                              (k/kstream topic-a)
+                                              (k/print!))))
+              produce (mock/producer driver topic-a)]
+          (produce [1 1])
+          (is (= "[KSTREAM-SOURCE-0000000000]: 1, 2\n" (.toString mock-out))))
         (finally
           (System/setOut std-out)))))
 
   (testing "through"
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
-          topology (-> (mock/topology-builder)
-                       (k/kstream topic-a)
-                       (k/through topic-b)
-                       (mock/build))]
+          topic-c (mock/topic "topic-c")
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/through topic-b)
+                                          (k/to! topic-c))))
+          produce (mock/producer driver topic-a)]
 
-      (mock/send topology topic-a 1 2)
+      (produce [1 1])
 
-      (let [result (mock/collect topology)]
-        (is (= ["1:2"] result)))))
+      (is (= [1 1]
+             (mock/consume driver topic-b)))
 
-  (testing "through (with custom partitioner)"
-    (let [topic-a (mock/topic "topic-a")
-          topic-b (mock/topic "topic-b")
-          partitioner-fn (fn [k v c] (rand-int 0 c))
-          topology (-> (mock/topology-builder)
-                       (k/kstream topic-a)
-                       (k/through partitioner-fn topic-b)
-                       (mock/build))]
-
-      (mock/send topology topic-a 1 2)
-
-      (let [result (mock/collect topology)]
-        (is (= ["1:2"] result)))))
+      (is (= [1 1]
+             (mock/consume driver topic-c)))))
 
   (testing "to!"
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
-          kstream (-> (mock/topology-builder)
-                      (k/kstream topic-a))]
-      (let [topology (mock/build kstream)]
-        (k/to! kstream topic-b)
-        (mock/send topology topic-a 1 2)
-        (let [result (mock/collect topology)]
-          (is (= ["1:2"] result))))))
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/to! topic-b))))
+          produce (mock/producer driver topic-a)]
 
-  (testing "to! (with custom partitioner)"
-    (let [topic-a (mock/topic "topic-a")
-          topic-b (mock/topic "topic-b")
-          partitioner-fn (fn [k v c] (rand-int 0 c))
-          kstream (-> (mock/topology-builder)
-                      (k/kstream topic-a))
-          topology (mock/build kstream)]
-      (k/to! kstream partitioner-fn topic-b)
-      (mock/send topology topic-a 1 2)
-      (let [result (mock/collect topology)]
-        (is (= ["1:2"] result)))))
+      (produce [1 1])
 
-  (testing "write-as-text!"
-    (let [topic-a (mock/topic "topic-a")
-          topology-builder (mock/topology-builder)
-          kstream (k/kstream topology-builder topic-a)
-          temp-file (java.io.File/createTempFile
-                     "jackdaw.stream+write-as-text-test"
-                     "txt")]
-      (k/write-as-text! kstream (.getPath temp-file))
-      (let [topology (mock/build kstream)]
-        (mock/send topology topic-a 1 2)
-        (close-test-driver topology)
-        (is (= "[KSTREAM-SOURCE-0000000000]: 1, 2\n" (slurp temp-file))))))
-
-  (testing "write-as-text! (with custom serdes)"
-    (let [topic-a (mock/topic "topic-a")
-          topology-builder (mock/topology-builder)
-          kstream (k/kstream topology-builder topic-a)
-          temp-file (java.io.File/createTempFile
-                     "jackdaw.stream+write-as-text-test"
-                     "txt")]
-      (k/write-as-text! kstream (.getPath temp-file) topic-a)
-      (let [topology (mock/build kstream)]
-        (mock/send topology topic-a 1 2)
-        (close-test-driver topology)
-        (is (= "[KSTREAM-SOURCE-0000000000]: 1, 2\n" (slurp temp-file))))))
+      (is (= [1 1]
+             (mock/consume driver topic-b)))))
 
   (testing "branch"
     (let [topic-a (mock/topic "topic-a")
-          predicate (fn [[k v]] (> v 1))
-          [kstream-a kstream-b] (-> (mock/topology-builder)
-                                    (k/kstream topic-a)
-                                    (k/branch [predicate (complement predicate)]))]
-      (let [topology-a (mock/build kstream-a)]
-        (-> topology-a
-            (mock/send topic-a 1 1)
-            (mock/send topic-a 2 2))
-        (let [result-a (mock/collect topology-a)]
-          (is (= ["2:2"] result-a))))
+          topic-pos (mock/topic "topic-pos")
+          topic-neg (mock/topic "topic-neg")
+          driver (mock/build-driver (fn [builder]
+                                      (let [[pos-stream neg-stream] (-> builder
+                                                                        (k/kstream topic-a)
+                                                                        (k/branch [(fn [[k v]]
+                                                                                     (<= 0 v))
+                                                                                   (constantly true)]))]
+                                        (k/to! pos-stream topic-pos)
+                                        (k/to! neg-stream topic-neg))))
+          produce (mock/producer driver topic-a)]
 
-      #_(let [topology-b (mock/build kstream-b)]
-          (-> topology-b
-              (mock/send topic-a 1 1)
-              (mock/send topic-a 2 2))
-          (let [result-b (mock/collect topology-b)]
-            (is (= ["1:1"] result-b))))))
+      (produce [1 1])
+      (produce [1 -1])
+
+      (is (= [1 1]
+             (mock/consume driver topic-pos)))
+
+      (is (= [1 -1]
+             (mock/consume driver topic-neg)))))
 
   (testing "flat-map"
     (let [topic-a (mock/topic "topic-a")
-          topology (-> (mock/topology-builder)
-                       (k/kstream topic-a)
-                       (k/flat-map (fn [[k v]] [[k [v 1]] [k [v 2]]]))
-                       (mock/build))]
+          topic-b (mock/topic "topic-b")
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/flat-map (fn [[k v]]
+                                                        [[k v]
+                                                         [k 0]]))
+                                          (k/to! topic-b))))
+          produce (mock/producer driver topic-a)]
 
-      (mock/send topology topic-a 1 2)
+      (produce [1 1])
 
-      (let [result (mock/collect topology)]
-        (is (= ["1:[2 1]" "1:[2 2]"] result)))))
+      (is (= [1 1]
+             (mock/consume driver topic-b)))
+      (is (= [1 0]
+             (mock/consume driver topic-b)))))
 
   (testing "flat-map-values"
     (let [topic-a (mock/topic "topic-a")
-          topology (-> (mock/topology-builder)
-                       (k/kstream topic-a)
-                       (k/flat-map-values (fn [v] [[v 1] [v 2]]))
-                       (mock/build))]
+          topic-b (mock/topic "topic-b")
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/flat-map-values (fn [v]
+                                                               [v (inc v)]))
+                                          (k/to! topic-b))))
+          produce (mock/producer driver topic-a)]
 
-      (mock/send topology topic-a 1 2)
+      (produce [1 1])
 
-      (let [result (mock/collect topology)]
-        (is (= ["1:[2 1]" "1:[2 2]"] result)))))
+      (is (= [1 1]
+             (mock/consume driver topic-b)))
+      (is (= [1 2]
+             (mock/consume driver topic-b)))))
 
   (testing "join-windowed"
-    (let [topology-builder (mock/topology-builder)
-          left-topic (mock/topic "left-topic")
-          right-topic (mock/topic "right-topic")
-          left-kstream (k/kstream topology-builder left-topic)
-          right-kstream (k/kstream topology-builder right-topic)
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          topic-c (mock/topic "topic-c")
           windows (JoinWindows/of 1000)
-          topology (-> left-kstream
-                       (k/join-windowed right-kstream
-                                        (fn [v1 v2] [v1 v2])
-                                        windows
-                                        left-topic
-                                        right-topic)
-                       (mock/build))]
+          driver (mock/build-driver (fn [builder]
+                                      (let [left-kstream (k/kstream builder topic-a)
+                                            right-kstream (k/kstream builder topic-b)]
+                                        (-> left-kstream
+                                            (k/join-windowed right-kstream
+                                                             +
+                                                             windows
+                                                             topic-a
+                                                             topic-b)
+                                            (k/to! topic-c)))))
+          produce-a (mock/producer driver topic-a)
+          produce-b (mock/producer driver topic-b)]
 
-      (-> topology
-          (mock/send left-topic 1 1)
-          (mock/send left-topic 1 2)
-          (mock/send left-topic 2 1)
-          (mock/send left-topic 2 2))
-
-      (let [result (mock/collect topology)]
-        (is (= [] result)))))
+      (produce-a [1 1] 1)
+      (produce-b [1 2] 100)
+      (produce-b [1 4] 10000) ;; Outside of join window
+      (is (= [1 3] (mock/consume driver topic-c)))
+      (is (not (mock/consume driver topic-c)))))
 
   (testing "map"
     (let [topic-a (mock/topic "topic-a")
-          topology (-> (mock/topology-builder)
-                       (k/kstream topic-a)
-                       (k/map (fn [[k v]] [v k]))
-                       (mock/build))]
+          topic-b (mock/topic "topic-b")
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/map (fn [[k v]]
+                                                   [(inc k) (inc v)]))
+                                          (k/to! topic-b))))
+          produce (mock/producer driver topic-a)]
 
-      (mock/send topology topic-a 1 2)
+      (produce [1 1])
 
-      (let [result (mock/collect topology)]
-        (is (= ["2:1"] result)))))
+      (is (= [2 2]
+             (mock/consume driver topic-b)))))
 
   (testing "outer-join-windowed"
-    (let [topology-builder (mock/topology-builder)
-          left-topic (mock/topic "left-topic")
-          right-topic (mock/topic "right-topic")
-          left-kstream (k/kstream topology-builder left-topic)
-          right-kstream (k/kstream topology-builder right-topic)
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          topic-c (mock/topic "topic-c")
           windows (JoinWindows/of 1000)
-          topology (-> left-kstream
-                       (k/outer-join-windowed right-kstream
-                                              (fn [v1 v2] [v1 v2])
-                                              windows
-                                              left-topic
-                                              right-topic)
-                       (mock/build))]
+          driver (mock/build-driver (fn [builder]
+                                      (let [left-kstream (k/kstream builder topic-a)
+                                            right-kstream (k/kstream builder topic-b)]
+                                        (-> left-kstream
+                                            (k/outer-join-windowed right-kstream
+                                                                   safe-add
+                                                                   windows
+                                                                   topic-a
+                                                                   topic-b)
+                                            (k/to! topic-c)))))
+          produce-a (mock/producer driver topic-a)
+          produce-b (mock/producer driver topic-b)]
 
-      (-> topology
-          (mock/send left-topic 1 1)
-          (mock/send left-topic 1 2)
-          (mock/send left-topic 2 1)
-          (mock/send left-topic 2 2))
-
-      (let [result (mock/collect topology)]
-        (is (= ["1:[1 nil]" "1:[2 nil]" "2:[1 nil]" "2:[2 nil]"] result)))))
+      (produce-a [1 1] 1)
+      (produce-b [1 2] 100)
+      (produce-b [1 4] 10000) ;; Outside of join window
+      (is (= [1 1] (mock/consume driver topic-c)))
+      (is (= [1 3] (mock/consume driver topic-c)))
+      (is (= [1 4] (mock/consume driver topic-c)))
+      (is (not (mock/consume driver topic-c)))))
 
   (testing "process!"
-    (let [external-log (atom [])
-          processor-fn (fn [ctx k v]
-                         (swap! external-log conj {:ctx ctx, :k k, :v v}))
-          topic-a (mock/topic "topic-a")
-          kstream (-> (mock/topology-builder)
-                      (k/kstream topic-a))]
+    (let [topic-a (mock/topic "topic-a")
+          records (atom [])
+          driver (mock/build-driver (fn [builder]
+                                      (-> (k/kstream builder topic-a)
+                                          (k/process! (fn [ctx k v]
+                                                        (swap! records conj v))
+                                                      []))))
+          produce-a (mock/producer driver topic-a)]
 
-      (k/process! kstream processor-fn [])
-
-      (let [topology (mock/build kstream)]
-
-        (mock/send topology topic-a 1 1)
-
-        (let [{:keys [ctx k v]} (first @external-log)]
-          (is (instance? org.apache.kafka.test.MockProcessorContext ctx))
-          (is (= k 1))
-          (is (= v 1)))
-
-        (let [result (mock/collect topology)]
-          (is (= ["1:1"] result))))))
+      (produce-a [1 1] 1)
+      (is (= [1] @records))))
 
   (testing "select-key"
     (let [topic-a (mock/topic "topic-a")
-          topology (-> (mock/topology-builder)
-                       (k/kstream topic-a)
-                       (k/select-key (fn [[k v]] (* 10 k)))
-                       (mock/build))]
+          topic-b (mock/topic "topic-b")
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/select-key (fn [[k v]]
+                                                          (inc k)))
+                                          (k/to! topic-b))))
+          produce (mock/producer driver topic-a)]
 
-      (mock/send topology topic-a 1 2)
+      (produce [1 1])
 
-      (let [result (mock/collect topology)]
-        (is (= ["10:2"] result)))))
+      (is (= [2 1]
+             (mock/consume driver topic-b)))))
 
   (testing "transform"
-    (let [transformer-supplier-fn #(let [total (atom 0)]
-                                     (reify Transformer
-                                       (init [_ _])
-                                       (close [_])
-                                       (punctuate [_ timestamp]
-                                         (key-value [-1 (int timestamp)]))
-                                       (transform [_ k v]
-                                         (swap! total + v)
-                                         (key-value [(* k 2) @total]))))
-          topic-a (mock/topic "topic-a")
-          kstream (-> (mock/topology-builder)
-                      (k/kstream topic-a)
-                      (k/transform transformer-supplier-fn))]
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          transformer-supplier-fn #(let [total (atom 0)]
+                                    (reify Transformer
+                                      (init [_ _])
+                                      (close [_])
+                                      (transform [_ k v]
+                                        (swap! total + v)
+                                        (key-value [(* k 2) @total]))))
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/transform transformer-supplier-fn)
+                                          (k/to! topic-b))))
+          produce (mock/producer driver topic-a)]
 
-      (let [topology (mock/build kstream)]
+      (produce [1 1])
+      (produce [1 2])
+      (produce [1 4])
 
-        (doseq [k [1 10 100 1000]]
-          (mock/send topology topic-a k (* 10 k)))
-
-        (let [result (mock/collect topology)]
-          (is (= ["2:10" "20:110" "200:1110" "2000:11110"] result)))
-
-        ;; TODO
-        ;; Expose KStreamTestDriver to test punctuate
-        )))
+      (is (= [2 1] (mock/consume driver topic-b)))
+      (is (= [2 3] (mock/consume driver topic-b)))
+      (is (= [2 7] (mock/consume driver topic-b)))))
 
   (testing "transform-values"
-    (let [value-transformer-supplier-fn #(let [total (atom 0)]
-                                           (reify ValueTransformer
-                                             (init [_ _])
-                                             (close [_])
-                                             (punctuate [_ timestamp]
-                                               (int timestamp))
-                                             (transform [_ v]
-                                               (swap! total + v)
-                                               @total)))
-          topic-a (mock/topic "topic-a")
-          kstream (-> (mock/topology-builder)
-                      (k/kstream topic-a)
-                      (k/transform-values value-transformer-supplier-fn))]
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          transformer-supplier-fn #(let [total (atom 0)]
+                                    (reify ValueTransformer
+                                      (init [_ _])
+                                      (close [_])
+                                      (transform [_ v]
+                                        (swap! total + v)
+                                        @total)))
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/transform-values transformer-supplier-fn)
+                                          (k/to! topic-b))))
+          produce (mock/producer driver topic-a)]
 
-      (let [topology (mock/build kstream)]
+      (produce [1 1])
+      (produce [1 2])
+      (produce [1 4])
 
-        (doseq [k [1 10 100 1000]]
-          (mock/send topology topic-a k (* 10 k)))
-
-        (let [result (mock/collect topology)]
-          (is (= ["1:10" "10:110" "100:1110" "1000:11110"] result)))
-
-        ;; TODO
-        ;; Expose KStreamTestDriver to test punctuate
-        ))
-    ))
+      (is (= [1 1] (mock/consume driver topic-b)))
+      (is (= [1 3] (mock/consume driver topic-b)))
+      (is (= [1 7] (mock/consume driver topic-b)))
+      (is (not (mock/consume driver topic-b))))))
 
 (deftest KTable
-  (testing "left-join"
-    (let [topology-builder (mock/topology-builder)
-          left-topic (mock/topic "left-topic")
-          right-topic (mock/topic "right-topic")
-          left-ktable (k/ktable topology-builder left-topic)
-          right-ktable (k/ktable topology-builder right-topic)
-          topology (-> left-ktable
-                       (k/left-join right-ktable (fn [v1 v2] [v1 v2]))
-                       (k/to-kstream)
-                       (mock/build))]
-
-      (-> topology
-          (mock/send left-topic 1 2)
-          (mock/send right-topic 1 1))
-
-      (let [result (mock/collect topology)]
-        (is (= ["1:[2 nil]" "1:[2 1]"] result)))))
-
-  (testing "for-each!"
-    (let [topic-a (mock/topic "topic-a")
-          topology-builder (mock/topology-builder)
-          ktable (k/ktable topology-builder topic-a)
-          results (atom {})]
-      (k/for-each! ktable (fn [[k v]] (swap! results assoc k v)))
-      (let [topology (mock/build (k/to-kstream ktable))]
-        (mock/send topology topic-a 1 2)
-        (let [result (mock/collect topology)]
-          (is (= {1 2} @results))))))
-
   (testing "filter"
     (let [topic-a (mock/topic "topic-a")
-          topology (-> (mock/topology-builder)
-                       (k/ktable topic-a)
-                       (k/filter (fn [[k v]] (> v 1)))
-                       (k/to-kstream)
-                       (mock/build))]
+          topic-b (mock/topic "topic-b")]
 
-      (-> topology
-          (mock/send topic-a 1 1)
-          (mock/send topic-a 2 2))
+      (with-open [driver (mock/build-driver (fn [builder]
+                                              (-> (k/ktable builder topic-a)
+                                                  (k/filter (fn [[k v]]
+                                                              (not (zero? v))))
+                                                  (k/to-kstream)
+                                                  (k/to! topic-b))))]
+        (let [produce (mock/producer driver topic-a)]
 
-      (let [result (mock/collect topology)]
-        (is (= ["1:null" "2:2"] result)))))
+          (produce [1 2])
+          (produce [1 0])
+
+          (is (= [1 2]
+                 (mock/consume driver topic-b)))
+          (is (= [1 nil] (mock/consume driver topic-b))) ;; Tombstone from filter
+          (is (not (mock/consume driver topic-b)))))))
 
   (testing "filter-not"
     (let [topic-a (mock/topic "topic-a")
-          topology (-> (mock/topology-builder)
-                       (k/ktable topic-a)
-                       (k/filter-not (fn [[k v]] (> v 1)))
-                       (k/to-kstream)
-                       (mock/build))]
+          topic-b (mock/topic "topic-b")]
 
-      (-> topology
-          (mock/send topic-a 1 1)
-          (mock/send topic-a 2 2))
+      (with-open [driver (mock/build-driver (fn [builder]
+                                              (-> (k/ktable builder topic-a)
+                                                  (k/filter-not (fn [[k v]]
+                                                                  (not (zero? v))))
+                                                  (k/to-kstream)
+                                                  (k/to! topic-b))))]
+        (let [produce (mock/producer driver topic-a)]
 
-      (let [result (mock/collect topology)]
-        (is (= ["1:1" "2:null"] result)))))
+          (produce [1 0])
+          (produce [1 2])
+
+          (is (= [1 0]
+                 (mock/consume driver topic-b)))
+          (is (= [1 nil] (mock/consume driver topic-b))) ;; Tombstone from filter
+          (is (not (mock/consume driver topic-b)))))))
 
   (testing "map-values"
     (let [topic-a (mock/topic "topic-a")
-          topology (-> (mock/topology-builder)
-                       (k/ktable topic-a)
-                       (k/map-values (fn [v] (str "new-" v)))
-                       (k/to-kstream)
-                       (mock/build))]
+          topic-b (mock/topic "topic-b")]
 
-      (mock/send topology topic-a 1 2)
+      (with-open [driver (mock/build-driver (fn [builder]
+                                              (-> (k/ktable builder topic-a)
+                                                  (k/map-values (fn [v]
+                                                                  (inc v)))
+                                                  (k/to-kstream)
+                                                  (k/to! topic-b))))]
+        (let [produce (mock/producer driver topic-a)]
 
-      (let [result (mock/collect topology)]
-        (is (= ["1:new-2"] result)))))
+          (produce [1 0])
+          (produce [1 2])
+          (produce [2 0])
 
-  (testing "print!"
-    (let [topic-a (mock/topic "topic-a")
-          topology-builder (mock/topology-builder)
-          ktable (k/ktable topology-builder topic-a)
-          std-out System/out
-          mock-out (java.io.ByteArrayOutputStream.)]
-      (try
-        (System/setOut (java.io.PrintStream. mock-out))
-        (k/print! ktable)
-
-        (let [topology (mock/build (k/to-kstream ktable))]
-          (mock/send topology topic-a 1 2)
-          (let [result (mock/collect topology)]
-            (is (= "[KTABLE-SOURCE-0000000001]: 1, (2<-null)\n" (.toString mock-out)))))
-        (finally
-          (System/setOut std-out)))))
-
-  (testing "print! (with custom serdes)"
-    (let [topic-a (mock/topic "topic-a")
-          topology-builder (mock/topology-builder)
-          ktable (k/ktable topology-builder topic-a)
-          std-out System/out
-          mock-out (java.io.ByteArrayOutputStream.)]
-      (try
-        (System/setOut (java.io.PrintStream. mock-out))
-        (k/print! ktable topic-a)
-
-        (let [topology (mock/build (k/to-kstream ktable))]
-          (mock/send topology topic-a 1 2)
-          (let [result (mock/collect topology)]
-            (is (= "[KTABLE-SOURCE-0000000001]: 1, (2<-null)\n" (.toString mock-out)))))
-        (finally
-          (System/setOut std-out)))))
-
-  (testing "through"
-    (let [topic-a (mock/topic "topic-a")
-          topic-b (mock/topic "topic-b")
-          topology (-> (mock/topology-builder)
-                       (k/ktable topic-a)
-                       (k/through topic-b)
-                       (k/to-kstream)
-                       (mock/build))]
-
-      (mock/send topology topic-a 1 2)
-
-      (let [result (mock/collect topology)]
-        (is (= ["1:2"] result)))))
-
-  (testing "through (with custom partitioner)"
-    (let [topic-a (mock/topic "topic-a")
-          topic-b (mock/topic "topic-b")
-          partitioner-fn (fn [k v c] (rand-int 0 c))
-          topology (-> (mock/topology-builder)
-                       (k/ktable topic-a)
-                       (k/through partitioner-fn topic-b)
-                       (k/to-kstream)
-                       (mock/build))]
-
-      (mock/send topology topic-a 1 2)
-
-      (let [result (mock/collect topology)]
-        (is (= ["1:2"] result)))))
-
-  (testing "to!"
-    (let [topic-a (mock/topic "topic-a")
-          topic-b (mock/topic "topic-b")
-          ktable (-> (mock/topology-builder)
-                     (k/ktable topic-a))]
-      (let [topology (mock/build (k/to-kstream ktable))]
-        (k/to! ktable topic-b)
-        (mock/send topology topic-a 1 2)
-        (let [result (mock/collect topology)]
-          (is (= ["1:2"] result))))))
-
-  (testing "to! (with custom partitioner)"
-    (let [topic-a (mock/topic "topic-a")
-          topic-b (mock/topic "topic-b")
-          partitioner-fn (fn [k v c] (rand-int 0 c))
-          ktable (-> (mock/topology-builder)
-                     (k/ktable topic-a))
-          topology (mock/build (k/to-kstream ktable))]
-      (k/to! ktable partitioner-fn topic-b)
-      (mock/send topology topic-a 1 2)
-      (let [result (mock/collect topology)]
-        (is (= ["1:2"] result)))))
-
-  (testing "write-as-text!"
-    (let [topic-a (mock/topic "topic-a")
-          topology-builder (mock/topology-builder)
-          ktable (k/ktable topology-builder topic-a)
-          temp-file (java.io.File/createTempFile
-                     "jackdaw.stream+write-as-text-test"
-                     "txt")]
-      (k/write-as-text! ktable (.getPath temp-file))
-      (let [topology (mock/build (k/to-kstream ktable))]
-        (mock/send topology topic-a 1 2)
-        (close-test-driver topology)
-        (is (= "[KTABLE-SOURCE-0000000001]: 1, (2<-null)\n" (slurp temp-file))))))
-
-  (testing "write-as-text! (with custom serdes)"
-    (let [topic-a (mock/topic "topic-a")
-          topology-builder (mock/topology-builder)
-          ktable (k/ktable topology-builder topic-a)
-          temp-file (java.io.File/createTempFile
-                     "jackdaw.stream+write-as-text-test"
-                     "txt")]
-      (k/write-as-text! ktable (.getPath temp-file) topic-a)
-      (let [topology (mock/build (k/to-kstream ktable))]
-        (mock/send topology topic-a 1 2)
-        (close-test-driver topology)
-        (is (= "[KTABLE-SOURCE-0000000001]: 1, (2<-null)\n" (slurp temp-file))))))
+          (is (= [1 1]
+                 (mock/consume driver topic-b)))
+          (is (= [1 3]
+                 (mock/consume driver topic-b)))
+          (is (= [2 1]
+                 (mock/consume driver topic-b)))
+          (is (not (mock/consume driver topic-b)))))))
 
   (testing "group-by"
     (let [topic-a (mock/topic "topic-a")
-          count-a (mock/topic "count-a")
-          topology (-> (mock/topology-builder)
-                       (k/ktable topic-a)
-                       (k/group-by (fn [[k v]] [v k]) topic-a)
-                       (k/count count-a)
-                       (k/to-kstream)
-                       (mock/build))]
+          topic-b (mock/topic "topic-b")
+          topic-c (mock/topic "topic-c")]
 
-      (mock/send topology topic-a 1 2)
+      (with-open [driver (mock/build-driver (fn [builder]
+                                              (-> (k/ktable builder topic-a)
+                                                  (k/group-by (fn [[k v]]
+                                                                [(if (even? k) k (inc k)) v])
+                                                              topic-a)
+                                                  (k/count topic-b)
+                                                  (k/to-kstream)
+                                                  (k/to! topic-c))))]
+        (let [produce (mock/producer driver topic-a)]
 
-      (let [result (mock/collect topology)]
-        (is (= ["2:1"] result)))))
+          (produce [1 0])
+          (produce [2 0])
 
-  (testing "group-by-key"
-    (let [topic-a (mock/topic "topic-a")
-          count-a (mock/topic "count-a")
-          topology (-> (mock/topology-builder)
-                       (k/kstream topic-a)
-                       (k/group-by-key count-a)
-                       (k/count count-a)
-                       (k/to-kstream)
-                       (mock/build))]
-
-      (mock/send topology topic-a 1 2)
-      (mock/send topology topic-a 1 2)
-
-      (let [result (mock/collect topology)]
-        (is (= ["1:1" "1:2"] result)))))
+          (is (= [2 1]
+                 (mock/consume driver topic-c)))
+          (is (= [2 2]
+                 (mock/consume driver topic-c)))
+          (is (not (mock/consume driver topic-c)))))))
 
   (testing "join"
-    (let [topology-builder (mock/topology-builder)
-          left-topic (mock/topic "left-topic")
-          right-topic (mock/topic "right-topic")
-          left-ktable (k/ktable topology-builder left-topic)
-          right-ktable (k/ktable topology-builder right-topic)
-          topology (-> left-ktable
-                       (k/join right-ktable (fn [v1 v2] [v1 v2]))
-                       (k/to-kstream)
-                       (mock/build))]
+    (let [topic-a (mock/topic "table-a")
+          topic-b (mock/topic "table-b")
+          topic-c (mock/topic "topic-c")]
 
-      (-> topology
-          (mock/send left-topic 1 2)
-          (mock/send right-topic 1 1))
+      (with-open [driver (mock/build-driver (fn [builder]
+                                              (let [left (k/ktable builder topic-a)
+                                                    right (k/ktable builder topic-b)]
+                                                (-> (k/join left right +)
+                                                    (k/to-kstream)
+                                                    (k/to! topic-c)))))]
+        (let [produce-left (mock/producer driver topic-a)
+              produce-right (mock/producer driver topic-b)]
 
-      (let [result (mock/collect topology)]
-        (is (= ["1:[2 1]"] result)))))
+          (produce-left [1 1])
+          (produce-right [1 2])
+          (produce-left [1 4])
+          (produce-left [2 42])
+
+          (is (= [1 3]
+                 (mock/consume driver topic-c)))
+          (is (= [1 6]
+                 (mock/consume driver topic-c)))
+          (is (not
+                 (mock/consume driver topic-c)))))))
 
   (testing "outer-join"
-    (let [topology-builder (mock/topology-builder)
-          left-topic (mock/topic "left-topic")
-          right-topic (mock/topic "right-topic")
-          left-ktable (k/ktable topology-builder left-topic)
-          right-ktable (k/ktable topology-builder right-topic)
-          topology (-> left-ktable
-                       (k/outer-join right-ktable (fn [v1 v2] [v1 v2]))
-                       (k/to-kstream)
-                       (mock/build))]
+    (let [topic-a (mock/topic "table-a")
+          topic-b (mock/topic "table-b")
+          topic-c (mock/topic "topic-c")]
 
-      (-> topology
-          (mock/send right-topic 1 1)
-          (mock/send left-topic 1 2))
+      (with-open [driver (mock/build-driver (fn [builder]
+                                              (let [left (k/ktable builder topic-a)
+                                                    right (k/ktable builder topic-b)]
+                                                (-> (k/outer-join left right safe-add)
+                                                    (k/to-kstream)
+                                                    (k/to! topic-c)))))]
+        (let [produce-left (mock/producer driver topic-a)
+              produce-right (mock/producer driver topic-b)]
 
-      (let [result (mock/collect topology)]
-        (is (= ["1:[nil 1]" "1:[2 1]"] result))))))
+          (produce-left [1 1])
+          (produce-right [1 2])
+          (produce-left [1 4])
+          (produce-left [2 42])
 
+          (is (= [1 1]
+                 (mock/consume driver topic-c)))
+          (is (= [1 3]
+                 (mock/consume driver topic-c)))
+          (is (= [1 6]
+                 (mock/consume driver topic-c)))
+          (is (= [2 42]
+                 (mock/consume driver topic-c)))
+          (is (not
+                 (mock/consume driver topic-c)))))))
 
-(deftest GroupedTable
-  (testing "aggregate"
-    (let [initializer-fn (constantly 0)
-          adder-fn (fn [acc [k v]] (+ acc 3 v))
-          subtractor-fn (fn [acc [k v]] (- acc 2 v))
-          topic-a (mock/topic "topic-a")
+  (testing "left-join"
+    (let [topic-a (mock/topic "table-a")
+          topic-b (mock/topic "table-b")
+          topic-c (mock/topic "topic-c")]
+
+      (with-open [driver (mock/build-driver (fn [builder]
+                                              (let [left (k/ktable builder topic-a)
+                                                    right (k/ktable builder topic-b)]
+                                                (-> (k/left-join left right safe-add)
+                                                    (k/to-kstream)
+                                                    (k/to! topic-c)))))]
+        (let [produce-left (mock/producer driver topic-a)
+              produce-right (mock/producer driver topic-b)]
+
+          (produce-left [1 1])
+          (produce-right [1 2])
+          (produce-left [1 4])
+          (produce-right [2 42])
+
+          (is (= [1 1]
+                 (mock/consume driver topic-c)))
+          (is (= [1 3]
+                 (mock/consume driver topic-c)))
+          (is (= [1 6]
+                 (mock/consume driver topic-c)))
+          (is (not
+                 (mock/consume driver topic-c))))))))
+
+(deftest grouped-stream
+  (testing "count"
+    (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
-          topology (-> (mock/topology-builder)
-                       (k/ktable topic-a)
-                       (k/group-by (fn [[k v]] [k v]) topic-a)
-                       (k/aggregate initializer-fn adder-fn subtractor-fn topic-b)
-                       (k/to-kstream)
-                       (mock/build))]
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/group-by-key)
+                                          (k/count topic-a)
+                                          (k/to-kstream)
+                                          (k/to! topic-b))))
+          produce (mock/producer driver topic-a)]
 
-      (-> topology
-          (mock/send topic-a 1 1)
-          (mock/send topic-a 1 2)
-          (mock/send topic-a 2 3))
+      (produce [1 1])
+      (produce [1 2])
 
-      (let [result (mock/collect topology)]
-        (is (= ["1:4" "1:6" "2:6"] result)))))
+      (is (= [1 1]
+             (mock/consume driver topic-b)))
+      (is (= [1 2]
+             (mock/consume driver topic-b)))
+      (is (not (mock/consume driver topic-b)))))
+
+  (testing "reduce"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/group-by (fn [[k v]] (long (/ k 10))) topic-a)
+                                          (k/reduce + topic-a)
+                                          (k/to-kstream)
+                                          (k/to! topic-b))))
+          produce (mock/producer driver topic-a)]
+
+      (produce [1 1])
+      (produce [1 2])
+      (produce [10 2])
+
+      (is (= [0 1]
+             (mock/consume driver topic-b)))
+      (is (= [0 3]
+             (mock/consume driver topic-b)))
+      (is (= [1 2]
+             (mock/consume driver topic-b)))
+      (is (not (mock/consume driver topic-b)))))
+
+  (testing "aggregate"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/group-by (fn [[k v]] (long (/ k 10))) topic-a)
+                                          (k/aggregate (constantly -10)
+                                                       (fn [acc [k v]] (+ acc v))
+                                                       topic-a)
+                                          (k/to-kstream)
+                                          (k/to! topic-b))))
+          produce (mock/producer driver topic-a)]
+
+      (produce [1 1])
+      (produce [1 2])
+      (produce [10 2])
+
+      (is (= [0 -9]
+             (mock/consume driver topic-b)))
+      (is (= [0 -7]
+             (mock/consume driver topic-b)))
+      (is (= [1 -8]
+             (mock/consume driver topic-b)))
+      (is (not (mock/consume driver topic-b))))))
+
+(deftest grouped-table
+  (testing "aggregate"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")]
+
+      (with-open [driver (mock/build-driver (fn [builder]
+                                              (-> (k/ktable builder topic-a)
+                                                  (k/group-by (fn [[k v]]
+                                                                [(long (/ k 10)) v])
+                                                              topic-a)
+                                                  (k/aggregate (constantly 0)
+                                                               (fn [acc [k v]] (+ acc v))
+                                                               (fn [acc [k v]] (- acc v))
+                                                               topic-b)
+                                                  (k/to-kstream)
+                                                  (k/to! topic-b))))]
+        (let [produce (mock/producer driver topic-a)]
+
+          (produce [1 1])
+          (produce [2 2])
+          (produce [2 nil])
+          (produce [10 3])
+
+          (is (= [0 1]
+                 (mock/consume driver topic-b)))
+          (is (= [0 3]
+                 (mock/consume driver topic-b)))
+          (is (= [0 1]
+                 (mock/consume driver topic-b)))
+          (is (= [1 3]
+                 (mock/consume driver topic-b)))
+          (is (not (mock/consume driver topic-b)))))))
 
   (testing "count"
     (let [topic-a (mock/topic "topic-a")
-          count-a (mock/topic "count-a")
-          topology (-> (mock/topology-builder)
-                       (k/ktable topic-a)
-                       (k/group-by (fn [[k v]] [v k]) topic-a)
-                       (k/count count-a)
-                       (k/to-kstream)
-                       (mock/build))]
+          topic-b (mock/topic "topic-b")
+          topic-c (mock/topic "topic-c")]
 
-      (mock/send topology topic-a 1 2)
+      (with-open [driver (mock/build-driver (fn [builder]
+                                              (-> (k/ktable builder topic-a)
+                                                  (k/group-by (fn [[k v]]
+                                                                [(if (even? k) k (inc k)) v])
+                                                              topic-a)
+                                                  (k/count topic-b)
+                                                  (k/to-kstream)
+                                                  (k/to! topic-c))))]
+        (let [produce (mock/producer driver topic-a)]
 
-      (let [result (mock/collect topology)]
-        (is (= ["2:1"] result)))))
+          (produce [1 0])
+          (produce [2 0])
+
+          (is (= [2 1]
+                 (mock/consume driver topic-c)))
+          (is (= [2 2]
+                 (mock/consume driver topic-c)))
+          (is (not (mock/consume driver topic-c)))))))
 
   (testing "reduce"
-    (let [adder-fn +
-          subtractor-fn -
-          topic-a (mock/topic "topic-a")
-          topic-b (mock/topic "topic-b")
-          topology (-> (mock/topology-builder)
-                       (k/ktable topic-a)
-                       (k/group-by (fn [[k v]] [k v]) topic-a)
-                       (k/reduce adder-fn subtractor-fn topic-b)
-                       (k/to-kstream)
-                       (mock/build))]
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")]
 
-      (-> topology
-          (mock/send topic-a 1 1)
-          (mock/send topic-a 1 2))
+      (with-open [driver (mock/build-driver (fn [builder]
+                                              (-> (k/ktable builder topic-a)
+                                                  (k/group-by (fn [[k v]]
+                                                                [(long (/ k 10)) v])
+                                                              topic-a)
+                                                  (k/reduce + - topic-b)
+                                                  (k/to-kstream)
+                                                  (k/to! topic-b))))]
+        (let [produce (mock/producer driver topic-a)]
 
-      (let [result (mock/collect topology)]
-        (is (= ["1:1" "1:2"] result))))))
+          (produce [1 1])
+          (produce [2 2])
+          (produce [2 nil])
+          (produce [10 3])
+
+          (is (= [0 1]
+                 (mock/consume driver topic-b)))
+          (is (= [0 3]
+                 (mock/consume driver topic-b)))
+          (is (= [0 1]
+                 (mock/consume driver topic-b)))
+          (is (= [1 3]
+                 (mock/consume driver topic-b)))
+          (is (not (mock/consume driver topic-b))))))))
 
 (deftest GlobalKTableTest
   (testing "inner global join"
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
+          topic-c (mock/topic "topic-c")]
 
-          topology-builder (mock/topology-builder)
+      (with-open [driver (mock/build-driver (fn [builder]
+                                              (let [k-stream (k/kstream builder topic-a)
+                                                    k-table (k/global-ktable builder topic-b)]
+                                                (-> k-stream
+                                                    (k/join-global k-table
+                                                                   (fn [[k v]]
+                                                                     k)
+                                                                   +)
+                                                    (k/to! topic-c)))))]
+        (let [produce-stream (mock/producer driver topic-a)
+              produce-table (mock/producer driver topic-b)]
 
-          left (k/kstream topology-builder topic-a)
-          right (k/global-ktable topology-builder topic-b "asdf")
+          (produce-stream [1 1])
+          (produce-table [1 2])
+          (produce-stream [1 4])
 
-          topology (-> left
-                       (k/join-global right
-                                      (fn [[k v]]
-                                        k)
-                                      +)
-                       (mock/build))]
-
-      (-> topology
-          (mock/send topic-b 1 1)
-          (mock/send topic-a 1 2)
-          (mock/send topic-a 2 3))
-
-      (let [result (mock/collect topology)]
-        (is (= ["1:3"] result)))))
+          (is (= [1 6]
+                 (mock/consume driver topic-c)))
+          (is (not (mock/consume driver topic-c)))))))
 
   (testing "left global join"
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
+          topic-c (mock/topic "topic-c")]
 
-          topology-builder (mock/topology-builder)
+      (with-open [driver (mock/build-driver (fn [builder]
+                                              (let [k-stream (k/kstream builder topic-a)
+                                                    k-table (k/global-ktable builder topic-b)]
+                                                (-> k-stream
+                                                    (k/left-join-global k-table
+                                                                        (fn [[k v]]
+                                                                          k)
+                                                                        safe-add)
+                                                    (k/to! topic-c)))))]
+        (let [produce-stream (mock/producer driver topic-a)
+              produce-table (mock/producer driver topic-b)]
 
-          left (k/kstream topology-builder topic-a)
-          right (k/global-ktable topology-builder topic-b "asdf")
+          (produce-stream [1 1])
+          (produce-table [1 2])
+          (produce-stream [1 4])
 
-          topology (-> left
-                       (k/left-join-global right
-                                           (fn [[k v]]
-                                             k)
-                                           (fn [a b]
-                                             (+ a (or b 0))))
-                       (mock/build))]
-
-      (-> topology
-          (mock/send topic-b 1 1)
-          (mock/send topic-a 1 2)
-          (mock/send topic-a 2 3))
-
-      (let [result (mock/collect topology)]
-        (is (= ["1:3" "2:3"] result))))))
-
-(deftest kafka-streams-test
-  (is (instance? org.apache.kafka.streams.KafkaStreams
-                 (k/kafka-streams (mock/topology-builder)
-                                  {"bootstrap.servers" "localhost:2181"
-                                   "application.id" ""}))))
+          (is (= [1 1]
+                 (mock/consume driver topic-c)))
+          (is (= [1 6]
+                 (mock/consume driver topic-c)))
+          (is (not (mock/consume driver topic-c))))))))

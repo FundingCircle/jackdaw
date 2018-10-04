@@ -1,82 +1,70 @@
 (ns jackdaw.streams.configured
   "Clojure wrapper to kafka streams."
-  (:refer-clojure :exclude [count map reduce group-by merge filter])
+  (:refer-clojure :exclude [count map reduce group-by merge filter peek])
   (:require [jackdaw.streams.protocols :refer :all]
             [jackdaw.streams.configurable :refer [config IConfigurable]]))
 
 (declare configured-kstream configured-ktable configured-global-ktable configured-kgroupedtable configured-kgroupedstream)
 
-(deftype ConfiguredTopologyBuilder [config topology-builder]
-  ITopologyBuilder
-  (merge
-    [_ kstreams]
-    (configured-kstream
-     config
-     (merge topology-builder kstreams)))
-
+(deftype ConfiguredStreamsBuilder [config streams-builder]
+  IStreamsBuilder
   (kstream
     [_ topic-config]
     (configured-kstream
      config
-     (kstream topology-builder topic-config)))
+     (kstream streams-builder topic-config)))
 
   (kstream
     [_ topic-config topic-pattern]
     (configured-kstream
      config
-     (kstream topology-builder topic-config topic-pattern)))
+     (kstream streams-builder topic-config topic-pattern)))
 
   (kstreams
     [_ topic-configs]
     (configured-kstream
      config
-     (kstreams topology-builder topic-configs)))
+     (kstreams streams-builder topic-configs)))
 
   (ktable
     [_ topic-config]
     (configured-ktable
      config
-     (ktable topology-builder topic-config)))
+     (ktable streams-builder topic-config)))
 
   (ktable
     [_ topic-config store-name]
     (configured-ktable
      config
-     (ktable topology-builder topic-config store-name)))
+     (ktable streams-builder topic-config store-name)))
 
   (global-ktable
     [_ topic-config]
     (configured-global-ktable
       config
-      (global-ktable topology-builder topic-config)))
-
-  (global-ktable
-    [_ topic-config store-name]
-    (configured-global-ktable
-      config
-      (global-ktable topology-builder topic-config store-name)))
+      (global-ktable streams-builder topic-config)))
 
   (source-topics
     [_]
-    (source-topics topology-builder))
+    (source-topics streams-builder))
 
-  (topology-builder*
+  (streams-builder*
     [_]
-    (topology-builder* topology-builder))
+    (streams-builder* streams-builder))
 
   IConfigurable
   (config [_]
     config)
 
   (configure [_ key value]
-    (ConfiguredTopologyBuilder.
+    (ConfiguredStreamsBuilder.
      (assoc config key value)
-     topology-builder)))
+     streams-builder)))
 
-(defn topology-builder
+(defn streams-builder
   "Makes a topology builder."
-  ([config topology-builder]
-   (ConfiguredTopologyBuilder. config topology-builder)))
+  ([config streams-builder]
+   (ConfiguredStreamsBuilder. config streams-builder)))
 
 (deftype ConfiguredKStream [config kstream]
   IKStreamBase
@@ -91,10 +79,6 @@
   (configured-kstream
     config
     (left-join kstream ktable value-joiner-fn topic-config)))
-
-  (for-each!
-    [_ foreach-fn]
-    (for-each! kstream foreach-fn))
 
   (filter
     [_ predicate-fn]
@@ -136,37 +120,15 @@
     [_]
     (print! kstream))
 
-  (print!
-    [_ topic-config]
-    (print! kstream topic-config))
-
   (through
     [_ topic-config]
     (configured-kstream
      config
      (through kstream topic-config)))
 
-  (through
-    [_ partition-fn topic-config]
-    (configured-kstream
-     config
-     (through kstream partition-fn topic-config)))
-
   (to!
     [_ topic-config]
     (to! kstream topic-config))
-
-  (to!
-    [_ partition-fn topic-config]
-    (to! kstream partition-fn topic-config))
-
-  (write-as-text!
-    [_ file-path]
-    (write-as-text! kstream file-path))
-
-  (write-as-text!
-    [_ file-path topic-config]
-    (write-as-text! kstream file-path topic-config))
 
   IKStream
   (branch
@@ -185,6 +147,10 @@
     (configured-kstream
      config
      (flat-map-values kstream value-mapper-fn)))
+
+  (for-each!
+    [_ foreach-fn]
+    (for-each! kstream foreach-fn))
 
   (group-by-key
     [_]
@@ -328,10 +294,6 @@
      config
      (left-join ktable other-ktable value-joiner-fn)))
 
-  (for-each!
-    [_ foreach-fn]
-    (for-each! ktable foreach-fn))
-
   (filter
     [_ predicate-fn]
     (configured-ktable
@@ -349,42 +311,6 @@
     (configured-ktable
      config
      (map-values ktable value-mapper-fn)))
-
-  (print!
-    [_]
-    (print! ktable))
-
-  (print!
-    [_ topic-config]
-    (print! ktable topic-config))
-
-  (through
-    [_ topic-config]
-    (configured-ktable
-     config
-     (through ktable topic-config)))
-
-  (through
-    [_ partition-fn topic-config]
-    (configured-ktable
-     config
-     (through ktable partition-fn topic-config)))
-
-  (to!
-    [_ topic-config]
-    (to! ktable topic-config))
-
-  (to!
-    [_ partition-fn topic-config]
-    (to! ktable partition-fn topic-config))
-
-  (write-as-text!
-    [_ file-path]
-    (write-as-text! ktable file-path))
-
-  (write-as-text!
-    [_ file-path topic-config]
-    (write-as-text! ktable file-path topic-config))
 
   IKTable
   (group-by
@@ -500,28 +426,14 @@
      (reduce kgroupedstream reducer-fn topic-config)))
 
   IKGroupedStream
-  (aggregate-windowed
-    [_ initializer-fn aggregator-fn windows topic-config]
-    (configured-ktable
-     config
-     (aggregate-windowed kgroupedstream initializer-fn aggregator-fn windows topic-config)))
-
-  (count-windowed
-    [_ windows topic-config]
-    (configured-ktable
-     config
-     (count-windowed kgroupedstream windows topic-config)))
-
-  (reduce-windowed
-    [_ reducer-fn windows topic-config]
-    (configured-ktable
-     config
-     (reduce-windowed kgroupedstream reducer-fn windows topic-config)))
+  (windowed-by
+    [_ windows]
+    ;; TODO: FIXME
+    nil)
 
   (kgroupedstream*
     [_]
     kgroupedstream))
-
 
 (defn configured-kgroupedstream
   "Makes a ConfiguredKGroupedStream object."

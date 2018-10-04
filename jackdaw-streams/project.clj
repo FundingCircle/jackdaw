@@ -9,5 +9,6 @@
                    [[clj-time "_"]
                     [org.apache.kafka/kafka-clients "_" :classifier "test"]
                     [org.apache.kafka/kafka-streams "_" :classifier "test"]
+                    [org.apache.kafka/kafka-streams-test-utils "2.0.0" :scope "test"]
                     [org.clojure/tools.logging "_"]
                     [junit "_"]]}})

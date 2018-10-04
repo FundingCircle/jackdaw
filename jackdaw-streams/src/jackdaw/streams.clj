@@ -1,58 +1,52 @@
 (ns jackdaw.streams
   "Kafka streams protocols."
-  (:refer-clojure :exclude [count map reduce group-by merge filter peek])
+  (:refer-clojure :exclude [count map merge reduce group-by filter peek])
   (:require [clojure.string :as str]
             [jackdaw.streams.interop :as interop]
             [jackdaw.streams.protocols :as p])
   (:import org.apache.kafka.streams.KafkaStreams
+           org.apache.kafka.streams.StreamsBuilder
            org.apache.kafka.streams.KafkaStreams$State
-           org.apache.kafka.streams.processor.TopologyBuilder))
+           org.apache.kafka.streams.Topology))
 
-;; ITopologyBuilder
-
-(defn merge
-  "Merges another KStream with this one."
-  [topology-builder kstreams]
-  (p/merge topology-builder kstreams))
+;; StreamsBuilder
 
 (defn kstream
   "Creates a KStream that will consume messages from the specified topic."
-  ([topology-builder topic-config]
+  ([streams-builder topic-config]
    {:pre [(map? topic-config)]}
-   (p/kstream topology-builder topic-config))
-  ([topology-builder topic-config topic-pattern]
+   (p/kstream streams-builder topic-config))
+  ([streams-builder topic-config topic-pattern]
    {:pre [(map? topic-config)]}
-   (p/kstream topology-builder topic-config topic-pattern)))
+   (p/kstream streams-builder topic-config topic-pattern)))
 
 (defn kstreams
   "Creates a KStream that will consume messages from the specified topics."
-  [topology-builder topic-configs]
-  (p/kstreams topology-builder topic-configs))
+  [streams-builder topic-configs]
+  (p/kstreams streams-builder topic-configs))
 
 (defn ktable
   "Creates a KTable that will consist of data from the specified topic."
-  ([topology-builder topic-config]
-   (p/ktable topology-builder topic-config))
-  ([topology-builder topic-config store-name]
-   (p/ktable topology-builder topic-config store-name)))
+  ([streams-builder topic-config]
+   (p/ktable streams-builder topic-config))
+  ([streams-builder topic-config store-name]
+   (p/ktable streams-builder topic-config store-name)))
 
 (defn global-ktable
   "Creates a GlobalKTable that will consist of data from the specified
   topic."
-  ([topology-builder topic-config]
-   (p/global-ktable topology-builder topic-config))
-  ([topology-builder topic-config store-name]
-   (p/global-ktable topology-builder topic-config store-name)))
+  [streams-builder topic-config]
+  (p/global-ktable streams-builder topic-config))
 
 (defn source-topics
   "Gets the names of source topics for the topology."
-  [topology-builder]
-  (p/source-topics topology-builder))
+  [streams-builder]
+  (p/source-topics streams-builder))
 
-(defn topology-builder*
+(defn streams-builder*
   "Returns the underlying KStreamBuilder."
-  [topology-builder]
-  (p/topology-builder* topology-builder))
+  [streams-builder]
+  (p/streams-builder* streams-builder))
 
 ;; IKStreamBase
 
@@ -64,11 +58,6 @@
    (p/left-join kstream ktable value-joiner-fn))
   ([kstream ktable value-joiner-fn topic-config]
    (p/left-join kstream ktable value-joiner-fn topic-config)))
-
-(defn for-each!
-  "Performs an action on each element of KStream."
-  [kstream foreach-fn]
-  (p/for-each! kstream foreach-fn))
 
 (defn filter
   [kstream predicate-fn]
@@ -101,32 +90,19 @@
 
 (defn print!
   "Prints the elements of the stream to *out*."
-  ([kstream]
-   (p/print! kstream))
-  ([kstream topic-config]
-   (p/print! kstream topic-config)))
+  [kstream]
+  (p/print! kstream))
 
 (defn through
   "Materializes a stream to a topic, and returns a new KStream that will
   consume messages from the topic."
-  ([kstream topic-config]
-   (p/through kstream topic-config))
-  ([kstream partition-fn topic-config]
-   (p/through kstream partition-fn topic-config)))
+  [kstream topic-config]
+  (p/through kstream topic-config))
 
 (defn to!
   "Materializes a stream to a topic."
-  ([kstream topic-config]
-   (p/to! kstream topic-config))
-  ([kstream partition-fn topic-config]
-   (p/to! kstream partition-fn topic-config)))
-
-(defn write-as-text!
-  "Writes the elements of a stream to a file at the given path."
-  ([kstream file-path]
-   (p/write-as-text! kstream file-path))
-  ([kstream file-path topic-config]
-   (p/write-as-text! kstream file-path topic-config)))
+  [kstream topic-config]
+  (p/to! kstream topic-config))
 
 ;; IKStream
 
@@ -148,6 +124,11 @@
   returned by calling `value-mapper-fn` on each value in the input stream."
   [kstream value-mapper-fn]
   (p/flat-map-values kstream value-mapper-fn))
+
+(defn for-each!
+  "Performs an action on each element of KStream."
+  [kstream foreach-fn]
+  (p/for-each! kstream foreach-fn))
 
 (defn group-by-key
   "Groups records with the same key into a KGroupedStream."
@@ -226,6 +207,10 @@
   [kstream global-kstream kv-mapper joiner]
   (p/left-join-global kstream global-kstream kv-mapper joiner))
 
+(defn merge
+  [kstream other]
+  (p/merge kstream other))
+
 (defn kstream*
   "Returns the underlying KStream object."
   [kstream]
@@ -287,19 +272,10 @@
 
 ;; IKGroupedStream
 
-(defn aggregate-windowed
-  ([kgroupedstream initializer-fn aggregator-fn windows topic-config]
-   (p/aggregate-windowed kgroupedstream initializer-fn aggregator-fn windows topic-config)))
-
-(defn count-windowed
-  "Counts the number of records by key into a new KTable."
-  ([kgroupedstream windows topic-config]
-   (p/count-windowed kgroupedstream windows topic-config)))
-
-(defn reduce-windowed
-  "Combines values of the stream by key into a new KTable."
-  ([kgroupedstream reducer-fn windows topic-config]
-   (p/reduce-windowed kgroupedstream reducer-fn windows topic-config)))
+(defn window-by
+  "Windows the KStream"
+  ([kgroupedstream window]
+   (p/windowed-by kgroupedstream window)))
 
 (defn kgroupedstream*
   "Returns the underlying KGroupedStream object."
@@ -313,16 +289,16 @@
   [globalktable]
   (p/global-ktable* globalktable))
 
-(defn topology-builder
+(defn streams-builder
   []
-  (interop/topology-builder))
+  (interop/streams-builder))
 
 (defn kafka-streams
   "Makes a Kafka Streams object."
   ([builder opts]
    (let [props (java.util.Properties.)]
      (.putAll props opts)
-     (KafkaStreams. ^TopologyBuilder (topology-builder* builder)
+     (KafkaStreams. ^Topology (streams-builder* builder)
                     ^java.util.Properties props))))
 
 (defn start!
