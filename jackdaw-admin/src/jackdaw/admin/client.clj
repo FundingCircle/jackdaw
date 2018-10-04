@@ -1,7 +1,7 @@
 (ns jackdaw.admin.client
   (:require [clojure.tools.logging :as log]
             [clojure.spec.alpha :as s]
-            [clojure.walk :refer [stringify-keys]])
+            [jackdaw.client :as jc])
   (:import java.util.Properties
            [org.apache.kafka.clients.admin
             AdminClient
@@ -14,16 +14,9 @@
             ConfigResource
             ConfigResource$Type]))
 
-;; copied from jackdaw.client to simplify deps tree
-(defn map->properties [m]
-  (let [props (Properties.)]
-    (when m
-      (.putAll props (stringify-keys m)))
-    props))
-
 (defn client [kafka-config]
   {:pre [(get kafka-config "bootstrap.servers")]}
-  (AdminClient/create (map->properties kafka-config)))
+  (AdminClient/create (jc/map->properties kafka-config)))
 
 (defn client? [x]
   (instance? AdminClient x))

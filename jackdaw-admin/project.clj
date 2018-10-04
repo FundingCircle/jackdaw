@@ -1,4 +1,4 @@
-(defproject fundingcircle/jackdaw-admin "0.3.22-SNAPSHOT"
+(defproject fundingcircle/jackdaw-admin "0.3.24-SNAPSHOT"
   :description "Tools for kafka administration"
 
   :dependencies [[org.clojure/tools.logging "_"]
@@ -9,7 +9,8 @@
             [lein-environ "1.1.0"]]
 
   :profiles {:kafka
-             {:dependencies [[fundingcircle/jackdaw-test "_"]]}
+             {:dependencies [[fundingcircle/jackdaw-test "_"]
+                             [fundingcircle/jackdaw-client "_"]]}
 
              :dev [:kafka]
 

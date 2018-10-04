@@ -1,4 +1,4 @@
-(ns jackdaw.client-extras-test
+(ns jackdaw.client.extras-test
  (:require [clojure.data.json :as json]
            [clojure.test :refer :all]
            [jackdaw.admin.topic :as topic]

@@ -1,4 +1,4 @@
-(defproject fundingcircle/jackdaw-test "0.3.22-SNAPSHOT"
+(defproject fundingcircle/jackdaw-test "0.3.24-SNAPSHOT"
   :description "Test fixtures for Kafka, Zookeeper, and Confluent Schema Registry"
 
   :source-paths ["src/clj"]
@@ -6,8 +6,7 @@
 
   :plugins [[fundingcircle/lein-modules "[0.3.0,0.4.0)"]]
 
-  :dependencies [[fundingcircle/jackdaw-client "_"]
-                 [io.confluent/kafka-connect-avro-converter "_"]
+  :dependencies [[io.confluent/kafka-connect-avro-converter "_"]
                  [io.confluent/kafka-connect-jdbc "_"]
                  [io.confluent/kafka-schema-registry "_"]
                  [org.apache.kafka/connect-api "_"]
@@ -19,6 +18,7 @@
                                      [clj-http "_"]
                                      [clj-time "_"]
                                      [environ "_"]
+                                     [fundingcircle/jackdaw-client "_"]
                                      [org.clojure/data.json "_"]
                                      [org.clojure/tools.nrepl "_"]
                                      [org.clojure/java.jdbc "_"]

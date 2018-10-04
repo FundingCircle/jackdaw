@@ -1,4 +1,4 @@
-(defproject fundingcircle/jackdaw "0.3.22-SNAPSHOT"
+(defproject fundingcircle/jackdaw "0.3.24-SNAPSHOT"
   :description "No frills Clojure wrapper around Apache Kafka APIs"
 
   :dependencies [[fundingcircle/jackdaw-admin "_"]
@@ -6,6 +6,7 @@
                  [fundingcircle/jackdaw-serdes "_"]
                  [fundingcircle/jackdaw-streams "_"]
                  [fundingcircle/jackdaw-test "_"]
+                 [fundingcircle/jackdaw-extras "_"]
                  [org.clojure/clojure "_"]]
 
   :plugins [[lein-codox "0.10.3"]
