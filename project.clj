@@ -88,7 +88,7 @@
                   ["change" "version" "leiningen.release/bump-version" "release"]
                   ["modules" "change" "version" "leiningen.release/bump-version" "release"]
                   ["vcs" "commit"]
-                  ["vcs" "tag"]
+                  ["vcs" "tag" "--no-sign"]
                   ["modules" "deploy"]
                   ["deploy"]
                   ["change" "version" "leiningen.release/bump-version"]
