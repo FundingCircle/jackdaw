@@ -1,4 +1,4 @@
-(defproject fundingcircle/jackdaw-extras "0.3.24"
+(defproject fundingcircle/jackdaw-extras "0.3.25-SNAPSHOT"
   :description "Extra tools for developing with kafka that draw from all the other jackdaw utilities"
 
   :plugins [[fundingcircle/lein-modules "[0.3.0,0.4.0)"]]
