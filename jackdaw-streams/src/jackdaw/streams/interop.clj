@@ -11,7 +11,7 @@
    (org.apache.kafka.streams KafkaStreams)
    (org.apache.kafka.streams StreamsBuilder)
    (org.apache.kafka.streams.kstream Aggregator Consumed GlobalKTable Initializer Joined JoinWindows KGroupedStream KGroupedTable
-                                     KStream KTable KeyValueMapper Materialized Predicate Printed Produced Reducer Serialized ValueJoiner ValueMapper ValueMapperWithKey ValueTransformerSupplier Windows)
+                                     KStream KTable KeyValueMapper Materialized Predicate Printed Produced Reducer Serialized SessionWindowedKStream SessionWindows TimeWindowedKStream ValueJoiner ValueMapper ValueMapperWithKey ValueTransformerSupplier Windows)
    (org.apache.kafka.streams.processor StreamPartitioner)))
 
 (set! *warn-on-reflection* true)
@@ -26,11 +26,11 @@
   (Serialized/with key-serde value-serde))
 
 (defn topic->materialized [{:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
-  (-> (Materialized/as ^String topic-name)
-      (.withKeySerde key-serde)
-      (.withValueSerde value-serde)))
+  (cond-> (Materialized/as ^String topic-name)
+    key-serde (.withKeySerde key-serde)
+    value-serde (.withValueSerde value-serde)))
 
-(declare clj-kstream clj-ktable clj-kgroupedtable clj-kgroupedstream clj-global-ktable)
+(declare clj-kstream clj-ktable clj-kgroupedtable clj-kgroupedstream clj-global-ktable clj-session-windowed-kstream clj-time-windowed-kstream)
 
 (def ^:private kstream-memo
   "Returns a kstream for the topic, creating a new one if needed."
@@ -460,10 +460,15 @@
               (topic->materialized topic-config))))
 
   IKGroupedStream
-  (windowed-by
+  (windowed-by-time
     [_ windows]
-    ;; TODO: FIXME
-    nil)
+    (clj-time-windowed-kstream
+      (.windowedBy ^KGroupedStream kgroupedstream ^Windows windows)))
+
+  (windowed-by-session
+    [_ windows]
+    (clj-session-windowed-kstream
+      (.windowedBy ^KGroupedStream kgroupedstream ^SessionWindows windows)))
 
   (kgroupedstream*
     [_]
@@ -473,3 +478,67 @@
   "Makes a CljKGroupedStream object."
   [kgroupedstream]
   (CljKGroupedStream. kgroupedstream))
+
+(deftype CljTimeWindowedKStream [^TimeWindowedKStream windowed-kstream]
+  IKGroupedBase
+  (aggregate
+    [_ initializer-fn aggregator-fn {:keys [jackdaw.topic/topic-name jackdaw.serdes/value-serde]}]
+    (clj-ktable
+     (.aggregate ^TimeWindowedKStream windowed-kstream
+                 ^Initializer (initializer initializer-fn)
+                 ^Aggregator (aggregator aggregator-fn)
+                 (doto (Materialized/as ^String topic-name) (.withValueSerde value-serde)))))
+  (count
+    [_ topic-config]
+    (clj-ktable
+     (.count ^TimeWindowedKStream windowed-kstream
+             (topic->materialized topic-config))))
+
+  (reduce
+    [_ reducer-fn topic-config]
+    (clj-ktable
+     (.reduce ^TimeWindowedKStream windowed-kstream
+              ^Reducer (reducer reducer-fn)
+              ^Materialized (topic->materialized topic-config))))
+
+  ITimeWindowedKStream
+  (time-windowed-kstream*
+    [_]
+    windowed-kstream))
+
+(defn clj-time-windowed-kstream
+  "Makes a CljTimeWindowedKStream object."
+  [windowed-kstream]
+  (CljTimeWindowedKStream. windowed-kstream))
+
+(deftype CljSessionWindowedKStream [^SessionWindowedKStream windowed-kstream]
+  IKGroupedBase
+  (aggregate
+    [_ initializer-fn aggregator-fn {:keys [jackdaw.topic/topic-name jackdaw.serdes/value-serde]}]
+    (clj-ktable
+     (.aggregate ^SessionWindowedKStream windowed-kstream
+                 ^Initializer (initializer initializer-fn)
+                 ^Aggregator (aggregator aggregator-fn)
+                 (doto (Materialized/as ^String topic-name) (.withValueSerde value-serde)))))
+  (count
+    [_ topic-config]
+    (clj-ktable
+     (.count ^SessionWindowedKStream windowed-kstream
+             (topic->materialized topic-config))))
+
+  (reduce
+    [_ reducer-fn topic-config]
+    (clj-ktable
+     (.reduce ^SessionWindowedKStream windowed-kstream
+              ^Reducer (reducer reducer-fn)
+              (topic->materialized topic-config))))
+
+  ISessionWindowedKStream
+  (session-windowed-kstream*
+    [_]
+    windowed-kstream))
+
+(defn clj-session-windowed-kstream
+  "Makes a CljSessionWindowedKStream object."
+  [windowed-kstream]
+  (CljSessionWindowedKStream. windowed-kstream))

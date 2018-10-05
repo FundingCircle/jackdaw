@@ -3,13 +3,15 @@
             [jackdaw.streams :as k]
             [jackdaw.streams.lambdas :as lambdas]
             [jackdaw.streams.protocols
-             :refer [IStreamsBuilder IGlobalKTable IKGroupedTable IKGroupedStream IKStream IKTable]])
+             :refer [IStreamsBuilder IGlobalKTable IKGroupedTable IKGroupedStream IKStream IKTable ITimeWindowedKStream ISessionWindowedKStream]])
   (:import org.apache.kafka.common.serialization.Serde
            org.apache.kafka.streams.kstream.JoinWindows))
 
 (def global-ktable? (partial satisfies? IGlobalKTable))
 (def join-windows? (partial instance? JoinWindows))
 (def kgroupedstream? (partial satisfies? IKGroupedStream))
+(def time-windowed-kstream? (partial satisfies? ITimeWindowedKStream))
+(def session-windowed-kstream? (partial satisfies? ISessionWindowedKStream))
 (def kgroupedtable? (partial satisfies? IKGroupedTable))
 (def kstream? (partial satisfies? IKStream))
 (def ktable? (partial satisfies? IKTable))
@@ -31,7 +33,9 @@
                                  :ktable ktable?))
 (s/def ::kgroupedstream-or-kgroupedtable
   (s/or :kgroupedstream kgroupedstream?
-        :kgroupedtable kgroupedtable?))
+        :kgroupedtable kgroupedtable?
+        :time-windowed time-windowed-kstream?
+        :session-windowed session-windowed-kstream?))
 
 ;; IStreamsBuilder
 

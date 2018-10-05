@@ -4,7 +4,7 @@
   (:require [jackdaw.streams.protocols :refer :all]
             [jackdaw.streams.configurable :refer [config IConfigurable]]))
 
-(declare configured-kstream configured-ktable configured-global-ktable configured-kgroupedtable configured-kgroupedstream)
+(declare configured-kstream configured-ktable configured-global-ktable configured-kgroupedtable configured-kgroupedstream configured-time-windowed-kstream configured-session-windowed-kstream)
 
 (deftype ConfiguredStreamsBuilder [config streams-builder]
   IStreamsBuilder
@@ -426,10 +426,17 @@
      (reduce kgroupedstream reducer-fn topic-config)))
 
   IKGroupedStream
-  (windowed-by
+  (windowed-by-time
     [_ windows]
-    ;; TODO: FIXME
-    nil)
+    (configured-time-windowed-kstream
+      config
+      (windowed-by-time kgroupedstream windows)))
+
+  (windowed-by-session
+    [_ windows]
+    (configured-session-windowed-kstream
+      config
+      (windowed-by-session kgroupedstream windows)))
 
   (kgroupedstream*
     [_]
@@ -439,6 +446,66 @@
   "Makes a ConfiguredKGroupedStream object."
   [config kgroupedstream]
   (ConfiguredKGroupedStream. config kgroupedstream))
+
+(deftype ConfiguredTimeWindowedKStream [config kgroupedstream]
+  IKGroupedBase
+  (aggregate
+    [_ initializer-fn aggregator-fn topic-config]
+    (configured-ktable
+     config
+     (aggregate kgroupedstream initializer-fn aggregator-fn topic-config)))
+
+  (count
+    [_ store-name]
+    (configured-ktable
+     config
+     (count kgroupedstream store-name)))
+
+  (reduce
+    [_ reducer-fn topic-config]
+    (configured-ktable
+     config
+     (reduce kgroupedstream reducer-fn topic-config)))
+
+  ITimeWindowedKStream
+  (time-windowed-kstream*
+    [_]
+    kgroupedstream))
+
+(defn configured-time-windowed-kstream
+  "Makes a ConfiguredKGroupedStream object."
+  [config kgroupedstream]
+  (ConfiguredTimeWindowedKStream. config kgroupedstream))
+
+(deftype ConfiguredSessionWindowedKStream [config kgroupedstream]
+  IKGroupedBase
+  (aggregate
+    [_ initializer-fn aggregator-fn topic-config]
+    (configured-ktable
+     config
+     (aggregate kgroupedstream initializer-fn aggregator-fn topic-config)))
+
+  (count
+    [_ store-name]
+    (configured-ktable
+     config
+     (count kgroupedstream store-name)))
+
+  (reduce
+    [_ reducer-fn topic-config]
+    (configured-ktable
+     config
+     (reduce kgroupedstream reducer-fn topic-config)))
+
+  ISessionWindowedKStream
+  (session-windowed-kstream*
+    [_]
+    kgroupedstream))
+
+(defn configured-session-windowed-kstream
+  "Makes a ConfiguredKGroupedStream object."
+  [config kgroupedstream]
+  (ConfiguredSessionWindowedKStream. config kgroupedstream))
 
 (deftype ConfiguredGlobalKTable [config global-ktable]
   IGlobalKTable

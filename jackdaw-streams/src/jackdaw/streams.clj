@@ -272,10 +272,15 @@
 
 ;; IKGroupedStream
 
-(defn window-by
+(defn window-by-time
   "Windows the KStream"
   ([kgroupedstream window]
-   (p/windowed-by kgroupedstream window)))
+   (p/windowed-by-time kgroupedstream window)))
+
+(defn window-by-session
+  "Windows the KStream"
+  ([kgroupedstream window]
+   (p/windowed-by-session kgroupedstream window)))
 
 (defn kgroupedstream*
   "Returns the underlying KGroupedStream object."

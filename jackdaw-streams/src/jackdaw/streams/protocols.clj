@@ -275,11 +275,27 @@
 
 (defprotocol IKGroupedStream
   "KGroupedStream is an abstraction of a grouped stream."
-  (windowed-by [kgroupedstream window])
+  (windowed-by-time [kgroupedstream window])
+
+  (windowed-by-session [kgroupedstream window])
 
   (kgroupedstream*
     [kgroupedstream]
     "Returns the underlying KGroupedStream object."))
+
+(defprotocol ITimeWindowedKStream
+  "ITimeWindowedKStream is an abstraction of a time windowed stream."
+
+  (time-windowed-kstream*
+    [ktime-windowed-kstream]
+    "Returns the underlying TimeWindowedKStream object."))
+
+(defprotocol ISessionWindowedKStream
+  "ISessionWindowedKStream is an abstraction of a session windowed stream."
+
+  (session-windowed-kstream*
+    [ksession-windowed-kstream]
+    "Returns the underlying SessionWindowedKStream object."))
 
 (defprotocol IGlobalKTable
   (global-ktable*

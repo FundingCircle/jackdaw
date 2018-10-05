@@ -10,7 +10,7 @@
             [jackdaw.streams.mock :as mock]
             [jackdaw.streams.protocols :refer [IKStream IKTable IStreamsBuilder]]
             [jackdaw.streams.specs])
-  (:import [org.apache.kafka.streams.kstream JoinWindows TimeWindows Transformer ValueTransformer]
+  (:import [org.apache.kafka.streams.kstream JoinWindows SessionWindows TimeWindows Transformer ValueTransformer]
            org.apache.kafka.streams.StreamsBuilder))
 
 (stest/instrument)
@@ -654,6 +654,63 @@
       (is (= [0 -7]
              (mock/consume driver topic-b)))
       (is (= [1 -8]
+             (mock/consume driver topic-b)))
+      (is (not (mock/consume driver topic-b)))))
+
+  (testing "windowed-by-time"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/group-by (fn [[k v]] (long (/ k 10))) topic-a)
+                                          (k/window-by-time (TimeWindows/of 1000))
+                                          (k/reduce + topic-a)
+                                          (k/to-kstream)
+                                          (k/map (fn [[k v]] [(.key k) v]))
+                                          (k/to! topic-b))))
+          produce (mock/producer driver topic-a)]
+
+      (produce [1 1] 1000)
+      (produce [1 2] 1500)
+      (produce [1 4] 5000)
+
+      (is (= [0 1]
+             (mock/consume driver topic-b)))
+      (is (= [0 3]
+             (mock/consume driver topic-b)))
+      (is (= [0 4]
+             (mock/consume driver topic-b)))
+      (is (not (mock/consume driver topic-b)))))
+
+  (testing "windowed-by-session"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/group-by (fn [[k v]] (long (/ k 10))) topic-a)
+                                          (k/window-by-session (SessionWindows/with 1000))
+                                          (k/reduce + topic-a)
+                                          (k/to-kstream)
+                                          (k/map (fn [[k v]] [(.key k) v]))
+                                          (k/to! topic-b))))
+          produce (mock/producer driver topic-a)]
+
+      (produce [1 1] 1000)
+      (produce [1 2] 1500)
+      (produce [1 3] 5000)
+      (produce [12 3] 5100)
+
+      (is (= [0 1]
+             (mock/consume driver topic-b)))
+      (is (= [0 nil]
+             (mock/consume driver topic-b)))
+      (is (= [0 3]
+             (mock/consume driver topic-b)))
+      (is (= [0 3]
+             (mock/consume driver topic-b)))
+      (is (= [1 3]
              (mock/consume driver topic-b)))
       (is (not (mock/consume driver topic-b))))))
 
