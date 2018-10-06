@@ -104,7 +104,7 @@
 (defn create-topic-
   [client topic-name num-partitions replication-factor topic-config]
   (let [topic (NewTopic. topic-name num-partitions replication-factor)]
-    (.configs topic (map->properties topic-config))
+    (.configs topic (jc/map->properties topic-config))
     (-> client
         (.createTopics [topic])
         .all
