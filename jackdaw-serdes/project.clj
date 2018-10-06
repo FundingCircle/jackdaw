@@ -1,4 +1,4 @@
-(defproject fundingcircle/jackdaw-serdes "0.3.25"
+(defproject fundingcircle/jackdaw-serdes "0.3.26-SNAPSHOT"
   :description "Serializers/deserializers for Kafka"
 
   :plugins [[fundingcircle/lein-modules "[0.3.0,0.4.0)"]]
