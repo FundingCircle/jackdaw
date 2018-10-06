@@ -54,7 +54,7 @@
             value-spec (:value-spec topic)
             topic-name (:jackdaw.topic/topic-name topic)]
 
-        (with-open [p (jc/producer {"boostrap.servers" bootstrap-servers} topic)]
+        (with-open [p (jc/producer {"bootstrap.servers" bootstrap-servers} topic)]
           (doseq [value record-values]
 
             (when (and validate? value-spec (not (s/valid? value-spec value)))
