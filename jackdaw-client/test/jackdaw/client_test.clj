@@ -2,6 +2,7 @@
   (:require [clojure.test :refer :all]
             [jackdaw.client :as client])
   (:import [java.util.concurrent LinkedBlockingQueue TimeUnit]
+           java.time.Duration
            [org.apache.kafka.clients.consumer Consumer ConsumerRecord ConsumerRecords]
            [org.apache.kafka.clients.producer Producer]
            org.apache.kafka.common.TopicPartition))
