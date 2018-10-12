@@ -20,7 +20,8 @@
         advertised-url (.advertisedUrl rest-server)
         worker-id (str (.getHost advertised-url) ":" (.getPort advertised-url))
         worker (Worker. worker-id (SystemTime.) (Plugins. {}) standalone-config (FileOffsetBackingStore.))
-        herder (StandaloneHerder. worker)
+        herder (StandaloneHerder. worker
+                                  (str (java.util.UUID/randomUUID)))
         connect (Connect. herder rest-server)]
 
       (.start connect)
