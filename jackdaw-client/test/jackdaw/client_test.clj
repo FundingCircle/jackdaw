@@ -54,7 +54,9 @@
   [queue]
   (reify Consumer
     (^ConsumerRecords poll [this ^long ms]
-      (.poll queue ms TimeUnit/MILLISECONDS))))
+      (.poll queue ms TimeUnit/MILLISECONDS))
+    (^ConsumerRecords poll [this ^Duration duration]
+     (.poll queue (.toMillis duration) TimeUnit/MILLISECONDS))))
 
 (deftest poll-test
   (let [q (LinkedBlockingQueue.)
