@@ -7,6 +7,7 @@
                  [fundingcircle/jackdaw-streams "_"]
                  [fundingcircle/jackdaw-test "_"]
                  [fundingcircle/jackdaw-extras "_"]
+                 [fundingcircle/jackdaw-examples "_"]
                  [org.clojure/clojure "_"]]
 
   :plugins [[lein-codox "0.10.3"]
