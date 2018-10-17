@@ -1,6 +1,5 @@
 # Jackdaw
-
-![jackdaw](https://user-images.githubusercontent.com/17861819/47072551-2f40d600-d1ee-11e8-9cd2-e7a47797e4ba.jpg)
+<img align="right" src="/etc/jackdaw.jpg" width=300/>
 
 Jackdaw is a Clojure library for the Apache Kafka distributed
 streaming platform.
