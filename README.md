@@ -1,15 +1,22 @@
 # Jackdaw
 
+(https://user-images.githubusercontent.com/17861819/47072551-2f40d600-d1ee-11e8-9cd2-e7a47797e4ba.jpg)
+
 Jackdaw is a Clojure library for the Apache Kafka distributed
 streaming platform.
 
 ## Libraries
 
-- jackdaw-client - client library for Apache Kafka Producer and
-  Consumer APIs
-- jackdaw-serdes - TODO: add description
-- jackdaw-test - test fixtures for Apache Kafka, Zookeeper, and
-  Confluent Schema Registry
+- `jackdaw-admin` - minimal client library for interaction with the Apache
+  Kafka management APIs
+- `jackdaw-client` - client library for Apache Kafka Producer and Consumer APIs
+- `jackdaw-streams` - client library for the Apache Kafka Streams APIs
+- `jackdaw-serdes` - utility code for working with various message
+  serialisation technologies (Avro, JSON, EDN ...), plus a minimal wrapper for
+the Schema Registry.
+- `jackdaw-test` - test fixtures for Apache Kafka, Zookeeper, and Confluent
+  Schema Registry
+- `jackdaw-examples` - some examples of Jackdaw in use
 
 ## Installation
 
@@ -21,6 +28,22 @@ add the following to your `:dependencies`:
 To include all of them:
 
     [fundingcircle/jackdaw "0.3.0"]
+
+## Building from Source
+
+Jackdaw uses lein modules. To build jackdaw from source, run:
+
+    $ lein modules install
+
+To run the tests, you will need the Confluent platform installed (see
+https://docs.confluent.io/current/quickstart/cos-quickstart.html#cos-quickstart):
+
+    $ confluent start kafka
+    $ lein modules test
+
+## Using Jackdaw
+
+See the `jackdaw-examples` module for some examples!
 
 ## Documentation
 
