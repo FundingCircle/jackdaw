@@ -155,7 +155,9 @@
       (is (= [1 2]
              @sentinel))))
 
-;; TODO: Why no work
+  ;; Per KAFKA-7326 Kstream.print() does not automatically flush so
+  ;; there is no good way to rest this until fix version 2.1.0
+  ;; https://issues.apache.org/jira/browse/KAFKA-7326
   #_(testing "print!"
     (let [std-out System/out
           mock-out (java.io.ByteArrayOutputStream.)]
