@@ -11,7 +11,7 @@
            org.apache.kafka.streams.TopologyTestDriver
            java.util.Properties
            org.apache.kafka.streams.test.ConsumerRecordFactory
-           [org.apache.kafka.common.serialization Serdes Serializer]))
+           [org.apache.kafka.common.serialization Serde Serdes Serializer]))
 
 (defn streams-builder
   "Creates a mock streams-builder."
@@ -68,10 +68,15 @@
     (.clear (.processed processor-supplier))
     processed))
 
-(defn producer [test-driver {:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
-  (let [record-factory (ConsumerRecordFactory. topic-name
-                                               ^Serializer (.serializer key-serde)
-                                               ^Serializer (.serializer value-serde))]
+(defn producer
+  [test-driver
+   {:keys [jackdaw.topic/topic-name
+           jackdaw.serdes/key-serde
+           jackdaw.serdes/value-serde]}]
+  (let [record-factory (ConsumerRecordFactory.
+                        topic-name
+                        (.serializer ^Serde key-serde)
+                        (.serializer ^Serde value-serde))]
     (fn produce!
       ([[k v]]
        (.pipeInput test-driver
