@@ -1,0 +1,4 @@
+{:deps
+ {fundingcircle/jackdaw {:mvn/version "0.3.27-SNAPSHOT"}}
+ :mvn/repos
+ {"confluent" {:url "https://packages.confluent.io/maven/"}}}
