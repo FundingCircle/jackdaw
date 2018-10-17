@@ -303,7 +303,7 @@
   ([builder opts]
    (let [props (java.util.Properties.)]
      (.putAll props opts)
-     (KafkaStreams. ^Topology (streams-builder* builder)
+     (KafkaStreams. ^Topology (.build (streams-builder* builder))
                     ^java.util.Properties props))))
 
 (defn start!
