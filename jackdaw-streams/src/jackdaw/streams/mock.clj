@@ -5,8 +5,7 @@
             [jackdaw.streams.configurable :refer [config configure]]
             [jackdaw.streams.configured :as configured]
             [jackdaw.streams.interop :as interop])
-  (:import [org.apache.kafka.test KStreamTestDriver MockProcessorSupplier]
-           java.nio.file.Files
+  (:import java.nio.file.Files
            java.nio.file.attribute.FileAttribute
            org.apache.kafka.streams.TopologyTestDriver
            java.util.Properties
@@ -21,23 +20,6 @@
    (configured/streams-builder
     {::streams-builder (k/streams-builder* streams-builder)}
     streams-builder)))
-
-(defn build
-  "Builds the topology."
-  [topology]
-  (let [processor-supplier (MockProcessorSupplier.)]
-    (.process (k/kstream* topology)
-              processor-supplier
-              (into-array String []))
-    (let [test-driver (doto (KStreamTestDriver.)
-                        (.setUp (-> topology config ::streams-builder)
-                                (.toFile
-                                 (Files/createTempDirectory
-                                  "kstream-test-driver"
-                                  (into-array FileAttribute [])))))]
-      (-> topology
-          (configure ::test-driver test-driver)
-          (configure ::processor-supplier processor-supplier)))))
 
 (defn streams-builder->test-driver [streams-builder]
   (let [topology (-> streams-builder config :jackdaw.streams.mock/streams-builder .build)]

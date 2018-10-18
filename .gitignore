@@ -15,3 +15,4 @@ pom.xml
 pom.xml.asc
 .lein-env
 .cpcache
+.nrepl-port
