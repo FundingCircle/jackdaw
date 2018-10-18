@@ -2,7 +2,7 @@
 
 ## Echo Stream
 
-This example is a trivial Kafka topology which simple copies strings from one
+This example is a trivial Kafka topology which simply copies strings from one
 topic (`input`) to another topic `output`. You will need to run Kafka
 independently:
 
@@ -20,6 +20,6 @@ Finally, start a command line producer to send some input:
 
     $ kafka-console-producer --broker-list localhost:9092 --property "parse.key=true" --property "key.separator=:" --topic input
 
-Every string sent to the input topic should appear on the output topic, pluse
+Every string sent to the input topic should appear on the output topic, plus
 the topology will echo the data it sees to its stdout.
 
