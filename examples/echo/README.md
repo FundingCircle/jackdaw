@@ -2,6 +2,20 @@
 
 This is a simple echo topology example.
 
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
+**Table of Contents**
+
+- [Simple ECHO topology](#simple-echo-topology)
+    - [Install](#install)
+    - [Running](#running)
+        - [Setup](#setup)
+        - [Run the topology](#run-the-topology)
+        - [Produce Records](#produce-records)
+    - [Consume Records](#consume-records)
+    - [Running tests](#running-tests)
+
+<!-- markdown-toc end -->
+
 ## Install
 
 Clofluent Platform 5.x 
@@ -47,4 +61,10 @@ To consume the echoed records you can close the producer `ctrl-c` or in a new te
 ```bash
 $ kafka-console-consumer --bootstrap-server localhost:9092 --property "print.key=true" --property "key.separator=:" --topic output --from-beginning
 Foo:Bar
+```
+
+## Running tests
+
+```bash 
+clj -Atest
 ```
