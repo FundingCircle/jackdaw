@@ -67,8 +67,13 @@
             ;; Shared pinned library versions
             :versions
             {fundingcircle :version
-             io.confluent "4.0.0"
+
+             ;; Kafka's version
              org.apache.kafka "2.0.0"
+             ;; Confluent does paired releases with Kafka, this should tie off with the kafka version.
+             ;; See https://docs.confluent.io/current/release-notes.html
+             io.confluent "5.0.0"
+
              arohner/wait-for "1.0.2"
              org.clojure/clojure "1.9.0"
              org.clojure/test.check "0.9.0"
