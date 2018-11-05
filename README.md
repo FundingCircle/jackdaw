@@ -15,7 +15,6 @@ streaming platform.
 the Schema Registry.
 - `jackdaw-test` - test fixtures for Apache Kafka, Zookeeper, and Confluent
   Schema Registry
-- `jackdaw-examples` - some examples of Jackdaw in use
 
 ## Installation
 
@@ -42,7 +41,7 @@ https://docs.confluent.io/current/quickstart/cos-quickstart.html#cos-quickstart)
 
 ## Using Jackdaw
 
-See the `jackdaw-examples` module for some examples!
+See the `examples` module for some examples!
 
 ## Documentation
 
