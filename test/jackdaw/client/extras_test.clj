@@ -35,7 +35,9 @@
     {:jackdaw.topic/topic-name topic-name
      :jackdaw.topic/record-key :partition-key
      :jackdaw.serdes/key-serde (serdes/serde ::serdes/string)
-     :jackdaw.serdes/value-serde (avro/avro-serde schema-registry-config
+     :jackdaw.serdes/value-serde (avro/avro-serde (merge avro/+base-schema-type-registry+
+                                                         avro/+UUID-type-registry+)
+                                                  schema-registry-config
                                                   topic-config)
      :jackdaw.topic/partition-key test-key
      :jackdaw.topic/partitions 15}))

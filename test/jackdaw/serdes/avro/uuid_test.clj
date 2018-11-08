@@ -8,6 +8,14 @@
            (org.apache.avro.generic GenericData$Record)
            (org.apache.avro.util Utf8)))
 
+(def +registry+
+  (merge avro/+base-schema-type-registry+
+         avro/+UUID-type-registry+))
+
+(def schema-type
+  (avro/make-conversion-stack
+   +registry+))
+
 (defn parse-schema [clj-schema]
   (.parse (Schema$Parser.) ^String (json/write-str clj-schema)))
 
@@ -17,7 +25,7 @@
                                      :name "id"
                                      :namespace "com.fundingcircle"
                                      :logicalType "jackdaw.serdes.avro.UUID"})
-          schema-type (avro/schema-type avro-schema)
+          schema-type (schema-type avro-schema)
           clj-data #uuid "2d30dd35-8dd1-4044-8bfb-9c810d56c5cb"
           avro-data (Utf8. "2d30dd35-8dd1-4044-8bfb-9c810d56c5cb")]
       (is (avro/match-clj? schema-type clj-data))
@@ -33,7 +41,7 @@
                                        :fields [{:name "id"
                                                  :namespace "com.fundingcircle"
                                                  :type uuid-schema}]})
-          schema-type (avro/schema-type record-schema)
+          schema-type (schema-type record-schema)
           id (uuid/v4)
           clj-data {:id id}
           avro-data (doto (GenericData$Record. record-schema)
@@ -51,7 +59,7 @@
                                      :name "id"
                                      :namespace "com.fundingcircle"
                                      :logicalType "uuid"})
-          schema-type (avro/schema-type avro-schema)
+          schema-type (schema-type avro-schema)
           clj-data #uuid "2d30dd35-8dd1-4044-8bfb-9c810d56c5cb"
           avro-data (Utf8. "2d30dd35-8dd1-4044-8bfb-9c810d56c5cb")]
       (is (avro/match-clj? schema-type clj-data))
@@ -67,7 +75,7 @@
                                        :fields [{:name "id"
                                                  :namespace "com.fundingcircle"
                                                  :type uuid-schema}]})
-          schema-type (avro/schema-type record-schema)
+          schema-type (schema-type record-schema)
           id (uuid/v4)
           clj-data {:id id}
           avro-data (doto (GenericData$Record. record-schema)
