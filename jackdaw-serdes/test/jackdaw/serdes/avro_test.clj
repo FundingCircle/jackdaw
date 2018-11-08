@@ -25,11 +25,12 @@
     record))
 
 (defn ->serde [schema-str]
-  (let [config {:schema.registry/client (reg/mock-client)
-                :schema.registry/url "localhost:8081" ; Not actually used
-                :avro/schema schema-str}]
-    (-> (avro/serde-config :value config)
-        (avro/avro-serde))))
+  (let [config
+        {:avro.schema-registry/client (reg/mock-client)
+         :avro.schema-registry/url    "localhost:8081"
+         :avro/schema                 schema-str
+         :key?                        false}]
+    (avro/avro-serde registry-config serde-config)))
 
 (defn deserialize [serde topic x]
   (let [deserializer (.deserializer serde)]

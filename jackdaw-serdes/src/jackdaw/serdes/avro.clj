@@ -490,28 +490,18 @@
 ;; Public API
 
 (defn avro-serde
-  "Given a serde config, return an avro serde pair."
-  [serde-config]
-  (let [serializer (avro-serializer serde-config)
-        deserializer (avro-deserializer serde-config)]
+  "Given logical types, a schema registry client, URL and an Avro descriptor, build a Serde."
+  [{:keys [avro.schema-registry/client
+           avro.schema-registry/url
+           avro/schema
+           key?]}]
+  (let [config {:key? key?
+                :registry-url url
+                :registry-client (or client
+                                     (registry/client url 128))
+                ;; Provide the old behavior by default, or fall through to the
+                ;; new behavior of getting the right schema when possible.
+                :avro-schema (parse-schema-str schema)}
+        serializer (avro-serializer config)
+        deserializer (avro-deserializer config)]
     (Serdes/serdeFrom serializer deserializer)))
-
-(defn serde-config [key-or-value topic-config]
-  (let [{:keys [schema.registry/client
-                schema.registry/url
-                ;; Key and value schema as standard in topic config
-                jackdaw.topic/key-schema
-                jackdaw.topic/value-schema
-                ;; The old magical :avro/schema key >.>
-                avro/schema]} topic-config
-        key? (case key-or-value
-               :key true
-               :value false)]
-    {:key? key?
-     :registry-client (or client (registry/client topic-config 10))
-     :registry-url (or url (registry/url topic-config))
-     ;; Provide the old behavior by default, or fall through to the
-     ;; new behavior of getting the right schema when possible.
-     :avro-schema (parse-schema-str
-                   (or schema
-                       (if key? key-schema value-schema)))}))
