@@ -4,7 +4,6 @@
   :plugins [[fundingcircle/lein-modules "[0.3.0,0.4.0)"]]
 
   :dependencies [[danlentz/clj-uuid "_"]
-                 [environ "_"]
                  [io.confluent/kafka-avro-serializer "_"]
                  [io.confluent/kafka-schema-registry-client "_"]
                  [org.apache.kafka/kafka-clients "_"]
