@@ -7,8 +7,7 @@
             [clojure.pprint :refer [pprint]]
             [environ.core :as env]
             [jackdaw.serdes.avro :as avro]
-            [jackdaw.serdes.avro :as avro]
-            [jackdaw.serdes.registry :as reg])
+            [jackdaw.serdes.avro.schema-registry :as reg])
   (:import (java.nio ByteBuffer)
            (java.util Collection)
            (org.apache.avro Schema$Parser Schema)
@@ -25,10 +24,12 @@
     record))
 
 (defn ->serde [schema-str]
-  (let [config
+  (let [registry-config
         {:avro.schema-registry/client (reg/mock-client)
-         :avro.schema-registry/url    "localhost:8081"
-         :avro/schema                 schema-str
+         :avro.schema-registry/url    "localhost:8081"}
+
+        serde-config
+        {:avro/schema                 schema-str
          :key?                        false}]
     (avro/avro-serde registry-config serde-config)))
 
@@ -74,7 +75,7 @@
                                  :expected '~form, :actual e#})))
             e#))))
 
-(deftest schema-type
+(deftest schema-type-test
   (testing "schemaless"
     (is (= (avro/clj->avro (avro/schema-type nil) "hello" [])
            "hello"))

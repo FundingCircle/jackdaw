@@ -12,15 +12,18 @@
 
 (def +topic-config+
   {:key? false
-   :avro/schema (slurp (io/resource "resources/example_schema.avsc"))
-   :avro.schema-registry/url "http://localhost:8081"})
+   :avro/schema (slurp (io/resource "resources/example_schema.avsc"))})
 
-(defn with-mock-client [config]
-  (assoc config :avro.schema-registry/client (MockSchemaRegistryClient.)))
+(def +real-registry+
+  {:avro.schema-registry/url "http://localhost:8081"})
+
+(def +mock-registry+
+  (merge +real-registry+
+        { :avro.schema-registry/client (MockSchemaRegistryClient.)}))
 
 (deftest mock-schema-registry
   (testing "schema can be serialized by registry client"
-    (let [serde ^Serde (avro/avro-serde (with-mock-client +topic-config+))]
+    (let [serde ^Serde (avro/avro-serde +mock-registry+ +topic-config+)]
       (let [msg {:customer-id (uuid/v4)
                  :address {:value "foo"
                            :key-path "foo.bar.baz"}}]
@@ -32,7 +35,7 @@
 
 (deftest ^:integration real-schema-registry
   (testing "schema registry set in config"
-    (let [serde ^Serde (avro/avro-serde +topic-config+)]
+    (let [serde ^Serde (avro/avro-serde +real-registry+ +topic-config+)]
       (let [msg {:customer-id (uuid/v4)
                  :address {:value "foo"
                            :key-path "foo.bar.baz"}}]
