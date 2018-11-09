@@ -29,14 +29,14 @@
                                {:name "testother"
                                 :type :string}]})
         topic-config {:avro/schema test-schema
-                      :schema.registry/url "http://localhost:8081"
-                      :schema.registry/client (MockSchemaRegistryClient.)}
-        serde-config (avro/serde-config :value
-                                        topic-config)]
+                      :key? false}
+        schema-registry-config {:avro.schema-registry/url "http://localhost:8081"
+                                :avro.schema-registry/client (MockSchemaRegistryClient.)}]
     {:jackdaw.topic/topic-name topic-name
      :jackdaw.topic/record-key :partition-key
      :jackdaw.serdes/key-serde (serdes/serde ::serdes/string)
-     :jackdaw.serdes/value-serde (avro/avro-serde serde-config)
+     :jackdaw.serdes/value-serde (avro/avro-serde schema-registry-config
+                                                  topic-config)
      :jackdaw.topic/partition-key test-key
      :jackdaw.topic/partitions 15}))
 
