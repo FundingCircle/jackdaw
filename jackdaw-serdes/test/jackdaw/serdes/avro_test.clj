@@ -5,7 +5,6 @@
             [clojure.data.json :as json]
             [clojure.java.io :as io]
             [clojure.pprint :refer [pprint]]
-            [environ.core :as env]
             [jackdaw.serdes.avro :as avro]
             [jackdaw.serdes.avro.schema-registry :as reg])
   (:import (java.nio ByteBuffer)
