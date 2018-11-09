@@ -1,7 +1,7 @@
 (ns jackdaw.serdes.avro
   (:require [clojure.tools.logging :as log]
             [clojure.string :as str]
-            [jackdaw.serdes.registry :as registry]
+            [jackdaw.serdes.avro.schema-registry :as registry]
             [jackdaw.serdes.fn :as fn])
   (:import (io.confluent.kafka.serializers KafkaAvroSerializer KafkaAvroDeserializer)
            (java.lang CharSequence)
@@ -490,11 +490,20 @@
 ;; Public API
 
 (defn avro-serde
-  "Given logical types, a schema registry client, URL and an Avro descriptor, build a Serde."
+  "Given a schema registry config with either a client or a URL and an
+  Avro topic descriptor, build and return a Serde instance."
   [{:keys [avro.schema-registry/client
-           avro.schema-registry/url
-           avro/schema
-           key?]}]
+           avro.schema-registry/url]
+    :as registry-config}
+   {:keys [avro/schema
+           key?]
+    :as topic-config}]
+
+  (when-not url
+    (throw
+     (IllegalArgumentException.
+      ":avro.schema-registry/url is required in the registry config")))
+
   (let [config {:key? key?
                 :registry-url url
                 :registry-client (or client
