@@ -1,9 +1,7 @@
 (ns jackdaw.serdes
   "Some useful serdes."
   (:refer-clojure :exclude [resolve])
-  (:require [environ.core :refer [env]]
-            [jackdaw.serdes.avro :as avro]
-            [jackdaw.serdes.edn :as edn]
+  (:require [jackdaw.serdes.edn :as edn]
             [jackdaw.serdes.json :as json]
             [jackdaw.serdes.uuid :as uuid])
   (:import org.apache.kafka.common.serialization.Serdes))
@@ -18,11 +16,7 @@
   This mapping is not intended to be exhaustive, merely introductory and useful."}
   +default-serdes+
 
-  {::avro-key    #(-> (avro/serde-config :key %)
-                      (avro/avro-serde))
-   ::avro-value  #(-> (avro/serde-config :value %)
-                      (avro/avro-serde))
-   ::edn         (fn [_] (edn/edn-serde))
+  {::edn         (fn [_] (edn/edn-serde))
    ::json        (fn [_] (json/json-serde))
    ::uuid        (fn [_] (uuid/uuid-serde))
    ::byte-array  (fn [_] (Serdes/ByteArray))
