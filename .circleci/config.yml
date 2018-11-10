@@ -27,15 +27,13 @@ jobs:
       - run:
           command: nohup confluent start
       - run:
-          command: lein modules do with-profile +dev,+test deps, install
-      - run:
           command: confluent status
       - save_cache:
           key: libs-cache-{{ checksum "project.clj" }}-{{ checksum ".circleci/config.yml" }}
           paths:
             - ~/.m2/
       - run:
-          command: lein modules test
+          command: lein test
 
   deploy-staging:
     docker:
