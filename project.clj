@@ -1,16 +1,31 @@
 (defproject fundingcircle/jackdaw "0.3.27-SNAPSHOT"
   :description "No frills Clojure wrapper around Apache Kafka APIs"
 
-  :dependencies [[fundingcircle/jackdaw-admin "_"]
-                 [fundingcircle/jackdaw-client "_"]
-                 [fundingcircle/jackdaw-serdes "_"]
-                 [fundingcircle/jackdaw-streams "_"]
-                 [fundingcircle/jackdaw-test "_"]
-                 [fundingcircle/jackdaw-extras "_"]
-                 [org.clojure/clojure "_"]]
+  :dependencies [[com.taoensso/nippy "2.12.2"]
+                 [danlentz/clj-uuid "0.1.7"]
+                 [environ "1.1.0"]
+                 ;; Confluent does paired releases with Kafka, this should tie
+                 ;; off with the kafka version.
+                 ;; See https://docs.confluent.io/current/release-notes.html
+                 [io.confluent/kafka-avro-serializer "5.0.0"]
+                 [io.confluent/kafka-connect-avro-converter "5.0.0"]
+                 [io.confluent/kafka-connect-jdbc "5.0.0"]
+                 [io.confluent/kafka-schema-registry "5.0.0"]
+                 [io.confluent/kafka-schema-registry-client "5.0.0"]
+                 [org.apache.kafka/connect-api "2.0.0"]
+                 [org.apache.kafka/connect-json "2.0.0"]
+                 [org.apache.kafka/connect-runtime "2.0.0"]
+                 [org.apache.kafka/kafka-clients "2.0.0"]
+                 [org.apache.kafka/kafka-streams "2.0.0"]
+                 [org.apache.kafka/kafka_2.11 "2.0.0"]
+                 [org.clojure/clojure "1.9.0"]
+                 [org.clojure/data.json "0.2.6"]
+                 [org.clojure/tools.logging "0.3.1"]]
 
   :plugins [[lein-codox "0.10.3"]
-            [fundingcircle/lein-modules "0.3.13-SNAPSHOT"]]
+            [lein-environ "1.1.0"]]
+
+  :aot [jackdaw.serdes.fn-impl]
 
   :profiles {;; Provide an alternative to :leiningen/default, used to include :shared
              :default
@@ -34,69 +49,27 @@
                ["releases"
                 {:url "https://fundingcircle.artifactoryonline.com/fundingcircle/libs-release-local"
                  :username [:gpg :env/artifactory_user]
-                 :password [:gpg :env/artifactory_password]}]]
-
-              :dependencies
-              [[org.clojure/clojure "_"]]}
+                 :password [:gpg :env/artifactory_password]}]]}
 
              ;; The dev profile - non-deployment configuration
              :dev
-             {:test-selectors
-              {:default (complement :integration)
-               :integration :integration}
-
-              :codox
+             {:codox
               {:output-path "codox"
-               :source-uri "http://github.com/fundingcircle/jackdaw/blob/{version}/{filepath}#L{line}"}
-
-              :dependencies
-              [[org.apache.kafka/kafka-clients "_" :classifier "test"]
-               [org.apache.kafka/kafka-streams "_" :classifier "test"]]}
+               :source-uri "http://github.com/fundingcircle/jackdaw/blob/{version}/{filepath}#L{line}"}}
 
              :test
-             {:dependencies [[org.clojure/test.check "_"]]}
+             {:resource-paths ["test/resources"]
+              :dependencies   [[arohner/wait-for "1.0.2"]
+                               [clj-http "2.3.0"]
+                               [clj-time "0.13.0"]
+                               [environ "1.1.0"]
+                               [org.apache.kafka/kafka-streams-test-utils "2.0.0" :scope "test"]
+                               [org.clojure/test.check "0.9.0"]
+                               [org.clojure/tools.nrepl "0.2.12"]
+                               [org.clojure/java.jdbc "0.7.0-beta2"]
+                               [org.xerial/sqlite-jdbc "3.19.3"]
+                               [junit "4.12"]]}
 
              ;; This is not in fact what lein defines repl to be
              :repl
-             [:default :dev :test]}
-
-  :modules {;; Always inherit the shared configuration
-            :inherited
-            [:shared]
-
-            ;; Shared pinned library versions
-            :versions
-            {fundingcircle :version
-
-             ;; Kafka's version
-             org.apache.kafka "2.0.0"
-             ;; Confluent does paired releases with Kafka, this should tie off with the kafka version.
-             ;; See https://docs.confluent.io/current/release-notes.html
-             io.confluent "5.0.0"
-
-             arohner/wait-for "1.0.2"
-             org.clojure/clojure "1.9.0"
-             org.clojure/test.check "0.9.0"
-             org.clojure/tools.logging "0.3.1"
-             org.clojure/data.json "0.2.6"
-             org.clojure/tools.nrepl "0.2.12"
-             org.clojure/java.jdbc "0.7.0-beta2"
-             org.xerial/sqlite-jdbc "3.19.3"
-             com.taoensso/nippy "2.12.2"
-             danlentz/clj-uuid "0.1.7"
-             environ "1.1.0"
-             junit "4.12"
-             clj-time "0.13.0"
-             clj-http "2.3.0"}}
-
-  :release-tasks [["vcs" "assert-committed"]
-                  ["change" "version" "leiningen.release/bump-version" "release"]
-                  ["modules" "change" "version" "leiningen.release/bump-version" "release"]
-                  ["vcs" "commit"]
-                  ["vcs" "tag" "--no-sign"]
-                  ["modules" "deploy"]
-                  ["deploy"]
-                  ["change" "version" "leiningen.release/bump-version"]
-                  ["modules" "change" "version" "leiningen.release/bump-version"]
-                  ["vcs" "commit"]
-                  ["vcs" "push"]])
+             [:default :dev :test]})
