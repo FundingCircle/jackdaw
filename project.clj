@@ -1,4 +1,4 @@
-(defproject fundingcircle/jackdaw "0.3.27-SNAPSHOT"
+(defproject fundingcircle/jackdaw "0.0.2-SNAPSHOT"
   :description "No frills Clojure wrapper around Apache Kafka APIs"
 
   :dependencies [[com.taoensso/nippy "2.12.2"]
