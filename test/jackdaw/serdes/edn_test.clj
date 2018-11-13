@@ -1,22 +1,20 @@
 (ns jackdaw.serdes.edn-test
   (:require [clojure.test :refer :all]
-            [clojure.test.check
-             [clojure-test :as ct :refer [defspec]]
-             [generators :as gen]
-             [properties :as prop]]
-            [jackdaw.serdes.edn :refer :all]
-            [taoensso.nippy :as nippy]))
+            [clojure.test.check.clojure-test :refer [defspec]]
+            [clojure.test.check.generators :as gen]
+            [clojure.test.check.properties :as prop]
+            [jackdaw.serdes.edn :as j.s.edn]))
 
-(deftest edn-roundtrip-test
+(defspec edn-roundtrip-test 20
   (testing "EDN data is the same after serialization and deserialization."
-    (is (= nippy/stress-data-comparable
-           (->> nippy/stress-data-comparable
-                (.serialize (edn-serializer) nil)
-                (.deserialize (edn-deserializer) nil))))))
+    (prop/for-all [x gen/any-printable]
+      (is (= x (->> (.serialize (j.s.edn/serializer) nil x)
+                    (.deserialize (j.s.edn/deserializer) nil)))))))
 
-(deftest edn-reverse-roundtrip-test
+(defspec edn-reverse-roundtrip-test 20
   (testing "EDN data is the same after deserialization and serialization."
-    (let [bytes (.serialize (edn-serializer) nil nippy/stress-data-comparable)]
-      (is (= (seq bytes)
-             (seq (->> (.deserialize (edn-deserializer) nil bytes)
-                       (.serialize (edn-serializer) nil))))))))
+    (prop/for-all [x gen/any-printable]
+      (let [bytes (.serialize (j.s.edn/serializer) nil x)]
+        (is (= (seq bytes)
+               (seq (->> (.deserialize (j.s.edn/deserializer) nil bytes)
+                         (.serialize (j.s.edn/serializer) nil)))))))))

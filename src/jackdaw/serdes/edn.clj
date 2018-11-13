@@ -1,23 +1,35 @@
 (ns jackdaw.serdes.edn
-  (:require [taoensso.nippy :as nippy]
-            [jackdaw.serdes.fn :as sfn])
-  (:import [org.apache.kafka.common.serialization Serdes]))
+  (:require [clojure.edn :refer [read-string]]
+            [jackdaw.serdes.fn :as j.s.fn])
+  (:import java.nio.charset.StandardCharsets
+           org.apache.kafka.common.serialization.Serdes))
 
-(defn edn-serializer
-  "EDN serializer."
-  []
-  (sfn/new-serializer {:serialize (fn [_ _ data]
-                                    (when data
-                                      (nippy/freeze data)))}))
+(set! *warn-on-reflection* true)
 
-(defn edn-deserializer
-  "EDN deserializer."
-  []
-  (sfn/new-deserializer {:deserialize (fn [_ _ data]
-                                        (when data
-                                          (nippy/thaw data)))}))
+(defn to-bytes
+  "Convert a string to byte array."
+  [data]
+  (.getBytes ^String data StandardCharsets/UTF_8))
 
-(defn edn-serde
-  "EDN serde."
+(defn from-bytes
+  "Converts a byte array to a string."
+  [^bytes data]
+  (String. data StandardCharsets/UTF_8))
+
+(defn serializer
+  "Returns an EDN serializer."
   []
-  (Serdes/serdeFrom (edn-serializer) (edn-deserializer)))
+  (j.s.fn/new-serializer {:serialize (fn [_ _ data]
+                                       (when data
+                                         (to-bytes (prn-str data))))}))
+
+(defn deserializer
+  "Returns an EDN deserializer."
+  []
+  (j.s.fn/new-deserializer {:deserialize (fn [_ _ data]
+                                           (read-string (from-bytes data)))}))
+
+(defn serde
+  "Returns EDN serde."
+  []
+  (Serdes/serdeFrom (serializer) (deserializer)))
