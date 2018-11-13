@@ -1,7 +1,7 @@
 (ns jackdaw.serdes
   "Some useful serdes."
   (:refer-clojure :exclude [resolve])
-  (:require [jackdaw.serdes.edn :as edn]
+  (:require [jackdaw.serdes.edn.nippy :as j.s.edn.nippy]
             [jackdaw.serdes.json :as json]
             [jackdaw.serdes.uuid :as uuid])
   (:import org.apache.kafka.common.serialization.Serdes))
@@ -16,7 +16,7 @@
   This mapping is not intended to be exhaustive, merely introductory and useful."}
   +default-serdes+
 
-  {::edn         (fn [_] (edn/edn-serde))
+  {::edn         (fn [_] (j.s.edn.nippy/serde))
    ::json        (fn [_] (json/json-serde))
    ::uuid        (fn [_] (uuid/uuid-serde))
    ::byte-array  (fn [_] (Serdes/ByteArray))
@@ -36,7 +36,7 @@
   its result - presumably a serde.
 
   If no mapping is provided, `#'+default-serdes+` is used.
-  
+
   If no serde constructor is found in the active mapping, the
   `default-ctor` is invoked.
 
