@@ -1,7 +1,8 @@
 (defproject fundingcircle/jackdaw "0.0.2-SNAPSHOT"
   :description "No frills Clojure wrapper around Apache Kafka APIs"
 
-  :dependencies [[com.taoensso/nippy "2.12.2"]
+  :dependencies [[clj-time "0.13.0"]
+                 [com.taoensso/nippy "2.12.2"]
                  [danlentz/clj-uuid "0.1.7"]
                  [environ "1.1.0"]
                  ;; Confluent does paired releases with Kafka, this should tie
@@ -61,7 +62,6 @@
              {:resource-paths ["test/resources"]
               :dependencies   [[arohner/wait-for "1.0.2"]
                                [clj-http "2.3.0"]
-                               [clj-time "0.13.0"]
                                [environ "1.1.0"]
                                [org.apache.kafka/kafka-streams-test-utils "2.0.0" :scope "test"]
                                [org.clojure/test.check "0.9.0"]
