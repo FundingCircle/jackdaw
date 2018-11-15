@@ -13,7 +13,7 @@
          avro/+UUID-type-registry+))
 
 (def schema-type
-  (avro/make-conversion-stack
+  (avro/make-coercion-stack
    +registry+))
 
 (defn parse-schema [clj-schema]

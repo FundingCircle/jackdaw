@@ -2,7 +2,7 @@
   "Generating Serdes mapping Clojure <-> Avro.
 
   The intentional API of this NS has three main features -
-  `SchemaType`, the intentional type registry (of which
+  `SchemaCoercion`, the intentional type registry (of which
   `#'+base-schema-type-registry+` is an example) and
   `#'avro-serde`.
 
@@ -24,18 +24,18 @@
   avro record as having some complex interpretation beyond their
   serialized format. The `type-registry` for the purposes of the
   `avro-serde` function a mapping of addresses to functions which will
-  when invoked build and return a `SchemaType` instance.
+  when invoked build and return a `SchemaCoercion` instance.
 
-  When a Serde is instantiated, a stack of `SchemaType` coersion
+  When a Serde is instantiated, a stack of `SchemaCoercion` coersion
   helpers is built which will - given a simply deserialized Avro
   record - walk its tree coercing its to Clojure types as defined by
-  the `SchemaType` helpers.
+  the `SchemaCoercion` helpers.
 
-  The `SchemaType` stack is built by statically inspecting the parsed
+  The `SchemaCoercion` stack is built by statically inspecting the parsed
   Avro schema, and using the type (if any) and potentially logical
   type to select a handler in the `type-registry` which will, given a
   function with which to recurse and the schema of that node, build
-  and return a `SchemaType` handler.
+  and return a `SchemaCoercion` handler.
 
   This registry pattern is deliberately chosen so that Avro coercion
   will be customizable by the user. As an example, the
@@ -54,6 +54,7 @@
   "
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [clojure.tools.logging :as log]
+            [clojure.core.cache :as cache]
             [clojure.string :as str]
             [jackdaw.serdes.avro.schema-registry :as registry]
             [jackdaw.serdes.fn :as fn])
@@ -62,7 +63,7 @@
            java.nio.ByteBuffer
            [java.util Collection Map UUID]
            [org.apache.avro Schema$Parser Schema$ArraySchema Schema Schema$Field]
-           [org.apache.avro.generic GenericData$Array GenericData$EnumSymbol GenericData$Record GenericRecordBuilder]
+           [org.apache.avro.generic GenericContainer GenericData$Array GenericData$EnumSymbol GenericData$Record GenericRecordBuilder]
            [org.apache.kafka.common.serialization Serializer Deserializer Serdes]))
 
 (set! *warn-on-reflection* true)
@@ -90,10 +91,18 @@
         {:type base-type :logical-type logical-type}
         {:type base-type}))))
 
-(defn make-conversion-stack [type-registry]
+(defn make-coercion-stack
+  "Given a registry mapping Avro type specs to 2-arity coercion
+  constructors, recursively build up a coercion stack which will go
+  clj <-> avro, returning the root coercion object.
+
+  (satisfies `SchemaCoercion`)"
+  [type-registry]
   (fn stack [^Schema schema]
     (let [dispatch (dispatch-on-type-fields schema)
-          ctor (get type-registry dispatch)]
+          ctor (or (get type-registry dispatch)
+                   (when (contains? dispatch :logical-type)
+                     (get type-registry (dissoc dispatch :logical-type))))]
       (if-not ctor
         (throw (ex-info "Failed to dispatch coersion!"
                         {:schema schema, :dispatch dispatch}))
@@ -101,7 +110,7 @@
 
 ;; Protocols and Multimethods
 
-(defprotocol SchemaType
+(defprotocol SchemaCoercion
   (match-clj? [schema-type clj-data])
   (match-avro? [schema-type avro-data])
   (avro->clj [schema-type avro-data])
@@ -132,7 +141,7 @@
 ;;; Boolean
 
 (defrecord BooleanType []
-  SchemaType
+  SchemaCoercion
   (match-clj? [_ x] (boolean? x))
   (match-avro? [_ x] (boolean? x))
   (avro->clj [_ x] x)
@@ -154,7 +163,7 @@
   (some-fn byte-buffer? bytes?))
 
 (defrecord BytesType []
-  SchemaType
+  SchemaCoercion
   (match-clj? [_ x] (avro-bytes? x))
   (match-avro? [_ x] (avro-bytes? x))
   (avro->clj [_ x] x)
@@ -167,7 +176,7 @@
 ;; Note that clojure.core/float? recognizes both single and double precision floating point values.
 
 (defrecord DoubleType []
-  SchemaType
+  SchemaCoercion
   (match-clj? [_ x] (float? x))
   (match-avro? [_ x] (float? x))
   (avro->clj [_ x] x)
@@ -179,7 +188,7 @@
   (instance? Float x))
 
 (defrecord FloatType []
-  SchemaType
+  SchemaCoercion
   (match-clj? [_ x] (single-float? x))
   (match-avro? [_ x] (single-float? x))
   (avro->clj [_ x] x)
@@ -195,7 +204,7 @@
        (int-range? x)))
 
 (defrecord IntType []
-  SchemaType
+  SchemaCoercion
   (match-clj? [_ x]
     (int-castable? x))
   (match-avro? [_ x] (int? x))
@@ -205,7 +214,7 @@
     (int x)))
 
 (defrecord LongType []
-  SchemaType
+  SchemaCoercion
   (match-clj? [_ x]
     (int? x))
   (match-avro? [_ x] (int? x))
@@ -215,7 +224,7 @@
     (long x)))
 
 (defrecord StringType []
-  SchemaType
+  SchemaCoercion
   (match-clj? [_ x] (string? x))
   (match-avro? [_ x] (instance? CharSequence x))
   (avro->clj [_ x] (str x))
@@ -224,7 +233,7 @@
     x))
 
 (defrecord NullType []
-  SchemaType
+  SchemaCoercion
   (match-clj? [_ x] (nil? x))
   (match-avro? [_ x] (nil? x))
   (avro->clj [_ x] x)
@@ -233,7 +242,7 @@
     x))
 
 (defrecord SchemalessType []
-  SchemaType
+  SchemaCoercion
   (match-clj? [_ x]
     true)
   (match-avro? [_ x]
@@ -244,7 +253,7 @@
 ;; UUID :disapprove:
 
 (defrecord StringUUIDType []
-  SchemaType
+  SchemaCoercion
   (match-clj? [_ uuid]
     (uuid? uuid))
   (match-avro? [_ uuid-str]
@@ -260,8 +269,8 @@
 
 ;;;; Complex Types
 
-(defrecord ArrayType [^Schema schema element-schema]
-  SchemaType
+(defrecord ArrayType [^Schema schema element-coercion]
+  SchemaCoercion
   (match-clj? [_ x]
     (sequential? x))
 
@@ -269,7 +278,7 @@
     (instance? GenericData$Array x))
 
   (avro->clj [_ java-collection]
-    (mapv #(avro->clj element-schema %) java-collection))
+    (mapv #(avro->clj element-coercion %) java-collection))
 
   (clj->avro [this clj-seq path]
     (validate-clj! this clj-seq path "array")
@@ -277,20 +286,20 @@
     (GenericData$Array. ^Schema schema
                         ^Collection
                         (map-indexed (fn [i x]
-                                       (clj->avro element-schema x (conj path i)))
+                                       (clj->avro element-coercion x (conj path i)))
                                      clj-seq))))
 
 (defn ->ArrayType
   "Wrapper by which to construct a `ArrayType` which handles the
   structural recursion of building the handler stack so that the
   `ArrayType` type can be pretty simple."
-  [schema-type ^Schema schema]
+  [schema->coercion ^Schema schema]
   (ArrayType. schema
-              (schema-type
+              (schema->coercion
                (.getElementType ^Schema$ArraySchema schema))))
 
-(defrecord EnumType [_ ^Schema schema]
-  SchemaType
+(defrecord EnumType [^Schema schema]
+  SchemaCoercion
   (match-clj? [_ x]
     (or
      (string? x)
@@ -310,9 +319,12 @@
          (mangle)
          (GenericData$EnumSymbol. schema))))
 
+(defn ->EnumType [_schema->coercion ^Schema schema]
+  (EnumType. schema))
+
 #_
 (defrecord FixedType []
-  SchemaType
+  SchemaCoercion
   (match-clj? [_ x]
     false)
   (match-avro? [_ x]
@@ -322,8 +334,8 @@
   (clj->avro [_ fixed path]
     (throw (UnsupportedOperationException. "Not implemented"))))
 
-(defrecord MapType [^Schema schema value-schema]
-  SchemaType
+(defrecord MapType [^Schema schema value-coercion]
+  SchemaCoercion
   (match-clj? [_ x]
     (map? x))
 
@@ -332,7 +344,7 @@
 
   (avro->clj [_ avro-map]
     (into {}
-          (map (fn [[k v]] [(str k) (avro->clj value-schema v)]))
+          (map (fn [[k v]] [(str k) (avro->clj value-coercion v)]))
           avro-map))
 
   (clj->avro [this clj-map path]
@@ -345,26 +357,26 @@
                                            (class-name k)
                                            k)
                                    {:path path, :clj-data clj-map})))
-                 [k (clj->avro value-schema v (conj path k))]))
+                 [k (clj->avro value-coercion v (conj path k))]))
           clj-map)))
 
 (defn ->MapType
   "Wrapper by which to construct a `MapType` which handles the
   structural recursion of building the handler stack so that the
   `MapType` type can be pretty simple."
-  [schema-type ^Schema schema]
-  (MapType. schema (schema-type (.getValueType schema))))
+  [schema->coercion ^Schema schema]
+  (MapType. schema (schema->coercion (.getValueType schema))))
 
-(defrecord RecordType [field->schema+type ^Schema schema schema-type]
-  SchemaType
+(defrecord RecordType [^Schema schema field->schema+coercion]
+  SchemaCoercion
   (match-clj? [_ clj-map]
     (let [fields (.getFields schema)]
-      (every? (fn [[field-key [^Schema$Field field field-schema-type]]]
+      (every? (fn [[field-key [^Schema$Field field field-coercion]]]
                 (let [field-value (get clj-map field-key ::missing)]
                   (if (= field-value ::missing)
                     (.defaultValue field)
-                    (match-clj? field-schema-type field-value))))
-              field->schema+type)))
+                    (match-clj? field-coercion field-value))))
+              field->schema+coercion)))
 
   (match-avro? [_ avro-record]
     (or (instance? GenericData$Record avro-record)
@@ -372,22 +384,21 @@
 
   (avro->clj [_ avro-record]
     (when avro-record
-      (let [record-schema (.getSchema ^GenericData$Record avro-record)]
-        (into {}
-              (map (fn [^Schema$Field field]
-                     (let [field-name (.name field)
-                           field-key (keyword (unmangle field-name))
-
-                           field-schema
-                           (or (some-> (get field->schema+type field-name) second)
-                               ;; FIXME (reid.mckenzie 2018-11-07):
-                               ;;   Can this go away altogether?
-                               ;;   The schema SHOULDN'T change mid-deserialization
-                               ;;   So we SHOULD be able to keep selecting only known keys
-                               (schema-type (.schema field)))
-                           value (.get ^GenericData$Record avro-record field-name)]
-                       [field-key (avro->clj field-schema value)])))
-              (.getFields record-schema)))))
+      (into {}
+            (comp (map first)
+                  (map (fn [^Schema$Field field]
+                         (let [field-name (.name field)
+                               field-key (keyword (unmangle field-name))
+                               [_ field-coercion :as entry] (get field->schema+coercion field-key)
+                               value (.get ^GenericData$Record avro-record field-name)]
+                           (when-not field-coercion
+                             (throw (ex-info "Unable to deserialize field"
+                                             {:field field
+                                              :field-name field-name
+                                              :field-key field-key
+                                              :entry entry})))
+                           [field-key (avro->clj field-coercion value)]))))
+            (vals field->schema+coercion))))
 
   (clj->avro [_ clj-map path]
     (when-not (map? clj-map)
@@ -398,17 +409,18 @@
       (try
         (doseq [[k v] clj-map]
           (let [new-k (mangle (name k))
-                field (.getField schema new-k)
-                _ (when-not field
-                    (throw (ex-info (format "Field %s not known in %s"
-                                            new-k
-                                            (.getName schema))
-                                    {:path path, :clj-data clj-map})))
-                child-schema (second (get field->schema+type k))
-                new-v (clj->avro child-schema v (conj path k))]
-            (.set record-builder new-k new-v)))
+                field (.getField schema new-k)]
+            (when-not field
+              (throw (ex-info (format "Field %s not known in %s"
+                                      new-k
+                                      (.getName schema))
+                              {:path path, :clj-data clj-map})))
+            (let [[_ field-coercion] (get field->schema+coercion k)
+                  new-v (clj->avro field-coercion v (conj path k))]
+              (.set record-builder new-k new-v))))
 
         (.build record-builder)
+
         (catch org.apache.avro.AvroRuntimeException e
           (throw (ex-info (str (.getMessage e))
                           {:path path, :clj-data clj-map} e)))))))
@@ -417,32 +429,31 @@
   "Wrapper by which to construct a `RecordType` which handles the
   structural recursion of building the handler stack so that the
   `RecordType` type can be pretty simple."
-  [schema-type ^Schema schema]
+  [schema->coercion ^Schema schema]
   (let [fields (into {}
                      (map (fn [^Schema$Field field]
                             [(keyword (unmangle (.name field)))
-                             [field
-                              (schema-type (.schema field))]]))
+                             [field (schema->coercion (.schema field))]]))
                      (.getFields schema))]
-    (RecordType. fields schema schema-type)))
+    (RecordType. schema fields)))
 
-(defn- match-union-type [schema-types pred]
-  (some #(when (pred %) %) schema-types))
+(defn- match-union-type [coercion-types pred]
+  (some #(when (pred %) %) coercion-types))
 
-(defrecord UnionType [schema-types schemas]
-  SchemaType
+(defrecord UnionType [coercion-types schemas]
+  SchemaCoercion
   (match-clj? [_ clj-data]
-    (boolean (match-union-type schema-types #(match-clj? % clj-data))))
+    (boolean (match-union-type coercion-types #(match-clj? % clj-data))))
 
   (match-avro? [_ avro-data]
-    (boolean (match-union-type schema-types #(match-avro? % avro-data))))
+    (boolean (match-union-type coercion-types #(match-avro? % avro-data))))
 
   (avro->clj [_ avro-data]
-    (let [schema-type (match-union-type schema-types #(match-avro? % avro-data))]
+    (let [schema-type (match-union-type coercion-types #(match-avro? % avro-data))]
       (avro->clj schema-type avro-data)))
 
   (clj->avro [_ clj-data path]
-    (if-let [schema-type (match-union-type schema-types  #(match-clj? % clj-data))]
+    (if-let [schema-type (match-union-type coercion-types  #(match-clj? % clj-data))]
       (clj->avro schema-type clj-data path)
       (throw (ex-info (serialization-error-msg clj-data
                                                (->> schemas
@@ -455,30 +466,31 @@
   "Wrapper by which to construct a `UnionType` which handles the
   structural recursion of building the handler stack so that the
   `UnionType` type can be pretty simple."
-  [schema-type ^Schema schema]
+  [schema->coercion ^Schema schema]
   (let [schemas (->> (.getTypes schema)
                      (into []))
-        types   (->> schemas
-                     (map schema-type)
-                     (into []))]
-    (UnionType. types schemas)))
+        coercions (->> schemas
+                       (map schema->coercion)
+                       (into []))]
+    (UnionType. coercions schemas)))
 
 ;;;; Serde Factory
 
 (defn- base-config [registry-url]
   {"schema.registry.url" registry-url})
 
-(defn- avro-serializer [type-registry serde-config]
+(defn- avro-serializer [schema->coercion serde-config]
   (let [{:keys [registry-client registry-url avro-schema key?]} serde-config
         base-serializer (KafkaAvroSerializer. registry-client)
-        schema-type ((make-conversion-stack type-registry) avro-schema)
+        ;; This is invariant across subject schema changes, shockingly.
+        coercion-type (schema->coercion avro-schema)
         methods {:close     (fn [_]
                               (.close base-serializer))
                  :configure (fn [_ base-config key?]
                               (.configure base-serializer base-config key?))
                  :serialize (fn [_ topic data]
                               (try
-                                (.serialize base-serializer topic (clj->avro schema-type data []))
+                                (.serialize base-serializer topic (clj->avro coercion-type data []))
                                 (catch clojure.lang.ExceptionInfo e
                                   (let [data (-> e
                                                  ex-data
@@ -488,10 +500,9 @@
     (.configure clj-serializer (base-config registry-url) key?)
     clj-serializer))
 
-(defn- avro-deserializer [type-registry serde-config]
+(defn- avro-deserializer [schema->coercion serde-config]
   (let [{:keys [registry-client registry-url avro-schema key?]} serde-config
         base-deserializer (KafkaAvroDeserializer. registry-client)
-        schema-type ((make-conversion-stack type-registry) avro-schema)
         methods {:close       (fn [_]
                                 (.close base-deserializer))
                  :configure   (fn [_ base-config key?]
@@ -499,11 +510,16 @@
                  :deserialize (fn [_ topic raw-data]
                                 (try
                                   (let [avro-data (.deserialize base-deserializer topic raw-data)]
-                                    (assert (match-avro? schema-type avro-data))
-                                    (avro->clj schema-type avro-data))
+                                    (if (instance? GenericContainer avro-data)
+                                      (let [coercion-type (schema->coercion
+                                                           (.getSchema ^GenericContainer avro-data))]
+                                        (assert (match-avro? coercion-type avro-data))
+                                        (avro->clj coercion-type avro-data))
+                                      ;; Schemaless data can't have coercion
+                                      avro-data))
                                   (catch Exception e
                                     (let [msg "Deserialization error"]
-                                      (log/error (str msg " for " topic))
+                                      (log/error e (str msg " for " topic))
                                       (throw (ex-info msg {:topic topic} e))))))}
         clj-deserializer (fn/new-deserializer methods)]
     (.configure clj-deserializer (base-config registry-url) key?)
@@ -538,7 +554,10 @@
    {:type "fixed"} (fn [_ _] (throw (ex-info "The fixed type is unsupported" {})))})
 
 (def ^{:const true
-       :doc   ""}
+       :doc "A type constructor registry.
+
+   Provides the logical types `uuid` and `jackdaw.serdes.avro.UUID` coded as strings with coercion
+   to round-trip `java.util.UUID` instances."}
 
   +UUID-type-registry+
 
@@ -557,23 +576,45 @@
   [type-registry
    {:keys [avro.schema-registry/client
            avro.schema-registry/url]
-    :as registry-config}
+    :as   registry-config}
    {:keys [avro/schema
+           avro/coercion-cache
            key?]
-    :as topic-config}]
+    :as   topic-config}]
 
   (when-not url
     (throw
      (IllegalArgumentException.
       ":avro.schema-registry/url is required in the registry config")))
 
-  (let [config {:key? key?
-                :registry-url url
+  (when-not (or (instance? clojure.lang.Atom coercion-cache)
+                (nil? coercion-cache))
+    (throw
+     (IllegalArgumentException.
+      ":avro/coercion-cache in the schema config must be either absent/nil, or an atom containing a cache")))
+
+  (let [config {:key?            key?
+                :registry-url    url
                 :registry-client (or client
                                      (registry/client url 128))
                 ;; Provide the old behavior by default, or fall through to the
                 ;; new behavior of getting the right schema when possible.
                 :avro-schema     (parse-schema-str schema)}
-        serializer (avro-serializer type-registry config)
-        deserializer (avro-deserializer type-registry config)]
+
+        ;; Coercion stack caching
+        ;;
+        ;; Every record carries its schema instance attached. Schemas implement reasonable hashing
+        ;; and object equality. This means that, rather than building up the entire clj <-> avro
+        ;; projection machinery by walking the schema for every record in or out, we can cache
+        coercion-cache (or coercion-cache (atom (cache/lru-cache-factory {})))
+        schema->coercion* (make-coercion-stack type-registry)
+        schema->coercion  #(locking coercion-cache
+                             ;; This hits or fills the cache as a side-effect hence the locking
+                             (swap! coercion-cache cache/through-cache % schema->coercion*)
+                             ;; Read and return the value. In locking so we have RAW.
+                             (get @coercion-cache %))
+
+        ;; The final serdes based on the (cached) coercion stack.
+        serializer (avro-serializer schema->coercion config)
+        deserializer (avro-deserializer schema->coercion config)]
     (Serdes/serdeFrom serializer deserializer)))

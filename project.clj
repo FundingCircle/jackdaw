@@ -21,7 +21,8 @@
                  [org.apache.kafka/kafka_2.11 "2.0.0"]
                  [org.clojure/clojure "1.9.0"]
                  [org.clojure/data.json "0.2.6"]
-                 [org.clojure/tools.logging "0.3.1"]]
+                 [org.clojure/tools.logging "0.3.1"]
+                 [org.clojure/core.cache "0.7.1"]]
 
   :plugins [[lein-codox "0.10.3"]
             [lein-environ "1.1.0"]]

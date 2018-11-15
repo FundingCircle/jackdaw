@@ -27,7 +27,7 @@
          avro/+UUID-type-registry+))
 
 (def schema-type
-  (avro/make-conversion-stack
+  (avro/make-coercion-stack
    +registry+))
 
 (defn ->serde [schema-str]
