@@ -510,6 +510,10 @@
                  :deserialize (fn [_ topic raw-data]
                                 (try
                                   (let [avro-data (.deserialize base-deserializer topic raw-data)]
+                                    ;; Note that `.deserialize` will return EITHER a Java Object, or
+                                    ;; a ^GenericContainer. ^GenericContainer is only produced when
+                                    ;; there was a schema associated with the deserialized data, and
+                                    ;; only then do we use the coercion stack machinery.
                                     (if (instance? GenericContainer avro-data)
                                       (let [coercion-type (schema->coercion
                                                            (.getSchema ^GenericContainer avro-data))]
@@ -528,7 +532,9 @@
 ;; Public API
 
 (def ^{:const true
-       :doc   ""}
+       :doc   "Provides handlers for all of Avro's fundamental types besides `fixed`.
+
+  Fixed is unsupported."}
 
   +base-schema-type-registry+
 
@@ -608,6 +614,9 @@
         ;; projection machinery by walking the schema for every record in or out, we can cache
         coercion-cache (or coercion-cache (atom (cache/lru-cache-factory {})))
         schema->coercion* (make-coercion-stack type-registry)
+        ;; Note that while schema->coercion* is directly recursive, schema->coercion simply
+        ;; delegates. Consequently there will be no cache entries other than encountered top level
+        ;; Avro schemas.
         schema->coercion  #(locking coercion-cache
                              ;; This hits or fills the cache as a side-effect hence the locking
                              (swap! coercion-cache cache/through-cache % schema->coercion*)
