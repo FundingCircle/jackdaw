@@ -77,8 +77,8 @@
    (p/group-by ktable key-value-mapper-fn topic-config)))
 
 (defn peek
-  "Creates a KStream that is the result of calling `value-mapper-fn` on each
-  element of the input stream."
+  "Performs the action defined by `peek-fn` on each element of the input
+  KStream, returning that stream untransformed."
   [kstream peek-fn]
   (p/peek kstream peek-fn))
 
