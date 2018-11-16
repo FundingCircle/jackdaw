@@ -29,7 +29,8 @@ to [`#jackdaw`](https://clojurians.slack.com/messages/CEA3C7UG0/)
 (or [open an issue](https://github.com/fundingcircle/jackdaw/issues)).
 
 
-## Contributing
+ - [Codox](http://fundingcircle.github.io/jackdaw)
+-
 
 TBD
 
