@@ -1,0 +1,11 @@
+{
+  "fields": [
+    {
+      "name": "a",
+      "type": "string"
+    }
+  ],
+  "name": "foo",
+  "namespace": "com.fundingcircle",
+  "type": "record"
+}

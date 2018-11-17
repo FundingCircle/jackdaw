@@ -63,7 +63,8 @@
            java.nio.ByteBuffer
            [java.util Collection Map UUID]
            [org.apache.avro Schema$Parser Schema$ArraySchema Schema Schema$Field]
-           [org.apache.avro.generic GenericContainer GenericData$Array GenericData$EnumSymbol GenericData$Record GenericRecordBuilder]
+           [org.apache.avro.generic GenericContainer GenericData$Array GenericData$EnumSymbol
+                                    GenericData$Record GenericRecordBuilder]
            [org.apache.kafka.common.serialization Serializer Deserializer Serdes]))
 
 (set! *warn-on-reflection* true)
@@ -515,8 +516,8 @@
                                     ;; there was a schema associated with the deserialized data, and
                                     ;; only then do we use the coercion stack machinery.
                                     (if (instance? GenericContainer avro-data)
-                                      (let [coercion-type (schema->coercion
-                                                           (.getSchema ^GenericContainer avro-data))]
+                                      (let [schema (.getSchema ^GenericContainer avro-data)
+                                            coercion-type (schema->coercion schema)]
                                         (assert (match-avro? coercion-type avro-data))
                                         (avro->clj coercion-type avro-data))
                                       ;; Schemaless data can't have coercion

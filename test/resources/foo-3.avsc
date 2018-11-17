@@ -1,0 +1,30 @@
+{
+  "fields": [
+    {
+      "name": "a",
+      "type": "string"
+    },
+    {
+      "default": null,
+      "name": "b",
+      "type": [
+        "null",
+        "string"
+      ]
+    },
+    {
+      "default": null,
+      "name": "c",
+      "type": [
+        "null",
+        {
+          "logicalType": "uuid",
+          "type": "string"
+        }
+      ]
+    }
+  ],
+  "name": "foo",
+  "namespace": "com.fundingcircle",
+  "type": "record"
+}

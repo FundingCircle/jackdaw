@@ -1,0 +1,19 @@
+{
+  "fields": [
+    {
+      "name": "a",
+      "type": "string"
+    },
+    {
+      "default": null,
+      "name": "b",
+      "type": [
+        "null",
+        "string"
+      ]
+    }
+  ],
+  "name": "foo",
+  "namespace": "com.fundingcircle",
+  "type": "record"
+}

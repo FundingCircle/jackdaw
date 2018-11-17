@@ -31,9 +31,14 @@
   ([{:keys [jackdaw.topic/topic-name]} key value]
    (ProducerRecord. ^String topic-name key value))
   ([{:keys [jackdaw.topic/topic-name]} partition key value]
-   (ProducerRecord. ^String topic-name ^Integer partition key value))
+   (ProducerRecord. ^String topic-name
+                    ^Integer (int partition)
+                    key value))
   ([{:keys [jackdaw.topic/topic-name]} partition timestamp key value]
-   (ProducerRecord. ^String topic-name ^Integer partition ^Long timestamp key value)))
+   (ProducerRecord. ^String topic-name
+                    ^Integer (int partition)
+                    ^Long (long timestamp)
+                    key value)))
 
 (defn topic-partition
   "Return a TopicPartition"
