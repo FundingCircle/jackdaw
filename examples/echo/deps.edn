@@ -1,7 +1,9 @@
 {:deps
  {fundingcircle/jackdaw {:mvn/version "0.3.27-SNAPSHOT"}}
+
  :mvn/repos
  {"confluent" {:url "https://packages.confluent.io/maven/"}}
+
  :aliases
  {:test {:extra-paths ["test"]
          :extra-deps {org.apache.kafka/kafka-streams-test-utils {:mvn/version "2.0.0"}

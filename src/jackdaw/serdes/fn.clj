@@ -1,4 +1,6 @@
 (ns jackdaw.serdes.fn
+  "FIXME"
+  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [clojure.spec.alpha :as s]
             [jackdaw.serdes.fn-impl :as fn-impl])
   (:import [org.apache.kafka.common.serialization Deserializer Serializer]))

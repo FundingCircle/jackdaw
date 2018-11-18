@@ -1,4 +1,6 @@
 (ns jackdaw.serdes.edn.nippy
+  "FIXME"
+  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [jackdaw.serdes.fn :as j.s.fn]
             [taoensso.nippy :as nippy])
   (:import org.apache.kafka.common.serialization.Serdes))

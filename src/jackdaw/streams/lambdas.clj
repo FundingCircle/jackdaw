@@ -1,8 +1,13 @@
 (ns jackdaw.streams.lambdas
   "Wrappers for the Java 'lambda' functions."
+  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:import org.apache.kafka.streams.KeyValue
-           [org.apache.kafka.streams.kstream Aggregator ForeachAction Initializer KeyValueMapper Predicate Reducer TransformerSupplier ValueJoiner ValueMapper ValueTransformerSupplier]
-           [org.apache.kafka.streams.processor Processor ProcessorSupplier StreamPartitioner]))
+           [org.apache.kafka.streams.kstream
+            Aggregator ForeachAction Initializer KeyValueMapper
+            Predicate Reducer TransformerSupplier ValueJoiner
+            ValueMapper ValueTransformerSupplier]
+           [org.apache.kafka.streams.processor
+            Processor ProcessorSupplier StreamPartitioner]))
 
 (defn key-value
   "A key-value pair defined for a single Kafka Streams record."

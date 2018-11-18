@@ -1,5 +1,6 @@
 (ns jackdaw.streams.mock
   "Mocks for testing kafka streams."
+  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:refer-clojure :exclude [send])
   (:require [jackdaw.streams.protocols :as k]
             [jackdaw.streams.configurable :refer [config configure]]
@@ -21,11 +22,15 @@
     {::streams-builder (k/streams-builder* streams-builder)}
     streams-builder)))
 
-(defn streams-builder->test-driver [streams-builder]
-  (let [topology (-> streams-builder config :jackdaw.streams.mock/streams-builder .build)]
-    (TopologyTestDriver. topology (doto (Properties.)
-                                    (.put "bootstrap.servers" "fake")
-                                    (.put "application.id" (str (java.util.UUID/randomUUID)))))))
+(defn streams-builder->test-driver
+  ""
+  [streams-builder]
+  (let [topology (-> streams-builder config ::streams-builder .build)]
+    (TopologyTestDriver.
+     topology
+     (doto (Properties.)
+       (.put "bootstrap.servers" "fake")
+       (.put "application.id" (str (java.util.UUID/randomUUID)))))))
 
 (defn send
   "Publishes message to a topic."
@@ -34,7 +39,7 @@
         time (or (-> topology config ::test-driver-time) 0)]
     (.setTime test-driver time)
     (.process test-driver
-              (:jackdaw.topic/topic-name topic-config)
+              (:topic-name topic-config)
               key
               message)
     (.flushState test-driver)
@@ -51,14 +56,15 @@
     processed))
 
 (defn producer
+  ""
   [test-driver
-   {:keys [jackdaw.topic/topic-name
-           jackdaw.serdes/key-serde
-           jackdaw.serdes/value-serde]}]
+   {:keys [topic-name
+           ^Serde key-serde
+           ^Serde value-serde]}]
   (let [record-factory (ConsumerRecordFactory.
                         topic-name
-                        (.serializer ^Serde key-serde)
-                        (.serializer ^Serde value-serde))]
+                        (.serializer key-serde)
+                        (.serializer value-serde))]
     (fn produce!
       ([[k v]]
        (.pipeInput test-driver
@@ -67,10 +73,15 @@
        (.pipeInput test-driver
                    (.create record-factory k v time-ms))))))
 
-(defn producer-record [x]
+(defn producer-record
+  [x]
   [(.key x) (.value x)])
 
-(defn consume [test-driver {:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
+(defn consume
+  [test-driver
+   {:keys [topic-name
+           ^Serde key-serde
+           ^Serde value-serde]}]
   (let [record (.readOutput test-driver topic-name
                             (.deserializer key-serde)
                             (.deserializer value-serde))]
@@ -82,9 +93,11 @@
     (f builder)
     (streams-builder->test-driver builder)))
 
+;; FIXME (arrdem 2018-11-24):
+;;   This is used by the test suite but has no bearing on anything else
 (defn topic
   "Helper to create a topic."
   [topic-name]
-  {:jackdaw.topic/topic-name topic-name
-   :jackdaw.serdes/key-serde (Serdes/Long)
-   :jackdaw.serdes/value-serde (Serdes/Long)})
+  {:topic-name topic-name
+   :key-serde (Serdes/Long)
+   :value-serde (Serdes/Long)})

@@ -1,5 +1,6 @@
 (ns jackdaw.serdes.uuid
   "Implements UUID serializer, deserializer, and SerDe."
+  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [clj-uuid :as uuid]
             [jackdaw.serdes.fn :as sfn])
   (:import java.nio.ByteBuffer

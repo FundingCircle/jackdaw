@@ -1,158 +1,226 @@
 (ns jackdaw.client
-  "Clojure wrapper to kafka consumers/producers"
-  (:require [clojure.walk :refer [stringify-keys]])
-  (:import [org.apache.kafka.clients.consumer
-            Consumer
-            ConsumerRecord
-            KafkaConsumer]
-           [org.apache.kafka.clients.producer
-            Callback
-            KafkaProducer
-            ProducerRecord
-            RecordMetadata
-            Producer]
-           java.time.Duration
-           [java.util Properties List]
-           org.apache.kafka.common.serialization.Serde
-           org.apache.kafka.common.TopicPartition))
+  "Clojure wrapper to Kafka's consumer and producer APIs.
 
-(defn map->properties [m]
-  (let [props (Properties.)]
-    (when m
-      (.putAll props (stringify-keys m)))
-    props))
+  The consumers and producers are the basis for streams, and many
+  other use cases. They can be used to send messages directly to, or
+  read messages from topics. There are also some facilities for
+  polling, and transactions.
+
+  See `jackdaw.client.*` for some add-ons atop this API.
+  "
+  {:license "3-clause BSD <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
+  (:require [clojure.tools.logging :as log]
+            [jackdaw.data :as jd])
+  (:import java.time.Duration
+           java.util.Collection
+           [org.apache.kafka.clients.consumer
+            Consumer KafkaConsumer OffsetAndTimestamp]
+           [org.apache.kafka.clients.producer
+            Callback KafkaProducer Producer ProducerRecord]
+           [org.apache.kafka.common
+            PartitionInfo TopicPartition]
+           org.apache.kafka.common.serialization.Serde))
 
 (set! *warn-on-reflection* true)
 
-(defn ^ProducerRecord producer-record
-  "Creates a kafka ProducerRecord for use with `send!`."
-  ([{:keys [jackdaw.topic/topic-name]} value]
-   (ProducerRecord. ^String topic-name value))
-  ([{:keys [jackdaw.topic/topic-name]} key value]
-   (ProducerRecord. ^String topic-name key value))
-  ([{:keys [jackdaw.topic/topic-name]} partition key value]
-   (ProducerRecord. ^String topic-name
-                    ^Integer (int partition)
-                    key value))
-  ([{:keys [jackdaw.topic/topic-name]} partition timestamp key value]
-   (ProducerRecord. ^String topic-name
-                    ^Integer (int partition)
-                    ^Long (long timestamp)
-                    key value)))
-
-(defn topic-partition
-  "Return a TopicPartition"
-  [{:keys [:jackdaw.topic/topic-name] :as topic-config} partition]
-  (TopicPartition. topic-name (int partition)))
+;;;; Producer
 
 (defn ^KafkaProducer producer
-  "Return a KafkaProducer with the supplied properties"
+  "Return a producer with the supplied properties and optional Serdes."
   ([config]
-   (KafkaProducer. ^Properties (map->properties config)))
-  ([config {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
-   (KafkaProducer. ^Properties (map->properties config)
-                   (.serializer ^Serde key-serde)
-                   (.serializer ^Serde value-serde))))
-
-(defn record-metadata
-  "Clojurizes an org.apache.kafka.clients.producer.RecordMetadata."
-  [^RecordMetadata record-metadata]
-  (when record-metadata
-    {:checksum (.checksum record-metadata)
-     :offset (.offset record-metadata)
-     :partition (.partition record-metadata)
-     :serialized-key-size (.serializedKeySize record-metadata)
-     :serialized-value-size (.serializedValueSize record-metadata)
-     :timestamp (.timestamp record-metadata)
-     :topic (.topic record-metadata)}))
+   (KafkaProducer. (jd/map->Properties config)))
+  ([config {:keys [^Serde key-serde ^Serde value-serde]}]
+   (KafkaProducer. (jd/map->Properties config)
+                   (.serializer key-serde)
+                   (.serializer value-serde))))
 
 (defn ^Callback callback
-  "Build a kafka producer callback function out of a normal clojure one
-   The function should expect two parameters, the first being the record
-   metadata, the second being an exception if there was one. The function
-   should check for an exception and handle it appropriately."
+  "Return a kafka `Callback` function out of a clojure `fn`.
+
+  The fn must be of 2-arity, being `[record-metadata?, ex?]` where the
+  record-metadata may be the datafied metadata for the produced
+  record, and the ex may be an exception encountered while producing
+  the record.
+
+  Callbacks are `void`, so the return value is ignored."
   [on-completion]
   (reify Callback
     (onCompletion [this record-meta exception]
-      (on-completion (record-metadata record-meta) exception))))
+      (on-completion record-meta exception))))
 
 (defn send!
-  "Asynchronously sends a record to a topic, returning a Future. A callback function
-  can be optionally provided that should expect two parameters: a map of the
-  record metadata, and an exception instance, if an error occurred."
+  "Asynchronously sends a record to a topic, returning a `Future`
+  which will produce a data structure describing the metadata of the
+  produced record when forced.
+
+  A 2-arity callback function may be provided. It will be invoked with
+  either [RecordMetdata, nil] or [nil, Exception] respectively if the
+  record was sent or if an exception was encountered."
   ([producer record]
-   (.send ^Producer producer ^ProducerRecord record))
+   (-> (.send ^Producer producer ^ProducerRecord record)
+       deref jd/datafy delay))
   ([producer record callback-fn]
-   (.send ^Producer producer ^ProducerRecord record ^Callback (callback callback-fn))))
+   (-> (.send ^Producer producer
+              ^ProducerRecord record
+              ^Callback (callback callback-fn))
+       deref jd/datafy delay)))
+
+(defn produce!
+  "Helper wrapping `#'send!`.
+
+  Builds and sends a `ProducerRecord` so you don't have to. Returns
+  a future which will produce datafied record metadata when forced."
+  ([producer topic value]
+   (send! producer
+          (jd/->ProducerRecord topic value)))
+  ([producer topic key value]
+   (send! producer
+          (jd/->ProducerRecord topic value)))
+  ([producer topic partition key value]
+   (send! producer
+          (jd/->ProducerRecord topic partition topic value)))
+  ([producer topic partition timestamp key value]
+   (send! producer
+          (jd/->ProducerRecord topic partition timestamp topic value)))
+  ([producer topic partition timestamp key value headers]
+   (send! producer
+          (jd/->ProducerRecord topic partition timestamp topic value headers))))
+
+;;;; Consumer
 
 (defn ^KafkaConsumer consumer
-  "Return a Consumer with the supplied properties."
+  "Return a consumer with the supplied properties and optional Serdes."
   ([config]
-   (KafkaConsumer. ^Properties (map->properties config)))
-  ([config {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
-   (KafkaConsumer. ^Properties (map->properties config)
-                   (when key-serde (.deserializer ^Serde key-serde))
-                   (when value-serde (.deserializer ^Serde value-serde)))))
+   (KafkaConsumer. (jd/map->Properties config)))
+  ([config {:keys [^Serde key-serde ^Serde value-serde] :as t}]
 
-(defn subscription [^KafkaConsumer consumer]
+   (when-not (or key-serde
+                 (get config "key.deserializer"))
+     (throw (ex-info "No key serde specified"
+                     {:topic t, :config config})))
+
+   (when-not (or value-serde
+                 (get config "value.deserializer"))
+     (throw (ex-info "No value serde specified"
+                     {:topic t, :config config})))
+
+   (KafkaConsumer.
+    (jd/map->Properties config)
+    (when key-serde
+      (.deserializer key-serde))
+    (when value-serde
+      (.deserializer value-serde)))))
+
+(defn subscription
+  "Return the subscription(s) of a consumer as a collection of topics.
+
+  Subscriptions are a set of strings, being the names of topics which
+  are subscribed to."
+  [^KafkaConsumer consumer]
   (.subscription consumer))
 
 (defn assignment
-  "Get the partitions currently assigned to this consumer"
+  "Return the assigned topics and partitions of a consumer."
   [^KafkaConsumer consumer]
-  (.assignment consumer))
+  (map jd/datafy (.assignment consumer)))
 
-(defn ^KafkaConsumer subscribe
-  "Subscribe a consumer to topics. Returns the consumer."
-  [^KafkaConsumer consumer & topic-configs]
-  (.subscribe consumer ^List (mapv :jackdaw.topic/topic-name topic-configs))
+(defn subscribe
+  "Subscribe a consumer to the specified topics.
+
+  Returns the consumer."
+  ^KafkaConsumer [^KafkaConsumer consumer topic-configs]
+  (.subscribe consumer
+              ^Collection (mapv (fn [{:keys [topic-name] :as t}]
+                                  (when-not (string? topic-name)
+                                    (throw (ex-info "No name for topic!"
+                                                    {:topic t})))
+                                  topic-name)
+                                topic-configs))
   consumer)
 
 (defn ^KafkaConsumer subscribed-consumer
-  "Returns a consumer that is subscribed to a single topic."
-  [config & topic-configs]
-  (-> (consumer config (first topic-configs))
-      (#(apply subscribe % topic-configs))))
+  "Given a broker configuration and topics, returns a consumer that is
+  subscribed to all of the given topic descriptors.
 
-(defn- consumer-record
-  "Clojurize the ConsumerRecord returned from consuming a kafka record"
-  [^ConsumerRecord consumer-record]
-  (when consumer-record
-    {:checksum (.checksum consumer-record)
-     :key (.key consumer-record)
-     :offset (.offset consumer-record)
-     :partition (.partition consumer-record)
-     :serializedKeySize (.serializedKeySize consumer-record)
-     :serializedValueSize (.serializedValueSize consumer-record)
-     :timestamp (.timestamp consumer-record)
-     :topic (.topic consumer-record)
-     :value (.value consumer-record)}))
+  WARNING: All topics subscribed to by a single consumer must share a
+  single pair of key and value serde instances. The serdes of the
+  first requested topic are used, and all other topics are expected to
+  be able to use same serdes."
+  [config topic-configs]
+  (when-not (sequential? topic-configs)
+    (throw (ex-info "subscribed-consumer takes a seq of topics!"
+                    {:topic-configs topic-configs})))
+
+  (-> (consumer config (first topic-configs))
+      (subscribe topic-configs)))
+
+(defn partitions-for
+  "Given a producer or consumer and a Jackdaw topic descriptor, return
+  metadata about the partitions assigned to the given consumer or
+  producer."
+  [producer-or-consumer {:keys [^String topic-name]}]
+  (->> (cond (instance? KafkaConsumer producer-or-consumer)
+             (.partitionsFor ^KafkaConsumer consumer topic-name)
+
+             (instance? KafkaProducer producer-or-consumer)
+             (.partitionsFor ^KafkaProducer consumer topic-name)
+
+             :else (throw (ex-info "Got non producer/consumer!"
+                                   {:inst producer-or-consumer
+                                    :class (class producer-or-consumer)})))
+       (map jd/datafy)))
+
+(defn num-partitions
+  "Given a producer or consumer and a topic, return the number of
+  partitions for that topic.
+
+  Note that partitions are 0-indexed, so a number of partitions 1
+  means that only partition 0 exists."
+  [producer-or-consumer topic]
+  (count (partitions-for producer-or-consumer topic)))
 
 (defn poll
-  "Polls kafka for new messages."
+  "Polls kafka for new messages, returning a potentially empty sequence
+  of datafied messages."
   [^Consumer consumer timeout]
-  (let [records (if (int? timeout)
-                  (.poll consumer ^long timeout)
-                  (.poll consumer ^Duration timeout))]
-    (mapv consumer-record records)))
+  (some->> (if (int? timeout)
+             (.poll consumer ^long timeout)
+             (.poll consumer ^Duration timeout))
+           (map jd/datafy)))
 
 (defn position
-  "Get the offset of the next record that will be fetched"
-  [^Consumer consumer ^TopicPartition topic-partition]
-  (.position consumer topic-partition))
+  "Get the offset of the next record that will be fetched.
+
+  Accepts either a `TopicPartition` record, or a datafied
+  `TopicPartition` as generated by the rest of the Jackdaw API."
+  ^long [^Consumer consumer topic-partition]
+  (.position consumer (jd/as-TopicPartition topic-partition)))
 
 (defn position-all
-  "Call position on every assigned partition, to force laziness from .seekToEnd/.seekToBeginning"
+  "Call position on every assigned partition, producing a map from
+  partition information to the consumer's offset into that partition."
   [consumer]
-  (->>
-   (for [part (assignment consumer)]
-     (position consumer part))
-   (doall)))
+  (->> (assignment consumer)
+       (map (juxt jd/datafy (partial position consumer)))
+       (into {})))
+
+(defn seek
+  "Seek the consumer to the specified offset on the specified partition.
+
+  Accepts either a `TopicPartition` instance or a datafied
+  `TopicPartition` as produced by the rest of the Jackdaw API.
+
+  Returns the consumer for convenience with `->`, `doto` etc."
+  [^Consumer consumer topic-partition ^long offset]
+  (doto consumer
+    (.seek (jd/as-TopicPartition topic-partition) offset)))
 
 (defn seek-to-end-eager
   "Seek to the last offset for all assigned partitions, and force positioning.
 
-When no partitions are passed, seek on all assigned partitions"
+  When no partitions are passed, seek on all assigned partitions.
+
+  Returns the consumer."
   ([^Consumer consumer]
    (seek-to-end-eager consumer []))
   ([^Consumer consumer topic-partitions]
@@ -164,18 +232,76 @@ When no partitions are passed, seek on all assigned partitions"
 (defn seek-to-beginning-eager
   "Seek to the first offset for the given topic/partitions and force positioning.
 
-When no partitions are passed, seek on all assigned partitions"
+  When no partitions are passed, seek on all assigned
+  topic-partitions."
   ([^Consumer consumer]
    (seek-to-beginning-eager consumer [])
    consumer)
   ([^Consumer consumer topic-partitions]
    (poll consumer 0)
-   (.seekToBeginning consumer topic-partitions)
+   (.seekToBeginning consumer (map jd/as-TopicPartition topic-partitions))
    (position-all consumer)
    consumer))
+
+(defn offsets-for-times
+  "Given a subscribed consumer and a mapping of topic-partition or
+  `TopicPartition` records to timestamps, return a mapping from
+  topic-partition descriptors to the offset into each partition of the
+  FIRST record whose timestamp is equal to or greater than the given
+  timestamp.
+
+  Timestamps are longs to MS precision in UTC."
+  [^Consumer consumer partition-timestamps]
+  (->> partition-timestamps
+       (map (fn [[topic-partition ts]]
+              [(jd/as-TopicPartition topic-partition) (long ts)]))
+       (.offsetsForTimes consumer)
+       (map (fn [[k v]] [(jd/datafy k) (jd/datafy v)]))
+       (into {})))
+
+(defn seek-to-timestamp
+  "Given an timestamp in epoch MS, a subscribed consumer and a seq of
+  Jackdaw topics, seek all partitions of the selected topics to the
+  offsets reported by Kafka to correlate with the given timestamp.
+
+  After seeking, the first message read from each partition will be
+  the EARLIEST message whose timestamp is greater than or equal to the
+  timestamp sought.
+
+  Returns the consumer for convenience with `->`, `doto` etc."
+  [^Consumer consumer timestamp topics]
+  (let [topic-partitions (->> (mapcat #(partitions-for consumer %) topics)
+                              (mapcat vals)
+                              (into {}))
+        start-offsets (offsets-for-times consumer
+                                         (zipmap topic-partitions
+                                                 (repeat timestamp)))]
+
+    (doseq [[^TopicPartition topic-partition
+             ^OffsetAndTimestamp timestamp-offset] start-offsets]
+      ;; timestamp-offset is nil if the topic has no messages
+      (let [offset (if timestamp-offset
+                     (.offset timestamp-offset)
+                     0)]
+        (log/infof "Setting starting offset (topic=%s, partition=%s): %s"
+                   (.topic topic-partition)
+                   (.partition topic-partition)
+                   offset)
+        (seek consumer topic-partition offset)))
+
+    consumer))
 
 (defn assign
   "Assign a consumer to specific partitions for specific topics. Returns the consumer."
   [^Consumer consumer & topic-partitions]
   (.assign consumer topic-partitions)
   consumer)
+
+(defn assign-all
+  "Assigns all of the partitions for all of the given topics to the consumer"
+  [^Consumer consumer topics]
+  (let [partitions (->> topics
+                        (mapcat #(.partitionsFor consumer ^String %))
+                        (map (fn [^PartitionInfo x]
+                               (TopicPartition. (.topic x) (.partition x)))))]
+    (apply assign consumer partitions)))

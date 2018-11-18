@@ -1,13 +1,12 @@
 (ns echo-stream
   (:gen-class)
-  (:require
-   [jackdaw.streams :as k]
-   [jackdaw.serdes :as serde]))
+  (:require [jackdaw.streams :as k]
+            [jackdaw.serdes :as serde]))
 
 (defn topic-config [topic-name]
-  {:jackdaw.topic/topic-name topic-name
-   :jackdaw.serdes/key-serde (serde/serde :jackdaw.serdes/string)
-   :jackdaw.serdes/value-serde (serde/serde :jackdaw.serdes/string)})
+  {:topic-name topic-name
+   :key-serde (serde/serde :jackdaw.serdes/string)
+   :value-serde (serde/serde :jackdaw.serdes/string)})
 
 (defn kafka-config []
   {"application.id" "jackdaw-test"

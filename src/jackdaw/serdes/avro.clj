@@ -58,14 +58,18 @@
             [clojure.string :as str]
             [jackdaw.serdes.avro.schema-registry :as registry]
             [jackdaw.serdes.fn :as fn])
-  (:import [io.confluent.kafka.serializers KafkaAvroSerializer KafkaAvroDeserializer]
+  (:import [io.confluent.kafka.serializers
+            KafkaAvroSerializer KafkaAvroDeserializer]
            java.lang.CharSequence
            java.nio.ByteBuffer
            [java.util Collection Map UUID]
-           [org.apache.avro Schema$Parser Schema$ArraySchema Schema Schema$Field]
-           [org.apache.avro.generic GenericContainer GenericData$Array GenericData$EnumSymbol
-                                    GenericData$Record GenericRecordBuilder]
-           [org.apache.kafka.common.serialization Serializer Deserializer Serdes]))
+           [org.apache.avro
+            Schema$Parser Schema$ArraySchema Schema Schema$Field]
+           [org.apache.avro.generic
+            GenericContainer GenericData$Array GenericData$EnumSymbol
+            GenericData$Record GenericRecordBuilder]
+           [org.apache.kafka.common.serialization
+            Serializer Deserializer Serdes]))
 
 (set! *warn-on-reflection* true)
 

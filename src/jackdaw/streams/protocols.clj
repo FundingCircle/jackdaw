@@ -1,5 +1,6 @@
 (ns jackdaw.streams.protocols
   "Kafka streams protocols."
+  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:refer-clojure :exclude [count map merge reduce group-by filter peek])
   (:import org.apache.kafka.streams.KafkaStreams
            org.apache.kafka.streams.StreamsBuilder))

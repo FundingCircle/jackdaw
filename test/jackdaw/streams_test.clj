@@ -8,9 +8,12 @@
             [jackdaw.streams.lambdas :as lambdas :refer [key-value]]
             [jackdaw.streams.lambdas.specs]
             [jackdaw.streams.mock :as mock]
-            [jackdaw.streams.protocols :refer [IKStream IKTable IStreamsBuilder]]
+            [jackdaw.streams.protocols
+             :refer [IKStream IKTable IStreamsBuilder]]
             [jackdaw.streams.specs])
-  (:import [org.apache.kafka.streams.kstream JoinWindows SessionWindows TimeWindows Transformer ValueTransformer]
+  (:import [org.apache.kafka.streams.kstream
+            JoinWindows SessionWindows TimeWindows Transformer
+            ValueTransformer]
            org.apache.kafka.streams.StreamsBuilder))
 
 (stest/instrument)

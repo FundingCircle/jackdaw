@@ -1,31 +1,49 @@
 (ns jackdaw.streams.specs
+  ""
+  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [clojure.spec.alpha :as s]
+            [jackdaw.specs :as js]
             [jackdaw.streams :as k]
             [jackdaw.streams.lambdas :as lambdas]
             [jackdaw.streams.protocols
-             :refer [IStreamsBuilder IGlobalKTable IKGroupedTable IKGroupedStream IKStream IKTable ITimeWindowedKStream ISessionWindowedKStream]])
+             :refer [IStreamsBuilder IGlobalKTable IKGroupedTable
+                     IKGroupedStream IKStream IKTable
+                     ITimeWindowedKStream ISessionWindowedKStream]])
   (:import org.apache.kafka.common.serialization.Serde
            org.apache.kafka.streams.kstream.JoinWindows))
 
-(def global-ktable? (partial satisfies? IGlobalKTable))
-(def join-windows? (partial instance? JoinWindows))
-(def kgroupedstream? (partial satisfies? IKGroupedStream))
-(def time-windowed-kstream? (partial satisfies? ITimeWindowedKStream))
-(def session-windowed-kstream? (partial satisfies? ISessionWindowedKStream))
-(def kgroupedtable? (partial satisfies? IKGroupedTable))
-(def kstream? (partial satisfies? IKStream))
-(def ktable? (partial satisfies? IKTable))
-(def serde? (partial instance? Serde))
-(def streams-builder? (partial satisfies? IStreamsBuilder))
+(def global-ktable?
+  (partial satisfies? IGlobalKTable))
 
-(s/def :jackdaw.topic/topic-name string?)
-(s/def :jackdaw.serdes/key-serde serde?)
-(s/def :jackdaw.serdes/value-serde serde?)
+(def join-windows?
+  (partial instance? JoinWindows))
 
-(s/def ::topic-config
-  (s/keys :req [:jackdaw.topic/topic-name
-                :jackdaw.serdes/key-serde
-                :jackdaw.serdes/value-serde]))
+(def kgroupedstream?
+  (partial satisfies? IKGroupedStream))
+
+(def time-windowed-kstream?
+  (partial satisfies? ITimeWindowedKStream))
+
+(def session-windowed-kstream?
+  (partial satisfies? ISessionWindowedKStream))
+
+(def kgroupedtable?
+  (partial satisfies? IKGroupedTable))
+
+(def kstream?
+  (partial satisfies? IKStream))
+
+(def ktable?
+  (partial satisfies? IKTable))
+
+(def serde?
+  (partial instance? Serde))
+
+(def streams-builder?
+  (partial satisfies? IStreamsBuilder))
+
+;; from jackdaw.specs
+(s/def ::topic-config :jackdaw.serialization-clients/topic)
 (s/def ::topic-configs (s/coll-of ::topic-config))
 
 (s/def ::kstreams (s/coll-of kstream?))

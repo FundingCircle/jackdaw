@@ -5,7 +5,8 @@
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]
             [jackdaw.client :as jc]
-            [jackdaw.client.extras :as jce]
+            [jackdaw.client.log :as jcl]
+            [jackdaw.data :as jd]
             [jackdaw.serdes :as js]
             [jackdaw.serdes.avro :as avro]
             [jackdaw.serdes.avro.schema-registry :as reg])
@@ -81,13 +82,13 @@
           (atom (cache/lru-cache-factory {}))
 
           test-topic-v1
-          {:jackdaw.topic/topic-name
+          {:topic-name
            (str "test-topic-" (uuid/v4))
 
-           :jackdaw.serdes/key-serde
+           :key-serde
            (js/serde ::js/string)
 
-           :jackdaw.serdes/value-serde
+           :value-serde
            (serde*
             {:key?                false
              :avro/schema         +test-schema-v1+
@@ -95,12 +96,12 @@
 
           test-topic-v2
           (merge test-topic-v1
-                 {:jackdaw.serdes/value-serde
+                 {:value-serde
                   (serde* {:key? false, :avro/schema +test-schema-v2+})})
 
           test-topic-v3
           (merge test-topic-v1
-                 {:jackdaw.serdes/value-serde
+                 {:value-serde
                   (serde* {:key? false, :avro/schema +test-schema-v3+})})
 
           topic+record
@@ -110,14 +111,14 @@
 
       (doseq [[t r] topic+record]
         (with-open [p (jc/producer +local-kafka+ t)]
-          @(jc/send! p (jc/producer-record t 0 (:a r) r))))
+          @(jc/send! p (jd/->ProducerRecord t 0 (:a r) r))))
 
-      (with-open [c (-> (jc/subscribed-consumer +local-kafka+ test-topic-v1)
+      (with-open [c (-> (jc/subscribed-consumer +local-kafka+ [test-topic-v1])
                         (jc/seek-to-beginning-eager))]
         (doseq [[[_ r] {r' :value}]
                 (map vector
                      topic+record
-                     (doall (jce/log-seq-until-inactivity c 1000)))]
+                     (doall (jcl/log-until-inactivity c 1000)))]
           (is (= r r') "Record didn't round trip!")))
 
       (is (= 3 (count (keys @v1-cache)))

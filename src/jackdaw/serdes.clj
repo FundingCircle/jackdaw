@@ -1,5 +1,6 @@
 (ns jackdaw.serdes
   "Some useful serdes."
+  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:refer-clojure :exclude [resolve])
   (:require [jackdaw.serdes.edn.nippy :as j.s.edn.nippy]
             [jackdaw.serdes.json :as json]

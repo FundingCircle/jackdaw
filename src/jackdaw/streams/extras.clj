@@ -1,4 +1,6 @@
 (ns jackdaw.streams.extras
+  "FIXME"
+  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [clj-time.core :as inst]
             [clojure.tools.logging :as log]
             [jackdaw.streams :as js]

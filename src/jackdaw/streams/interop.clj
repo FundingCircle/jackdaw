@@ -1,42 +1,54 @@
 (ns jackdaw.streams.interop
   "Clojure wrapper to kafka streams."
+  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:refer-clojure :exclude [count map reduce group-by merge filter peek])
   (:require [clojure.string :as str]
             [jackdaw.streams.protocols :refer :all]
             [jackdaw.streams.lambdas :refer :all])
-  (:import
-   (java.util Collection)
-   (java.util.regex Pattern)
-   (org.apache.kafka.common.serialization Serde)
-   (org.apache.kafka.streams KafkaStreams)
-   (org.apache.kafka.streams StreamsBuilder)
-   (org.apache.kafka.streams.kstream Aggregator Consumed GlobalKTable Initializer Joined JoinWindows KGroupedStream KGroupedTable
-                                     KStream KTable KeyValueMapper Materialized Predicate Printed Produced Reducer Serialized SessionWindowedKStream SessionWindows TimeWindowedKStream ValueJoiner ValueMapper ValueMapperWithKey ValueTransformerSupplier Windows)
-   (org.apache.kafka.streams.processor StreamPartitioner)))
+  (:import [java.util
+            Collection]
+           [java.util.regex
+            Pattern]
+           [org.apache.kafka.common.serialization
+            Serde]
+           [org.apache.kafka.streams
+            KafkaStreams]
+           [org.apache.kafka.streams
+            StreamsBuilder]
+           [org.apache.kafka.streams.kstream
+            Aggregator Consumed GlobalKTable Initializer Joined
+            JoinWindows KGroupedStream KGroupedTable KStream KTable
+            KeyValueMapper Materialized Predicate Printed Produced
+            Reducer Serialized SessionWindowedKStream SessionWindows
+            TimeWindowedKStream ValueJoiner ValueMapper
+            ValueMapperWithKey ValueTransformerSupplier Windows]
+           [org.apache.kafka.streams.processor
+            StreamPartitioner]))
 
 (set! *warn-on-reflection* true)
 
-(defn topic->consumed [{:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
+(defn topic->consumed [{:keys [key-serde value-serde]}]
   (Consumed/with key-serde value-serde))
 
-(defn topic->produced [{:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
+(defn topic->produced [{:keys [key-serde value-serde]}]
   (Produced/with key-serde value-serde))
 
-(defn topic->serialized [{:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
+(defn topic->serialized [{:keys [key-serde value-serde]}]
   (Serialized/with key-serde value-serde))
 
-(defn topic->materialized [{:keys [jackdaw.topic/topic-name jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
+(defn topic->materialized [{:keys [topic-name key-serde value-serde]}]
   (cond-> (Materialized/as ^String topic-name)
     key-serde (.withKeySerde key-serde)
     value-serde (.withValueSerde value-serde)))
 
-(declare clj-kstream clj-ktable clj-kgroupedtable clj-kgroupedstream clj-global-ktable clj-session-windowed-kstream clj-time-windowed-kstream)
+(declare clj-kstream clj-ktable clj-kgroupedtable clj-kgroupedstream
+         clj-global-ktable clj-session-windowed-kstream
+         clj-time-windowed-kstream)
 
 (def ^:private kstream-memo
   "Returns a kstream for the topic, creating a new one if needed."
   (memoize
-   (fn [streams-builder
-        {:keys [jackdaw.topic/topic-name] :as topic-config}]
+   (fn [streams-builder {:keys [topic-name] :as topic-config}]
      (clj-kstream
       (.stream ^StreamsBuilder streams-builder
                ^String topic-name
@@ -45,9 +57,7 @@
 (def ^:private kstream-memo-patterned
   "Returns a kstream for the topic, creating a new one if needed."
   (memoize
-   (fn [streams-builder
-        topic-config
-        topic-pattern]
+   (fn [streams-builder topic-config topic-pattern]
      (clj-kstream
       (.stream ^StreamsBuilder streams-builder
                ^Pattern topic-pattern
@@ -56,8 +66,7 @@
 (def ^:private ktable-memo
   "Returns a ktable for the topic, creating a new one if needed."
   (memoize
-   (fn [streams-builder
-        {:keys [jackdaw.topic/topic-name] :as topic-config}
+   (fn [streams-builder {:keys [topic-name] :as topic-config}
         store-name]
      (clj-ktable
       (.table ^StreamsBuilder streams-builder
@@ -79,23 +88,23 @@
   (kstreams
     [_ topic-configs]
     (clj-kstream
-     (let [topic-names (clojure.core/map :jackdaw.topic/topic-name topic-configs)]
+     (let [topic-names (clojure.core/map :topic-name topic-configs)]
        (.stream streams-builder
                 ^Collection topic-names))))
 
   (ktable
-    [_ {:keys [jackdaw.topic/topic-name] :as topic-config}]
+    [_ {:keys [topic-name] :as topic-config}]
     (ktable-memo streams-builder topic-config topic-name))
 
   (ktable
     [_ topic-config store-name]
     (ktable-memo streams-builder topic-config store-name))
 
-  (global-ktable [_ {:keys [jackdaw.topic/topic-name] :as topic-config}]
+  (global-ktable [_ {:keys [topic-name] :as topic-config}]
     (clj-global-ktable
-      (.globalTable ^StreamsBuilder streams-builder
-                    ^String topic-name
-                    ^Consumed (topic->consumed topic-config))))
+     (.globalTable ^StreamsBuilder streams-builder
+                   ^String topic-name
+                   ^Consumed (topic->consumed topic-config))))
 
   (streams-builder*
     [_]
@@ -116,7 +125,7 @@
                 (value-joiner value-joiner-fn))))
 
   (left-join
-    [_ ktable value-joiner-fn {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}]
+    [_ ktable value-joiner-fn {:keys [key-serde value-serde]}]
     (clj-kstream
      (.leftJoin kstream
                 ^KTable (ktable* ktable)
@@ -179,12 +188,12 @@
     nil)
 
   (through
-    [_ {:keys [jackdaw.topic/topic-name] :as topic-config}]
+    [_ {:keys [topic-name] :as topic-config}]
     (clj-kstream
      (.through kstream topic-name (topic->produced topic-config))))
 
   (to!
-    [_ {:keys [jackdaw.topic/topic-name] :as topic-config}]
+    [_ {:keys [topic-name] :as topic-config}]
     (.to kstream ^String topic-name ^Produced (topic->produced topic-config))
     nil)
 
@@ -213,8 +222,8 @@
 
   (join-windowed
     [_ other-kstream value-joiner-fn windows
-     {key-serde :jackdaw.serdes/key-serde this-value-serde :jackdaw.serdes/value-serde}
-     {other-value-serde :jackdaw.serdes/value-serde}]
+     {key-serde :key-serde this-value-serde :value-serde}
+     {other-value-serde :value-serde}]
     (clj-kstream
      (.join kstream
             (kstream* other-kstream)
@@ -232,8 +241,8 @@
 
   (left-join-windowed
     [_ other-kstream value-joiner-fn windows
-     {:keys [jackdaw.serdes/key-serde jackdaw.serdes/value-serde]}
-     {other-value-serde :jackdaw.serdes/value-serde}]
+     {:keys [key-serde value-serde]}
+     {other-value-serde :value-serde}]
     (clj-kstream
      (.leftJoin kstream
                 (kstream* other-kstream)
@@ -256,8 +265,8 @@
 
   (outer-join-windowed
     [_ other-kstream value-joiner-fn windows
-     {key-serde :jackdaw.serdes/key-serde value-serde :jackdaw.serdes/value-serde}
-     {other-value-serde :jackdaw.serdes/value-serde}]
+     {key-serde :key-serde value-serde :value-serde}
+     {other-value-serde :value-serde}]
     (clj-kstream
      (.outerJoin kstream
                  (kstream* other-kstream)
@@ -301,18 +310,18 @@
   (join-global
     [_ global-kstream key-value-mapper-fn joiner-fn]
     (clj-kstream
-      (.join kstream
-             ^GlobalKTable (global-ktable* global-kstream)
-             ^KeyValueMapper (select-key-value-mapper key-value-mapper-fn)
-             ^ValueJoiner (value-joiner joiner-fn))))
+     (.join kstream
+            ^GlobalKTable (global-ktable* global-kstream)
+            ^KeyValueMapper (select-key-value-mapper key-value-mapper-fn)
+            ^ValueJoiner (value-joiner joiner-fn))))
 
   (left-join-global
     [_ global-kstream key-value-mapper-fn joiner-fn]
     (clj-kstream
-      (.leftJoin kstream
-                 ^GlobalKTable (global-ktable* global-kstream)
-                 ^KeyValueMapper (select-key-value-mapper key-value-mapper-fn)
-                 ^ValueJoiner (value-joiner joiner-fn))))
+     (.leftJoin kstream
+                ^GlobalKTable (global-ktable* global-kstream)
+                ^KeyValueMapper (select-key-value-mapper key-value-mapper-fn)
+                ^ValueJoiner (value-joiner joiner-fn))))
 
   (kstream* [_]
     kstream))
@@ -406,7 +415,7 @@
   IKGroupedBase
   (aggregate
     [_ initializer-fn adder-fn subtractor-fn
-     {:keys [jackdaw.topic/topic-name jackdaw.serdes/value-serde]}]
+     {:keys [topic-name value-serde]}]
     (clj-ktable
      (.aggregate kgroupedtable
                  (initializer initializer-fn)
@@ -440,12 +449,13 @@
 (deftype CljKGroupedStream [^KGroupedStream kgroupedstream]
   IKGroupedBase
   (aggregate
-    [_ initializer-fn aggregator-fn {:keys [jackdaw.topic/topic-name jackdaw.serdes/value-serde]}]
+    [_ initializer-fn aggregator-fn {:keys [topic-name value-serde]}]
     (clj-ktable
      (.aggregate ^KGroupedStream kgroupedstream
                  ^Initializer (initializer initializer-fn)
                  ^Aggregator (aggregator aggregator-fn)
-                 (doto (Materialized/as ^String topic-name) (.withValueSerde value-serde)))))
+                 (doto (Materialized/as ^String topic-name)
+                   (.withValueSerde value-serde)))))
   (count
     [_ topic-config]
     (clj-ktable
@@ -463,12 +473,12 @@
   (windowed-by-time
     [_ windows]
     (clj-time-windowed-kstream
-      (.windowedBy ^KGroupedStream kgroupedstream ^Windows windows)))
+     (.windowedBy ^KGroupedStream kgroupedstream ^Windows windows)))
 
   (windowed-by-session
     [_ windows]
     (clj-session-windowed-kstream
-      (.windowedBy ^KGroupedStream kgroupedstream ^SessionWindows windows)))
+     (.windowedBy ^KGroupedStream kgroupedstream ^SessionWindows windows)))
 
   (kgroupedstream*
     [_]
@@ -482,12 +492,13 @@
 (deftype CljTimeWindowedKStream [^TimeWindowedKStream windowed-kstream]
   IKGroupedBase
   (aggregate
-    [_ initializer-fn aggregator-fn {:keys [jackdaw.topic/topic-name jackdaw.serdes/value-serde]}]
+    [_ initializer-fn aggregator-fn {:keys [topic-name value-serde]}]
     (clj-ktable
      (.aggregate ^TimeWindowedKStream windowed-kstream
                  ^Initializer (initializer initializer-fn)
                  ^Aggregator (aggregator aggregator-fn)
-                 (doto (Materialized/as ^String topic-name) (.withValueSerde value-serde)))))
+                 (doto (Materialized/as ^String topic-name)
+                   (.withValueSerde value-serde)))))
   (count
     [_ topic-config]
     (clj-ktable
@@ -514,12 +525,13 @@
 (deftype CljSessionWindowedKStream [^SessionWindowedKStream windowed-kstream]
   IKGroupedBase
   (aggregate
-    [_ initializer-fn aggregator-fn {:keys [jackdaw.topic/topic-name jackdaw.serdes/value-serde]}]
+    [_ initializer-fn aggregator-fn {:keys [topic-name value-serde]}]
     (clj-ktable
      (.aggregate ^SessionWindowedKStream windowed-kstream
                  ^Initializer (initializer initializer-fn)
                  ^Aggregator (aggregator aggregator-fn)
-                 (doto (Materialized/as ^String topic-name) (.withValueSerde value-serde)))))
+                 (doto (Materialized/as ^String topic-name)
+                   (.withValueSerde value-serde)))))
   (count
     [_ topic-config]
     (clj-ktable

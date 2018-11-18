@@ -1,6 +1,7 @@
 (ns user
   (:require [jackdaw.client :as jc]
             [jackdaw.serdes :as js]
+            [jackdaw.admin :as ja]
             [jackdaw.serdes.avro :as js.a]))
 
 (def +local-schema-registry+
@@ -21,3 +22,5 @@
   (merge js.a/+base-schema-type-registry+
          js.a/+UUID-type-registry+))
 
+(def +admin-client+
+  (ja/->AdminClient +local-kafka+))

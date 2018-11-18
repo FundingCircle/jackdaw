@@ -17,7 +17,7 @@
                                     (deliver result :ok))))]
 
         (.onCompletion cb nil nil)
-        (is (= :ok @result ))))
+        (is (= :ok @result))))
 
     (testing "failure"
       (let [result (promise)

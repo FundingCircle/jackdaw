@@ -1,4 +1,6 @@
 (ns jackdaw.serdes.edn
+  "FIXME"
+  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [clojure.edn :refer [read-string]]
             [jackdaw.serdes.fn :as j.s.fn])
   (:import java.nio.charset.StandardCharsets
