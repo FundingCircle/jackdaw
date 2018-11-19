@@ -7,6 +7,12 @@
 (comment
 
   ;; comment
+  (confluent/start)
+
+  ;; comment
+  (get-topics)
+
+  ;; comment
   (start)
 
   ;; comment
@@ -43,5 +49,11 @@
 
   ;; comment
   (stop)
+
+  ;; comment
+  (get-topics)
+
+  ;; comment
+  (confluent/stop)
 
   )

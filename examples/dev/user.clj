@@ -6,6 +6,7 @@
             [jackdaw.serdes.edn :as j.s.edn]
             [jackdaw.streams :as j]
             [jackdaw.client.extras :as j.client.extras]
+            [confluent]
             [system])
   (:import org.apache.kafka.common.serialization.Serdes))
 
@@ -151,7 +152,6 @@
 
 ;; --------------------------------------------------------------------------------
 ;; functions to set up and tear down the system
-
 
 (defn start
   []
