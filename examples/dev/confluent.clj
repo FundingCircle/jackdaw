@@ -5,6 +5,7 @@
             [clojure.java.shell :refer [sh]]))
 
 ;; TODO: Explain this doesn't stop Kafka, etc. if the REPL is killed.
+;; TODO: Add documentation to explain how to install missing binary.
 
 (defn not-up
   "doc-string"

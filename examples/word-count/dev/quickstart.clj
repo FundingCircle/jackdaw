@@ -7,6 +7,10 @@
 (comment
 
   ;; comment
+  ;; Add steps to install confluent platform or link to external documentation
+  ;; brew install or whatever it is we do
+
+  ;; comment
   (confluent/start)
 
   ;; comment
