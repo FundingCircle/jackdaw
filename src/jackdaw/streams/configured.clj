@@ -379,6 +379,12 @@
      (aggregate kgroupedtable initializer-fn adder-fn subtractor-fn topic-config)))
 
   (count
+    [_]
+    (configured-ktable
+     config
+     (count kgroupedtable)))
+
+  (count
     [_ store-name]
     (configured-ktable
      config
@@ -416,6 +422,12 @@
     (configured-ktable
      config
      (aggregate kgroupedstream initializer-fn aggregator-fn topic-config)))
+
+  (count
+    [_]
+    (configured-ktable
+     config
+     (count kgroupedstream)))
 
   (count
     [_ store-name]
@@ -460,6 +472,12 @@
      (aggregate kgroupedstream initializer-fn aggregator-fn topic-config)))
 
   (count
+    [_]
+    (configured-ktable
+     config
+     (count kgroupedstream)))
+
+  (count
     [_ store-name]
     (configured-ktable
      config
@@ -488,6 +506,12 @@
     (configured-ktable
      config
      (aggregate kgroupedstream initializer-fn aggregator-fn topic-config)))
+
+  (count
+    [_]
+    (configured-ktable
+     config
+     (count kgroupedstream)))
 
   (count
     [_ store-name]

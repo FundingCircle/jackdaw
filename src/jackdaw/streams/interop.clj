@@ -422,6 +422,12 @@
                  (aggregator adder-fn)
                  (aggregator subtractor-fn)
                  (doto (Materialized/as ^String topic-name) (.withValueSerde value-serde)))))
+
+  (count
+    [_]
+    (clj-ktable
+     (.count ^KGroupedTable kgroupedtable)))
+
   (count
     [_ topic-config]
     (clj-ktable
@@ -454,8 +460,13 @@
      (.aggregate ^KGroupedStream kgroupedstream
                  ^Initializer (initializer initializer-fn)
                  ^Aggregator (aggregator aggregator-fn)
-                 (doto (Materialized/as ^String topic-name)
-                   (.withValueSerde value-serde)))))
+                 (doto (Materialized/as ^String topic-name) (.withValueSerde value-serde)))))
+
+  (count
+    [_]
+    (clj-ktable
+     (.count ^KGroupedStream kgroupedstream)))
+
   (count
     [_ topic-config]
     (clj-ktable
@@ -497,8 +508,13 @@
      (.aggregate ^TimeWindowedKStream windowed-kstream
                  ^Initializer (initializer initializer-fn)
                  ^Aggregator (aggregator aggregator-fn)
-                 (doto (Materialized/as ^String topic-name)
-                   (.withValueSerde value-serde)))))
+                 (doto (Materialized/as ^String topic-name) (.withValueSerde value-serde)))))
+
+  (count
+    [_]
+    (clj-ktable
+     (.count ^TimeWindowedKStream windowed-kstream)))
+
   (count
     [_ topic-config]
     (clj-ktable
@@ -530,8 +546,13 @@
      (.aggregate ^SessionWindowedKStream windowed-kstream
                  ^Initializer (initializer initializer-fn)
                  ^Aggregator (aggregator aggregator-fn)
-                 (doto (Materialized/as ^String topic-name)
-                   (.withValueSerde value-serde)))))
+                 (doto (Materialized/as ^String topic-name) (.withValueSerde value-serde)))))
+
+  (count
+    [_]
+    (clj-ktable
+     (.count ^SessionWindowedKStream windowed-kstream)))
+
   (count
     [_ topic-config]
     (clj-ktable

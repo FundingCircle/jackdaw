@@ -254,6 +254,7 @@
     instance of KTable.")
 
   (count
+    [kgrouped]
     [kgrouped topic-config]
     "Counts the number of records by key into a new KTable.")
 

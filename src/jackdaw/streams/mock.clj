@@ -66,12 +66,14 @@
                         (.serializer key-serde)
                         (.serializer value-serde))]
     (fn produce!
-      ([[k v]]
-       (.pipeInput test-driver
-                   (.create record-factory k v)))
-      ([[k v] time-ms]
-       (.pipeInput test-driver
-                   (.create record-factory k v time-ms))))))
+      ([k v]
+       (.pipeInput test-driver (.create record-factory k v)))
+      ([k v time-ms]
+       (.pipeInput test-driver (.create record-factory k v time-ms))))))
+
+(defn publish
+  [test-driver topic-config k v]
+  ((producer test-driver topic-config) k v))
 
 (defn producer-record
   [x]
@@ -87,6 +89,14 @@
                             (.deserializer value-serde))]
     (when record
       (producer-record record))))
+
+(defn get-records
+  [test-driver topic-config]
+  (take-while some? (repeatedly (partial consume test-driver topic-config))))
+
+(defn get-keyvals
+  [test-driver topic-config]
+  (map #(vals (select-keys % [:key :value])) (get-records test-driver topic-config)))
 
 (defn build-driver [f]
   (let [builder (streams-builder)]

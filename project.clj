@@ -67,12 +67,12 @@
               :dependencies   [[arohner/wait-for "1.0.2"]
                                [clj-http "2.3.0"]
                                [environ "1.1.0"]
+                               [junit "4.12"]
                                [org.apache.kafka/kafka-streams-test-utils "2.0.0" :scope "test"]
+                               [org.clojure/java.jdbc "0.7.0-beta2"]
                                [org.clojure/test.check "0.9.0"]
                                [org.clojure/tools.nrepl "0.2.12"]
-                               [org.clojure/java.jdbc "0.7.0-beta2"]
-                               [org.xerial/sqlite-jdbc "3.19.3"]
-                               [junit "4.12"]]}
+                               [org.xerial/sqlite-jdbc "3.19.3"]]}
 
              ;; This is not in fact what lein defines repl to be
              :repl

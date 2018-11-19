@@ -1,7 +1,7 @@
 (ns jackdaw.serdes.edn
   "FIXME"
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
-  (:require [clojure.edn :refer [read-string]]
+  (:require [clojure.edn]
             [jackdaw.serdes.fn :as j.s.fn])
   (:import java.nio.charset.StandardCharsets
            org.apache.kafka.common.serialization.Serdes))
@@ -29,7 +29,8 @@
   "Returns an EDN deserializer."
   []
   (j.s.fn/new-deserializer {:deserialize (fn [_ _ data]
-                                           (read-string (from-bytes data)))}))
+                                           (-> (from-bytes data)
+                                               clojure.edn/read-string))}))
 
 (defn serde
   "Returns EDN serde."

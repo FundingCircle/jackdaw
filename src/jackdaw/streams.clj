@@ -100,7 +100,7 @@
   [kstream topic-config]
   (p/through kstream topic-config))
 
-(defn to!
+(defn to
   "Materializes a stream to a topic."
   [kstream topic-config]
   (p/to! kstream topic-config))
@@ -254,8 +254,10 @@
 
 (defn count
   "Counts the number of records by key into a new KTable."
-  [kgrouped name]
-  (p/count kgrouped name))
+  ([kgrouped]
+   (p/count kgrouped))
+  ([kgrouped name]
+   (p/count kgrouped name)))
 
 (defn reduce
   "Combines values of a stream by key into a new KTable."
@@ -307,12 +309,12 @@
      (KafkaStreams. ^Topology (.build (streams-builder* builder))
                     ^java.util.Properties props))))
 
-(defn start!
+(defn start
   "Starts processing."
   [kafka-streams]
   (.start ^KafkaStreams kafka-streams))
 
-(defn close!
+(defn close
   "Stops the kafka streams."
   [kafka-streams]
   (.close ^KafkaStreams kafka-streams))
