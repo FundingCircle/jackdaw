@@ -4,6 +4,8 @@
             [clojure.tools.logging :as log]
             [clojure.java.shell :refer [sh]]))
 
+;; TODO: Explain this doesn't stop Kafka, etc. if the REPL is killed.
+
 (defn not-up
   "doc-string"
   [service]
