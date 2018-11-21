@@ -68,12 +68,14 @@
     (fn produce!
       ([k v]
        (.pipeInput test-driver (.create record-factory k v)))
-      ([k v time-ms]
+      ([time-ms k v]
        (.pipeInput test-driver (.create record-factory k v time-ms))))))
 
 (defn publish
-  [test-driver topic-config k v]
-  ((producer test-driver topic-config) k v))
+  ([test-driver topic-config k v]
+   ((producer test-driver topic-config) k v))
+  ([test-driver topic-config time-ms k v]
+   ((producer test-driver topic-config) time-ms k v)))
 
 (defn producer-record
   [x]

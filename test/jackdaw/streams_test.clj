@@ -65,18 +65,17 @@
       (with-open [driver (mock/build-driver (fn [builder]
                                               (let [left (k/kstream builder topic-a)
                                                     right (k/ktable builder topic-b)]
-                                                (k/to! (k/left-join left right safe-add) topic-c))))]
-        (let [produce-left (mock/producer driver topic-a)
-              produce-right (mock/producer driver topic-b)]
+                                                (k/to (k/left-join left right safe-add) topic-c))))]
+        (let [publish-left (partial mock/publish driver topic-a)
+              publish-right (partial mock/publish driver topic-b)]
 
-          (produce-left [1 2]) ;; table: nil, event: 2
-          (produce-right [1 1]) ;; Add to table
-          (produce-left [1 2]) ;; table: 1, event: 2
+          (publish-left 1 2) ;; table: nil, event: 2
+          (publish-right 1 1) ;; Add to table
+          (publish-left 1 2) ;; table: 1, event: 2
 
-          (is (= [1 2]
-                 (mock/consume driver topic-c)))
-          (is (= [1 3]
-                 (mock/consume driver topic-c)))))))
+          (let [keyvals (mock/get-keyvals driver topic-c)]
+            (is (= [1 2] (first keyvals)))
+            (is (= [1 3] (second keyvals))))))))
 
   (testing "for-each!"
     (let [topic-a (mock/topic "topic-a")
@@ -85,10 +84,10 @@
                                       (-> builder
                                           (k/kstream topic-a)
                                           (k/for-each! (fn [[_ x]] (swap! sentinel conj x))))))
-          produce (mock/producer driver topic-a)]
+          publish (partial mock/publish driver topic-a)]
 
-      (produce [1 1])
-      (produce [1 2])
+      (publish 1 1)
+      (publish 1 2)
 
       (is (= [1 2]
              @sentinel))))
@@ -100,14 +99,13 @@
                                       (-> builder
                                           (k/kstream topic-a)
                                           (k/filter (fn [[k v]] (> v 1)))
-                                          (k/to! topic-b))))
-          produce (mock/producer driver topic-a)]
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
 
-      (produce [1 1])
-      (produce [1 2])
+      (publish 1 1)
+      (publish 1 2)
 
-      (let [result (mock/consume driver topic-b)]
-        (is (= result [1 2])))))
+      (is (= [[1 2]] (mock/get-keyvals driver topic-b)))))
 
   (testing "filter-not"
     (let [topic-a (mock/topic "topic-a")
@@ -116,14 +114,13 @@
                                       (-> builder
                                           (k/kstream topic-a)
                                           (k/filter-not (fn [[k v]] (> v 1)))
-                                          (k/to! topic-b))))
-          produce (mock/producer driver topic-a)]
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
 
-      (produce [1 1])
-      (produce [1 2])
+      (publish 1 1)
+      (publish 1 2)
 
-      (let [result (mock/consume driver topic-b)]
-        (is (= result [1 1])))))
+      (is (= [[1 1]] (mock/get-keyvals driver topic-b)))))
 
   (testing "map-values"
     (let [topic-a (mock/topic "topic-a")
@@ -132,14 +129,15 @@
                                       (-> builder
                                           (k/kstream topic-a)
                                           (k/map-values inc)
-                                          (k/to! topic-b))))
-          produce (mock/producer driver topic-a)]
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
 
-      (produce [1 1])
-      (produce [1 2])
+      (publish 1 1)
+      (publish 1 2)
 
-      (is (= (mock/consume driver topic-b) [1 2]))
-      (is (= (mock/consume driver topic-b) [1 3]))))
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= [1 2] (first keyvals)))
+        (is (= [1 3] (second keyvals))))))
 
   (testing "peek"
     (let [topic-a (mock/topic "topic-a")
@@ -149,11 +147,11 @@
                                       (-> builder
                                           (k/kstream topic-a)
                                           (k/peek (fn [[_ x]] (swap! sentinel conj x)))
-                                          (k/to! topic-b))))
-          produce (mock/producer driver topic-a)]
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
 
-      (produce [1 1])
-      (produce [1 2])
+      (publish 1 1)
+      (publish 1 2)
 
       (is (= [1 2]
              @sentinel))))
@@ -172,8 +170,8 @@
                                           (-> builder
                                               (k/kstream topic-a)
                                               (k/print!))))
-              produce (mock/producer driver topic-a)]
-          (produce [1 1])
+              publish (partial mock/publish driver topic-a)]
+          (publish 1 1)
           (is (= "[KSTREAM-SOURCE-0000000000]: 1, 2\n" (.toString mock-out))))
         (finally
           (System/setOut std-out)))))
@@ -186,30 +184,26 @@
                                       (-> builder
                                           (k/kstream topic-a)
                                           (k/through topic-b)
-                                          (k/to! topic-c))))
-          produce (mock/producer driver topic-a)]
+                                          (k/to topic-c))))
+          publish (partial mock/publish driver topic-a)]
 
-      (produce [1 1])
+      (publish 1 1)
 
-      (is (= [1 1]
-             (mock/consume driver topic-b)))
+      (is (= [[1 1]] (mock/get-keyvals driver topic-b)))
+      (is (= [[1 1]] (mock/get-keyvals driver topic-c)))))
 
-      (is (= [1 1]
-             (mock/consume driver topic-c)))))
-
-  (testing "to!"
+  (testing "to"
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
           driver (mock/build-driver (fn [builder]
                                       (-> builder
                                           (k/kstream topic-a)
-                                          (k/to! topic-b))))
-          produce (mock/producer driver topic-a)]
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
 
-      (produce [1 1])
+      (publish 1 1)
 
-      (is (= [1 1]
-             (mock/consume driver topic-b)))))
+      (is (= [[1 1]] (mock/get-keyvals driver topic-b)))))
 
   (testing "branch"
     (let [topic-a (mock/topic "topic-a")
@@ -221,18 +215,15 @@
                                                                         (k/branch [(fn [[k v]]
                                                                                      (<= 0 v))
                                                                                    (constantly true)]))]
-                                        (k/to! pos-stream topic-pos)
-                                        (k/to! neg-stream topic-neg))))
-          produce (mock/producer driver topic-a)]
+                                        (k/to pos-stream topic-pos)
+                                        (k/to neg-stream topic-neg))))
+          publish (partial mock/publish driver topic-a)]
 
-      (produce [1 1])
-      (produce [1 -1])
+      (publish 1 1)
+      (publish 1 -1)
 
-      (is (= [1 1]
-             (mock/consume driver topic-pos)))
-
-      (is (= [1 -1]
-             (mock/consume driver topic-neg)))))
+      (is (= [[1 1]] (mock/get-keyvals driver topic-pos)))
+      (is (= [[1 -1]] (mock/get-keyvals driver topic-neg)))))
 
   (testing "flat-map"
     (let [topic-a (mock/topic "topic-a")
@@ -243,15 +234,14 @@
                                           (k/flat-map (fn [[k v]]
                                                         [[k v]
                                                          [k 0]]))
-                                          (k/to! topic-b))))
-          produce (mock/producer driver topic-a)]
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
 
-      (produce [1 1])
+      (publish 1 1)
 
-      (is (= [1 1]
-             (mock/consume driver topic-b)))
-      (is (= [1 0]
-             (mock/consume driver topic-b)))))
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= [1 1] (first keyvals)))
+        (is (= [1 0] (second keyvals))))))
 
   (testing "flat-map-values"
     (let [topic-a (mock/topic "topic-a")
@@ -261,15 +251,14 @@
                                           (k/kstream topic-a)
                                           (k/flat-map-values (fn [v]
                                                                [v (inc v)]))
-                                          (k/to! topic-b))))
-          produce (mock/producer driver topic-a)]
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
 
-      (produce [1 1])
+      (publish 1 1)
 
-      (is (= [1 1]
-             (mock/consume driver topic-b)))
-      (is (= [1 2]
-             (mock/consume driver topic-b)))))
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= [1 1] (first keyvals)))
+        (is (= [1 2] (second keyvals))))))
 
   (testing "join-windowed"
     (let [topic-a (mock/topic "topic-a")
@@ -285,15 +274,14 @@
                                                              windows
                                                              topic-a
                                                              topic-b)
-                                            (k/to! topic-c)))))
-          produce-a (mock/producer driver topic-a)
-          produce-b (mock/producer driver topic-b)]
+                                            (k/to topic-c)))))
+          publish-a (partial mock/publish driver topic-a)
+          publish-b (partial mock/publish driver topic-b)]
 
-      (produce-a [1 1] 1)
-      (produce-b [1 2] 100)
-      (produce-b [1 4] 10000) ;; Outside of join window
-      (is (= [1 3] (mock/consume driver topic-c)))
-      (is (not (mock/consume driver topic-c)))))
+      (publish-a 1 1 1)
+      (publish-b 100 1 2)
+      (publish-b 10000 1 4) ;; Outside of join window
+      (is (= [[1 3]] (mock/get-keyvals driver topic-c)))))
 
   (testing "map"
     (let [topic-a (mock/topic "topic-a")
@@ -303,13 +291,12 @@
                                           (k/kstream topic-a)
                                           (k/map (fn [[k v]]
                                                    [(inc k) (inc v)]))
-                                          (k/to! topic-b))))
-          produce (mock/producer driver topic-a)]
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
 
-      (produce [1 1])
+      (publish 1 1)
 
-      (is (= [2 2]
-             (mock/consume driver topic-b)))))
+      (is (= [[2 2]] (mock/get-keyvals driver topic-b)))))
 
   (testing "outer-join-windowed"
     (let [topic-a (mock/topic "topic-a")
@@ -325,17 +312,19 @@
                                                                    windows
                                                                    topic-a
                                                                    topic-b)
-                                            (k/to! topic-c)))))
-          produce-a (mock/producer driver topic-a)
-          produce-b (mock/producer driver topic-b)]
+                                            (k/to topic-c)))))
+          publish-a (partial mock/publish driver topic-a)
+          publish-b (partial mock/publish driver topic-b)]
 
-      (produce-a [1 1] 1)
-      (produce-b [1 2] 100)
-      (produce-b [1 4] 10000) ;; Outside of join window
-      (is (= [1 1] (mock/consume driver topic-c)))
-      (is (= [1 3] (mock/consume driver topic-c)))
-      (is (= [1 4] (mock/consume driver topic-c)))
-      (is (not (mock/consume driver topic-c)))))
+      (publish-a 1 1 1)
+      (publish-b 100 1 2)
+      (publish-b 10000 1 4) ;; Outside of join window
+
+      (let [keyvals (mock/get-keyvals driver topic-c)]
+        (is (= 3 (count keyvals)))
+        (is (= [1 1] (first keyvals)))
+        (is (= [1 3] (second keyvals )))
+        (is (= [1 4] (nth keyvals 2))))))
 
   (testing "process!"
     (let [topic-a (mock/topic "topic-a")
@@ -345,9 +334,9 @@
                                           (k/process! (fn [ctx k v]
                                                         (swap! records conj v))
                                                       []))))
-          produce-a (mock/producer driver topic-a)]
+          publish-a (partial mock/publish driver topic-a)]
 
-      (produce-a [1 1] 1)
+      (publish-a 1 1 1)
       (is (= [1] @records))))
 
   (testing "select-key"
@@ -358,13 +347,12 @@
                                           (k/kstream topic-a)
                                           (k/select-key (fn [[k v]]
                                                           (inc k)))
-                                          (k/to! topic-b))))
-          produce (mock/producer driver topic-a)]
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
 
-      (produce [1 1])
+      (publish 1 1)
 
-      (is (= [2 1]
-             (mock/consume driver topic-b)))))
+      (is (= [[2 1]] (mock/get-keyvals driver topic-b)))))
 
   (testing "transform"
     (let [topic-a (mock/topic "topic-a")
@@ -380,16 +368,17 @@
                                       (-> builder
                                           (k/kstream topic-a)
                                           (k/transform transformer-supplier-fn)
-                                          (k/to! topic-b))))
-          produce (mock/producer driver topic-a)]
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
 
-      (produce [1 1])
-      (produce [1 2])
-      (produce [1 4])
+      (publish 1 1)
+      (publish 1 2)
+      (publish 1 4)
 
-      (is (= [2 1] (mock/consume driver topic-b)))
-      (is (= [2 3] (mock/consume driver topic-b)))
-      (is (= [2 7] (mock/consume driver topic-b)))))
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= [2 1] (first keyvals)))
+        (is (= [2 3] (second keyvals )))
+        (is (= [2 7] (nth keyvals 2))))))
 
   (testing "transform-values"
     (let [topic-a (mock/topic "topic-a")
@@ -405,17 +394,18 @@
                                       (-> builder
                                           (k/kstream topic-a)
                                           (k/transform-values transformer-supplier-fn)
-                                          (k/to! topic-b))))
-          produce (mock/producer driver topic-a)]
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
 
-      (produce [1 1])
-      (produce [1 2])
-      (produce [1 4])
+      (publish 1 1)
+      (publish 1 2)
+      (publish 1 4)
 
-      (is (= [1 1] (mock/consume driver topic-b)))
-      (is (= [1 3] (mock/consume driver topic-b)))
-      (is (= [1 7] (mock/consume driver topic-b)))
-      (is (not (mock/consume driver topic-b))))))
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= 3 (count keyvals)))
+        (is (= [1 1] (first keyvals)))
+        (is (= [1 3] (second keyvals )))
+        (is (= [1 7] (nth keyvals 2)))))))
 
 (deftest KTable
   (testing "filter"
@@ -427,16 +417,16 @@
                                                   (k/filter (fn [[k v]]
                                                               (not (zero? v))))
                                                   (k/to-kstream)
-                                                  (k/to! topic-b))))]
-        (let [produce (mock/producer driver topic-a)]
+                                                  (k/to topic-b))))]
+        (let [publish (partial mock/publish driver topic-a)]
 
-          (produce [1 2])
-          (produce [1 0])
+          (publish 1 2)
+          (publish 1 0)
 
-          (is (= [1 2]
-                 (mock/consume driver topic-b)))
-          (is (= [1 nil] (mock/consume driver topic-b))) ;; Tombstone from filter
-          (is (not (mock/consume driver topic-b)))))))
+          (let [keyvals (mock/get-keyvals driver topic-b)]
+            (is (= 2 (count keyvals)))
+            (is (= [1 2] (first keyvals)))
+            (is (= [1 nil] (second keyvals)))))))) ;; Tombstone from filter
 
   (testing "filter-not"
     (let [topic-a (mock/topic "topic-a")
@@ -447,16 +437,16 @@
                                                   (k/filter-not (fn [[k v]]
                                                                   (not (zero? v))))
                                                   (k/to-kstream)
-                                                  (k/to! topic-b))))]
-        (let [produce (mock/producer driver topic-a)]
+                                                  (k/to topic-b))))]
+        (let [publish (partial mock/publish driver topic-a)]
 
-          (produce [1 0])
-          (produce [1 2])
+          (publish 1 0)
+          (publish 1 2)
 
-          (is (= [1 0]
-                 (mock/consume driver topic-b)))
-          (is (= [1 nil] (mock/consume driver topic-b))) ;; Tombstone from filter
-          (is (not (mock/consume driver topic-b)))))))
+          (let [keyvals (mock/get-keyvals driver topic-b)]
+            (is (= 2 (count keyvals)))
+            (is (= [1 0] (first keyvals)))
+            (is (= [1 nil] (second keyvals)))))))) ;; Tombstone from filter
 
   (testing "map-values"
     (let [topic-a (mock/topic "topic-a")
@@ -467,20 +457,18 @@
                                                   (k/map-values (fn [v]
                                                                   (inc v)))
                                                   (k/to-kstream)
-                                                  (k/to! topic-b))))]
-        (let [produce (mock/producer driver topic-a)]
+                                                  (k/to topic-b))))]
+        (let [publish (partial mock/publish driver topic-a)]
 
-          (produce [1 0])
-          (produce [1 2])
-          (produce [2 0])
+          (publish 1 0)
+          (publish 1 2)
+          (publish 2 0)
 
-          (is (= [1 1]
-                 (mock/consume driver topic-b)))
-          (is (= [1 3]
-                 (mock/consume driver topic-b)))
-          (is (= [2 1]
-                 (mock/consume driver topic-b)))
-          (is (not (mock/consume driver topic-b)))))))
+          (let [keyvals (mock/get-keyvals driver topic-b)]
+            (is (= 3 (count keyvals)))
+            (is (= [1 1] (first keyvals)))
+            (is (= [1 3] (second keyvals)))
+            (is (= [2 1] (nth keyvals 2))))))))
 
   (testing "group-by"
     (let [topic-a (mock/topic "topic-a")
@@ -494,17 +482,16 @@
                                                               topic-a)
                                                   (k/count topic-b)
                                                   (k/to-kstream)
-                                                  (k/to! topic-c))))]
-        (let [produce (mock/producer driver topic-a)]
+                                                  (k/to topic-c))))]
+        (let [publish (partial mock/publish driver topic-a)]
 
-          (produce [1 0])
-          (produce [2 0])
+          (publish 1 0)
+          (publish 2 0)
 
-          (is (= [2 1]
-                 (mock/consume driver topic-c)))
-          (is (= [2 2]
-                 (mock/consume driver topic-c)))
-          (is (not (mock/consume driver topic-c)))))))
+          (let [keyvals (mock/get-keyvals driver topic-c)]
+            (is (= 2 (count keyvals)))
+            (is (= [2 1] (first keyvals)))
+            (is (= [2 2] (second keyvals))))))))
 
   (testing "join"
     (let [topic-a (mock/topic "table-a")
@@ -516,21 +503,19 @@
                                                     right (k/ktable builder topic-b)]
                                                 (-> (k/join left right +)
                                                     (k/to-kstream)
-                                                    (k/to! topic-c)))))]
-        (let [produce-left (mock/producer driver topic-a)
-              produce-right (mock/producer driver topic-b)]
+                                                    (k/to topic-c)))))]
+        (let [publish-left (partial mock/publish driver topic-a)
+              publish-right (partial mock/publish driver topic-b)]
 
-          (produce-left [1 1])
-          (produce-right [1 2])
-          (produce-left [1 4])
-          (produce-left [2 42])
+          (publish-left 1 1)
+          (publish-right 1 2)
+          (publish-left 1 4)
+          (publish-left 2 42)
 
-          (is (= [1 3]
-                 (mock/consume driver topic-c)))
-          (is (= [1 6]
-                 (mock/consume driver topic-c)))
-          (is (not
-                 (mock/consume driver topic-c)))))))
+          (let [keyvals (mock/get-keyvals driver topic-c)]
+            (is (= 2 (count keyvals)))
+            (is (= [1 3] (first keyvals)))
+            (is (= [1 6] (second keyvals))))))))
 
   (testing "outer-join"
     (let [topic-a (mock/topic "table-a")
@@ -542,25 +527,21 @@
                                                     right (k/ktable builder topic-b)]
                                                 (-> (k/outer-join left right safe-add)
                                                     (k/to-kstream)
-                                                    (k/to! topic-c)))))]
-        (let [produce-left (mock/producer driver topic-a)
-              produce-right (mock/producer driver topic-b)]
+                                                    (k/to topic-c)))))]
+        (let [publish-left (partial mock/publish driver topic-a)
+              publish-right (partial mock/publish driver topic-b)]
 
-          (produce-left [1 1])
-          (produce-right [1 2])
-          (produce-left [1 4])
-          (produce-left [2 42])
+          (publish-left 1 1)
+          (publish-right 1 2)
+          (publish-left 1 4)
+          (publish-left 2 42)
 
-          (is (= [1 1]
-                 (mock/consume driver topic-c)))
-          (is (= [1 3]
-                 (mock/consume driver topic-c)))
-          (is (= [1 6]
-                 (mock/consume driver topic-c)))
-          (is (= [2 42]
-                 (mock/consume driver topic-c)))
-          (is (not
-                 (mock/consume driver topic-c)))))))
+          (let [keyvals (mock/get-keyvals driver topic-c)]
+            (is (= 4 (count keyvals)))
+            (is (= [1 1] (first keyvals)))
+            (is (= [1 3] (second keyvals)))
+            (is (= [1 6] (nth keyvals 2)))
+            (is (= [2 42] (nth keyvals 3))))))))
 
   (testing "left-join"
     (let [topic-a (mock/topic "table-a")
@@ -572,23 +553,20 @@
                                                     right (k/ktable builder topic-b)]
                                                 (-> (k/left-join left right safe-add)
                                                     (k/to-kstream)
-                                                    (k/to! topic-c)))))]
-        (let [produce-left (mock/producer driver topic-a)
-              produce-right (mock/producer driver topic-b)]
+                                                    (k/to topic-c)))))]
+        (let [publish-left (partial mock/publish driver topic-a)
+              publish-right (partial mock/publish driver topic-b)]
 
-          (produce-left [1 1])
-          (produce-right [1 2])
-          (produce-left [1 4])
-          (produce-right [2 42])
+          (publish-left 1 1)
+          (publish-right 1 2)
+          (publish-left 1 4)
+          (publish-right 2 42)
 
-          (is (= [1 1]
-                 (mock/consume driver topic-c)))
-          (is (= [1 3]
-                 (mock/consume driver topic-c)))
-          (is (= [1 6]
-                 (mock/consume driver topic-c)))
-          (is (not
-                 (mock/consume driver topic-c))))))))
+          (let [keyvals (mock/get-keyvals driver topic-c)]
+            (is (= 3 (count keyvals)))
+            (is (= [1 1] (first keyvals)))
+            (is (= [1 3] (second keyvals)))
+            (is (= [1 6] (nth keyvals 2)))))))))
 
 (deftest grouped-stream
   (testing "count"
@@ -600,17 +578,16 @@
                                           (k/group-by-key)
                                           (k/count topic-a)
                                           (k/to-kstream)
-                                          (k/to! topic-b))))
-          produce (mock/producer driver topic-a)]
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
 
-      (produce [1 1])
-      (produce [1 2])
+      (publish 1 1)
+      (publish 1 2)
 
-      (is (= [1 1]
-             (mock/consume driver topic-b)))
-      (is (= [1 2]
-             (mock/consume driver topic-b)))
-      (is (not (mock/consume driver topic-b)))))
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= 2 (count keyvals)))
+        (is (= [1 1] (first keyvals)))
+        (is (= [1 2] (last keyvals))))))
 
   (testing "reduce"
     (let [topic-a (mock/topic "topic-a")
@@ -621,20 +598,18 @@
                                           (k/group-by (fn [[k v]] (long (/ k 10))) topic-a)
                                           (k/reduce + topic-a)
                                           (k/to-kstream)
-                                          (k/to! topic-b))))
-          produce (mock/producer driver topic-a)]
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
 
-      (produce [1 1])
-      (produce [1 2])
-      (produce [10 2])
+      (publish 1 1)
+      (publish 1 2)
+      (publish 10 2)
 
-      (is (= [0 1]
-             (mock/consume driver topic-b)))
-      (is (= [0 3]
-             (mock/consume driver topic-b)))
-      (is (= [1 2]
-             (mock/consume driver topic-b)))
-      (is (not (mock/consume driver topic-b)))))
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= 3 (count keyvals)))
+        (is (= [0 1] (first keyvals)))
+        (is (= [0 3] (second keyvals)))
+        (is (= [1 2] (nth keyvals 2))))))
 
   (testing "aggregate"
     (let [topic-a (mock/topic "topic-a")
@@ -647,20 +622,18 @@
                                                        (fn [acc [k v]] (+ acc v))
                                                        topic-a)
                                           (k/to-kstream)
-                                          (k/to! topic-b))))
-          produce (mock/producer driver topic-a)]
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
 
-      (produce [1 1])
-      (produce [1 2])
-      (produce [10 2])
+      (publish 1 1)
+      (publish 1 2)
+      (publish 10 2)
 
-      (is (= [0 -9]
-             (mock/consume driver topic-b)))
-      (is (= [0 -7]
-             (mock/consume driver topic-b)))
-      (is (= [1 -8]
-             (mock/consume driver topic-b)))
-      (is (not (mock/consume driver topic-b)))))
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= 3 (count keyvals)))
+        (is (= [0 -9] (first keyvals)))
+        (is (= [0 -7] (second keyvals)))
+        (is (= [1 -8] (nth keyvals 2))))))
 
   (testing "windowed-by-time"
     (let [topic-a (mock/topic "topic-a")
@@ -673,20 +646,18 @@
                                           (k/reduce + topic-a)
                                           (k/to-kstream)
                                           (k/map (fn [[k v]] [(.key k) v]))
-                                          (k/to! topic-b))))
-          produce (mock/producer driver topic-a)]
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
 
-      (produce [1 1] 1000)
-      (produce [1 2] 1500)
-      (produce [1 4] 5000)
+      (publish 1000 1 1)
+      (publish 1500 1 2)
+      (publish 5000 1 4)
 
-      (is (= [0 1]
-             (mock/consume driver topic-b)))
-      (is (= [0 3]
-             (mock/consume driver topic-b)))
-      (is (= [0 4]
-             (mock/consume driver topic-b)))
-      (is (not (mock/consume driver topic-b)))))
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= 3 (count keyvals)))
+        (is (= [0 1] (first keyvals)))
+        (is (= [0 3] (second keyvals)))
+        (is (= [0 4] (nth keyvals 2))))))
 
   (testing "windowed-by-session"
     (let [topic-a (mock/topic "topic-a")
@@ -699,25 +670,21 @@
                                           (k/reduce + topic-a)
                                           (k/to-kstream)
                                           (k/map (fn [[k v]] [(.key k) v]))
-                                          (k/to! topic-b))))
-          produce (mock/producer driver topic-a)]
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
 
-      (produce [1 1] 1000)
-      (produce [1 2] 1500)
-      (produce [1 3] 5000)
-      (produce [12 3] 5100)
+      (publish 1000 1 1)
+      (publish 1500 1 2)
+      (publish 5000 1 3)
+      (publish 5100 12 3)
 
-      (is (= [0 1]
-             (mock/consume driver topic-b)))
-      (is (= [0 nil]
-             (mock/consume driver topic-b)))
-      (is (= [0 3]
-             (mock/consume driver topic-b)))
-      (is (= [0 3]
-             (mock/consume driver topic-b)))
-      (is (= [1 3]
-             (mock/consume driver topic-b)))
-      (is (not (mock/consume driver topic-b))))))
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= 5 (count keyvals)))
+        (is (= [0 1] (first keyvals)))
+        (is (= [0 nil] (second keyvals)))
+        (is (= [0 3] (nth keyvals 2)))
+        (is (= [0 3] (nth keyvals 3)))
+        (is (= [1 3] (nth keyvals 4)))))))
 
 (deftest grouped-table
   (testing "aggregate"
@@ -734,23 +701,20 @@
                                                                (fn [acc [k v]] (- acc v))
                                                                topic-b)
                                                   (k/to-kstream)
-                                                  (k/to! topic-b))))]
-        (let [produce (mock/producer driver topic-a)]
+                                                  (k/to topic-b))))]
+        (let [publish (partial mock/publish driver topic-a)]
 
-          (produce [1 1])
-          (produce [2 2])
-          (produce [2 nil])
-          (produce [10 3])
+          (publish 1 1)
+          (publish 2 2)
+          (publish 2 nil)
+          (publish 10 3)
 
-          (is (= [0 1]
-                 (mock/consume driver topic-b)))
-          (is (= [0 3]
-                 (mock/consume driver topic-b)))
-          (is (= [0 1]
-                 (mock/consume driver topic-b)))
-          (is (= [1 3]
-                 (mock/consume driver topic-b)))
-          (is (not (mock/consume driver topic-b)))))))
+          (let [keyvals (mock/get-keyvals driver topic-b)]
+            (is (= 4 (count keyvals)))
+            (is (= [0 1] (first keyvals)))
+            (is (= [0 3] (second keyvals)))
+            (is (= [0 1] (nth keyvals 2)))
+            (is (= [1 3] (nth keyvals 3))))))))
 
   (testing "count"
     (let [topic-a (mock/topic "topic-a")
@@ -764,17 +728,16 @@
                                                               topic-a)
                                                   (k/count topic-b)
                                                   (k/to-kstream)
-                                                  (k/to! topic-c))))]
-        (let [produce (mock/producer driver topic-a)]
+                                                  (k/to topic-c))))]
+        (let [publish (partial mock/publish driver topic-a)]
 
-          (produce [1 0])
-          (produce [2 0])
+          (publish 1 0)
+          (publish 2 0)
 
-          (is (= [2 1]
-                 (mock/consume driver topic-c)))
-          (is (= [2 2]
-                 (mock/consume driver topic-c)))
-          (is (not (mock/consume driver topic-c)))))))
+          (let [keyvals (mock/get-keyvals driver topic-c)]
+            (is (= 2 (count keyvals)))
+            (is (= [2 1] (first keyvals)))
+            (is (= [2 2] (second keyvals))))))))
 
   (testing "reduce"
     (let [topic-a (mock/topic "topic-a")
@@ -787,23 +750,20 @@
                                                               topic-a)
                                                   (k/reduce + - topic-b)
                                                   (k/to-kstream)
-                                                  (k/to! topic-b))))]
-        (let [produce (mock/producer driver topic-a)]
+                                                  (k/to topic-b))))]
+        (let [publish (partial mock/publish driver topic-a)]
 
-          (produce [1 1])
-          (produce [2 2])
-          (produce [2 nil])
-          (produce [10 3])
+          (publish 1 1)
+          (publish 2 2)
+          (publish 2 nil)
+          (publish 10 3)
 
-          (is (= [0 1]
-                 (mock/consume driver topic-b)))
-          (is (= [0 3]
-                 (mock/consume driver topic-b)))
-          (is (= [0 1]
-                 (mock/consume driver topic-b)))
-          (is (= [1 3]
-                 (mock/consume driver topic-b)))
-          (is (not (mock/consume driver topic-b))))))))
+          (let [keyvals (mock/get-keyvals driver topic-b)]
+            (is (= 4 (count keyvals)))
+            (is (= [0 1] (first keyvals)))
+            (is (= [0 3] (second keyvals)))
+            (is (= [0 1] (nth keyvals 2)))
+            (is (= [1 3] (nth keyvals 3)))))))))
 
 (deftest GlobalKTableTest
   (testing "inner global join"
@@ -819,17 +779,15 @@
                                                                    (fn [[k v]]
                                                                      k)
                                                                    +)
-                                                    (k/to! topic-c)))))]
-        (let [produce-stream (mock/producer driver topic-a)
-              produce-table (mock/producer driver topic-b)]
+                                                    (k/to topic-c)))))]
+        (let [publish-stream (partial mock/publish driver topic-a)
+              publish-table (partial mock/publish driver topic-b)]
 
-          (produce-stream [1 1])
-          (produce-table [1 2])
-          (produce-stream [1 4])
+          (publish-stream 1 1)
+          (publish-table 1 2)
+          (publish-stream 1 4)
 
-          (is (= [1 6]
-                 (mock/consume driver topic-c)))
-          (is (not (mock/consume driver topic-c)))))))
+          (is (= [[1 6]] (mock/get-keyvals driver topic-c)))))))
 
   (testing "left global join"
     (let [topic-a (mock/topic "topic-a")
@@ -844,16 +802,15 @@
                                                                         (fn [[k v]]
                                                                           k)
                                                                         safe-add)
-                                                    (k/to! topic-c)))))]
-        (let [produce-stream (mock/producer driver topic-a)
-              produce-table (mock/producer driver topic-b)]
+                                                    (k/to topic-c)))))]
+        (let [publish-stream (partial mock/publish driver topic-a)
+              publish-table (partial mock/publish driver topic-b)]
 
-          (produce-stream [1 1])
-          (produce-table [1 2])
-          (produce-stream [1 4])
+          (publish-stream 1 1)
+          (publish-table 1 2)
+          (publish-stream 1 4)
 
-          (is (= [1 1]
-                 (mock/consume driver topic-c)))
-          (is (= [1 6]
-                 (mock/consume driver topic-c)))
-          (is (not (mock/consume driver topic-c))))))))
+          (let [keyvals (mock/get-keyvals driver topic-c)]
+            (is (= 2 (count keyvals)))
+            (is (= [1 1] (first keyvals)))
+            (is (= [1 6] (second keyvals)))))))))
