@@ -4,7 +4,9 @@ This tutorial contains a simple stream processing application using Jackdaw and 
 
 ## Setting up
 
-Before starting, it is recommended to install the Confluent Platform CLI which can be obtained from `https://www.confluent.io/download/`. To install Clojure: `https://clojure.org/guides/getting_started`.
+Before starting, it is recommended to install the Confluent Platform CLI which can be obtained from [https://www.confluent.io/download/](https://www.confluent.io/download/).
+
+To install Clojure: [https://clojure.org/guides/getting_started](https://clojure.org/guides/getting_started).
 
 ## Project structure
 
