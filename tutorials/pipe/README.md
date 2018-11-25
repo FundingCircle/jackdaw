@@ -28,7 +28,7 @@ The `deps.edn` file describes the project's dependencies and source paths.
 
 The `system.clj` file contains functions to start, stop, and reset the app. These are required by the `user` namespace for interactive development and should not be invoked directly.
 
-The `pipe.clj` file describes the topology. Pipe reads from a Kafka topic called "input", logs the key and value, and writes to a Kafka topic called "output":
+The `pipe.clj` file describes the app and topology. Pipe reads from a Kafka topic called "input", logs the key and value, and writes to a Kafka topic called "output":
 ```
 (defn build-topology
   [builder]

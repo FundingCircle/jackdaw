@@ -28,9 +28,7 @@ The `deps.edn` file describes the project's dependencies and source paths.
 
 The `system.clj` file contains functions to start, stop, and reset the app. These are required by the `user` namespace for interactive development and should not be invoked directly.
 
-The `word_count.clj` file describes the topology. Word Count reads from a Kafka topic called 'input', logs the key and value, and writes the counts to a topic called 'output':
-
-Pipe reads from a Kafka topic called "input", logs the key and value, and writes to a Kafka topic called "output". The topology uses a KTable to track how many times words are seen:
+The `word_count.clj` file describes the app and topology. Word Count reads from a Kafka topic called 'input', logs the key and value, and writes the counts to a topic called 'output'. The topology uses a KTable to track how many times words are seen:
 ```
   (defn build-topology
     [builder]
