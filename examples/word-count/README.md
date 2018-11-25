@@ -1,6 +1,8 @@
 # Word Count
 
-This tutorial contains a simple stream processing application using Jackdaw and Kafka Streams. Before starting, it is recommended to install the Confluent Platform CLI which can be obtained from `https://www.confluent.io/download/`. To install Clojure: `https://clojure.org/guides/getting_started`.
+This tutorial contains a simple stream processing application using Jackdaw and Kafka Streams.
+
+Before starting, it is recommended to install the Confluent Platform CLI which can be obtained from `https://www.confluent.io/download/`. To install Clojure: `https://clojure.org/guides/getting_started`.
 
 The project structure looks like this:
 ```
@@ -48,7 +50,7 @@ Pipe reads from a Kafka topic called 'input', logs the key and value, and writes
 
 The `word_count_test.clj` file contains a test.
 
-Let's get started! First, fire up a Clojure REPL and load the `word-count` namespace. Then, start ZooKeeper and Kafka. If these services are already running, you may skip this step:
+Let's get started! Fire up a Clojure REPL and load the `word-count` namespace. Then, start ZooKeeper and Kafka. If these services are already running, you may skip this step:
 ```
 user> (confluent/start)
 INFO zookeeper is up (confluent:288)
