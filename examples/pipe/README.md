@@ -76,7 +76,7 @@ user> (get-keyvals (topic-config "output"))
 
 This concludes this tutorial.
 
-For interactive development, reload the file and invoke `user/reset`. These stops the app, deletes topics and internal state using a regex, and recreates the topics and restarts the app.
+For interactive development, reload the file and invoke `user/reset`. These stops the app, deletes topics and internal state using a regex, and recreates the topics and restarts the app. The details are in the `system` namespace.
 
 To run tests, load the `pipe-test` namespace and invoke a test runner using your editor, or from the command line:
 ```
