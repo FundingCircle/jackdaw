@@ -102,7 +102,9 @@ user> (get-keyvals (topic-config "output"))
  ("streams" 2))
 ```
 
-That concludes this tutorial.
+This concludes this tutorial.
+
+For interactive development, reload the file and invoke `user/reset`. These stops the app, deletes topics and internal state using a regex, and recreates the topics and restarts the app.
 
 To run tests, load the `word-count-test` namespace and invoke a test runner using your editor, or from the command line:
 ```
