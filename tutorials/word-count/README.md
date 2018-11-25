@@ -75,7 +75,7 @@ INFO word-count is up (word-count:288)
 
 The `user/start` function creates two Kafka topics needed by Word Count and starts it.
 
-For the full list of topics:
+For the full list of topics, type:
 ```
 user> (get-topics)
 #{"word-count-KSTREAM-AGGREGATE-STATE-STORE-0000000004-repartition"

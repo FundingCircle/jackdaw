@@ -62,7 +62,7 @@ INFO pipe is up (pipe:288)
 
 The `user/start` function creates two Kafka topics needed by Pipe and starts it.
 
-For the full list of topics:
+For the full list of topics, type:
 ```
 user> (get-topics)
 #{"output" "__confluent.support.metrics" "input"}
