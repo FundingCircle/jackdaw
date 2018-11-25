@@ -30,7 +30,7 @@ The `system.clj` file contains functions to start, stop, and reset the app. Thes
 
 The `word_count.clj` file describes the topology. Word Count reads from a Kafka topic called 'input', logs the key and value, and writes the counts to a topic called 'output':
 
-Pipe reads from a Kafka topic called 'input', logs the key and value, and writes to a Kafka topic called 'output'. The topology uses a KTable to track how many times words are seen:
+Pipe reads from a Kafka topic called "input", logs the key and value, and writes to a Kafka topic called "output". The topology uses a KTable to track how many times words are seen:
 ```
   (defn build-topology
     [builder]
