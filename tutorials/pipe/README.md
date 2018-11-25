@@ -2,7 +2,11 @@
 
 This tutorial contains a simple stream processing application using Jackdaw and Kafka Streams.
 
+## Setting up
+
 Before starting, it is recommended to install the Confluent Platform CLI which can be obtained from `https://www.confluent.io/download/`. To install Clojure: `https://clojure.org/guides/getting_started`.
+
+## Project structure
 
 The project structure looks like this:
 ```
@@ -34,6 +38,8 @@ The `pipe.clj` file describes the topology. Pipe reads from a Kafka topic called
 ```
 
 The `pipe_test.clj` file contains a test.
+
+## Running the app
 
 Let's get started! Fire up a Clojure REPL and load the `pipe` namespace. Then, start ZooKeeper and Kafka. If these services are already running, you may skip this step:
 ```
@@ -76,7 +82,11 @@ user> (get-keyvals (topic-config "output"))
 
 This concludes this tutorial.
 
+## Interactive development
+
 For interactive development, reload the file and invoke `user/reset`. These stops the app, deletes topics and internal state using a regex, and recreates the topics and restarts the app. The details are in the `system` namespace.
+
+## Running tests
 
 To run tests, load the `pipe-test` namespace and invoke a test runner using your editor, or from the command line:
 ```
