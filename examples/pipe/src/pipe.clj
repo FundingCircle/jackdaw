@@ -1,10 +1,9 @@
-(ns word-count
+(ns pipe
   "This tutorial contains a simple stream processing application using
   Jackdaw and Kafka Streams.
 
-  Word Count reads from a Kafka topic called `input`, logs the key and
-  value, and writes the counts to a topic called `output`. It uses a
-  KTable to track how many times words are seen."
+  Pipe reads from a Kafka topic called `input`, logs the key and
+  value, and writes these to a Kafka topic called `output`."
   (:gen-class)
   (:require [clojure.string :as str]
             [clojure.tools.logging :refer [info]]
@@ -14,18 +13,14 @@
 
 
 (defn topic-config
-  "Takes a topic name and (optionally) a key and value serde and
-  returns a topic configuration map, which may be used to create a
-  topic or produce/consume records."
-  ([topic-name]
-   (topic-config topic-name (j.s.edn/serde) (j.s.edn/serde)))
-
-  ([topic-name key-serde value-serde]
-   {:jackdaw.topic/topic-name topic-name
-    :jackdaw.topic/partitions 1
-    :jackdaw.topic/replication-factor 1
-    :jackdaw.serdes/key-serde key-serde
-    :jackdaw.serdes/value-serde value-serde}))
+  "Takes a topic name and returns a topic configuration map, which may
+  be used to create a topic or produce/consume records."
+  [topic-name]
+  {:jackdaw.topic/topic-name topic-name
+   :jackdaw.topic/partitions 1
+   :jackdaw.topic/replication-factor 1
+   :jackdaw.serdes/key-serde (j.s.edn/serde)
+   :jackdaw.serdes/value-serde (j.s.edn/serde)})
 
 
 (defn app-config
@@ -37,27 +32,14 @@
 
 (defn build-topology
   "Reads from a Kafka topic called `input`, logs the key and value,
-  and writes the counts to a topic called `output`. Returns a topology
-  builder."
+  and writes these to a Kafka topic called `output`. Returns a
+  topology builder."
   [builder]
-  (let [text-input (-> (j/kstream builder (topic-config "input"))
-                       (j/peek (fn [[k v]]
-                                 (info (str {:key k :value v})))))
-
-        count (-> text-input
-                  (j/flat-map-values (fn [v]
-                                       (str/split (str/lower-case v)
-                                                  #"\W+")))
-                  (j/group-by (fn [[_ v]] v)
-                              (topic-config nil (Serdes/String)
-                                            (Serdes/String)))
-                  (j/count))]
-
-    (-> count
-        (j/to-kstream)
-        (j/to (topic-config "output")))
-
-    builder))
+  (-> (j/kstream builder (topic-config "input"))
+      (j/peek (fn [[k v]]
+                (info (str {:key k :value v}))))
+      (j/to (topic-config "output")))
+  builder)
 
 (defn start-app
   "Starts the stream processing application."
@@ -66,14 +48,14 @@
         topology (build-topology builder)
         app (j/kafka-streams topology app-config)]
     (j/start app)
-    (info "word-count is up")
+    (info "pipe is up")
     app))
 
 (defn stop-app
   "Stops the stream processing application."
   [app]
   (j/close app)
-  (info "word-count is down"))
+  (info "pipe is down"))
 
 
 (defn -main
@@ -106,12 +88,11 @@
 
 
   ;; Write to the input stream.
-  (publish (topic-config "input") nil "all streams lead to kafka")
-  (publish (topic-config "input") nil "hello kafka streams")
+  (publish (topic-config "input") nil "this is a pipe")
 
 
   ;; Read from the output stream.
   (get-keyvals (topic-config "output"))
 
 
-  )
+)

@@ -7,14 +7,14 @@
             [clojure.tools.logging :as log]
             [clojure.java.shell :refer [sh]]
             [jackdaw.admin.client :as j.admin.client]
-            [word-count]))
+            [pipe]))
 
 (def system nil)
 
 (defn create-topics
   "Takes a list of topics and creates these using the names given."
   [topic-names]
-  (let [topic-config-list (map word-count/topic-config topic-names)]
+  (let [topic-config-list (map pipe/topic-config topic-names)]
     (with-open [client (j.admin.client/client {"bootstrap.servers"
                                                "localhost:9092"})]
       (j.admin.client/create-topics client topic-config-list))))
@@ -27,32 +27,18 @@
                                              "localhost:9092"})]
     (let [topics-to-delete (->> (j.admin.client/get-topics client)
                                 (filter #(re-find re %))
-                                (map word-count/topic-config))]
+                                (map pipe/topic-config))]
       (j.admin.client/delete-topics client topics-to-delete))))
 
-(defn application-id
-  "Takes an application config and returns an `application.id`."
-  [app-config]
-  (get app-config "application.id"))
-
-(defn destroy-state-stores
-  "Takes an application config and deletes local files associated with
-  internal state."
-  [app-config]
-  (sh "rm" "-rf" (str "/tmp/kafka-streams/" (application-id app-config)))
-  (log/info "internal state is deleted"))
-
 (defn stop
-  "Stops the app, and deletes topics and internal state.
+  "Stops the app and deletes topics.
   This functions is required by the `user` namespace and should not
   be called directly."
   []
   (when system
-    (word-count/stop-app (:app system)))
-  (re-delete-topics (re-pattern (str "(input|output|"
-                                     (application-id (word-count/app-config))
-                                     ".*)")))
-  (destroy-state-stores (word-count/app-config)))
+    (pipe/stop-app (:app system)))
+  (re-delete-topics #"(input|output)"))
+
 
 (defn start
   "Creates topics, and starts the app.
@@ -61,4 +47,4 @@
   []
   (with-out-str (stop))
   (create-topics ["input" "output"])
-  {:app (word-count/start-app (word-count/app-config))})
+  {:app (pipe/start-app (pipe/app-config))})

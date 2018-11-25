@@ -1,14 +1,17 @@
 (ns confluent
-  "doc-string"
+  "Functions to start and stop ZooKeeper and Kafka.
+  These functions require the Confluent Platform CLI which can be
+  obtained from `https://www.confluent.io/download/`.
+
+  WARNING: Quitting the REPL will not stop ZooKeeper and Kafka. Before
+  exiting, you must invoke `confluent/stop`. Otherwise, run `confluent
+  destroy` from the command line."
   (:require [clojure.string :as str]
             [clojure.tools.logging :as log]
             [clojure.java.shell :refer [sh]]))
 
-;; TODO: Explain this doesn't stop Kafka, etc. if the REPL is killed.
-;; TODO: Add documentation to explain how to install missing binary.
-
 (defn not-up
-  "doc-string"
+  "Takes `service` and returns true if the service is down"
   [service]
   (->> (:out (sh "confluent" "status"))
        str/split-lines
@@ -18,14 +21,14 @@
        boolean))
 
 (defn stop
-  "doc-string"
+  "Starts ZooKeeper and Kafka."
   []
   (sh "confluent" "destroy")
   (log/info "kafka is down")
   (log/info "zookeeper is down"))
 
 (defn start
-  "doc-string"
+  "Starts ZooKeeper and Kafka."
   []
   (with-out-str (stop))
   (doseq [s ["zookeeper" "kafka"]]
@@ -35,7 +38,7 @@
         (log/info s "is up"))))
 
 (defn reset
-  "doc-string"
+  "Stops and starts ZooKeeper and Kafka."
   []
   (stop)
   (start))
