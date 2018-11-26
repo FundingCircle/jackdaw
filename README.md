@@ -1,6 +1,6 @@
 <img align="left" src="doc/images/jackdaw-logo.png" width=175/>
 
-Jackdaw is a Clojure library for the Apache Kafka distributed streaming platform. Quisque nec lobortis sem. Morbi vehicula nec lectus id efficitur. Nulla suscipit lacus quis mi cursus iaculis. Cras quis erat turpis. Ut at erat ac augue dictum mattis. Suspendisse tincidunt elit ac velit vulputate, ac feugiat est porttitor. Vivamus vestibulum vel eros non fermentum. Mauris vestibulum mi sit amet turpis volutpat faucibus eget sed dolor. Morbi tincidunt risus id feugiat molestie. Sed dictum faucibus luctus. Integer iaculis sapien ultricies leo pellentesque aliquet.
+Jackdaw is a Clojure library for the Apache Kafka distributed streaming platform. With Jackdaw you can create or list topics using the AdminClient API, produce or consume records using the Producer and Consumer APIs, and create stream processing applications using the Streams API. Jackdaw also contains functions to serialize and deserialize records as JSON, EDN, and Avro, as well as functions for writing unit and integration tests.
 
 
 ## Installation
