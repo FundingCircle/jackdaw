@@ -1,6 +1,6 @@
-<img align="left" src="doc/images/jackdaw-logo.png" width=100/>
+<img align="left" src="doc/images/jackdaw-logo.png" width=175/>
 
-Jackdaw is a Clojure library for the Apache Kafka distributed streaming platform.
+Jackdaw is a Clojure library for the Apache Kafka distributed streaming platform. Quisque nec lobortis sem. Morbi vehicula nec lectus id efficitur. Nulla suscipit lacus quis mi cursus iaculis. Cras quis erat turpis. Ut at erat ac augue dictum mattis. Suspendisse tincidunt elit ac velit vulputate, ac feugiat est porttitor. Vivamus vestibulum vel eros non fermentum. Mauris vestibulum mi sit amet turpis volutpat faucibus eget sed dolor. Morbi tincidunt risus id feugiat molestie. Sed dictum faucibus luctus. Integer iaculis sapien ultricies leo pellentesque aliquet. Nulla sed cursus neque. Quisque tristique sem ac dolor condimentum, sed varius metus iaculis. Cras faucibus a odio ut molestie. Praesent gravida nibh id mauris elementum, sagittis fringilla nibh pellentesque.
 
 
 ## Installation
