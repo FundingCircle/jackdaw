@@ -1,5 +1,5 @@
 # Jackdaw
-<img align="left" src="doc/images/slack-icon.png" width=200/>
+<img align="left" src="doc/images/jackdaw-logo.png" width=175/>
 
 Jackdaw is a Clojure library for the Apache Kafka distributed streaming platform.
 
