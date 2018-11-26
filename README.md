@@ -1,5 +1,4 @@
-# Jackdaw
-<img align="left" src="doc/images/jackdaw-logo.png" width=175/>
+<img align="left" src="doc/images/jackdaw-logo.png" width=100/>
 
 Jackdaw is a Clojure library for the Apache Kafka distributed streaming platform.
 
@@ -19,7 +18,7 @@ To use the latest release, add the following to your project:
 ## Tutorials
 
 - [Pipe](https://github.com/FundingCircle/jackdaw/tree/master/tutorials/pipe)
-- [Word Count] (https://github.com/FundingCircle/jackdaw/tree/master/tutorials/word-count)
+- [Word Count](https://github.com/FundingCircle/jackdaw/tree/master/tutorials/word-count)
 - [Simple Ledger](https://github.com/FundingCircle/jackdaw/tree/master/tutorials/simple-ledger)
 
 
