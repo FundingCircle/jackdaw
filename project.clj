@@ -1,5 +1,5 @@
-(defproject fundingcircle/jackdaw "0.0.2-SNAPSHOT"
-  :description "No frills Clojure wrapper around Apache Kafka APIs"
+(defproject fundingcircle/jackdaw "0.4.0-SNAPSHOT"
+  :description "Clojure library for the Apache Kafka distributed streaming platform."
 
   :dependencies [[clj-time "0.13.0"]
                  [com.taoensso/nippy "2.12.2"]
