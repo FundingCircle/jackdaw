@@ -19,7 +19,7 @@
                  [org.apache.kafka/kafka-clients "2.0.0"]
                  [org.apache.kafka/kafka-streams "2.0.0"]
                  [org.apache.kafka/kafka_2.11 "2.0.0"]
-                 [org.clojure/clojure "1.10.0-beta6"]
+                 [org.clojure/clojure "1.9.0"]
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/tools.logging "0.3.1"]
                  [org.clojure/core.cache "0.7.1"]]
