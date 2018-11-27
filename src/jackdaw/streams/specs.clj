@@ -62,11 +62,6 @@
                      :topic-configs ::topic-configs)
         :ret kstream?)
 
-(s/fdef k/merge
-        :args (s/cat :streams-builder streams-builder?
-                     :kstreams ::kstreams)
-        :ret kstream?)
-
 (s/fdef k/ktable
         :args (s/cat :streams-builder streams-builder?
                      :topic-config ::topic-config)
@@ -182,6 +177,11 @@
 (s/fdef k/map
         :args (s/cat :kstream kstream?
                      :key-value-mapper-fn ifn?)
+        :ret kstream?)
+
+(s/fdef k/merge
+        :args (s/cat :kstream kstream?
+                     :other kstream?)
         :ret kstream?)
 
 (s/fdef k/outer-join-windowed

@@ -298,6 +298,23 @@
 
       (is (= [[2 2]] (mock/get-keyvals driver topic-b)))))
 
+  (testing "merge"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          topic-c (mock/topic "topic-c")
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/merge (k/kstream builder topic-b))
+                                          (k/to topic-c))))
+          produce-a (mock/producer driver topic-a)
+          produce-b (mock/producer driver topic-a)]
+
+      (produce-a 1 1 1)
+      (produce-b 100 2 2)
+      (is (= [1 1] (mock/consume driver topic-c)))
+      (is (= [2 2] (mock/consume driver topic-c)))))
+
   (testing "outer-join-windowed"
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")

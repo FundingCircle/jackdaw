@@ -211,6 +211,13 @@
      config
      (map kstream key-value-mapper-fn)))
 
+  (merge
+    [_ other-kstream]
+    (configured-kstream
+      config
+      (merge kstream
+             other-kstream)))
+
   (outer-join-windowed
     [_ other-kstream value-joiner-fn windows]
     (configured-kstream

@@ -255,6 +255,12 @@
     (clj-kstream
      (.map kstream (key-value-mapper key-value-mapper-fn))))
 
+  (merge
+    [_ other-kstream]
+    (clj-kstream
+      (.merge kstream
+              (kstream* other-kstream))))
+
   (outer-join-windowed
     [_ other-kstream value-joiner-fn windows]
     (clj-kstream
