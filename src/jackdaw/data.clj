@@ -18,7 +18,7 @@
 
 (set! *warn-on-reflection* true)
 
-;;;; Datafy backport for 1.10+
+;;;; Datafy backport for pre 1.10
 
 (when-not (contains? (ns-map *ns*) 'Datafiable)
   (eval
