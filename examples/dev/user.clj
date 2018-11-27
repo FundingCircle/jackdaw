@@ -1,11 +1,10 @@
 (ns user
   "doc-string"
   (:require [clojure.java.shell :refer [sh]]
-            [jackdaw.client :as j.client]
-            [jackdaw.admin.client :as j.admin.client]
-            [jackdaw.serdes.edn :as j.s.edn]
+            [jackdaw.client :as jc]
+            [jackdaw.admin :as ja]
+            [jackdaw.serdes.edn :as jse]
             [jackdaw.streams :as j]
-            [jackdaw.client.extras :as j.client.extras]
             [confluent]
             [system])
   (:import org.apache.kafka.common.serialization.Serdes))
@@ -21,20 +20,21 @@
   partition count, and returns a topic configuration map, which may be
   used to create a topic or produce/consume records."
   ([topic-name]
-   (topic-config topic-name (j.s.edn/serde)))
+   (topic-config topic-name (jse/serde)))
 
   ([topic-name value-serde]
-   (topic-config topic-name (j.s.edn/serde) value-serde))
+   (topic-config topic-name (jse/serde) value-serde))
 
   ([topic-name key-serde value-serde]
    (topic-config topic-name 1 key-serde value-serde))
 
-  ([topic-name partitions key-serde value-serde]
-   {:jackdaw.topic/topic-name topic-name
-    :jackdaw.topic/partitions partitions
-    :jackdaw.topic/replication-factor 1
-    :jackdaw.serdes/key-serde key-serde
-    :jackdaw.serdes/value-serde value-serde}))
+  ([topic-name partition-count key-serde value-serde]
+   {:topic-name topic-name
+    :partition-count partition-count
+    :replication-factor 1
+    :topic-config {}
+    :key-serde key-serde
+    :value-serde value-serde}))
 
 
 ;;; ------------------------------------------------------------
@@ -49,20 +49,20 @@
 (defn create-topic
   "Takes a topic config and creates a Kafka topic."
   [topic-config]
-  (with-open [client (j.admin.client/client (kafka-admin-client-config))]
-    (j.admin.client/create-topic client topic-config)))
+  (with-open [client (ja/->AdminClient (kafka-admin-client-config))]
+    (ja/create-topics! client [topic-config])))
 
-(defn get-topics
+(defn list-topics
   "Returns a list of Kafka topics."
   []
-  (with-open [client (j.admin.client/client (kafka-admin-client-config))]
-    (j.admin.client/get-topics client)))
+  (with-open [client (ja/->AdminClient (kafka-admin-client-config))]
+    (ja/list-topics client)))
 
 (defn topic-exists?
   "Takes a topic name and returns true if the topic exists."
-  [topic-name]
-  (with-open [client (j.admin.client/client (kafka-admin-client-config))]
-    (j.admin.client/topic-exists? client topic-name)))
+  [topic-config]
+  (with-open [client (ja/->AdminClient (kafka-admin-client-config))]
+    (ja/topic-exists? client topic-config)))
 
 
 ;;; ------------------------------------------------------------
@@ -86,26 +86,19 @@
   "Takes a topic config and record value, and (optionally) a key and
   parition number, and produces to a Kafka topic."
   ([topic-config value]
-   (with-open [client (j.client/producer (kafka-producer-config) topic-config)]
-     (j.client/send! client (j.client/producer-record
-                             topic-config
-                             value))
-     nil))
+   (with-open [client (jc/producer (kafka-producer-config) topic-config)]
+     @(jc/produce! client topic-config value))
+   nil)
 
   ([topic-config key value]
-   (with-open [client (j.client/producer (kafka-producer-config) topic-config)]
-     (j.client/send! client (j.client/producer-record topic-config
-                                                      key
-                                                      value))
-     nil))
+   (with-open [client (jc/producer (kafka-producer-config) topic-config)]
+     @(jc/produce! client topic-config key value))
+   nil)
 
   ([topic-config partition key value]
-   (with-open [client (j.client/producer (kafka-producer-config) topic-config)]
-     (j.client/send! client (j.client/producer-record topic-config
-                                                      (int partition)
-                                                      key
-                                                      value))
-     nil)))
+   (with-open [client (jc/producer (kafka-producer-config) topic-config)]
+     @(jc/produce! client topic-config partition key value))
+   nil))
 
 
 (defn get-records
@@ -115,9 +108,9 @@
    (get-records topic-config 30))
 
   ([topic-config timeout]
-   (with-open [client (j.client/subscribed-consumer (kafka-consumer-config)
-                                                    topic-config)]
-     (j.client/poll client timeout))))
+   (with-open [client (jc/subscribed-consumer (kafka-consumer-config)
+                                              [topic-config])]
+     (jc/poll client timeout))))
 
 
 (defn get-keyvals
@@ -127,7 +120,7 @@
    (get-keyvals topic-config 30))
 
   ([topic-config timeout]
-   (map #(vals (select-keys % [:key :value])) (get-records topic-config timeout))))
+   (map (juxt :key :value) (get-records topic-config timeout))))
 
 
 ;;; ------------------------------------------------------------

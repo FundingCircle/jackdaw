@@ -8,7 +8,7 @@
   (:require [clojure.string :as str]
             [clojure.tools.logging :refer [info]]
             [jackdaw.streams :as j]
-            [jackdaw.serdes.edn :as j.s.edn])
+            [jackdaw.serdes.edn :as jse])
   (:import [org.apache.kafka.common.serialization Serdes]))
 
 
@@ -16,11 +16,11 @@
   "Takes a topic name and returns a topic configuration map, which may
   be used to create a topic or produce/consume records."
   [topic-name]
-  {:jackdaw.topic/topic-name topic-name
-   :jackdaw.topic/partitions 1
-   :jackdaw.topic/replication-factor 1
-   :jackdaw.serdes/key-serde (j.s.edn/serde)
-   :jackdaw.serdes/value-serde (j.s.edn/serde)})
+  {:topic-name topic-name
+   :partition-count 1
+   :replication-factor 1
+   :key-serde (jse/serde)
+   :value-serde (jse/serde)})
 
 
 (defn app-config
@@ -84,7 +84,7 @@
 
 
   ;; Get a list of current topics.
-  (get-topics)
+  (list-topics)
 
 
   ;; Write to the input stream.

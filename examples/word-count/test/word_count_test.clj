@@ -2,15 +2,15 @@
   "This illustrates the use of the TopologyTestDriver and jackdaw.test
   to test Kafka Streams topologies."
   (:require [word-count :as sut]
-            [jackdaw.streams.mock :as j.streams.mock]
+            [jackdaw.streams.mock :as jsm]
             [clojure.test :refer :all]))
 
 
 (deftest build-topology-unit-test
   (testing "word-count unit test"
-    (let [driver (j.streams.mock/build-driver sut/build-topology)
-          publish (partial j.streams.mock/publish driver)
-          get-keyvals (partial j.streams.mock/get-keyvals driver)]
+    (let [driver (jsm/build-driver sut/build-topology)
+          publish (partial jsm/publish driver)
+          get-keyvals (partial jsm/get-keyvals driver)]
 
       (publish (sut/topic-config "input") nil
                "all streams lead to kafka")
@@ -30,12 +30,3 @@
           1 "to"
           2 "kafka"
           1 "hello")))))
-
-
-(deftest build-topology-integration-test
-  (testing "word-count integration test"
-
-    ;; FIXME: Charles Reese <2018-11-18>: Create an integration test
-    ;; after test machine has been added.
-
-    ))

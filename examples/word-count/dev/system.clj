@@ -6,29 +6,29 @@
   (:require [clojure.string :as str]
             [clojure.tools.logging :as log]
             [clojure.java.shell :refer [sh]]
-            [jackdaw.admin.client :as j.admin.client]
+            [jackdaw.admin :as ja]
             [word-count]))
 
 (def system nil)
 
+(defn kafka-admin-client-config
+  []
+  {"bootstrap.servers" "localhost:9092"})
+
 (defn create-topics
   "Takes a list of topics and creates these using the names given."
-  [topic-names]
-  (let [topic-config-list (map word-count/topic-config topic-names)]
-    (with-open [client (j.admin.client/client {"bootstrap.servers"
-                                               "localhost:9092"})]
-      (j.admin.client/create-topics client topic-config-list))))
+  [topic-config-list]
+  (with-open [client (ja/->AdminClient (kafka-admin-client-config))]
+    (ja/create-topics! client topic-config-list)))
 
 (defn re-delete-topics
   "Takes an instance of java.util.regex.Pattern and deletes any Kafka
   topics that match."
   [re]
-  (with-open [client (j.admin.client/client {"bootstrap.servers"
-                                             "localhost:9092"})]
-    (let [topics-to-delete (->> (j.admin.client/get-topics client)
-                                (filter #(re-find re %))
-                                (map word-count/topic-config))]
-      (j.admin.client/delete-topics client topics-to-delete))))
+  (with-open [client (ja/->AdminClient (kafka-admin-client-config))]
+    (let [topics-to-delete (->> (ja/list-topics client)
+                                (filter #(re-find re (:topic-name %))))]
+      (ja/delete-topics! client topics-to-delete))))
 
 (defn application-id
   "Takes an application config and returns an `application.id`."
@@ -60,5 +60,5 @@
   be called directly."
   []
   (with-out-str (stop))
-  (create-topics ["input" "output"])
+  (create-topics (map word-count/topic-config ["input" "output"]))
   {:app (word-count/start-app (word-count/app-config))})
