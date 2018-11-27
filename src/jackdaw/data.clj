@@ -20,21 +20,18 @@
 
 ;;;; Datafy backport for pre 1.10
 
-(when-not (contains? (ns-map *ns*) 'Datafiable)
-  (eval
-   '(try
-      (require '[clojure.core.protocols :refer [Datafiable]])
-      (catch Exception _
-        (in-ns 'clojure.core.protocols)
-        (defprotocol Datafiable
-          (datafy [o]))
-        (extend-protocol Datafiable
-          Object
-          (datafy [o] o)
-          nil
-          (datafy [o] o))
-        (in-ns 'jackdaw.data)
-        (require '[clojure.core.protocols :refer [Datafiable]])))))
+(try
+  (require '[clojure.core.protocols :refer [Datafiable]])
+  (catch java.lang.IllegalAccessError _
+    (binding [*ns* (the-ns 'clojure.core.protocols)]
+      (eval '(defprotocol Datafiable
+               (datafy [o]))))
+    (require '[clojure.core.protocols :refer [Datafiable]])
+    (eval '(extend-protocol clojure.core.protocols/Datafiable
+             Object
+             (datafy [o] o)
+             nil
+             (datafy [o] o)))))
 
 ;;; Just vendor this - not worth the footwork to import the "real" one
 
