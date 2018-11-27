@@ -1,20 +1,23 @@
 (ns jackdaw.client.partitioning
   "Extras for `jackdaw.client` which help you define record partitioning
-  schemes.
+  schemes as part of a topic's configuration.
 
-  Unfortunately, the partitioning API provided by Kafka sucks. You
-  have to define a `org.apache.kafka.clients.producer.Partitioner`
-  class implementation with an 0-arity constructor, and you include
-  the name of that Partitioner class in your producer options. This
-  seems to have been done so that the Partitioner can have access to
-  Kafka internal state about the cluster, from which to read partition
-  count and related data.
+  The partitioning API provided by Kafka, like the serdes API, leaves
+  a lot to be desired when trying to interop from Clojure. You have to
+  define a `org.apache.kafka.clients.producer.Partitioner` class
+  implementation with an 0-arity constructor, and you include the name
+  of that Partitioner class in your producer options. This seems to
+  have been done so that the Partitioner can have access to Kafka
+  internal state about the cluster, from which to read partition count
+  and related data. But this pretty soundly defeats Clojure's idioms
+  of avoiding class generation wherever possible and using instance
+  parameterization.
 
   The `Producer` (and `Consumer`) APIs however do expose
   `.partitionsFor` - a way to interrogate a topic to understand how
   many partitions it contains.
 
-  This namespace defines a protocol by which clients can define
+  This namespace defines a mechanism by which clients can define
   \"defaulting\" behavior both for record keys, and for record
   partitioning.
 
@@ -38,9 +41,9 @@
            org.apache.kafka.common.utils.Utils))
 
 (defn record-key->key-fn
-  "Given a topic config having `:jackdaw.topic/record-key`, parse it,
-  annotating the topic with a `::key-fn` which will simply fetch the
-  specified record-key."
+  "Given a topic config having `:record-key`, parse it,
+  annotating the topic with a `:Lkey-fn` which will simply fetch the
+  specified record-key out of any record."
   [{:keys [record-key] :as t}]
   (let [record-key (as-> record-key %
                      (-> %
@@ -82,9 +85,9 @@
      (jd/->ProducerRecord ^String topic-name value)))
   ([^Producer producer {:keys [topic-name ::partition-fn] :as t} key value]
    (if partition-fn
-     (->ProducerRecord producer
-                       t (partition-fn t key value (jc/num-partitions producer t))
-                       key value)
+     (as-> (jc/num-partitions producer t) %
+       (partition-fn t key value %)
+       (->ProducerRecord producer t % key value))
      (jd/->ProducerRecord ^String topic-name key value)))
   ([^Producer producer topic partition key value]
    (jd/->ProducerRecord topic (int partition) key value))
