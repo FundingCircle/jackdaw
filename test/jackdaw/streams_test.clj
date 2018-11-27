@@ -308,7 +308,7 @@
                                           (k/merge (k/kstream builder topic-b))
                                           (k/to topic-c))))
           produce-a (mock/producer driver topic-a)
-          produce-b (mock/producer driver topic-a)]
+          produce-b (mock/producer driver topic-b)]
 
       (produce-a 1 1 1)
       (produce-b 100 2 2)
