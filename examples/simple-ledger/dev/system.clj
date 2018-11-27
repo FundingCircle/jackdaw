@@ -65,6 +65,6 @@
   be called directly."
   []
   (with-out-str (stop))
-  (create-topics (map word-count/topic-config ["ledger-entries-requested"
-                                               "ledger-transaction-added"]))
+  (create-topics (map simple-ledger/topic-config ["ledger-entries-requested"
+                                                  "ledger-transaction-added"]))
   {:app (simple-ledger/start-app (simple-ledger/app-config))})

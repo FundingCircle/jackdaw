@@ -357,8 +357,7 @@
                               (merge v
                                      {:starting-balance 0
                                       :current-balance (:amount v)})))
-              (j/group-by-key (topic-config nil (Serdes/String)
-                                            (j.s.edn/serde)))
+              (j/group-by-key (topic-config nil (Serdes/String) (jse/serde)))
               (j/reduce account-balance-reducer
                         (topic-config "balances")))]
 
