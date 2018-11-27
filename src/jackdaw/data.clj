@@ -28,6 +28,11 @@
         (in-ns 'clojure.core.protocols)
         (defprotocol Datafiable
           (datafy [o]))
+        (extend-protocol Datafiable
+          Object
+          (datafy [o] o)
+          nil
+          (datafy [o] o))
         (in-ns 'jackdaw.data)
         (require '[clojure.core.protocols :refer [Datafiable]])))))
 
