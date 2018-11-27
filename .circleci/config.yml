@@ -4,7 +4,10 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/clojure:latest
+      - image: quay.io/fundingcircle/clojure:latest
+        auth:
+          username: $DOCKER_USERNAME
+          password: $DOCKER_PASSWORD
     environment:
       _JAVA_OPTIONS: "-Xms1024m -Xmx3072m"
     steps:
@@ -15,15 +18,6 @@ jobs:
             - libs-cache-{{ checksum "project.clj" }}-{{ checksum ".circleci/config.yml" }}
             - libs-cache-{{ checksum "project.clj" }}
             - libs-cache-
-
-      - run:
-          command: wget -qO - https://packages.confluent.io/deb/4.0/archive.key | sudo apt-key add -
-      - run:
-          command: sudo apt-get install software-properties-common apt-transport-https less
-      - run:
-          command: sudo add-apt-repository "deb [arch=amd64] https://packages.confluent.io/deb/4.0 stable main"
-      - run:
-          command: sudo apt-get update && sudo apt-get install confluent-platform-oss-2.11
       - run:
           command: nohup confluent start
       - run:
@@ -72,7 +66,8 @@ workflows:
   version: 2
   build_and_deploy:
     jobs:
-      - build
+      - build:
+          context: org-global
       - deploy-staging:
           requires:
             - build
