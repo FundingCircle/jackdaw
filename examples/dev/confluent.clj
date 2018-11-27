@@ -7,7 +7,6 @@
   exiting, you must invoke `confluent/stop`. Otherwise, run `confluent
   destroy` from the command line."
   (:require [clojure.string :as str]
-            [clojure.tools.logging :as log]
             [clojure.java.shell :refer [sh]]))
 
 (defn not-up
@@ -24,8 +23,8 @@
   "Starts ZooKeeper and Kafka."
   []
   (sh "confluent" "destroy")
-  (log/info "kafka is down")
-  (log/info "zookeeper is down"))
+  (println "kafka is down")
+  (println "zookeeper is down"))
 
 (defn start
   "Starts ZooKeeper and Kafka."
@@ -35,7 +34,7 @@
     (do (while (not-up s)
           (sh "confluent" "start" s)
           (Thread/sleep 1000))
-        (log/info s "is up"))))
+        (println s "is up"))))
 
 (defn reset
   "Stops and starts ZooKeeper and Kafka."

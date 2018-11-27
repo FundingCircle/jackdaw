@@ -115,49 +115,53 @@
   ;;; Add input validation
   ;;;
 
-  (do (s/def ::ledger-entries-requested-value
-        (s/keys :req-un [::id
-                         ::entries]))
+  (do
 
-      (s/def ::id uuid?)
-      (s/def ::entries (s/+ ::entry))
+    (s/def ::ledger-entries-requested-value
+      (s/keys :req-un [::id
+                       ::entries]))
 
-      (s/def ::entry
-        (s/and (s/keys :req-un [::debit-account-name
-                                ::credit-account-name
-                                ::amount])
-               #(not= (:debit-account-name %)
-                      (:credit-account-name %))))
+    (s/def ::id uuid?)
+    (s/def ::entries (s/+ ::entry))
 
-      (s/def ::debit-account-name string?)
-      (s/def ::credit-account-name string?)
-      (s/def ::amount pos-int?))
+    (s/def ::entry
+      (s/and (s/keys :req-un [::debit-account-name
+                              ::credit-account-name
+                              ::amount])
+             #(not= (:debit-account-name %)
+                    (:credit-account-name %))))
 
-
-  (defn valid-input?
-    [[_ v]]
-    (s/valid? ::ledger-entries-requested-value v))
+    (s/def ::debit-account-name string?)
+    (s/def ::credit-account-name string?)
+    (s/def ::amount pos-int?))
 
 
-  (defn log-bad-input
-    [[k v]]
-    (info (str "Bad input: " {:key k :value v})))
+  (do
+
+    (defn valid-input?
+      [[_ v]]
+      (s/valid? ::ledger-entries-requested-value v))
 
 
-  (defn build-topology
-    [builder]
-    (let [input (j/kstream builder
-                           (topic-config "ledger-entries-requested"))
+    (defn log-bad-input
+      [[k v]]
+      (info (str "Bad input: " {:key k :value v})))
 
-          [valid invalid] (j/branch input [valid-input?
-                                           (constantly true)])
 
-          _ (j/peek invalid log-bad-input)]
+    (defn build-topology
+      [builder]
+      (let [input (j/kstream builder
+                             (topic-config "ledger-entries-requested"))
 
-      (-> valid
-          (j/to (topic-config "ledger-transaction-added")))
+            [valid invalid] (j/branch input [valid-input?
+                                             (constantly true)])
 
-      builder))
+            _ (j/peek invalid log-bad-input)]
+
+        (-> valid
+            (j/to (topic-config "ledger-transaction-added")))
+
+        builder)))
 
 
   ;; Reset the app.
@@ -198,39 +202,41 @@
   ;;; transactions (aka debits and credits).
   ;;;
 
-  (defn entry-sides
-    [{:keys [debit-account-name
-             credit-account-name
-             amount]}]
-    [[debit-account-name
-      {:account-name debit-account-name
-       :amount (- amount)}]
-     [credit-account-name
-      {:account-name credit-account-name
-       :amount amount}]])
+  (do
+
+    (defn entry-sides
+      [{:keys [debit-account-name
+               credit-account-name
+               amount]}]
+      [[debit-account-name
+        {:account-name debit-account-name
+         :amount (- amount)}]
+       [credit-account-name
+        {:account-name credit-account-name
+         :amount amount}]])
 
 
-  (defn entries->transactions
-    [[_ v]]
-    (reduce #(concat %1 (entry-sides %2)) [] (:entries v)))
+    (defn entries->transactions
+      [[_ v]]
+      (reduce #(concat %1 (entry-sides %2)) [] (:entries v)))
 
 
-  (defn build-topology
-    [builder]
-    (let [input (j/kstream builder
-                           (topic-config "ledger-entries-requested"))
+    (defn build-topology
+      [builder]
+      (let [input (j/kstream builder
+                             (topic-config "ledger-entries-requested"))
 
-          [valid invalid] (j/branch input [valid-input?
-                                           (constantly true)])
+            [valid invalid] (j/branch input [valid-input?
+                                             (constantly true)])
 
-          _ (j/peek invalid log-bad-input)
+            _ (j/peek invalid log-bad-input)
 
-          transactions (j/flat-map valid entries->transactions)]
+            transactions (j/flat-map valid entries->transactions)]
 
-      (-> transactions
-          (j/to (topic-config "ledger-transaction-added")))
+        (-> transactions
+            (j/to (topic-config "ledger-transaction-added")))
 
-      builder))
+        builder)))
 
 
   ;; Reset the app.
@@ -332,40 +338,42 @@
   ;;; Keep track of running balances.
   ;;;
 
-  (defn account-balance-reducer
-    [x y]
-    (let [starting-balance (:current-balance x)]
-      (merge y {:starting-balance starting-balance
-                :current-balance (+ starting-balance (:amount y))})))
+  (do
+
+    (defn account-balance-reducer
+      [x y]
+      (let [starting-balance (:current-balance x)]
+        (merge y {:starting-balance starting-balance
+                  :current-balance (+ starting-balance (:amount y))})))
 
 
-  (defn build-topology
-    [builder]
-    (let [input (j/kstream builder
-                           (topic-config "ledger-entries-requested"))
+    (defn build-topology
+      [builder]
+      (let [input (j/kstream builder
+                             (topic-config "ledger-entries-requested"))
 
-          [valid invalid] (j/branch input [valid-input?
-                                           (constantly true)])
+            [valid invalid] (j/branch input [valid-input?
+                                             (constantly true)])
 
-          _ (j/peek invalid log-bad-input)
+            _ (j/peek invalid log-bad-input)
 
-          transactions (j/flat-map valid entries->transactions)
+            transactions (j/flat-map valid entries->transactions)
 
-          balances
-          (-> transactions
-              (j/map-values (fn [v]
-                              (merge v
-                                     {:starting-balance 0
-                                      :current-balance (:amount v)})))
-              (j/group-by-key (topic-config nil (Serdes/String) (jse/serde)))
-              (j/reduce account-balance-reducer
-                        (topic-config "balances")))]
+            balances
+            (-> transactions
+                (j/map-values (fn [v]
+                                (merge v
+                                       {:starting-balance 0
+                                        :current-balance (:amount v)})))
+                (j/group-by-key (topic-config nil (Serdes/String) (jse/serde)))
+                (j/reduce account-balance-reducer
+                          (topic-config "balances")))]
 
-      (-> balances
-          (j/to-kstream)
-          (j/to (topic-config "ledger-transaction-added")))
+        (-> balances
+            (j/to-kstream)
+            (j/to (topic-config "ledger-transaction-added")))
 
-      builder))
+        builder)))
 
 
   ;; Reset the app.

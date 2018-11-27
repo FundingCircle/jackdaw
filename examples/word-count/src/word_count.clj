@@ -45,16 +45,16 @@
                        (j/peek (fn [[k v]]
                                  (info (str {:key k :value v})))))
 
-        count (-> text-input
-                  (j/flat-map-values (fn [v]
-                                       (str/split (str/lower-case v)
-                                                  #"\W+")))
-                  (j/group-by (fn [[_ v]] v)
-                              (topic-config nil (Serdes/String)
-                                            (Serdes/String)))
-                  (j/count))]
+        counts (-> text-input
+                   (j/flat-map-values (fn [v]
+                                        (str/split (str/lower-case v)
+                                                   #"\W+")))
+                   (j/group-by (fn [[_ v]] v)
+                               (topic-config nil (Serdes/String)
+                                             (Serdes/String)))
+                   (j/count))]
 
-    (-> count
+    (-> counts
         (j/to-kstream)
         (j/to (topic-config "output")))
 
