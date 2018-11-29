@@ -1,4 +1,4 @@
-(defproject fundingcircle/jackdaw "0.4.0-SNAPSHOT"
+(defproject fundingcircle/jackdaw "_"
   :description "A Clojure library for the Apache Kafka distributed streaming platform."
 
   :dependencies [[clj-time "0.13.0"]
@@ -25,9 +25,20 @@
                  [org.clojure/core.cache "0.7.1"]]
 
   :plugins [[lein-codox "0.10.3"]
-            [lein-environ "1.1.0"]]
+            [lein-environ "1.1.0"]
+            [me.arrdem/lein-git-version "2.0.8"]]
 
   :aot [jackdaw.serdes.fn-impl]
+
+  :git-version
+  {:status-to-version
+   (fn [{:keys [tag version branch ahead ahead? dirty?] :as git}]
+     (if (and tag (not ahead?) (not dirty?))
+       tag
+       (let [[_ prefix patch] (re-find #"(\d+\.\d+)\.(\d+)" tag)
+             patch            (Long/parseLong patch)
+             patch+           (inc patch)]
+         (format "%s.%d-%s-SNAPSHOT" prefix patch+ branch))))}
 
   :profiles {;; Provide an alternative to :leiningen/default, used to include :shared
              :default
