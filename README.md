@@ -12,7 +12,7 @@ To use the latest release, add the following to your project:
 
 ## Documentation
 
-- [API docs](https://fundingcircle.github.io/jackdaw)
+- [API docs](https://fundingcircle.github.io/jackdaw/codox/index.html)
 
 
 ## Examples
