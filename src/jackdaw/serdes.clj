@@ -56,18 +56,19 @@
                             {:topic topic-or-kw})))))
 
   ([mapping topic-or-kw default-ctor]
-   (let [key (or (::type topic-or-kw)
-                 topic-or-kw)]
-     (when-not (keyword? key)
+   (let [k (or (::type topic-or-kw)
+               topic-or-kw)]
+     (when-not (keyword? k)
        (throw (ex-info "Failed to find a legal mapping `key` for `topic-or-kw`"
                        {:topic-or-kw topic-or-kw
-                        :key key})))
-     (-> (get mapping key default-ctor)
+                        :key k})))
+     (-> (get mapping k default-ctor)
          ;; Could also be (apply <> topic-or-kw nil)
          (.invoke topic-or-kw)))))
 
 (defn resolve
-  "Loads the key and value serdes for a topic spec, returning an extended topic spec.
+  "Loads the key and value serdes for a topic spec, returning an
+  extended topic spec.
 
   By default, serdes are resolved from `#'+default-serdes+`. The
   registry is deliberately read-only. Users wanting to override the
@@ -78,30 +79,28 @@
   This is done so that no global coherence property is required on
   serde instances, as it's impossible to enforce such a contract.
 
-  `topic-config` structs are expected to have
-  `:jackdaw.topic/key-serde` and `:jackdaw.topic/value-serde`, both of
-  which should be keywords present in the provided (or default) serde
-  registry mappings.
+  `topic-config` structs are expected to have `:key-serde` and
+  `:value-serde`, both of which should be keywords present in the
+  provided (or default) serde registry mappings.
 
   In order to support Avro serdes, which are parameterized on the
-  concrete schema to use, `:jackdaw.topic/value-schema` and
-  `:jackdaw.topics/key-schema` may be provided."
+  concrete schema to use, `:value-schema` and `:key-schema` may be
+  provided."
 
   ([topic-config]
    (resolve +default-serdes+ topic-config))
   ([registry topic-config]
-   (let [{:keys [jackdaw.topic/key-serde
-                 jackdaw.topic/value-serde]} topic-config]
+   (let [{:keys [key-serde value-serde]} topic-config]
 
      (if-not key-serde
        (throw
         (IllegalArgumentException.
-         ":jackdaw.topic/key-serde is required in the topic config.")))
+         ":key-serde is required in the topic config.")))
 
      (if-not value-serde
        (throw
         (IllegalArgumentException.
-         ":jackdaw.topic/value-serde is required in the topic config.")))
+         ":value-serde is required in the topic config.")))
 
      (assoc topic-config
             ;; FIXME (reid.mckenzie 2018-09-24):
@@ -110,11 +109,11 @@
             ;;   parameterizing the ctor on the thus altered topic config is
             ;;   fairly janky. There's probably a better way to generally
             ;;   parameterize serdes, but leaving this as is for now.
-            ::key-serde
+            :key-serde
             (serde registry
                    (assoc topic-config
                           ::type key-serde))
-            ::value-serde
+            :value-serde
             (serde registry
                    (assoc topic-config
                           ::type value-serde))))))
