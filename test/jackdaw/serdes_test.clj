@@ -1,6 +1,8 @@
 (ns jackdaw.serdes-test
   (:require [clojure.test :refer :all]
-            [jackdaw.serdes :as serdes]))
+            [jackdaw.serdes :as serdes]
+            [jackdaw.serdes.fn :as sfn])
+  (:import [org.apache.kafka.common.serialization Deserializer Serdes Serializer]))
 
 (deftest lookup-serde
 
@@ -78,3 +80,38 @@
     (is (thrown-with-msg? IllegalArgumentException
                           #":value-serde is required in the topic config"
                           (serdes/resolve {:key-serde :jackdaw.serdes/string})))))
+
+
+(deftest serialise-and-deserialise
+
+  (testing "To EDN and Back"
+    (let [tc {:topic-name "endy"
+              :key-serde :jackdaw.serdes/edn
+              :value-serde :jackdaw.serdes/edn}
+          resolved (serdes/resolve tc)
+          value-serde (:value-serde resolved)
+          value {:a 1 :b 2}
+          ser (.serialize (.serializer value-serde) (:topic-name tc) value)
+          des (.deserialize (.deserializer value-serde) (:topic-name tc) ser)]
+      (is (.isArray (.getClass ser)))
+      (is (= value des))))
+
+  (testing "Custom serde: To CAPS and back"
+    (let [caps-serde (fn []
+                        (Serdes/serdeFrom
+                          (sfn/new-serializer
+                            {:serialize (fn [_ _ data]
+                                          (.getBytes (clojure.string/upper-case data)))})
+                          (sfn/new-deserializer
+                            {:deserialize (fn [_ _ data]
+                                            (clojure.string/lower-case (String. data)))})))]
+      (let [tc {:topic-name "IN_CAPS"
+                :key-serde :caps
+                :value-serde :caps}
+            resolved (serdes/resolve {:caps (fn [_] (caps-serde))} tc)
+            value-serde (:value-serde resolved)
+            value "hello, world"
+            ser (.serialize (.serializer value-serde) (:topic-name tc) value)
+            des (.deserialize (.deserializer value-serde) (:topic-name tc) ser)]
+        (is (= "HELLO, WORLD" (String. ser)))
+        (is (= value des))))))
