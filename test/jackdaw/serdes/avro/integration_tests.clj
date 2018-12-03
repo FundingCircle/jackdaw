@@ -7,12 +7,11 @@
             [jackdaw.client :as jc]
             [jackdaw.client.log :as jcl]
             [jackdaw.data :as jd]
-            [jackdaw.serdes :as js]
             [jackdaw.serdes.avro :as avro]
             [jackdaw.serdes.avro.schema-registry :as reg])
   (:import [org.apache.avro Schema$Parser]
            [org.apache.avro.generic GenericData$Record]
-           [org.apache.kafka.common.serialization Serde]))
+           [org.apache.kafka.common.serialization Serde Serdes]))
 
 (def +type-registry+
   (merge avro/+base-schema-type-registry+
@@ -33,7 +32,7 @@
 
 (deftest mock-schema-registry
   (testing "schema can be serialized by registry client"
-    (let [serde ^Serde (avro/avro-serde +type-registry+ +mock-schema-registry+ +topic-config+)]
+    (let [serde ^Serde (avro/serde +type-registry+ +mock-schema-registry+ +topic-config+)]
       (let [msg {:customer-id (uuid/v4)
                  :address     {:value    "foo"
                                :key-path "foo.bar.baz"}}]
@@ -45,7 +44,7 @@
 
 (deftest ^:integration real-schema-registry
   (testing "schema registry set in config"
-    (let [serde ^Serde (avro/avro-serde +type-registry+ +real-schema-registry+ +topic-config+)]
+    (let [serde ^Serde (avro/serde +type-registry+ +real-schema-registry+ +topic-config+)]
       (let [msg {:customer-id (uuid/v4)
                  :address     {:value    "foo"
                                :key-path "foo.bar.baz"}}]
@@ -74,7 +73,7 @@
 ;;;; "versioned" topic configs
 
 (def serde*
-  (partial avro/avro-serde +type-registry+ +real-schema-registry+))
+  (partial avro/serde +type-registry+ +real-schema-registry+))
 
 (deftest ^:integration schema-evolution-test
   (testing "serialize then deserialize several serde versions"
@@ -86,7 +85,7 @@
            (str "test-topic-" (uuid/v4))
 
            :key-serde
-           (js/serde ::js/string)
+           (Serdes/String)
 
            :value-serde
            (serde*

@@ -39,7 +39,7 @@
         serde-config
         {:avro/schema schema-str
          :key?        false}]
-    (avro/avro-serde +registry+ schema-registry-config serde-config)))
+    (avro/serde +registry+ schema-registry-config serde-config)))
 
 (defn deserialize [serde topic x]
   (let [deserializer (.deserializer serde)]
