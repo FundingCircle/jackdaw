@@ -125,13 +125,14 @@
                 (value-joiner value-joiner-fn))))
 
   (left-join
-    [_ ktable value-joiner-fn {:keys [key-serde value-serde]}]
+    [_ ktable value-joiner-fn
+     {key-serde :key-serde this-value-serde :value-serde}
+     {other-value-serde :value-serde}]
     (clj-kstream
      (.leftJoin kstream
                 ^KTable (ktable* ktable)
                 ^ValueJoiner (value-joiner value-joiner-fn)
-                ^Serde key-serde
-                ^Serde value-serde)))
+                (Joined/with key-serde this-value-serde other-value-serde))))
 
   (peek
     [_ peek-fn]
