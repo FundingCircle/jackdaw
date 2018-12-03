@@ -38,7 +38,7 @@
   "Shared methods."
   (left-join
     [kstream-or-ktable ktable value-joiner-fn]
-    [kstream-or-ktable ktable value-joiner-fn topic-config]
+    [kstream-or-ktable ktable value-joiner-fn this-topic-config other-topic-config]
     "Creates a KStream from the result of calling `value-joiner-fn` with
     each element in the KStream and the value in the KTable with the same
     key.")
