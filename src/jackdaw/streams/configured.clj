@@ -79,10 +79,10 @@
      (left-join kstream ktable value-joiner-fn)))
 
   (left-join
-  [_ ktable value-joiner-fn topic-config]
+  [_ ktable value-joiner-fn topic-config other-topic-config]
   (configured-kstream
     config
-    (left-join kstream ktable value-joiner-fn topic-config)))
+    (left-join kstream ktable value-joiner-fn topic-config other-topic-config)))
 
   (filter
     [_ predicate-fn]

@@ -87,7 +87,8 @@
         :args (s/cat :kstream-or-ktable ::kstream-or-ktable
                      :ktable ktable?
                      :value-joiner-fn ifn?
-                     :topic-config (s/? ::topic-config))
+                     :this-topic-config (s/? ::topic-config)
+                     :other-topic-config (s/? ::topic-config))
         :ret ::kstream-or-ktable)
 
 (s/fdef k/for-each!
