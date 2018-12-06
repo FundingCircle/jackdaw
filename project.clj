@@ -56,11 +56,11 @@
                ["clojars"
                 "https://clojars.org/repo/"]
                ["snapshots"
-                {:url "https://fundingcircle.jfrog.io/fundingcircle/libs-snapshot-local"
+                {:url "https://fundingcircle.artifactoryonline.com/fundingcircle/libs-snapshot-local"
                  :username [:gpg :env/artifactory_user]
                  :password [:gpg :env/artifactory_password]}]
                ["releases"
-                {:url "https://fundingcircle.jfrog.io/fundingcircle/libs-release-local"
+                {:url "https://fundingcircle.artifactoryonline.com/fundingcircle/libs-release-local"
                  :username [:gpg :env/artifactory_user]
                  :password [:gpg :env/artifactory_password]}]]}
 
