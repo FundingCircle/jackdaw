@@ -8,7 +8,9 @@
    [kafka.test.test-config :as test-config]
    [clojure.test :refer :all])
   (:import
-   (org.apache.kafka.common.serialization Serdes)))
+   (org.apache.kafka.common.serialization Serdes)
+   (org.apache.kafka.clients.consumer KafkaConsumer)
+   (kafka.client TopicProducer)))
 
 (def str-serde  (Serdes/String))
 (def long-serde (Serdes/Long))  ;; clojure numbers are long by default
@@ -33,112 +35,30 @@
     (testing "broker up/down"
       (fix t))))
 
-(deftest producer-test
+(deftest find-producer-test
   (let [fix (join-fixtures
              [(fix/zookeeper test-config/broker)
               (fix/broker test-config/broker)
-              (fix/producer-registry {:words test-config/producer})])
+              (fix/producer-registry {:default-serde test-config/producer
+                                      :custom-serde [test-config/producer long-serde str-serde]})])
         t (fn []
-            (let [[a aa] [@(fix/publish! :words {:topic "words"
-                                                 :key "1"
-                                                 :value "a"})
-                          @(fix/publish! :words {:topic "words"
-                                                 :key "2"
-                                                 :value "aa"})]]
-              (is (= 1 (:serializedValueSize (client/metadata a))))
-              (is (= 2 (:serializedValueSize (client/metadata aa))))))]
-    (testing "producer publish!"
-      (fix t))))
+            (testing "default serde"
+              (is (instance? TopicProducer (fix/find-producer :default-serde))))
 
-(deftest producer-with-serde-test
-  (let [fix (join-fixtures
-             [(fix/zookeeper test-config/broker)
-              (fix/broker test-config/broker)
-              (fix/producer-registry {:words [test-config/producer
-                                              (.serializer long-serde)
-                                              (.serializer str-serde)]})])
-        t (fn []
-            (let [[a aa] [@(fix/publish! :words {:topic "words"
-                                                 :key 1
-                                                 :value "a"})
-                          @(fix/publish! :words {:topic "words"
-                                                 :key 2
-                                                 :value "aa"})]]
-              (is (= 1 (:serializedValueSize (client/metadata a))))
-              (is (= 2 (:serializedValueSize (client/metadata aa))))))]
+            (testing "custom serde"
+              (is (instance? TopicProducer (fix/find-producer :custom-serde)))))]
     (testing "producer publish! non-default serde"
       (fix t))))
 
-(defn call-with-consumer-queue
-  "Functionally consume a consumer"
-  [f consumer]
-  (let [latch (fix/latch 1)
-        queue (fix/queue 10)
-        proc (fix/consumer-loop consumer queue latch)]
-    (try
-      (f queue)
-      (finally
-        (.countDown latch)
-        @proc))))
-
-(deftest consumer-test
+(deftest find-consumer-test
   (let [fix (join-fixtures
              [(fix/zookeeper test-config/broker)
               (fix/broker test-config/broker)
-              (fix/consumer-registry {:words test-config/consumer})
-              (fix/producer-registry {:words test-config/producer})])
-        t #(call-with-consumer-queue
-            (fn [queue]
-              @(fix/publish! :words {:topic "words"
-                                     :key "1"
-                                     :value "a"})
-
-              @(fix/publish! :words {:topic "words"
-                                     :key "2"
-                                     :value "aa"})
-
-              (let [[a aa] [(.take queue)
-                            (.take queue)]]
-                (is (= {:topic "words"
-                        :key "1"
-                        :value "a"}
-                       (client/select-methods a [:topic :key :value])))
-                (is (= {:topic "words"
-                        :key "2"
-                        :value "aa"}
-                       (client/select-methods aa [:topic :key :value])))))
-            (fix/find-consumer :words))]
-    (fix t)))
-
-(deftest consumer-with-serde-test
-  (let [fix (join-fixtures
-             [(fix/zookeeper test-config/broker)
-              (fix/broker test-config/broker)
-              (fix/consumer-registry {:words [test-config/consumer
-                                              (.deserializer long-serde)
-                                              (.deserializer str-serde)]})
-              (fix/producer-registry {:words [test-config/producer
-                                              (.serializer long-serde)
-                                              (.serializer str-serde)]})])
-        t #(call-with-consumer-queue
-            (fn [queue]
-              @(fix/publish! :words {:topic "words"
-                                     :key 1
-                                     :value "a"})
-
-              @(fix/publish! :words {:topic "words"
-                                     :key 2
-                                     :value "aa"})
-
-              (let [[a aa] [(.take queue)
-                            (.take queue)]]
-                (is (= {:topic "words"
-                        :key 1
-                        :value "a"}
-                       (client/select-methods a [:topic :key :value])))
-                (is (= {:topic "words"
-                        :key 2
-                        :value "aa"}
-                       (client/select-methods aa [:topic :key :value])))))
-            (fix/find-consumer :words))]
+              (fix/consumer-registry {:default-serde test-config/consumer
+                                      :custom-serde [test-config/consumer long-serde str-serde]})])
+        t (fn []
+            (testing "default serde"
+              (is (instance? KafkaConsumer (fix/find-consumer :default-serde))))
+            (testing "custom serde"
+              (is (instance? KafkaConsumer (fix/find-consumer :custom-serde)))))]
     (fix t)))

@@ -11,7 +11,7 @@
 
 (use-fixtures :once (join-fixtures [(fix/kafka-platform test-config/broker true)
                                     (fix/producer-registry {:foo test-config/producer})
-                                    (fix/log-seqs {:foo test-config/consumer})]))
+                                    (fix/consumer-registry {:foo test-config/consumer})]))
 
 (deftest ^:integration integration-test
   (let [result (fix/publish! :foo {:topic "foo"
@@ -20,16 +20,7 @@
         result-log (->> (fix/log-seq :foo)
                         (map client/record))]
 
-    (testing "publish!"
-      (are [key] (get (client/metadata @result) key)
-        :offset
-        :topic
-        :toString
-        :partition
-        :checksum
-        :serializedKeySize
-        :serializedValueSize
-        :timestamp))
+    (let [result (client/send! producer "1" "bar")]
 
     (testing "consume!"
       (is (= {:topic "foo"
