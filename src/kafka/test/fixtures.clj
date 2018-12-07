@@ -1,6 +1,7 @@
 (ns kafka.test.fixtures
   "Test fixtures for kafka based apps"
   (:require
+   [clojure.test :as test]
    [clojure.tools.logging :as log]
    [kafka.admin :as admin]
    [kafka.core :as kafka]
@@ -14,16 +15,17 @@
    (org.apache.kafka.clients.producer KafkaProducer ProducerRecord Callback)))
 
 (def ^:dynamic *zk-utils*)
-(def ^:dynamic *consumers*)
-(def ^:dynamic *loggers*)
+(def ^:dynamic *consumer-registry*)
+(def ^:dynamic *producer-registry*)
+(def ^:dynamic *log-seq-registry*)
 
 ;; utils
 
-(defn embedded-fixtures? []
-  (read-string (env :embedded-fixtures)))
-
 (defn latch [n]
   (CountDownLatch. n))
+
+(defn queue [n]
+  (LinkedBlockingQueue. n))
 
 ;; services
 
@@ -34,13 +36,11 @@
    the test `t`"
   [config]
   (fn [t]
-    (if-not (embedded-fixtures?)
-      (t)
-      (let [zk (zk/start! {:config config})]
-        (try
-          (t)
-          (finally
-            (zk/stop! zk)))))))
+    (let [zk (zk/start! {:config config})]
+      (try
+        (t)
+        (finally
+          (zk/stop! zk))))))
 
 (defn broker
   "A kafka test fixture.
@@ -53,18 +53,20 @@
                     {:config config})))
 
   (fn [t]
-    (if-not (embedded-fixtures?)
-      (t)
-      (let [log-dirs (get config "log.dirs")
-            kafka (broker/start! {:config config})]
-        (try
-          (t)
-          (finally
-            (broker/stop! (merge kafka {:log-dirs log-dirs}))))))))
+    (let [log-dirs (get config "log.dirs")
+          kafka (broker/start! {:config config})]
+      (try
+        (t)
+        (finally
+          (broker/stop! (merge kafka {:log-dirs log-dirs})))))))
 
 ;; auto-closing client
 
-(defn zk-utils [config]
+(defn zk-utils
+  "An instance of ZkUtils (typically required by kafka admin for ops)
+
+   Closes the corresponding zk client after the tests"
+  [config]
   (fn [t]
     (let [client (zk/client config)
           utils (zk/utils client)]
@@ -77,7 +79,9 @@
 ;; basic auto-topic creation/deletion
 
 (defn with-topics [config topics]
-  "During development, this seemed useful. Requires the zk-utils fixture"
+  "During development, this seemed useful.
+
+   Requires the zk-utils fixture"
   (fn [t]
     (try
       (doseq [topic topics]
@@ -99,8 +103,6 @@
 ;;
 ;;
 
-(def ^:dynamic *producers*)
-
 (defn- open-producers [configs]
   (let [logger (fn [p]
                  (log/infof "opened producer: %s" (first p)))]
@@ -110,13 +112,12 @@
          (apply hash-map))))
 
 (defn- close-producers []
-  (doseq [[k p] *producers*]
-    (.close p)
-    (log/info "closed producer: %s" k)))
+  (doseq [[k p] *producer-registry*]
+    (.close p)))
 
-(defn producers [configs]
+(defn producer-registry [configs]
   (fn [t]
-    (binding [*producers* (open-producers configs)]
+    (binding [*producer-registry* (open-producers configs)]
       (try
         (t)
         (finally
@@ -126,7 +127,7 @@
   "Identifying the producer by :id means we can delegate the clean up
    of producers after the test to the fixture"
   ([id {:keys [topic key value]}]
-   (let [producer (get *producers* id)
+   (let [producer (get *producer-registry* id)
          record (if key
                   (ProducerRecord. topic key value)
                   (ProducerRecord. topic value))]
@@ -145,10 +146,10 @@
        (apply hash-map)))
 
 (defn find-consumer [id]
-  (get *consumers* id))
+  (get *consumer-registry* id))
 
 (defn close-consumers []
-  (doseq [[k p] *consumers*]
+  (doseq [[k p] *consumer-registry*]
     (.close p)))
 
 ;; Logger Registry
@@ -157,71 +158,129 @@
 ;; automatically poll the consumers in their own thread and provide a lazy-seq over
 ;; the results
 
-(defn- lazy-iterate
-  [it]
-  (lazy-seq
-   (when (.hasNext it)
-     (cons (.next it) (lazy-iterate it)))))
+(defn consumer-loop [consumer queue latch]
+  (future
+    (loop []
+      (let [stop? (zero? (.getCount latch))
+            records (when-not stop?
+                      (locking consumer (.poll consumer 1000)))]
+        (when-not stop?
+          (when (pos? (.count records))
+            (doseq [rec (iterator-seq (.iterator records))]
+              (.put queue rec)))
+          (recur))))))
 
-(defn- lazy-polling
-  [consumer latch]
-  (lazy-seq
-   (when-let [records (when (pos? (.getCount latch))
-                        (locking consumer (.poll consumer 100)))]
-     (concat (lazy-iterate (.iterator records))
-             (when (pos? (.getCount latch))
-               (lazy-polling consumer latch))))))
+(defn- logger
+  "Can anyone think of a better name for this?
 
-(defn logger [k cfg latch]
+   The idea is to find the consumer `k` and feed all records read
+   from it through a LinkedBlockingQueue.
+
+   The consumer code originally used code from tubelines but we wanted more
+   control over exactly when to stop consuming. A manual loop gives us a chance
+   between each `.poll` to stop if the latch has been counted down to zero."
+  [k cfg latch]
   (let [consumer (find-consumer k)
-        queue (LinkedBlockingQueue. 100)
-        processor (future
-                    (loop []
-                      (let [stop? (zero? (.getCount latch))
-                            records (when-not stop?
-                                      (locking consumer (.poll consumer 1000)))]
-                        (when-not stop?
-                          (when (pos? (.count records))
-                            (doseq [rec (iterator-seq (.iterator records))]
-                              (.put queue rec)))
-                          (recur)))))]
+        queue (queue 100)
+        processor (consumer-loop consumer queue latch)]
     {:queue queue
      :processor processor}))
 
-(defn open-loggers [latch configs]
+(defn- open-loggers
+  "Opens (starts?) a collection of loggers.
+
+   Each logger has a `group-id` and consumes messages from it's configured topic.
+   All threads will stop when the latch is released."
+  [latch configs]
   (->> (for [[k cfg] configs]
          [k (logger k cfg latch)])
        (mapcat identity)
        (apply hash-map)))
 
-(defn close-consumers []
-  (doseq [[k c] *consumers*]
-    (.close c)))
-
-(defn close-loggers [latch]
+(defn- close-loggers
+  "Countdown the latch that stops the logger threads"
+  [latch]
   (.countDown latch)
-  (doseq [[k {:keys [processor]}] *loggers*]
+  (doseq [[k {:keys [processor]}] *log-seq-registry*]
     @processor))
 
-(defn consumers [configs]
+(defn- close-consumers
+  "Close any opened consumers"
+  []
+  (doseq [[k c] *consumer-registry*]
+    (.close c)))
+
+(defn consumer-registry
+  "Open a collection of consumers.
+
+   Consumers are quite low-level. See `loggers` for an API that is a bit
+   easier to use for writing tests."
+  [configs]
   (fn [t]
-    (binding [*consumers* (open-consumers configs)]
+    (binding [*consumer-registry* (open-consumers configs)]
       (try
         (t)
         (finally
           (close-consumers))))))
 
-(defn loggers [configs]
+(defn log-seq-registry
+  "Open a collection of loggers.
+
+   Each logger finds a consumer with the same name, and for each record
+   cosumed, inserts it into a java LinkedBlockingQueue. You can obtain
+   a lazy-seq view of this queue by calling the function `log-seq`
+   with the corresponding `group-id`.
+
+   The hope is that mapping the data back into an ordinary clojure
+   data structure will give people the freedom to write clean tests."
+  [configs]
   (fn [t]
     (let [latch (latch 1)]
-      (binding [*loggers* (open-loggers latch configs)]
+      (binding [*log-seq-registry* (open-loggers latch configs)]
         (try
           (t)
           (finally
             (close-loggers latch)))))))
 
-(defn lazy-logs [id]
+;; fixture composition
+
+(defn identity-fixture
+  "They have this already in clojure.test but it is called
+   `default-fixture` and it is private. Probably stu seirra's fault
+   :troll:"
+  [t]
+  (t))
+
+(defn kafka-platform
+  "Combine the zookeeper, broker, and schema-registry fixtures into
+   one glorius test helper"
+  [broker-config]
+  (if (read-string (env :embedded-fixtures))
+    (test/compose-fixtures (zookeeper broker-config)
+                           (broker broker-config))
+    identity-fixture))
+
+(defn log-seqs
+  "Compose the `consumers` and `loggers` fixtures to provide the
+   `log-seq` abstraction.
+
+   Configs is a map of keywords to consumer parameters. If parameters
+   is just a single map, we use the single arity Consumer constructor.
+   Otherwise we pass parameters directly to the Consumer constructor.
+
+   Enable this fixture if you want to be able to access a topic's
+   output as a clojure lazy-seq. The can be obtained using"
+  [configs]
+  (test/compose-fixtures (consumer-registry configs)
+                         (log-seq-registry configs)))
+
+(defn log-seq
+  "Get a lazy-sequence view of the kafka topic identified by `id`.
+
+   Messages from the topic will be deserialized according to the
+   the parameters you supplied to `log-seqs` in the test fixture."
+  [id]
   (lazy-seq
-   (let [queue (get-in *loggers* [id :queue])]
+   (let [queue (get-in *log-seq-registry* [id :queue])]
      (when-let [item (.take queue)]
-       (cons item (lazy-logs id))))))
+       (cons item (log-seq id))))))
