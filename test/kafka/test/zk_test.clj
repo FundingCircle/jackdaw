@@ -10,13 +10,6 @@
    (org.I0Itec.zkclient ZkClient ZkConnection)
    (org.apache.zookeeper.server ZooKeeperServer)))
 
-(defn- tmp-dir [& parts]
-  (let [gen-dir (fn [root]
-                  (apply io/file root "embedded-zookeeper" parts))]
-    (-> (System/getProperty "java.io.tmpdir")
-        (gen-dir)
-        (.getPath))))
-
 (def zk-config {"zookeeper.connect" "localhost:32181"})
 
 (defn call-with-zk [f config]

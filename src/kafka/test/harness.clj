@@ -34,35 +34,6 @@
    (org.apache.kafka.clients.consumer ConsumerRecord)
    (org.apache.kafka.clients.producer ProducerRecord)))
 
-(defn count-down-latch
-  "Provides the facility to wait for something to happen.
-
-   In this case we use it as a signal to cleanup resources when we're
-   done with the test harness"
-  [n]
-  (CountDownLatch. n))
-
-
-(defn collect-logs!
-  "Creates a kafka consumer and `put!`s all messages into the supplied
-   `log-stream`.
-
-   Blocks until the `latch` has been released."
-  [{:keys [config topics latch log-stream]}]
-  (let [consumer (kafka/consumer
-                  (config/props config [:consumer])
-                  topics)]
-
-    (s/on-closed log-stream #(locking consumer (.close consumer)))
-
-    (s/consume (fn [rec]
-                 (s/put! log-stream {:topic (.topic rec)
-                                     :key (.key rec)
-                                     :value (.value rec)}))
-               (kafka/log-seq consumer))
-    (.await latch)))
-
-
 (defn start!
   "Starts the test harness
 
@@ -71,76 +42,72 @@
      :producer    a kafka producer with the supplied config
      :zk-utils    this is required for administrive tasks like
                   creating/listing topics etc
-     :log-stream  a manifold stream into which all records consumed
-                  by the consumer are `put!`
-     :latch       a java.util.concurrent primitive to indicate
-                  when the consumer can be closed
-     :collector   the log collection thread. this is a manifold
-                  future that can be dereferenced once the consumer
-                  has been closed."
-  [{:keys [config topics] :as harness}]
-  (let [acks           (atom [])
-        offsets        (atom {})
-
-        log-stream     (s/stream)
-        zk-client      (zk/client (get-in config [:broker]))
+     :zk-client   internal zk client for things like creating
+                  test topics, get broker listing etc"
+  [{:keys [config] :as harness}]
+  (let [zk-client      (zk/client (get-in config [:broker]))
         zk-utils       (zk/utils zk-client)
-        stopped?       (d/deferred)
-        latch          (count-down-latch 1)
 
         producer       (kafka/producer
-                        (config/props config [:producer]))
-
-        try-collect!   (fn []
-                         (try
-                           (collect-logs! (assoc harness
-                                                 :topics topics
-                                                 :latch latch
-                                                 :log-stream log-stream))
-                           (d/success! stopped? :ok)
-                           (catch Exception e
-                             (d/error! stopped? e))))]
+                        (config/props config [:producer]))]
 
     {:producer producer
      :zk-utils zk-utils
-     :zk-client zk-client
-     :log-stream log-stream
-     :latch latch
-     :stopped? stopped?
-     :collector (d/future (try-collect!))}))
+     :zk-client zk-client}))
 
 
 (defn stop!
   "Stops the test harness"
-  [{:keys [log-stream zk-client producer latch]}]
-  (.countDown latch)
-  (s/close! log-stream)
+  [{:keys [log-streams zk-client producer]}]
+  (do
+    (doseq [log-stream @log-streams]
+      (s/close! log-stream))
 
-  (doseq [closeable [producer zk-client]]
-    (when closeable
-      (.close closeable)))
+    (doseq [closeable [producer zk-client]]
+      (when closeable
+        (.close closeable)))
 
-  {:producer nil
-   :consumer nil
-   :log-stream nil})
+    {:producer nil
+     :zk-utils nil
+     :zk-client nil}))
 
 (defn put!
   "Put a record onto a kafka topic"
-  [{:keys [producer]} {:keys [topic key value]} callback-fn]
+  ([{:keys [producer]} {:keys [topic key value]}]
+   @(.send producer (if key
+                      (ProducerRecord. topic key value)
+                      (ProducerRecord. topic value))))
+
+  ([{:keys [producer]} {:keys [topic key value]} callback-fn]
   (let [record (if key
                  (ProducerRecord. topic key value)
                  (ProducerRecord. topic value))]
-    @(.send producer record callback-fn)))
+    @(.send producer record callback-fn))))
 
-(defn take!
-  "Take a record from the subscription"
-  [{:keys [log-stream]}]
-  (s/take! log-stream))
+(defn logs
+  "Return a stream of logs for the supplied topics.
 
-(defrecord Harness [zk-utils zk-client
-                    log-stream
-                    latch stopped?
-                    producer]
+   The stream will be closed (and its resources released) when the harness
+   is stopped"
+  [{:keys [config log-streams]} topics]
+  (let [consumer (kafka/consumer
+                  (config/props config [:consumer])
+                  topics)
+        log (s/stream)]
+
+    (.subscribe consumer topics)
+    (s/on-closed log #(locking consumer (.close consumer)))
+    (swap! log-streams conj log)
+
+    (s/consume (fn [rec]
+                  (s/put! log
+                          {:topic (.topic rec)
+                           :key (.key rec)
+                           :value (.value rec)}))
+                (kafka/log-seq consumer))
+    log))
+
+(defrecord Harness [config zk-utils zk-client log-streams producer]
   component/Lifecycle
   (start [this]
     (merge this (start! this)))
@@ -150,7 +117,7 @@
 
 (defn harness [config]
   (map->Harness {:config config
-                 :topics (:topics config)}))
+                 :log-streams (atom [])}))
 
 ;; Experimental
 ;;
@@ -170,13 +137,13 @@
 
 (defn harness-system [config]
   (component/system-map
-   :zookeeper (zk/server config)
+   :zookeeper (zk/server (:broker config))
    :kafka (component/using
-           (kafka/server config)
+           (kafka/server (:broker config))
            [:zookeeper])
    :harness (component/using
              (harness config)
-             [:kafka :zookeeper])))
+             [:kafka])))
 
 (defmulti test-harness #(get % "harness"))
 
@@ -188,7 +155,7 @@
            [:zookeeper])
    :harness (component/using
              (harness config)
-             [:kafka :zookeeper])))
+             [:kafka])))
 
 (defmethod test-harness "multi-broker" [config]
   (component/system-map
