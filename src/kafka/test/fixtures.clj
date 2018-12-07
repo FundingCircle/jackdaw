@@ -1,11 +1,13 @@
 (ns kafka.test.fixtures
   "Test fixtures for kafka based apps"
-  (:require [clojure.tools.logging :as log]
+  (:require [clojure.java.io :as io]
+            [clojure.tools.logging :as log]
             [clojurewerkz.propertied.properties :as p]
             [kafka.test.config :as config]
             [kafka.test.kafka :as broker]
-            [kafka.test.zk :as zk]
-            [kafka.test.fs :as fs])
+            [kafka.test.kc :as kc]
+            [kafka.test.fs :as fs]
+            [kafka.test.zk :as zk])
   (:import [io.confluent.kafka.schemaregistry.rest SchemaRegistryConfig SchemaRegistryRestApplication]))
 
 ;; services
@@ -83,6 +85,21 @@
         (finally
           (.stop server)
           (log/info "Stopped schema registry fixture" server))))))
+
+(defn kafka-connect
+  [worker-config]
+  (fn [t]
+
+    (let [kc-runner (kc/start! {:config worker-config})]
+      (try
+        (log/info "Started Kafka Connector in standalone mode")
+        (t)
+
+        (finally
+          (log/info "Shutting down kafka connect worker")
+          (kc/stop! kc-runner))))))
+
+;; fixture composition
 
 (defn identity-fixture
   "They have this already in clojure.test but it is called
