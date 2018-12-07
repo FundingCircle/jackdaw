@@ -16,13 +16,22 @@
 (def poll-timeout-ms 1000)
 (def consumer-timeout-ms 5000)
 
+(defn fuse
+  "Returns a function that throws an exception when called after some time has passed."
+  [millis]
+  (let [end (+ millis (System/currentTimeMillis))]
+    (fn []
+      (if (< end (System/currentTimeMillis))
+        (throw (ex-info "Timer expired" {:millis millis}))
+        true))))
+
 (deftest ^:integration integration-test
-  (with-open [producer (client/producer test-config/producer "foo")
-              consumer (client/consumer test-config/consumer "foo")]
+  (with-open [producer (client/producer test-config/producer)
+              consumer (-> (client/consumer test-config/consumer)
+                           (client/subscribe "foo"))]
 
-    (let [result (client/send! producer "1" "bar")]
-
-      (testing "publish!"
+    (testing "publish!"
+      (let [result (client/send! producer (client/producer-record "foo" "1" "bar"))]
         (are [key] (get (client/metadata @result) key)
           :offset
           :topic
@@ -31,8 +40,11 @@
           :checksum
           :serializedKeySize
           :serializedValueSize
-          :timestamp))
+          :timestamp)))
 
-      (testing "consume!"
-        (is (= ["1" "bar"]
-               (first (client/log-messages consumer 1000 5000))))))))
+    (testing "consume!"
+      (let [[key val] (-> (client/log-messages consumer
+                                               poll-timeout-ms
+                                               (fuse consumer-timeout-ms))
+                          first)]
+        (is (= ["1" "bar"] [key val]))))))
