@@ -14,17 +14,22 @@
                                     (fix/consumer-registry {:foo test-config/consumer})]))
 
 (deftest ^:integration integration-test
-  (let [result (fix/publish! :foo {:topic "foo"
-                                   :key "1"
-                                   :value "bar"})
-        result-log (->> (fix/log-seq :foo)
-                        (map client/record))]
+  (let [producer (fix/find-producer :foo)
+        consumer (fix/find-consumer :foo)]
 
     (let [result (client/send! producer "1" "bar")]
 
-    (testing "consume!"
-      (is (= {:topic "foo"
-              :key "1"
-              :value "bar"}
-             (-> (first result-log)
-                 (select-keys [:topic :key :value])))))))
+      (testing "publish!"
+        (are [key] (get (client/metadata @result) key)
+          :offset
+          :topic
+          :toString
+          :partition
+          :checksum
+          :serializedKeySize
+          :serializedValueSize
+          :timestamp))
+
+      (testing "consume!"
+        (is (= ["1" "bar"]
+               (first (client/log-messages consumer 1000 5000))))))))
