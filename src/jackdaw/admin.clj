@@ -102,7 +102,7 @@
   {:pre [(client? client)
           (sequential? topics)]}
   (-> client
-      (.describeConfigs (map #(-> % :topic-name jd/->topic-resource) topics))
+      (.describeConfigs (map #(-> % :topic-name jd/->topic-resource)))
       .all deref vals first jd/datafy))
 
 (defn topics-ready?
