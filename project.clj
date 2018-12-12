@@ -54,15 +54,7 @@
               [["confluent"
                 "https://packages.confluent.io/maven/"]
                ["clojars"
-                "https://clojars.org/repo/"]
-               ["snapshots"
-                {:url "https://fundingcircle.artifactoryonline.com/fundingcircle/libs-snapshot-local"
-                 :username [:gpg :env/artifactory_user]
-                 :password [:gpg :env/artifactory_password]}]
-               ["releases"
-                {:url "https://fundingcircle.artifactoryonline.com/fundingcircle/libs-release-local"
-                 :username [:gpg :env/artifactory_user]
-                 :password [:gpg :env/artifactory_password]}]]}
+                "https://clojars.org/repo/"]]}
 
              ;; The dev profile - non-deployment configuration
              :dev
