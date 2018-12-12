@@ -5,7 +5,6 @@
 /.nrepl-port
 /checkouts
 /classes
-/codox
 /jackdaw-[a-z]*/.lein-*
 /jackdaw-[a-z]*/.nrepl-port
 /jackdaw-[a-z]*/checkouts
