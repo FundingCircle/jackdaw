@@ -483,5 +483,5 @@
     (is (= (String. (round-trip serde "bananas" (.getBytes "hello")))
            "hello"))
 
-    (is (thrown? org.apache.kafka.common.errors.SerializationException
+    (is (thrown? java.lang.IllegalArgumentException
                  (round-trip serde "bananas" {:hello 3})))))
