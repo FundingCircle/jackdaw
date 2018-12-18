@@ -66,6 +66,7 @@
 
              :test
              {:resource-paths ["test/resources"]
+              :plugins [[lein-cloverage "1.0.13"]]
               :dependencies   [[arohner/wait-for "1.0.2"]
                                [clj-http "2.3.0"]
                                [environ "1.1.0"]
