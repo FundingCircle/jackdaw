@@ -4,7 +4,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: quay.io/fundingcircle/clojure:latest
+      - image: circleci/clojure:lein-2.8.1
         auth:
           username: $DOCKER_USERNAME
           password: $DOCKER_PASSWORD
@@ -12,6 +12,12 @@ jobs:
       _JAVA_OPTIONS: "-Xms1024m -Xmx3072m"
     steps:
       - checkout
+      - run: wget -qO - https://packages.confluent.io/deb/4.0/archive.key | sudo apt-key add -
+      - run: sudo apt-get install software-properties-common apt-transport-https less
+      - run: sudo add-apt-repository "deb [arch=amd64] https://packages.confluent.io/deb/4.0 stable main"
+      - run: sudo apt-get update && sudo apt-get install confluent-platform-oss-2.11
+      - run: sudo sed -i 's/\(log.retention.check.interval.ms\)=.*$/\1=2000/' /etc/kafka/server.properties
+
       - &restore-cache
         restore_cache:
           keys:
