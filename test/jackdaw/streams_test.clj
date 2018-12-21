@@ -14,7 +14,8 @@
   (:import [org.apache.kafka.streams.kstream
             JoinWindows SessionWindows TimeWindows Transformer
             ValueTransformer]
-           org.apache.kafka.streams.StreamsBuilder))
+           org.apache.kafka.streams.StreamsBuilder
+           [org.apache.kafka.common.serialization Serdes]))
 
 (stest/instrument)
 
@@ -695,6 +696,30 @@
         (is (= [0 1] (first keyvals)))
         (is (= [0 3] (second keyvals)))
         (is (= [0 4] (nth keyvals 2))))))
+
+  (testing "windowed-by-time with string keys"
+    (let [topic-a (assoc (mock/topic "topic-a") :key-serde (Serdes/String))
+          topic-b (assoc (mock/topic "topic-b") :key-serde (Serdes/String))
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/group-by-key)
+                                          (k/window-by-time (TimeWindows/of 1000))
+                                          (k/reduce + topic-a)
+                                          (k/to-kstream)
+                                          (k/map (fn [[k v]] [(.key k) v]))
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
+
+      (publish 1000 "a" 1)
+      (publish 1500 "a" 2)
+      (publish 5000 "a" 4)
+
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= 3 (count keyvals)))
+        (is (= ["a" 1] (first keyvals)))
+        (is (= ["a" 3] (second keyvals)))
+        (is (= ["a" 4] (nth keyvals 2))))))
 
   (testing "windowed-by-session"
     (let [topic-a (mock/topic "topic-a")
