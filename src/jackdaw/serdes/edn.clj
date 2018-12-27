@@ -27,12 +27,15 @@
 
 (defn deserializer
   "Returns an EDN deserializer."
-  []
-  (jsfn/new-deserializer {:deserialize (fn [_ _ data]
-                                         (-> (from-bytes data)
-                                             clojure.edn/read-string))}))
+  ([]
+   (deserializer {}))
+  ([opts]
+   (let [opts (into {} opts)]
+     (jsfn/new-deserializer {:deserialize (fn [_ _ data]
+                                            (->> (from-bytes data)
+                                                 (clojure.edn/read-string opts)))}))))
 
 (defn serde
   "Returns an EDN serde."
-  []
-  (Serdes/serdeFrom (serializer) (deserializer)))
+  [& [opts]]
+  (Serdes/serdeFrom (serializer) (deserializer opts)))
