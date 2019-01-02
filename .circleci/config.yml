@@ -59,7 +59,8 @@ jobs:
       - run: confluent status
       - run:
           name: run code coverage
-          command: lein with-profile test cloverage --codecov
+          # need also `shared` because of the repositories setting
+          command: lein with-profile test,shared cloverage --codecov
 
       - store_test_results:
           path: target/test-results
