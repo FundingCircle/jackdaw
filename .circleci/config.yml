@@ -157,6 +157,24 @@ jobs:
           command: |
             lein do jar, pom, deploy clojars
 
+  eastwood:
+    docker:
+      - image: circleci/clojure:lein-2.8.1
+
+    environment:
+      _JAVA_OPTIONS: "-Xms1024m -Xmx3072m"
+
+    steps:
+      - checkout
+      - &restore-cache
+        restore_cache:
+          keys:
+            - libs-cache-{{ checksum "project.clj" }}-{{ checksum ".circleci/config.yml" }}
+            - libs-cache-{{ checksum "project.clj" }}
+            - libs-cache-
+      - run:
+          command: lein eastwood || true
+
 workflows:
   version: 2
   build_and_test:
@@ -193,3 +211,5 @@ workflows:
               only: /^\d+\.\d+\.\d+$/
             branches:
               ignore: /.*/
+
+      - eastwood
