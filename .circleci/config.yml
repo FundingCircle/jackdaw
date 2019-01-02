@@ -2,6 +2,37 @@
 version: 2
 
 jobs:
+  build:
+    docker:
+      - image: circleci/clojure:lein-2.8.1
+
+    environment:
+      _JAVA_OPTIONS: "-Xms1024m -Xmx3072m"
+
+    steps:
+      - checkout
+      - run: wget -qO - https://packages.confluent.io/deb/4.0/archive.key | sudo apt-key add -
+      - run: sudo apt-get install software-properties-common apt-transport-https less
+      - run: sudo add-apt-repository "deb [arch=amd64] https://packages.confluent.io/deb/4.0 stable main"
+      - run: sudo apt-get update && sudo apt-get install confluent-platform-oss-2.11
+      - run: sudo sed -i 's/\(log.retention.check.interval.ms\)=.*$/\1=2000/' /etc/kafka/server.properties
+
+      - &restore-cache
+        restore_cache:
+          keys:
+            - libs-cache-{{ checksum "project.clj" }}-{{ checksum ".circleci/config.yml" }}
+            - libs-cache-{{ checksum "project.clj" }}
+            - libs-cache-
+
+      - run: nohup confluent start
+      - run: confluent status
+      - save_cache:
+          key: libs-cache-{{ checksum "project.clj" }}-{{ checksum ".circleci/config.yml" }}
+          paths:
+            - ~/.m2/
+      - run:
+          command: lein test
+
   coverage_report:
     docker:
       - image: circleci/clojure:lein-2.8.1
@@ -23,11 +54,9 @@ jobs:
             - libs-cache-{{ checksum "project.clj" }}-{{ checksum ".circleci/config.yml" }}
             - libs-cache-{{ checksum "project.clj" }}
             - libs-cache-
-      - run:
-          command: nohup confluent start
-      - run:
-          command: confluent status
 
+      - run: nohup confluent start
+      - run: confluent status
       - run:
           name: run code coverage
           command: lein with-profile test cloverage --codecov
@@ -41,37 +70,6 @@ jobs:
       - run:
           name: Upload test coverage report to Codecov
           command: bash <(curl -s https://codecov.io/bash)
-
-  build:
-    docker:
-      - image: circleci/clojure:lein-2.8.1
-    environment:
-      _JAVA_OPTIONS: "-Xms1024m -Xmx3072m"
-
-    steps:
-      - checkout
-      - run: wget -qO - https://packages.confluent.io/deb/4.0/archive.key | sudo apt-key add -
-      - run: sudo apt-get install software-properties-common apt-transport-https less
-      - run: sudo add-apt-repository "deb [arch=amd64] https://packages.confluent.io/deb/4.0 stable main"
-      - run: sudo apt-get update && sudo apt-get install confluent-platform-oss-2.11
-      - run: sudo sed -i 's/\(log.retention.check.interval.ms\)=.*$/\1=2000/' /etc/kafka/server.properties
-
-      - &restore-cache
-        restore_cache:
-          keys:
-            - libs-cache-{{ checksum "project.clj" }}-{{ checksum ".circleci/config.yml" }}
-            - libs-cache-{{ checksum "project.clj" }}
-            - libs-cache-
-      - run:
-          command: nohup confluent start
-      - run:
-          command: confluent status
-      - save_cache:
-          key: libs-cache-{{ checksum "project.clj" }}-{{ checksum ".circleci/config.yml" }}
-          paths:
-            - ~/.m2/
-      - run:
-          command: lein test
 
 workflows:
   version: 2
