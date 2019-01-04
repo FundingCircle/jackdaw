@@ -20,6 +20,13 @@
                (seq (->> (.deserialize (jse/deserializer) nil bytes)
                          (.serialize (jse/serializer) nil)))))))))
 
+(defspec edn-print-length-test 20
+  (testing "EDN data is the same after serialization and deserialization with *print-length*."
+    (binding [*print-length* 100]
+      (prop/for-all [x (gen/vector gen/int (inc *print-length*))]
+        (is (= x (->> (.serialize (jse/serializer) nil x)
+                      (.deserialize (jse/deserializer) nil))))))))
+
 (defmethod print-method java.net.URI
   [obj writer]
   (.write writer "#jackdaw/uri ")
