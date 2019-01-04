@@ -1,5 +1,6 @@
 (ns jackdaw.serdes.edn-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.spec.alpha :as s]
+            [clojure.test :refer :all]
             [clojure.test.check.clojure-test :refer [defspec]]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
@@ -18,3 +19,15 @@
         (is (= (seq bytes)
                (seq (->> (.deserialize (jse/deserializer) nil bytes)
                          (.serialize (jse/serializer) nil)))))))))
+
+(defmethod print-method java.net.URI
+  [obj writer]
+  (.write writer "#jackdaw/uri ")
+  (.write writer (pr-str (str obj))))
+
+(defspec edn-roundtrip-custom-reader 20
+  (testing "custom EDN reader"
+    (let [opts {:readers {'jackdaw/uri #(java.net.URI. %)}}]
+      (prop/for-all [x (s/gen uri?)]
+        (is (= x (->> (.serialize (jse/serializer) nil x)
+                      (.deserialize (jse/deserializer opts) nil))))))))
