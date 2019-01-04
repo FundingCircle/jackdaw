@@ -11,6 +11,7 @@
            org.apache.kafka.streams.TopologyTestDriver
            java.util.Properties
            org.apache.kafka.streams.test.ConsumerRecordFactory
+           org.apache.kafka.common.header.internals.RecordHeaders
            [org.apache.kafka.common.serialization Serde Serdes Serializer]))
 
 (defn streams-builder
@@ -69,7 +70,7 @@
       ([k v]
        (.pipeInput test-driver (.create record-factory k v)))
       ([time-ms k v]
-       (.pipeInput test-driver (.create record-factory k v time-ms))))))
+       (.pipeInput test-driver (.create record-factory topic-name k v (RecordHeaders.) time-ms))))))
 
 (defn publish
   ([test-driver topic-config k v]
