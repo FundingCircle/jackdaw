@@ -1,0 +1,81 @@
+<configuration error="true">
+
+  <!-- The output file configuration for log/app.log -->
+  <appender name="test-log" class="ch.qos.logback.core.rolling.RollingFileAppender">
+
+    <!-- Default encoder is ch.qos.logback.classic.encoder.PatternLayoutEncoder -->
+    <encoder>
+      <pattern>%date{HH:mm:ss.SSS} %-5level %logger{25}: %msg %X thread=%thread%n</pattern>
+    </encoder>
+
+    <!-- Default location of log file is log/test.log -->
+    <file>logs/test.log</file>
+
+    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+      <!-- Roll over log files daily -->
+      <fileNamePattern>logs/app.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+
+      <!-- And start a new file every 64 MB -->
+      <maxFileSize>64 MB</maxFileSize>
+
+      <!-- Keep at most 15 days of history -->
+      <maxHistory>15</maxHistory>
+
+      <!-- Up to a maximum of 512 MB -->
+      <totalSizeCap>512MB</totalSizeCap>
+
+      <!-- Ensure short-lived processes still clean up old logs -->
+      <cleanHistoryOnStart>true</cleanHistoryOnStart>
+    </rollingPolicy>
+  </appender>
+
+  <!-- The output file configuration for log/all.log -->
+  <appender name="all-log" class="ch.qos.logback.core.rolling.RollingFileAppender">
+
+    <!-- Default encoder is ch.qos.logback.classic.encoder.PatternLayoutEncoder -->
+    <encoder>
+      <pattern>%date{HH:mm:ss.SSS} %-5level %logger{25}: %msg %X thread=%thread%n</pattern>
+    </encoder>
+
+    <!-- Default location of log file is log/all.log -->
+    <file>logs/all.log</file>
+
+    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+      <!-- Roll over log files daily -->
+      <fileNamePattern>logs/all.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+
+      <!-- And start a new file every 64 MB -->
+      <maxFileSize>64 MB</maxFileSize>
+
+      <!-- Keep at most 15 days of history -->
+      <maxHistory>15</maxHistory>
+
+      <!-- Up to a maximum of 512 MB -->
+      <totalSizeCap>512MB</totalSizeCap>
+
+      <!-- Ensure short-lived processes still clean up old logs -->
+      <cleanHistoryOnStart>true</cleanHistoryOnStart>
+    </rollingPolicy>
+  </appender>
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%date{HH:mm:ss.SSS} %-5level %logger{25}: %msg %X thread=%thread%n</pattern>
+    </encoder>
+  </appender>
+
+
+  <root level="info">
+    <appender-ref ref="all-log"/>
+    <appender-ref ref="STDOUT"/>
+  </root>
+
+  <logger name="org.apache.kafka" level="WARN"/>
+	<logger name="io.confluent.kafka.serializers" level="WARN"/>
+
+  <logger name="jackdaw.test" level="INFO">
+    <appender-ref ref="test-log"/>
+  </logger>
+
+
+</configuration>
