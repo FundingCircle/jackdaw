@@ -5,9 +5,6 @@ jobs:
   build:
     docker:
       - image: circleci/clojure:lein-2.8.1
-        auth:
-          username: $DOCKER_USERNAME
-          password: $DOCKER_PASSWORD
     environment:
       _JAVA_OPTIONS: "-Xms1024m -Xmx3072m"
     steps:
