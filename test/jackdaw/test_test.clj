@@ -13,38 +13,29 @@
    (java.util Properties)
    (org.apache.kafka.streams TopologyTestDriver)))
 
-(def schema-registry-config
-  {:avro.schema-registry/client (reg/mock-client)
-   :avro.schema-registry/url    "localhost:8081"})
-
-(def resolver (serde/local-serdes-resolver schema-registry-config))
-
 (def foo-topic
-  (-> {:topic-name "foo"
-       :replication-factor 1
-       :partition-count 1
-       :unique-key :id
-       :key-serde :string
-       :value-serde :json}
-      (resolver)))
+  (serde/resolver {:topic-name "foo"
+                   :replication-factor 1
+                   :partition-count 1
+                   :unique-key :id
+                   :key-serde :string
+                   :value-serde :json}))
 
 (def test-in
-  (-> {:topic-name "test-in"
-       :replication-factor 1
-       :partition-count 1
-       :unique-key :id
-       :key-serde :string
-       :value-serde :json}
-      (resolver)))
+  (serde/resolver {:topic-name "test-in"
+                   :replication-factor 1
+                   :partition-count 1
+                   :unique-key :id
+                   :key-serde :string
+                   :value-serde :json}))
 
 (def test-out
-  (-> {:topic-name "test-out"
-       :replication-factor 1
-       :partition-count 1
-       :unique-key :id
-       :key-serde :string
-       :value-serde :json}
-      (resolver)))
+  (serde/resolver {:topic-name "test-out"
+                   :replication-factor 1
+                   :partition-count 1
+                   :unique-key :id
+                   :key-serde :string
+                   :value-serde :json}))
 
 (def kafka-config {"bootstrap.servers" "localhost:9092"
                    "group.id" "kafka-write-test"})

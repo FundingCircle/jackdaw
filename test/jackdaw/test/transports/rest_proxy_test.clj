@@ -7,28 +7,20 @@
    [jackdaw.streams :as k]
    [jackdaw.test :as jd.test]
    [jackdaw.test.fixtures :as fix]
-   [jackdaw.test.serde :refer [apply-serializers apply-deserializers local-serdes-resolver]]
+   [jackdaw.test.serde :as serde]
    [jackdaw.test.journal :refer [with-journal watch-for]]
    [jackdaw.test.transports :as trns]
-   [jackdaw.test.transports.rest-proxy :as rest-proxy]
-   [jackdaw.serdes.avro.schema-registry :as reg])
+   [jackdaw.test.transports.rest-proxy :as rest-proxy])
   (:import
    (java.util Properties)))
 
 (def kafka-config {"bootstrap.servers" "localhost:9092"
                    "group.id" "kafka-write-test"})
 
-(def schema-registry-config
-  {:avro.schema-registry/client (reg/mock-client)
-   :avro.schema-registry/url    "localhost:8081"})
-
-(def resolver (local-serdes-resolver schema-registry-config))
-
 (defn rest-proxy-config
   [group-id]
   {:bootstrap-uri "http://localhost:8082"
    :group-id group-id})
-
 
 (defn kstream-config
   [app app-id]
@@ -48,22 +40,20 @@
       builder)))
 
 (def test-in
-  (-> {:topic-name "test-in"
-       :replication-factor 1
-       :partition-count 1
-       :unique-key :id
-       :key-serde :long
-       :value-serde :edn}
-      (resolver)))
+  (serde/resolver {:topic-name "test-in"
+                   :replication-factor 1
+                   :partition-count 1
+                   :unique-key :id
+                   :key-serde :long
+                   :value-serde :edn}))
 
 (def test-out
-  (-> {:topic-name "test-out"
-       :replication-factor 1
-       :partition-count 1
-       :unique-key :id
-       :key-serde :long
-       :value-serde :edn}
-      (resolver)))
+  (serde/resolver {:topic-name "test-out"
+                   :replication-factor 1
+                   :partition-count 1
+                   :unique-key :id
+                   :key-serde :long
+                   :value-serde :edn}))
 
 (def topic-config {"test-in" test-in
                    "test-out" test-out})

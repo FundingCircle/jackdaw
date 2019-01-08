@@ -14,56 +14,15 @@
 
 ;; Access to various serdes
 
-(defn local-schema-loader []
-  (fn [topic-config key?]
-    (if key?
-      "{\"type\":\"string\"}"
-      (when-let [r (.getResource
-                     (.getContextClassLoader (Thread/currentThread))
-                     (str (:topic.metadata/value-schema-name topic-config) ".json"))]
-        (slurp r)))))
-
-
-(defn create-avro-serde [schema-registry-config schema-loader topic-config key?]
-  (avro-serde/serde
-    ;; Registry of avro <-> clj types
-    avro-serde/+base-schema-type-registry+
-    schema-registry-config
-    ;; Avro serdes config
-    {:key? key?
-     :avro/schema (schema-loader topic-config key?)}))
-
-(defn create-serdes-lookup [schema-registry-config schema-loader]
-  {:avro-key (fn [topic-config]
-               (create-avro-serde
-                 schema-registry-config schema-loader topic-config true))
-   :avro-value (fn [topic-config]
-                 (create-avro-serde
-                   schema-registry-config schema-loader topic-config false))
-   :edn (fn [_]
-          (edn-serde/serde))
-   :json (fn [_]
-           (json-serde/serde))
-   :long (fn [_]
-           (Serdes/Long))
-   :string (fn [_]
-             (Serdes/String))})
-
-(defn serdes-resolver [schema-registry-config schema-loader]
-  (fn [topic-config]
-    (letfn [(get-serde [k]
-              (let [f (get
-                        (create-serdes-lookup schema-registry-config schema-loader)
-                        (get topic-config k))]
-                (f topic-config)))]
-      (merge
-        topic-config
-        {:key-serde (get-serde :key-serde)
-         :value-serde (get-serde :value-serde)}))))
-
-(defn local-serdes-resolver [schema-registry-config]
-  (serdes-resolver schema-registry-config (local-schema-loader)))
-
+(defn resolver [topic-config]
+  (let [serde-lookup {:edn (edn-serde/serde)
+                      :json (json-serde/serde)
+                      :long (Serdes/Long)
+                      :string (Serdes/String)}]
+    (merge
+      topic-config
+      {:key-serde (serde-lookup (:key-serde topic-config))
+       :value-serde (serde-lookup (:value-serde topic-config))})))
 
 ;; Serialization/Deserialization
 ;;

@@ -5,32 +5,23 @@
    [jackdaw.test.transports.kafka]
    [jackdaw.test.serde :as serde]
    [jackdaw.test :refer [test-machine]]
-   [clojure.test :refer :all]
-   [jackdaw.serdes.avro.schema-registry :as reg]))
-
-(def schema-registry-config
-  {:avro.schema-registry/client (reg/mock-client)
-   :avro.schema-registry/url    "localhost:8081"})
-
-(def resolver (serde/local-serdes-resolver schema-registry-config))
+   [clojure.test :refer :all]))
 
 (def foo-topic
-  (-> {:topic-name "foo"
-       :replication-factor 1
-       :partition-count 1
-       :unique-key :id
-       :key-serde :long
-       :value-serde :edn}
-      (resolver)))
+  (serde/resolver {:topic-name "foo"
+                   :replication-factor 1
+                   :partition-count 1
+                   :unique-key :id
+                   :key-serde :long
+                   :value-serde :edn}))
 
 (def bar-topic
-  (-> {:topic-name "bar"
-       :replication-factor 1
-       :partition-count 1
-       :unique-key :id
-       :key-serde :long
-       :value-serde :long}
-      (resolver)))
+  (serde/resolver {:topic-name "bar"
+                   :replication-factor 1
+                   :partition-count 1
+                   :unique-key :id
+                   :key-serde :long
+                   :value-serde :long}))
 
 (def kafka-config {"bootstrap.servers" "localhost:9092"
                    "group.id" "kafka-write-test"})
