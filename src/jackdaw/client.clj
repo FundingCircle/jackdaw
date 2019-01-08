@@ -57,13 +57,13 @@
   either [RecordMetdata, nil] or [nil, Exception] respectively if the
   record was sent or if an exception was encountered."
   ([producer record]
-   (-> (.send ^Producer producer ^ProducerRecord record)
-       deref jd/datafy delay))
+   (let [send-future (.send ^Producer producer ^ProducerRecord record)]
+     (delay (jd/datafy @send-future))))
   ([producer record callback-fn]
-   (-> (.send ^Producer producer
-              ^ProducerRecord record
-              ^Callback (callback callback-fn))
-       deref jd/datafy delay)))
+   (let [send-future (.send ^Producer producer
+                            ^ProducerRecord record
+                            ^Callback (callback callback-fn))]
+     (delay (jd/datafy @send-future)))))
 
 (defn produce!
   "Helper wrapping `#'send!`.
