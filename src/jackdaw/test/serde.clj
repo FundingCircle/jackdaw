@@ -15,29 +15,31 @@
 ;; Access to various serdes
 
 (defn local-schema-loader []
-  (fn [topic-name _]
-    (when-let [r (.getResource
-                   (.getContextClassLoader (Thread/currentThread))
-                   (str (name topic-name) ".json"))]
-      (slurp r))))
+  (fn [topic-config key?]
+    (if key?
+      "{\"type\":\"string\"}"
+      (when-let [r (.getResource
+                     (.getContextClassLoader (Thread/currentThread))
+                     (str (:topic.metadata/value-schema-name topic-config) ".json"))]
+        (slurp r)))))
 
 
-(defn create-avro-serde [schema-registry-config schema-loader topic-name key?]
+(defn create-avro-serde [schema-registry-config schema-loader topic-config key?]
   (avro-serde/serde
     ;; Registry of avro <-> clj types
     avro-serde/+base-schema-type-registry+
     schema-registry-config
     ;; Avro serdes config
     {:key? key?
-     :avro/schema (schema-loader topic-name key?)}))
+     :avro/schema (schema-loader topic-config key?)}))
 
 (defn create-serdes-lookup [schema-registry-config schema-loader]
-  {:avro-key (fn [topic-name]
+  {:avro-key (fn [topic-config]
                (create-avro-serde
-                 schema-registry-config schema-loader topic-name true))
-   :avro-value (fn [topic-name]
+                 schema-registry-config schema-loader topic-config true))
+   :avro-value (fn [topic-config]
                  (create-avro-serde
-                   schema-registry-config schema-loader topic-name false))
+                   schema-registry-config schema-loader topic-config false))
    :edn (fn [_]
           (edn-serde/serde))
    :json (fn [_]
@@ -53,7 +55,7 @@
               (let [f (get
                         (create-serdes-lookup schema-registry-config schema-loader)
                         (get topic-config k))]
-                (f (:topic-name topic-config))))]
+                (f topic-config)))]
       (merge
         topic-config
         {:key-serde (get-serde :key-serde)

@@ -71,7 +71,6 @@
              {:resource-paths ["test/resources"]
               ;;:injections [(require 'io.aviso.logging.setup)]
               :dependencies   [[io.aviso/logging "0.3.1"]
-                               [arohner/wait-for "1.0.2"]
                                [clj-http "2.3.0"]
                                [environ "1.1.0"]
                                [junit "4.12"]

@@ -152,14 +152,21 @@
                  "Content-Type" (content-types :json)}
         body {:name id
               :auto.offset.reset "latest"
-              :auto.commit.enable false}]
+              :auto.commit.enable false}
+        preserve-https (fn [consumer]
+                         ;; Annoyingly, the proxy will return an HTTP address for a
+                         ;; subscriber even when its running over HTTPS
+                         (if (clojure.string/starts-with? url "https")
+                           (update consumer :base-uri clojure.string/replace #"^http:" "https:")
+                           consumer))]
 
     (let [response @(handle-proxy-request http/post url headers body)]
       (if (:error response)
         (do (log/infof "rest-proxy create consumer error: %s" (:error response))
             (assoc client :error response))
         (let [{:keys [base-uri instance-id]} (:json-body response)]
-          (assoc client :base-uri base-uri, :instance-id instance-id))))))
+          (preserve-https
+            (assoc client :base-uri base-uri, :instance-id instance-id)))))))
 
 (defn with-subscription
   [{:keys [base-uri group-id instance-id] :as client} topic-metadata]
