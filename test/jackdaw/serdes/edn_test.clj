@@ -8,13 +8,13 @@
 
 (defspec edn-roundtrip-test 20
   (testing "EDN data is the same after serialization and deserialization."
-    (prop/for-all [x gen/any-printable]
+    (prop/for-all [x (gen/fmap #(apply str %) (gen/vector gen/char-alpha 100))]
       (is (= x (->> (.serialize (jse/serializer) nil x)
                     (.deserialize (jse/deserializer) nil)))))))
 
 (defspec edn-reverse-roundtrip-test 20
   (testing "EDN data is the same after deserialization and serialization."
-    (prop/for-all [x gen/any-printable]
+    (prop/for-all [x (gen/fmap #(apply str %) (gen/vector gen/char-alpha 100))]
       (let [bytes (.serialize (jse/serializer) nil x)]
         (is (= (seq bytes)
                (seq (->> (.deserialize (jse/deserializer) nil bytes)
