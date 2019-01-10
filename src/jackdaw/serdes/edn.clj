@@ -1,7 +1,8 @@
 (ns jackdaw.serdes.edn
   "Implements an EDN SerDes (Serializer/Deserializer)."
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
-  (:require [clojure.edn]
+  (:require [clojure.edn :as edn]
+            [clojure.tools.logging :as log]
             [jackdaw.serdes.fn :as jsfn])
   (:import java.nio.charset.StandardCharsets
            org.apache.kafka.common.serialization.Serdes))
@@ -34,9 +35,15 @@
    (deserializer {}))
   ([opts]
    (let [opts (into {} opts)]
-     (jsfn/new-deserializer {:deserialize (fn [_ _ data]
-                                            (->> (from-bytes data)
-                                                 (clojure.edn/read-string opts)))}))))
+     (jsfn/new-deserializer
+      {:deserialize (fn [_ topic bytes]
+                      (let [string (from-bytes bytes)]
+                        (try
+                          (edn/read-string opts string)
+                          (catch Exception e
+                            (let [msg "Deserialization error"]
+                              (log/error e (str msg " for " topic))
+                              (throw (ex-info msg {:topic topic :data string} e)))))))}))))
 
 (defn serde
   "Returns an EDN serde."
