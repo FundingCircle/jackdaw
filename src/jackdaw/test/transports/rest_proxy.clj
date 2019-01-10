@@ -33,15 +33,6 @@
   (let [decoder (Base64/getDecoder)]
     (.decode decoder decodable)))
 
-(defn datafy-record
-  [{:keys [producer-record] :as m}]
-  (let [data (-> (select-keys m [:key :value])
-                 (assoc :topic (get-in m [:topic :topic-name]))
-                 (assoc :partition (.partition producer-record))
-                 (update :key base64-encode)
-                 (update :value base64-encode))]
-    (assoc m :data-record data)))
-
 (defn undatafy-record
   [topic-metadata m]
   (-> m
@@ -240,24 +231,12 @@
      :messages messages
      :continue? continue?}))
 
-(defn build-record
-  "Builds a Kafka Producer and assoc it onto the message map"
-  [m]
-  ;; The easiest way to make this as real as possible is to build
-  ;; a real ProducerRecord and then get extract the data from it. This way
-  ;; we don't have to calculate the partition oureslves.
-  ;;
-  ;; On the other hand, this means we have a bit of an unwanted dependency
-  ;; (in this ns) on the Kafka Client API. Perhaps later it might be
-  ;; worth calculating this partition ourselves based on the supplied
-  ;; topic-metadata but there are a few wrinkles to iron out with that
-  ;; approach.
-  (let [rec (mk-producer-record (:topic m)
-                                (:partition m)
-                                (:timestamp m)
-                                (:key m)
-                                (:value m))]
-    (assoc m :producer-record rec)))
+(defn build-record [m]
+  (let [data (-> (select-keys m [:key :value :partition])
+                 (assoc :topic (get-in m [:topic :topic-name]))
+                 (update :key base64-encode)
+                 (update :value base64-encode))]
+    (assoc m :data-record data)))
 
 (defn deliver-ack
   "Deliver the `ack` promise with the result of attempting to write to kafka. The
@@ -280,7 +259,6 @@
   ([config topics serializers]
    (let [producer       (rest-proxy-client config)
          xform          (comp
-                         datafy-record
                          build-record
                          #(apply-serializers serializers %))
          messages       (async/chan 1 (map xform))]

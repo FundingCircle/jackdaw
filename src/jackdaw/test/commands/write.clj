@@ -1,92 +1,65 @@
 (ns jackdaw.test.commands.write
   (:require
-   [clojure.spec.alpha :as s]
    [clojure.core.async :as async]
-   [clojure.tools.logging :as log]))
+   [clojure.tools.logging :as log]
+   [jackdaw.client.partitioning :as partitioning]))
 
-(s/def ::write-implicit-key
-  (s/cat :timeout pos-int?
-         :topic string?
-         :msg any?
-         :timestamp (s/nilable integer?)))
+(defn default-partition-fn [topic-map k]
+  (int (partitioning/default-partition topic-map k nil (:partition-count topic-map))))
 
-(s/def ::write-explicit-key
-  (s/cat :timeout pos-int?
-         :topic string?
-         :k any?
-         :v any?
-         :timestamp (s/nilable integer?)))
+(defn create-message [machine topic-map message opts]
+  ;; By default the message will use the `:id` field as the key on kafka
+  ;; and run the default partitioning function for the partition (which
+  ;; works the same as the kafka one). This behaviour can be changed as follows:
+  ;;  - If the topic map contains a `:key-fn`, use that function to extract
+  ;;    the key from the message
+  ;;  - If the topic map contains a `:partition-fn`, use that function to
+  ;;    determine the partition to write to (should be an fn of airity 2
+  ;;    as per `default-partition-fn`
+  ;;  - The `:key-fn` and `:partition-fn` can also be passed separately in
+  ;;    the options map `opts`.
+  ;;  - Further, the `opts` map can contain an explciit `:key` and/or
+  ;;    `:partition`, which if set will provide the values to use
+  ;; If both specified, `opts` values will override values in the topic map.
+  (let [key-fn (or (:key-fn opts)
+                   (:key-fn topic-map)
+                   :id)
+        partition-fn (or (:partition-fn opts)
+                         (:partition-fn topic-map)
+                         default-partition-fn)
+        k (if-let [explicit-key (:key opts)]
+            explicit-key
+            (key-fn message))
+        _ (clojure.pprint/pprint k)
+        _ (clojure.pprint/pprint topic-map)
+        partn (if-let [explicit-partition (:partition opts)]
+                explicit-partition
+                (partition-fn topic-map k))
+        timestamp (:timestamp opts (System/currentTimeMillis))]
+    {:topic topic-map
+     :key k
+     :value message
+     :partition partn
+     :timestamp timestamp}))
 
-(s/def ::write-params
-  (s/alt
-   :implict-key ::write-implicit-key
-   :explicit-key ::write-explicit-key))
+(defn do-write
+  ([machine topic-name message]
+   (do-write machine topic-name message {}))
+  ([machine topic-name message opts]
+   (if-let [topic-map (get (:topics machine) topic-name)]
+     (let [to-send (create-message machine topic-map message opts)
+           messages (:messages (:producer machine))
+           ack (promise)]
+       (log/info "Sending" to-send "to topic" topic-name)
+       (async/put! messages (assoc to-send :ack ack))
+       (deref ack (:timeout opts 1000) {:error :timeout}))
+     {:error :unknown-topic
+      :topic topic-name
+      :known-topics (keys (:topic-config machine))})))
 
-(comment
-  (s/conform ::write-params [1000 "foo" "yolo" nil])
-  (s/conform ::write-params [1000 "foo" "k" "yolo" nil]))
 
-(defn write-explicit-key
-  "Returns the result of writing `msg` using `producer`"
-  [{:keys [producer serdes]}
-   {:keys [topic k v timestamp timeout]}]
-   (let [{:keys [messages]} producer
-         ack (promise)]
-     (async/put! messages
-                 {:topic topic
-                  :key k
-                  :value v
-                  :timestamp (or timestamp (System/currentTimeMillis))
-                  :ack ack})
-     (deref ack timeout {:error :timeout})))
-
-(defn write-implicit-key
-  [{:keys [producer serdes]}
-   {:keys [topic msg timestamp timeout]}]
-  (let [{:keys [messages]} producer
-        ack (promise)
-        msg-key (get msg (keyword (:unique-key topic)))]
-    (async/put! messages
-                {:topic topic
-                 :key msg-key
-                 :value msg
-                 :timestamp (or timestamp (System/currentTimeMillis))
-                 :ack ack})
-    (deref ack timeout {:error :timeout})))
-
-(defn write
-  [machine write-args]
-  (let [writers {:explicit-key write-explicit-key
-                 :implict-key write-implicit-key}
-        [writer args] write-args]
-    ((get writers writer) machine args)))
-
-(defn invalid?
-  [x]
-  (= x :clojure.spec.alpha/invalid))
-
-(defn handle-write-cmd
-  [machine cmd params]
-  (let [parsed-params (s/conform ::write-params params)
-        invalid? (= :clojure.spec.alpha/invalid parsed-params)
-
-        [write-type {:keys [topic] :as write-args}] (when-not invalid?
-                                                      parsed-params)
-        t (when topic
-            (get (:topics machine) topic))]
-
-    (log/info "write-type: " write-type)
-    (log/info "write-args: " (assoc write-args :topic t))
-
-    (cond
-      invalid? {:error :invalid-params
-                :explain-data (s/explain-data ::write-params params)}
-
-      t        (write machine [write-type (assoc write-args
-                                                 :topic t)])
-      :else    {:error :unknown-topic
-                :topic topic
-                :known-topics (keys (:topic-config machine))})))
+(defn handle-write-cmd [machine cmd params]
+  (apply do-write machine params))
 
 (def command-map
   {:jackdaw.test.commands/write! handle-write-cmd})

@@ -38,7 +38,6 @@
   (serde/resolver {:topic-name "test-in"
                    :replication-factor 1
                    :partition-count 1
-                   :unique-key :id
                    :key-serde :long
                    :value-serde :edn}))
 
@@ -46,7 +45,6 @@
   (serde/resolver {:topic-name "test-out"
                    :replication-factor 1
                    :partition-count 1
-                   :unique-key :id
                    :key-serde :long
                    :value-serde :edn}))
 
@@ -87,7 +85,7 @@
             messages (get-in t [:producer :messages])
             serdes (get-in t [:serdes])
             ack (promise)
-            msg-key (get msg (keyword (:unique-key test-in)))]
+            msg-key (:id msg)]
 
         (log/info "feed: " msg)
         (async/put! messages
@@ -113,7 +111,7 @@
             messages (get-in t [:producer :messages])
             serdes (get-in t [:serdes])
             ack (promise)
-            msg-key (get msg (keyword (:unique-key test-in)))]
+            msg-key (:id msg)]
 
         (log/info "feed: " msg)
         (async/put! messages

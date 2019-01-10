@@ -4,21 +4,20 @@
    [clojure.tools.logging :as log]))
 
 ;; Circle CI times out after a minute, so make sure this is less than 60,000
-(def ^:dynamic *default-watch-timeout* 45000)
+(def ^:dynamic *default-watch-timeout* 10000)
 
 (defn- watch-timeout [t]
-  (if (= t :default-timeout)
+  (if (or (nil? t) (= t :default-timeout))
     *default-watch-timeout*
     t))
 
 (defn- watch-params
-  ([watch-query] [*default-watch-timeout* watch-query "Watcher"])
-  ([timeout watch-query] [(watch-timeout timeout) watch-query "Watcher"])
-  ([timeout watch-query info] [(watch-timeout timeout) watch-query info]))
+  ([watch-query] [watch-query "Watcher" *default-watch-timeout*])
+  ([watch-query opts] [watch-query (:info opts) (watch-timeout (:timeout opts))]))
 
 (defn handle-watch-cmd
   [machine cmd params]
-  (let [[timeout query info] (apply watch-params params)
+  (let [[query info timeout] (apply watch-params params)
         condition? (fn [journal]
                      (query journal))
         journal (:journal machine)]

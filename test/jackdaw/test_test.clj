@@ -17,7 +17,6 @@
   (serde/resolver {:topic-name "foo"
                    :replication-factor 1
                    :partition-count 1
-                   :unique-key :id
                    :key-serde :string
                    :value-serde :json}))
 
@@ -25,7 +24,6 @@
   (serde/resolver {:topic-name "test-in"
                    :replication-factor 1
                    :partition-count 1
-                   :unique-key :id
                    :key-serde :string
                    :value-serde :json}))
 
@@ -33,7 +31,6 @@
   (serde/resolver {:topic-name "test-out"
                    :replication-factor 1
                    :partition-count 1
-                   :unique-key :id
                    :key-serde :string
                    :value-serde :json}))
 
@@ -64,9 +61,9 @@
   (testing "write then watch"
     (fix/with-fixtures [(fix/topic-fixture kafka-config {"foo" foo-topic})]
       (with-open [t (jd.test/test-machine (kafka-transport))]
-        (let [write [:jackdaw.test.commands/write! 1000 "foo" {:id "msg1" :payload "yolo"} nil]
-              watch [:jackdaw.test.commands/watch! 1000 (by-id "foo" "msg1")
-                     "failed to find foo with id=msg1"]
+        (let [write [:jackdaw.test.commands/write! "foo" {:id "msg1" :payload "yolo"}]
+              watch [:jackdaw.test.commands/watch! (by-id "foo" "msg1")
+                     {:info "failed to find foo with id=msg1"}]
 
               {:keys [results journal]} (jd.test/run-test t [write watch])
               [write-result watch-result] results]
@@ -88,13 +85,13 @@
 (deftest test-reuse-machine
   (fix/with-fixtures [(fix/topic-fixture kafka-config {"foo" foo-topic})]
     (with-open [t (jd.test/test-machine (kafka-transport))]
-      (let [prog1 [[:jackdaw.test.commands/write! 1000 "foo" {:id "msg2" :payload "yolo"} nil]
-                   [:jackdaw.test.commands/watch! 1000 (by-id "foo" "msg2")
-                    "failed to find foo with id=msg2"]]
+      (let [prog1 [[:jackdaw.test.commands/write! "foo" {:id "msg2" :payload "yolo"}]
+                   [:jackdaw.test.commands/watch! (by-id "foo" "msg2")
+                    {:info "failed to find foo with id=msg2"}]]
 
-            prog2 [[:jackdaw.test.commands/write! 1000 "foo" {:id "msg3" :payload "you only live twice"} nil]
-                   [:jackdaw.test.commands/watch! 1000 (by-id "foo" "msg3")
-                    "failed to find foo with id=msg3"]]]
+            prog2 [[:jackdaw.test.commands/write! "foo" {:id "msg3" :payload "you only live twice"}]
+                   [:jackdaw.test.commands/watch! (by-id "foo" "msg3")
+                    {:info "failed to find foo with id=msg3"}]]]
 
         (testing "run test sequence and inspect results"
           (let [{:keys [results journal]} (jd.test/run-test t prog1)]

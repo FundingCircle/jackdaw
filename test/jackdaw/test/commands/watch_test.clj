@@ -27,7 +27,7 @@
       (send journal conj cmd)
       (let [result (async/poll! result-ch)]
         (is (nil? result) result)))
-    
+
     (send journal conj (last cmd-list))
 
     (async/<!! result-ch)))

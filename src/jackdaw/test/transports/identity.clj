@@ -17,7 +17,7 @@
     {:messages messages}))
 
 (defmethod t/transport :identity
-  [{:keys []}]
+  [{:keys [topics]}]
   (let [ch (async/chan 1)
         test-consumer (identity-consumer ch)
         test-producer (identity-producer)
@@ -25,6 +25,7 @@
                       (:messages test-consumer))]
     {:consumer test-consumer
      :producer test-producer
+     :topics topics
      :exit-hooks [(fn []
                     (async/close! (:messages test-producer))
                     (async/<!! p))]}))

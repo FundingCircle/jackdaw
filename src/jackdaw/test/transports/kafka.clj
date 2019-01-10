@@ -131,7 +131,7 @@
   "Builds a Kafka Producer and assoc it onto the message map"
   [m]
   (let [rec (mk-producer-record (:topic m)
-                                (:partition m (int 0)) ;; TODO proper partitioning ...
+                                (:partition m (int 0))
                                 (:timestamp m)
                                 (:key m)
                                 (:value m))]
