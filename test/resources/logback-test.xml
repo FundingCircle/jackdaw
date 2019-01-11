@@ -64,18 +64,20 @@
     </encoder>
   </appender>
 
-
   <root level="info">
     <appender-ref ref="all-log"/>
-    <appender-ref ref="STDOUT"/>
   </root>
 
+  <!-- Swallow the noisy logs -->
   <logger name="org.apache.kafka" level="WARN"/>
-	<logger name="io.confluent.kafka.serializers" level="WARN"/>
+  <logger name="io.confluent.kafka.serializers" level="WARN"/>
 
   <logger name="jackdaw.test" level="INFO">
     <appender-ref ref="test-log"/>
   </logger>
 
+  <logger name="io.aviso.logging" level="INFO">
+    <appender-ref ref="STDOUT"/>
+  </logger>
 
 </configuration>

@@ -7,7 +7,7 @@
 (defn default-partition-fn [topic-map k]
   (int (partitioning/default-partition topic-map k nil (:partition-count topic-map))))
 
-(defn create-message [machine topic-map message opts]
+(defn create-message [topic-map message opts]
   ;; By default the message will use the `:id` field as the key on kafka
   ;; and run the default partitioning function for the partition (which
   ;; works the same as the kafka one). This behaviour can be changed as follows:
@@ -30,8 +30,6 @@
         k (if-let [explicit-key (:key opts)]
             explicit-key
             (key-fn message))
-        _ (clojure.pprint/pprint k)
-        _ (clojure.pprint/pprint topic-map)
         partn (if-let [explicit-partition (:partition opts)]
                 explicit-partition
                 (partition-fn topic-map k))
@@ -47,7 +45,7 @@
    (do-write machine topic-name message {}))
   ([machine topic-name message opts]
    (if-let [topic-map (get (:topics machine) topic-name)]
-     (let [to-send (create-message machine topic-map message opts)
+     (let [to-send (create-message topic-map message opts)
            messages (:messages (:producer machine))
            ack (promise)]
        (log/info "Sending" to-send "to topic" topic-name)
@@ -62,4 +60,4 @@
   (apply do-write machine params))
 
 (def command-map
-  {:jackdaw.test.commands/write! handle-write-cmd})
+  {:write! handle-write-cmd})

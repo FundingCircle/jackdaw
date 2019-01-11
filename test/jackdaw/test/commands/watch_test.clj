@@ -21,7 +21,7 @@
   (let [journal (agent [])
         machine {:journal journal}
         result-ch (async/thread
-                    (watch/handle-watch-cmd machine :jackdaw.test.commands/watch! [watcher]))]
+                    (watch/handle-watch-cmd machine :watch [watcher]))]
 
     (doseq [cmd (butlast cmd-list)]
       (send journal conj cmd)

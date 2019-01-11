@@ -24,4 +24,4 @@
     (j/watch-for machine condition? timeout info)))
 
 (def command-map
-  {:jackdaw.test.commands/watch! handle-watch-cmd})
+  {:watch handle-watch-cmd})

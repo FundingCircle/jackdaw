@@ -4,11 +4,13 @@
    [jackdaw.serdes.avro.schema-registry :as reg]
    [jackdaw.streams :as k]
    [jackdaw.test :as jd.test]
+   [jackdaw.test.commands :as cmd]
    [jackdaw.test.fixtures :as fix]
    [jackdaw.test.serde :as serde]
    [jackdaw.test.transports :as trns]
    [jackdaw.test.transports.kafka]
-   [jackdaw.test.transports.mock])
+   [jackdaw.test.transports.mock]
+   [jackdaw.test.middleware :refer [with-status]])
   (:import
    (java.util Properties)
    (org.apache.kafka.streams TopologyTestDriver)))
@@ -57,12 +59,51 @@
                    (= id (get-in m [:value :id]))))
          first)))
 
+(deftest test-run-test
+  (testing "the run test machinery"
+    (let [m {:executor (-> (fn [m c]
+                             (let [[cmd & params] c]
+                               (apply ({:min (fn [v] {:result (apply min v)})
+                                        :max (fn [v] {:result (apply max v)})
+                                        :is-1 (fn [v] (if (= v 1)
+                                                        {:result true}
+                                                        {:error :not-1}))}
+                                       cmd)
+                                      params)))
+                           with-status)
+             :journal (atom {})}]
+      (testing "works properly"
+        (let [{:keys [results journal]}
+              (jd.test/run-test m [[:min [1 2 3]]
+                                   [:max [1 2 3]]
+                                   [:is-1 1]])]
+          (is (= 3 (count results)))
+          (is (every? #(= :ok %) (map :status results)))))
+
+      (testing "execution stops on an error"
+        (let [{:keys [results journal]}
+              (jd.test/run-test m [[:min [1 2 3]]
+                                   [:is-1 2]
+                                   [:max [1 2 3]]])]
+          (is (= 2 (count results)))
+          (is (= :ok (:status (first results))))
+          (is (= :error (:status (second results))))))
+
+      (testing "execution stops on an unknown command"
+        (let [{:keys [results journal]}
+              (jd.test/run-test m [[:min [1 2 3]]
+                                   [:foo 2]
+                                   [:max [1 2 3]]])]
+          (is (= 2 (count results)))
+          (is (= :ok (:status (first results))))
+          (is (= :error (:status (second results)))))))))
+
 (deftest test-write-then-watch
   (testing "write then watch"
     (fix/with-fixtures [(fix/topic-fixture kafka-config {"foo" foo-topic})]
       (with-open [t (jd.test/test-machine (kafka-transport))]
-        (let [write [:jackdaw.test.commands/write! "foo" {:id "msg1" :payload "yolo"}]
-              watch [:jackdaw.test.commands/watch! (by-id "foo" "msg1")
+        (let [write [:write! "foo" {:id "msg1" :payload "yolo"}]
+              watch [:watch (by-id "foo" "msg1")
                      {:info "failed to find foo with id=msg1"}]
 
               {:keys [results journal]} (jd.test/run-test t [write watch])
@@ -85,12 +126,12 @@
 (deftest test-reuse-machine
   (fix/with-fixtures [(fix/topic-fixture kafka-config {"foo" foo-topic})]
     (with-open [t (jd.test/test-machine (kafka-transport))]
-      (let [prog1 [[:jackdaw.test.commands/write! "foo" {:id "msg2" :payload "yolo"}]
-                   [:jackdaw.test.commands/watch! (by-id "foo" "msg2")
+      (let [prog1 [[:write! "foo" {:id "msg2" :payload "yolo"}]
+                   [:watch (by-id "foo" "msg2")
                     {:info "failed to find foo with id=msg2"}]]
 
-            prog2 [[:jackdaw.test.commands/write! "foo" {:id "msg3" :payload "you only live twice"}]
-                   [:jackdaw.test.commands/watch! (by-id "foo" "msg3")
+            prog2 [[:write! "foo" {:id "msg3" :payload "you only live twice"}]
+                   [:watch (by-id "foo" "msg3")
                     {:info "failed to find foo with id=msg3"}]]]
 
         (testing "run test sequence and inspect results"

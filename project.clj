@@ -69,7 +69,7 @@
 
              :test
              {:resource-paths ["test/resources"]
-              ;;:injections [(require 'io.aviso.logging.setup)]
+              :injections [(require 'io.aviso.logging.setup)]
               :dependencies   [[io.aviso/logging "0.3.1"]
                                [clj-http "2.3.0"]
                                [environ "1.1.0"]

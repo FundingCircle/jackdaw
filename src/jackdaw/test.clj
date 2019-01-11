@@ -52,7 +52,7 @@
 ;; The `journaller` is used to asynchronously read topics of interest and log
 ;; their output in a `:journal` key. Test middlware may use the journal to obtain a
 ;; snapshot of the test input/output during the execution of a command. See the
-;; middleware and the `jackdaw.test.commands/watch!` command for example usage
+;; middleware and the `watch` command for example usage
 ;; of this feature.
 
 ;; The `:exit-hooks` key may be used by middleware that requires the disposal of any
@@ -118,19 +118,22 @@
    The first parameter is a test-machine and the second is a list of
    commands to execute. Remember to use `with-open` on the test-machine
    to ensure that all resources are correcly torn down."
-  [{:keys [exit-hooks] :as machine}
-    commands]
-   (let [exe (fn [cmd]
-               (try
-                 ((:executor machine) machine cmd)
-                 (catch Exception e
-                   (log/error e "Uncaught exception while executing test command")
-                   {:error (.getMessage e)})))]
-
-     {:results (->> commands
-                    (map exe)
-                    (doall))
-      :journal @(:journal machine)}))
+  [machine commands]
+  (let [exe (fn [cmd]
+              (try
+                ((:executor machine) machine cmd)
+                (catch Exception e
+                  (log/error e "Uncaught exception while executing test command")
+                  {:status :error
+                   :error e})))]
+    ;; run commands, stopping if one fails.
+    {:results (loop [results []
+                     cmd-list commands]
+                (let [r (exe (first cmd-list))]
+                  (if (or (contains? r :error) (empty? (rest cmd-list)))
+                    (conj results r)
+                    (recur (conj results r) (rest cmd-list)))))
+     :journal @(:journal machine)}))
 
 (defn identity-transport
   "The identity transport simply injects input events directly into

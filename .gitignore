@@ -11,6 +11,7 @@
 /jackdaw-[a-z]*/checkouts
 /jackdaw-[a-z]*/target
 /target
+/logs
 pom.xml
 pom.xml.asc
 .lein-env

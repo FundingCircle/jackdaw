@@ -18,10 +18,16 @@
   [machine cmd]
   (let [[cmd & params] cmd
         handler (get command-map cmd)]
-    (let [result (handler machine cmd params)]
-      (assoc result
-             :cmd cmd
-             :params params))))
+    (if handler
+      ;; Happy
+      (let [result (handler machine cmd params)]
+        (assoc result
+               :cmd cmd
+               :params params))
+      ;; else Sad
+      {:error :unknown-command
+       :cmd cmd
+       :params params})))
 
 (defn with-handler
   [machine handler]
