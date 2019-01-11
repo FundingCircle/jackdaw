@@ -34,11 +34,16 @@
                 explicit-partition
                 (partition-fn topic-map k))
         timestamp (:timestamp opts (System/currentTimeMillis))]
-    {:topic topic-map
-     :key k
-     :value message
-     :partition partn
-     :timestamp timestamp}))
+    (if (or (< partn 0)
+            (> partn (dec (:partition-count topic-map))))
+      (throw (ex-info "Invalid partition number for topic"
+                      {:partition partn
+                       :topic topic-map}))
+      {:topic topic-map
+       :key k
+       :value message
+       :partition partn
+       :timestamp timestamp})))
 
 (defn do-write
   ([machine topic-name message]

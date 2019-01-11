@@ -5,7 +5,9 @@
    [jackdaw.test.transports.kafka]
    [jackdaw.test.serde :as serde]
    [jackdaw.test :refer [test-machine]]
-   [clojure.test :refer :all]))
+   [clojure.test :refer :all])
+  (:import
+    [clojure.lang ExceptionInfo]))
 
 (def foo-topic
   (serde/resolver {:topic-name "foo"
@@ -48,47 +50,86 @@
       (doseq [hook (:exit-hooks t)]
         (hook)))))
 
+(defn test-key-defaults []
+  (let [opts {}
+        foos (serde/resolver
+              {:topic-name "foo"
+               :partition-count 5
+               :key-serde :long
+               :value-serde :json})
+        msg {:id 1 :a 2 :b 3 :payload "yolo"}]
+
+    (testing "fallback to global default"
+      (is (= 1 (-> (write/create-message foos msg {})
+                   :key))))
+
+    (testing "topic with :key-fn"
+      (let [foos (assoc foos :key-fn :a)]
+        (is (= 2 (-> (write/create-message foos msg {})
+                     :key)))))
+
+    (testing "opts with :key-fn"
+      (let [opts (assoc opts :key-fn :b)]
+        (is (= 3 (-> (write/create-message foos msg opts)
+                     :key)))))
+
+    (testing "opts with explicit :key"
+      (let [opts (assoc opts :key 10)]
+        (is (= 10 (-> (write/create-message foos msg opts)
+                     :key)))))))
+
+(defn test-partition-defaults []
+  (let [foos (serde/resolver
+              {:topic-name "foo"
+               :partition-count 5
+               :key-serde :long
+               :value-serde :json})
+        opts {}
+        msg {:id 1 :a 2 :b 3 :payload "yolo"}]
+
+    (testing "fallback to global default"
+      (is (= (write/default-partition-fn foos 1)
+             (-> (write/create-message foos msg opts)
+                 :partition))))
+
+    (testing "topic with :partition-fn"
+      (let [foos (assoc foos :partition-fn (constantly 2))]
+        (is (= 2 (-> (write/create-message foos msg opts)
+                     :partition)))))
+
+    (testing "opts with :partition-fn"
+      (let [opts (assoc opts :partition-fn (constantly 3))]
+        (is (= 3 (-> (write/create-message foos msg opts)
+                     :partition)))))
+
+    (testing "opts with explicit :partition"
+      (let [opts (assoc opts :partition 4)]
+        (is (= 4 (-> (write/create-message foos msg opts)
+                     :partition)))))))
+
+(defn test-bad-partition []
+  (let [foos (serde/resolver
+               {:topic-name "foo"
+                :partition-count 5
+                :key-serde :long
+                :value-serde :json})
+        opts {}
+        msg {:id 1 :a 2 :b 3 :payload "yolo"}]
+
+    (testing "partition must be >= 0"
+      (is (thrown-with-msg? ExceptionInfo #"Invalid partition number for topic"
+             (-> (write/create-message foos msg {:partition -1})
+                 :partition))))
+
+    (testing "partition must be < partition count"
+        (is (thrown-with-msg? ExceptionInfo #"Invalid partition number for topic"
+               (-> (write/create-message foos msg {:partition 5})
+                     :partition))))))
+
 (deftest test-create-message
-  (testing "create a message to send"
-    (let [input-msg {:id 3 :id2 100 :id3 3000 :payload "yolo"}
-          prepared-msg-1 (write/create-message baz-topic input-msg {})
-          prepared-msg-2 (write/create-message baz-topic input-msg {:key 1234})
-          prepared-msg-3 (write/create-message baz2-topic input-msg {})
-          prepared-msg-4 (write/create-message baz-topic input-msg
-                                               {:key-fn :id2
-                                                :partition-fn (constantly 200)})
-          prepared-msg-5 (write/create-message baz2-topic input-msg
-                                               {:key-fn :id3
-                                                :partition-fn (constantly 300)})
-          prepared-msg-6 (write/create-message baz-topic input-msg
-                                               {:key 1000000
-                                                :partition-fn (constantly 400)})
-          prepared-msg-7 (write/create-message baz-topic input-msg {:partition 777})
-          prepared-msg-8 (write/create-message baz-topic input-msg {:key 1234
-                                                                    :partition 777})]
-      (is (= 3 (:key prepared-msg-1)))
-      (is (= 4 (:partition prepared-msg-1)))
-
-      (is (= 1234 (:key prepared-msg-2)))
-      (is (= 2 (:partition prepared-msg-2)))
-
-      (is (= 100 (:key prepared-msg-3)))
-      (is (= 100 (:partition prepared-msg-3)))
-
-      (is (= 100 (:key prepared-msg-4)))
-      (is (= 200 (:partition prepared-msg-4)))
-
-      (is (= 3000 (:key prepared-msg-5)))
-      (is (= 300 (:partition prepared-msg-5)))
-
-      (is (= 1000000 (:key prepared-msg-6)))
-      (is (= 400 (:partition prepared-msg-6)))
-
-      (is (= 3 (:key prepared-msg-7)))
-      (is (= 777 (:partition prepared-msg-7)))
-
-      (is (= 1234 (:key prepared-msg-8)))
-      (is (= 777 (:partition prepared-msg-8))))))
+  (test-key-defaults)
+  (test-partition-defaults)
+  (test-bad-partition))
 
 (deftest test-write!
   (with-transport (trns/transport {:type :kafka
