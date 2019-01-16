@@ -30,6 +30,11 @@ references:
         - *mvn_cache_key
         - *mvn_cache_backup
 
+  build_config: &build_config
+    docker:
+      - image: circleci/clojure:lein-2.8.1
+    working_directory: ~/jackdaw
+
   test_config: &test_config
     docker:
       - image: circleci/clojure:lein-2.8.1
@@ -51,7 +56,7 @@ references:
 
 jobs:
   checkout_code:
-    <<: *test_config
+    <<: *build_config
     steps:
       - *restore_repo
       - checkout
@@ -60,7 +65,7 @@ jobs:
           paths:
             - .
   deps:
-    <<: *test_config
+    <<: *build_config
     steps:
       - *restore_repo
       - *restore_mvn
@@ -70,7 +75,6 @@ jobs:
           key: *mvn_cache_key
           paths:
             - /home/circleci/.m2
-
   test:
     <<: *test_config
     steps:
