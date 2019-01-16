@@ -1,40 +1,91 @@
 ---
 version: 2
 
-jobs:
-  build:
+references:
+  repo_cache_key: &repo_cache_key
+    v1-jackdaw-{{ .Branch }}-{{ .Revision }}
+
+  repo_cache_backup_1: &repo_cache_backup_1
+    v1-jackdaw-{{ .Branch }}
+
+  repo_cache_backup_2: &repo_cache_backup_2
+    v1-jackdaw
+
+  restore_repo: &restore_repo
+    restore_cache:
+      keys:
+        - *repo_cache_key
+        - *repo_cache_backup_1
+        - *repo_cache_backup_2
+
+  mvn_cache_key: &mvn_cache_key
+    v1-jackdaw-deps-{{ checksum "project.clj" }}
+
+  mvn_cache_backup: &mvn_cache_backup
+    v1-jackdaw-deps
+
+  restore_mvn: &restore_mvn
+    restore_cache:
+      keys:
+        - *mvn_cache_key
+        - *mvn_cache_backup
+
+  test_config: &test_config
     docker:
       - image: circleci/clojure:lein-2.8.1
-    environment:
-      _JAVA_OPTIONS: "-Xms1024m -Xmx3072m"
-    steps:
-      - checkout
-      - run: wget -qO - https://packages.confluent.io/deb/4.0/archive.key | sudo apt-key add -
-      - run: sudo apt-get install software-properties-common apt-transport-https less
-      - run: sudo add-apt-repository "deb [arch=amd64] https://packages.confluent.io/deb/4.0 stable main"
-      - run: sudo apt-get update && sudo apt-get install confluent-platform-oss-2.11
-      - run: sudo sed -i 's/\(log.retention.check.interval.ms\)=.*$/\1=2000/' /etc/kafka/server.properties
+      - image: confluentinc/cp-zookeeper:4.0.2-2
+        environment:
+          ZOOKEEPER_CLIENT_PORT: 2181
+      - image: confluentinc/cp-kafka:4.0.2-2
+        environment:
+          KAFKA_BROKER_ID: 1
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+          KAFKA_ZOOKEEPER_CONNECT: localhost:2181
+    working_directory: ~/jackdaw
 
-      - &restore-cache
-        restore_cache:
-          keys:
-            - libs-cache-{{ checksum "project.clj" }}-{{ checksum ".circleci/config.yml" }}
-            - libs-cache-{{ checksum "project.clj" }}
-            - libs-cache-
-      - run:
-          command: nohup confluent start
-      - run:
-          command: confluent status
+jobs:
+  checkout_code:
+    <<: *test_config
+    steps:
+      - *restore_repo
+      - checkout
       - save_cache:
-          key: libs-cache-{{ checksum "project.clj" }}-{{ checksum ".circleci/config.yml" }}
+          key: v1-jackdaw-{{ .Branch }}-{{ .Revision }}
           paths:
-            - ~/.m2/
+            - .
+  deps:
+    <<: *test_config
+    steps:
+      - *restore_repo
+      - *restore_mvn
       - run:
-          command: lein test
+          lein with-profiles +test deps
+      - save_cache:
+          key: *mvn_cache_key
+          paths:
+            - /home/circleci/.m2
+
+  test:
+    <<: *test_config
+    steps:
+      - *restore_repo
+      - *restore_mvn
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          lein test
 
 workflows:
   version: 2
-  build_and_deploy:
+  test:
     jobs:
-      - build:
+      - checkout_code
+      - deps:
           context: org-global
+          requires:
+            - checkout_code
+      - test:
+          context: org-global
+          requires:
+            - deps
