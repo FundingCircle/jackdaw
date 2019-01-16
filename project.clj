@@ -1,7 +1,9 @@
 (defproject fundingcircle/jackdaw "_"
   :description "A Clojure library for the Apache Kafka distributed streaming platform."
 
-  :dependencies [[clj-time "0.13.0"]
+  :dependencies [[aleph "0.4.6"]
+                 [clj-time "0.13.0"]
+                 [org.clojure/core.async "0.4.474"]
                  [danlentz/clj-uuid "0.1.7"]
                  [environ "1.1.0"]
                  ;; Confluent does paired releases with Kafka, this should tie
@@ -10,14 +12,15 @@
                  [io.confluent/kafka-avro-serializer "5.1.0"]
                  [io.confluent/kafka-connect-avro-converter "5.1.0"]
                  [io.confluent/kafka-connect-jdbc "5.1.0"]
-                 [io.confluent/kafka-schema-registry "5.1.0"]
+                 [io.confluent/kafka-schema-registry "5.1.0" :exclusions [org.slf4j/slf4j-log4j12]]
                  [io.confluent/kafka-schema-registry-client "5.1.0"]
                  [org.apache.kafka/connect-api "2.1.0"]
                  [org.apache.kafka/connect-json "2.1.0"]
-                 [org.apache.kafka/connect-runtime "2.1.0"]
+                 [org.apache.kafka/connect-runtime "2.1.0" :exclusions [org.slf4j/slf4j-log4j12]]
                  [org.apache.kafka/kafka-clients "2.1.0"]
                  [org.apache.kafka/kafka-streams "2.1.0"]
                  [org.apache.kafka/kafka_2.11 "2.1.0"]
+                 [org.apache.kafka/kafka-streams-test-utils "2.1.0" :scope "test"]
                  [org.clojure/clojure "1.9.0"]
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/tools.logging "0.3.1"]
@@ -66,11 +69,11 @@
 
              :test
              {:resource-paths ["test/resources"]
-              :dependencies   [[arohner/wait-for "1.0.2"]
+              :injections [(require 'io.aviso.logging.setup)]
+              :dependencies   [[io.aviso/logging "0.3.1"]
                                [clj-http "2.3.0"]
                                [environ "1.1.0"]
                                [junit "4.12"]
-                               [org.apache.kafka/kafka-streams-test-utils "2.1.0" :scope "test"]
                                [org.clojure/java.jdbc "0.7.0-beta2"]
                                [org.clojure/test.check "0.9.0"]
                                [org.clojure/tools.nrepl "0.2.12"]
