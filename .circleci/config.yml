@@ -81,7 +81,7 @@ jobs:
           key: *mvn_cache_key
           paths:
             - /home/circleci/.m2
-  test:
+  build:
     <<: *test_config
     steps:
       - *restore_repo
@@ -93,14 +93,14 @@ jobs:
 
 workflows:
   version: 2
-  test:
+  build_and_deploy:
     jobs:
       - checkout_code
       - deps:
           context: org-global
           requires:
             - checkout_code
-      - test:
+      - build:
           context: org-global
           requires:
             - deps
