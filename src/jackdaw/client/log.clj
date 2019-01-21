@@ -12,7 +12,7 @@
 
   If fuse-fn was provided, stops after fuse-fn returns false."
   ([^Consumer consumer polling-interval-ms]
-   (seq consumer polling-interval-ms (constantly true)))
+   (log consumer polling-interval-ms (constantly true)))
   ([^Consumer consumer polling-interval-ms fuse-fn]
    (let [r (jc/poll consumer polling-interval-ms)]
      (if (fuse-fn r)
@@ -27,7 +27,7 @@
 
   Stops when current time > end-at."
   [^Consumer consumer polling-interval-ms end-at-ms]
-  (seq consumer
+  (log consumer
        polling-interval-ms
        (fn [_]
          (< (System/currentTimeMillis)
