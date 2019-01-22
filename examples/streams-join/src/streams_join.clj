@@ -92,26 +92,28 @@
            nil
            {:id 2
             :name "Investor #002"})
-  (publish (topic-config "investors")
-           nil
-           {:id 3
-            :name "Investor #003"})
+
 
   (publish (topic-config "addresses")
            nil
            {:id 1
-            :investor_id 3
+            :investor_id 1
             :address "Oak Street, London"})
   (publish (topic-config "addresses")
            nil
            {:id 2
-            :investor_id 2
+            :investor_id 1
             :address "Maple Close, London"})
   (publish (topic-config "addresses")
            nil
            {:id 3
             :investor_id 1
             :address "Pine Avenue"})
+  (publish (topic-config "addresses")
+           nil
+           {:id 4
+            :investor_id 2
+            :address "Baobab Lane"})
 
   ;; Read from the output stream.
   (get-keyvals (topic-config "investors-with-addresses"))
