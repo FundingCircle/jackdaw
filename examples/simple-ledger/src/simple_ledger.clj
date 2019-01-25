@@ -145,7 +145,9 @@
 
     (defn log-bad-input
       [[k v]]
-      (info (str "Bad input: " {:key k :value v})))
+      (info (str "Bad input: "
+                 (s/explain-data ::ledger-entries-requested-value v))))
+
 
 
     (defn build-topology
@@ -184,10 +186,17 @@
   (get-keyvals (topic-config "ledger-transaction-added"))
 
 
+  ;; Reset the app.
+  (reset)
+
+
   ;; Write invalid input.
   (publish (topic-config "ledger-entries-requested")
            nil
-           "this is not a pipe")
+           {:id (java.util.UUID/randomUUID)
+            :entries [{:debit-account-name "foo"
+                       :credit-account-name "foo"
+                       :amount 10}]})
 
 
   ;; Read from the output stream.
@@ -365,7 +374,8 @@
                                 (merge v
                                        {:starting-balance 0
                                         :current-balance (:amount v)})))
-                (j/group-by-key (topic-config nil (Serdes/String) (jse/serde)))
+                (j/group-by-key (topic-config nil (Serdes/String)
+                                              (jse/serde)))
                 (j/reduce account-balance-reducer
                           (topic-config "balances")))]
 

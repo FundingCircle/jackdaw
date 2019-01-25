@@ -27,11 +27,11 @@
 
   Stops when current time > end-at."
   [^Consumer consumer polling-interval-ms end-at-ms]
-  (log consumer
-       polling-interval-ms
-       (fn [_]
-         (< (System/currentTimeMillis)
-            end-at-ms))))
+  (seq (log consumer
+            polling-interval-ms
+            (fn [_]
+              (< (System/currentTimeMillis)
+                 end-at-ms)))))
 
 (defn log-until-inactivity
   "Given a consumer, returns a lazy sequence of datafied consumer records.

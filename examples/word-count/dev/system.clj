@@ -49,7 +49,9 @@
   []
   (when system
     (word-count/stop-app (:app system)))
-  (re-delete-topics (re-pattern (str "(input|output|"
+  (re-delete-topics (re-pattern (str "("
+                                     (str/join "|" (word-count/topic-names))
+                                     "|"
                                      (application-id (word-count/app-config))
                                      ".*)")))
   (destroy-state-stores (word-count/app-config)))
@@ -60,5 +62,5 @@
   be called directly."
   []
   (with-out-str (stop))
-  (create-topics (map word-count/topic-config ["input" "output"]))
+  (create-topics (map word-count/topic-config (word-count/topic-names)))
   {:app (word-count/start-app (word-count/app-config))})
