@@ -75,6 +75,7 @@ jobs:
           key: v1-jackdaw-{{ .Branch }}-{{ .Revision }}
           paths:
             - .
+
   checkout_tags:
     <<: *build_config
     steps:
@@ -124,18 +125,32 @@ jobs:
       - *restore_mvn
       - run: lein deploy clojars
 
+  uberjar:
+    <<: *build_config
+    steps:
+      - *restore_repo
+      - *restore_mvn
+      - setup_remote_docker:
+          docker_layer_caching: true
+
+      - run: lein uberjar
+
 workflows:
   version: 2
   build_and_test:
     jobs:
       - checkout_code
       - deps:
-          context: org-global
           requires:
             - checkout_code
       - test:
-          context: org-global
           requires:
+            - checkout_code
+            - deps
+
+      - uberjar:
+          requires:
+            - checkout_code
             - deps
 
   deploy:
