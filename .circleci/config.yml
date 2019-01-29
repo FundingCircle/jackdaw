@@ -130,6 +130,9 @@ jobs:
     steps:
       - *restore_repo
       - *restore_mvn
+      - run: git config --global url."https://github.com/".insteadOf "git@github.com:"
+      - run: git config --global url."https://".insteadOf "git://"
+      - run: git fetch --tags
       - setup_remote_docker:
           docker_layer_caching: true
 
@@ -141,6 +144,7 @@ workflows:
     jobs:
       - checkout_code
       - deps:
+          context: org-global
           requires:
             - checkout_code
       - test:
@@ -149,6 +153,7 @@ workflows:
             - deps
 
       - uberjar:
+          context: org-global
           requires:
             - checkout_code
             - deps
