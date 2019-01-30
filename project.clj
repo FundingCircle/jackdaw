@@ -63,21 +63,15 @@
              {:source-paths
               ["dev"]
 
+              :injections [(require 'io.aviso.logging.setup)]
+              :dependencies [[io.aviso/logging "0.3.1"]
+                             [org.clojure/test.check "0.9.0"]]
               :codox
               {:output-path "codox"
                :source-uri "http://github.com/fundingcircle/jackdaw/blob/{version}/{filepath}#L{line}"}}
 
              :test
-             {:resource-paths ["test/resources"]
-              :injections [(require 'io.aviso.logging.setup)]
-              :dependencies   [[io.aviso/logging "0.3.1"]
-                               [clj-http "2.3.0"]
-                               [environ "1.1.0"]
-                               [junit "4.12"]
-                               [org.clojure/java.jdbc "0.7.0-beta2"]
-                               [org.clojure/test.check "0.9.0"]
-                               [org.clojure/tools.nrepl "0.2.12"]
-                               [org.xerial/sqlite-jdbc "3.19.3"]]}
+             {:resource-paths ["test/resources"]}
 
              ;; This is not in fact what lein defines repl to be
              :repl
