@@ -2,8 +2,8 @@
   :description "A Clojure library for the Apache Kafka distributed streaming platform."
 
   :dependencies [[aleph "0.4.6"]
-                 [clj-time "0.13.0"]
-                 [org.clojure/core.async "0.4.474"]
+                 [clj-time "0.15.1"]
+                 [org.clojure/core.async "0.4.490"]
                  [danlentz/clj-uuid "0.1.7"]
                  [environ "1.1.0"]
                  ;; Confluent does paired releases with Kafka, this should tie
@@ -20,11 +20,10 @@
                  [org.apache.kafka/kafka-clients "2.1.0"]
                  [org.apache.kafka/kafka-streams "2.1.0"]
                  [org.apache.kafka/kafka_2.11 "2.1.0"]
-                 [org.apache.kafka/kafka-streams-test-utils "2.1.0" :scope "test"]
-                 [org.clojure/clojure "1.9.0"]
+                 [org.clojure/clojure "1.9.0" :scope "provided"]
                  [org.clojure/data.json "0.2.6"]
-                 [org.clojure/tools.logging "0.3.1"]
-                 [org.clojure/core.cache "0.7.1"]]
+                 [org.clojure/tools.logging "0.4.1"]
+                 [org.clojure/core.cache "0.7.2"]]
 
   :plugins [[lein-codox "0.10.3"]
             [lein-environ "1.1.0"]
@@ -65,6 +64,7 @@
 
               :injections [(require 'io.aviso.logging.setup)]
               :dependencies [[io.aviso/logging "0.3.1"]
+                             [org.apache.kafka/kafka-streams-test-utils "2.1.0"]
                              [org.clojure/test.check "0.9.0"]]
               :codox
               {:output-path "codox"
