@@ -75,16 +75,16 @@
           (jd/->ProducerRecord topic value)))
   ([producer topic key value]
    (send! producer
-          (jd/->ProducerRecord topic value)))
+          (jd/->ProducerRecord topic key value)))
   ([producer topic partition key value]
    (send! producer
-          (jd/->ProducerRecord topic partition topic value)))
+          (jd/->ProducerRecord topic partition key value)))
   ([producer topic partition timestamp key value]
    (send! producer
-          (jd/->ProducerRecord topic partition timestamp topic value)))
+          (jd/->ProducerRecord topic partition timestamp key value)))
   ([producer topic partition timestamp key value headers]
    (send! producer
-          (jd/->ProducerRecord topic partition timestamp topic value headers))))
+          (jd/->ProducerRecord topic partition timestamp key value headers))))
 
 ;;;; Consumer
 
