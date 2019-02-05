@@ -49,12 +49,12 @@
   []
   (when system
     (user-events/stop-app (:app system)))
-  (re-delete-topics (re-pattern (str "("
-                                     (str/join "|" (user-events/topic-names))
-                                     "|"
-                                     (application-id (user-events/app-config))
-                                     ".*)")))
-  (destroy-state-stores (user-events/app-config)))
+  (re-delete-topics
+    (re-pattern (str "("
+                     (str/join "|" (user-events/topic-names))
+                     "|"
+                     (application-id (user-events/app-config))
+                     ".*)"))))
 
 (defn start
   "Creates topics, and starts the app.
