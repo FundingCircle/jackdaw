@@ -1,4 +1,4 @@
-(ns user-events.core
+(ns user-region.core
   "Demonstrates group-by operations and aggregations on KTable.
 
   In this specific example we compute the user count per geo-region
@@ -49,8 +49,7 @@
   "Reads from a Kafka topic called `user-region` and writes these to
   a Kafka topic called `region-user-count`. Returns a topology builder."
   [builder]
-  (let [user-region-table
-        (j/ktable builder (topic-config "user-region"))
+  (let [user-region-table (j/ktable builder (topic-config "user-region"))
 
         region-count (-> user-region-table
                          (j/group-by (fn [[_ v]] (vector v v))
@@ -62,6 +61,7 @@
     ;; Aggregate the user counts of by region
     (-> region-count
         (j/to-kstream)
+        (j/peek (fn [[k v]] (println (str {:key k :value v}))))
         (j/to (topic-config "region-user-count")))
 
     builder))

@@ -7,7 +7,7 @@
             [clojure.tools.logging :as log]
             [clojure.java.shell :refer [sh]]
             [jackdaw.admin :as ja]
-            [user-events.core :as user-events]))
+            [user-region.core :as app]))
 
 (def system nil)
 
@@ -48,12 +48,12 @@
   be called directly."
   []
   (when system
-    (user-events/stop-app (:app system)))
+    (app/stop-app (:app system)))
   (re-delete-topics
     (re-pattern (str "("
-                     (str/join "|" (user-events/topic-names))
+                     (str/join "|" (app/topic-names))
                      "|"
-                     (application-id (user-events/app-config))
+                     (application-id (app/app-config))
                      ".*)"))))
 
 (defn start
@@ -62,5 +62,5 @@
   be called directly."
   []
   (with-out-str (stop))
-  (create-topics (map user-events/topic-config (user-events/topic-names)))
-  {:app (user-events/start-app (user-events/app-config))})
+  (create-topics (map app/topic-config (app/topic-names)))
+  {:app (app/start-app (app/app-config))})
