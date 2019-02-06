@@ -20,10 +20,6 @@
                  [org.clojure/tools.logging "0.4.1"]
                  [org.clojure/core.cache "0.7.2"]]
 
-  :plugins [[lein-codox "0.10.3"]
-            [lein-environ "1.1.0"]
-            [me.arrdem/lein-git-version "2.0.8"]]
-
   :aot [jackdaw.serdes.fn-impl]
 
   :git-version
@@ -61,6 +57,9 @@
               :dependencies [[io.aviso/logging "0.3.1"]
                              [org.apache.kafka/kafka-streams-test-utils "2.1.0"]
                              [org.clojure/test.check "0.9.0"]]
+
+              :plugins [[lein-codox "0.10.3"]
+                        [me.arrdem/lein-git-version "2.0.8"]]
               :codox
               {:output-path "codox"
                :source-uri "http://github.com/fundingcircle/jackdaw/blob/{version}/{filepath}#L{line}"}}
