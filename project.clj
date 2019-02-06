@@ -7,7 +7,6 @@
                  [clj-time "0.15.1"]
                  [org.clojure/core.async "0.4.490"]
                  [danlentz/clj-uuid "0.1.7"]
-                 [environ "1.1.0"]
                  ;; Confluent does paired releases with Kafka, this should tie
                  ;; off with the kafka version.
                  ;; See https://docs.confluent.io/current/release-notes.html
