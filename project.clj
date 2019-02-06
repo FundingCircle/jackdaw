@@ -11,6 +11,7 @@
                  ;; off with the kafka version.
                  ;; See https://docs.confluent.io/current/release-notes.html
 
+                 [io.confluent/kafka-schema-registry-client "5.1.0"]
                  [io.confluent/kafka-avro-serializer "5.1.0"]
                  [org.apache.kafka/kafka-clients "2.1.0"]
                  [org.apache.kafka/kafka-streams "2.1.0"]
