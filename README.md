@@ -22,20 +22,28 @@ To use the latest release, add the following to your project:
 
 ## Testing
 
-The included docker-compose file (adapted from confluent's ["all-in-one"](https://github.com/confluentinc/cp-docker-images/blob/5.1.0-post/examples/cp-all-in-one/docker-compose.yml) compose file)
-provides all the services required to run the project's tests. This allows the tests
-to be run as follows. You'll need up-to-date versions of docker, docker-compose and lein
+### TLDR;
 
 ```
 docker-compose up -d
-docker run \
-   --env-file .env.circle \
-   --workdir /usr/src/app \
-   --mount type=bind,source=${HOME}/.m2,destination=/root/.m2 \
-   --mount type=bind,source=$(pwd),destination=/usr/src/app \
-   --network jackdaw_default \
-  clojure:openjdk-8-lein lein test
+lein test
 ```
+
+### A bit more detail
+
+The project includes a docker-compose configuration for running the tests. The
+[primary compose file](docker-compose.yml) includes the required services
+and exposes their ports without binding them on the host.
+
+The [override compose file](docker-compose.override.yml) binds the services
+to their corresponding ports on the host. The override file is loaded by
+default so if you simply run `docker-compose up -d` it will seem as if the
+services are all running locally and you can connect to them from a REPL
+running on your host.
+
+If you wish to avoid this behavior (e.g. you already have your own locally
+configured confluent stack), you can use `docker-compose up -d -f docker-compose.yml`
+so that the override is ignored.
 
 ## Contributing
 

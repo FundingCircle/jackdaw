@@ -70,7 +70,7 @@ jobs:
           docker_layer_caching: true
       - run:
           name: Start External Services (docker-compose up)
-          command: docker-compose up -d
+          command: docker-compose -f docker-compose.yml up -d
       - run:
           name: Run Tests
           command: |
