@@ -69,27 +69,28 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
-          lein test
+          name: Start External Services (docker-compose up)
+          command: docker-compose up -d
+      - run:
+          name: Run Tests
+          command: |
+            docker create \
+              -v /home/circleci/.m2 \
+              -v /home/circleci/jackdaw \
+              --name data circleci/clojure:lein-2.8.1 \
+              /bin/true
+
+            docker cp /home/circleci/.m2 data:/home/circleci/
+            docker cp /home/circleci/jackdaw data:/home/circleci/
+
+            docker run \
+              --env-file .env.circle \
+              --workdir /home/circleci/jackdaw \
+              --volumes-from data \
+              --network jackdaw_default \
+              circleci/clojure:lein-2.8.1 lein test
       - store_artifacts:
           path: ./logs
-      - run: |
-          docker-compose up -d
-
-          docker create \
-            -v /home/circleci/.m2 \
-            -v /home/circleci/jackdaw \
-            --name data circleci/clojure:lein-2.8.1 \
-            /bin/true
-
-          docker cp /home/circleci/.m2 data:/home/circleci/
-          docker cp /home/circleci/jackdaw data:/home/circleci/
-
-          docker run \
-            --env-file .env.circle \
-            --workdir /home/circleci/jackdaw \
-            --volumes-from data \
-            --network jackdaw_default \
-            circleci/clojure:lein-2.8.1 lein test
 
 workflows:
   version: 2
