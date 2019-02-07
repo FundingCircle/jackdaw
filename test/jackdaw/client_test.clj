@@ -1,6 +1,7 @@
 (ns jackdaw.client-test
   (:require [clojure.test :refer :all]
-            [jackdaw.client :as client])
+            [jackdaw.client :as client]
+            [jackdaw.test-config :refer [test-config]])
   (:import [java.util.concurrent LinkedBlockingQueue TimeUnit]
            java.time.Duration
            [org.apache.kafka.clients.consumer Consumer ConsumerRecord ConsumerRecords]
@@ -38,13 +39,17 @@
              (ConsumerRecord. topic partition offset k v)) data)})))
 
 (deftest consumer-test
-  (let [config {"bootstrap.servers" "localhost:9092"
+  (let [config {"bootstrap.servers" (format "%s:%s"
+                                            (get-in (test-config) [:broker :host])
+                                            (get-in (test-config) [:broker :port]))
                 "key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
                 "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"}]
     (is (instance? Consumer (client/consumer config)))))
 
 (deftest producer-test
-  (let [config {"bootstrap.servers" "localhost:9092"
+  (let [config {"bootstrap.servers" (format "%s:%s"
+                                            (get-in (test-config) [:broker :host])
+                                            (get-in (test-config) [:broker :port]))
                 "key.serializer" "org.apache.kafka.common.serialization.StringSerializer"
                 "value.serializer" "org.apache.kafka.common.serialization.StringSerializer"}]
     (is (instance? Producer (client/producer config)))))

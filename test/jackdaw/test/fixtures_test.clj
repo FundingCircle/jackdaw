@@ -1,7 +1,8 @@
 (ns jackdaw.test.fixtures-test
   (:require
    [clojure.test :refer :all]
-   [jackdaw.test.fixtures :refer :all])
+   [jackdaw.test.fixtures :refer :all]
+   [jackdaw.test-config :refer [test-config]])
   (:import
    (org.apache.kafka.clients.admin AdminClient NewTopic)))
 
@@ -12,7 +13,9 @@
    :config {}})
 
 (def kafka-config
-  {"bootstrap.servers" "localhost:9092"})
+  {"bootstrap.servers" (format "%s:%s"
+                               (get-in (test-config) [:broker :host])
+                               (get-in (test-config) [:broker :port]))})
 
 (def test-topics
   (let [topics {"foo" topic-foo}]

@@ -5,6 +5,7 @@
    [jackdaw.test.transports.kafka]
    [jackdaw.test.serde :as serde]
    [jackdaw.test :refer [test-machine]]
+   [jackdaw.test-config :refer [test-config]]
    [clojure.test :refer :all])
   (:import
     [clojure.lang ExceptionInfo]))
@@ -39,7 +40,9 @@
                    :key-serde :long
                    :value-serde :json}))
 
-(def kafka-config {"bootstrap.servers" "localhost:9092"
+(def kafka-config {"bootstrap.servers" (format "%s:%s"
+                                               (get-in (test-config) [:broker :host])
+                                               (get-in (test-config) [:broker :port]))
                    "group.id" "kafka-write-test"})
 
 (defn with-transport

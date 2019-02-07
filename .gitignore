@@ -15,5 +15,6 @@
 pom.xml
 pom.xml.asc
 .lein-env
+.lein-failures
 .cpcache
 .nrepl-port

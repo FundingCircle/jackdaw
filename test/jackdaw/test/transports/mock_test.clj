@@ -7,6 +7,7 @@
    [jackdaw.test.journal :refer [with-journal watch-for]]
    [jackdaw.test.transports.mock :as mock]
    [jackdaw.test :as jd.test]
+   [jackdaw.test-config :refer [test-config]]
    [jackdaw.test.transports :as trns]
    [jackdaw.test.serde :as serde])
   (:import
@@ -57,7 +58,9 @@
   []
   (trns/transport {:type :mock
                    :driver (test-driver (echo-stream test-in test-out)
-                                        {"bootstrap.servers" "localhost:9092"
+                                        {"bootstrap.servers" (format "%s:%s"
+                                                                     (get-in (test-config) [:broker :host])
+                                                                     (get-in (test-config) [:broker :port]))
                                          "application.id" "test-echo-stream"})
                    :topics {"test-in" test-in
                             "test-out" test-out}}))

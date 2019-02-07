@@ -1,0 +1,14 @@
+{
+ :broker {:host #or [#env BROKER_HOST "localhost"]
+          :port #or [#env BROKER_PORT 9092]}
+
+ :kafka-rest {:host #or [#env KAFKA_REST_HOST "localhost"]
+              :port #or [#env KAFKA_REST_PORT 8082]}
+
+ :schema-registry {:host #or [#env SCHEMA_REGISTRY_HOST "localhost"]
+                   :port #or [#env SCHEMA_REGISTRY_PORT 8081]}
+
+ :zookeeper {:host #or [#env ZOOKEEPER_HOST "localhost"]
+             :port #or [#env ZOOKEEPER_PORT 2181]}
+
+ }
