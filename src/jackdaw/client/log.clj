@@ -58,6 +58,6 @@
 (defn count-messages
   "Consumes all of the messages on a topic to determine the current count"
   [config topic]
-  (with-open [^Consumer consumer (-> (jc/subscribed-consumer config topic)
+  (with-open [^Consumer consumer (-> (jc/subscribed-consumer config [topic])
                                      (jc/seek-to-beginning-eager))]
     (count (log-until-inactivity consumer 2000))))
