@@ -216,6 +216,22 @@
   (testing "to"
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
+          topic-c (mock/topic "topic-c")
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/to (mock/topic
+                                                  (fn [k v rc]
+                                                    (if (= k 1) "topic-b" "topic-c")))))))
+          publish (partial mock/publish driver topic-a)]
+
+      (publish 1 1)
+      (publish 2 1)
+
+      (is (= [[1 1]] (mock/get-keyvals driver topic-b))
+      (is (= [[2 1]] (mock/get-keyvals driver topic-c)))))
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
           driver (mock/build-driver (fn [builder]
                                       (-> builder
                                           (k/kstream topic-a)
