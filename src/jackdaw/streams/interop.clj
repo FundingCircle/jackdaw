@@ -56,7 +56,7 @@
 
 (defn record-context->clj
   [^RecordContext rc]
-  {:headers (header->clj (.headers rc))
+  {:headers (headers->clj (.headers rc))
    :offset (let [offset (.offset rc)]
              (when (nat-int? offset)
                offset))
