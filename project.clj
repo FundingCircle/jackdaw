@@ -56,8 +56,7 @@
               ["dev"]
 
               :injections [(require 'io.aviso.logging.setup)]
-              :dependencies [[aero "1.1.3"]
-                             [io.aviso/logging "0.3.1"]
+              :dependencies [[io.aviso/logging "0.3.1"]
                              [org.apache.kafka/kafka-streams-test-utils "2.1.0"]
                              [org.clojure/test.check "0.9.0"]]
 
