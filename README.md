@@ -29,21 +29,7 @@ docker-compose up -d
 lein test
 ```
 
-### A bit more detail
-
-The project includes a docker-compose configuration for running the tests. The
-[primary compose file](docker-compose.yml) includes the required services
-and exposes their ports without binding them on the host.
-
-The [override compose file](docker-compose.override.yml) binds the services
-to their corresponding ports on the host. The override file is loaded by
-default so if you simply run `docker-compose up -d` it will seem as if the
-services are all running locally and you can connect to them from a REPL
-running on your host.
-
-If you wish to avoid this behavior (e.g. you already have your own locally
-configured confluent stack), you can use `docker-compose up -d -f docker-compose.yml`
-so that the override is ignored.
+[More Detail](doc/testing.md)
 
 ## Contributing
 

@@ -38,8 +38,6 @@
   (merge +real-schema-registry+
          {:avro.schema-registry/client (reg/mock-client)}))
 
-
-
 (deftest mock-schema-registry
   (testing "schema can be serialized by registry client"
     (let [serde ^Serde (avro/serde +type-registry+ +mock-schema-registry+ +topic-config+)]
