@@ -35,6 +35,11 @@ references:
       - image: circleci/clojure:lein-2.8.1
     working_directory: ~/jackdaw
 
+  deploy_config:
+    docker:
+      - image: circleci/clojure:lein-2.8.1
+    working_directory: /home/circle/jackdaw
+
   test_config: &test_config
     docker:
       - image: circleci/clojure:lein-2.8.1
@@ -81,7 +86,7 @@ jobs:
           key: *mvn_cache_key
           paths:
             - /home/circleci/.m2
-  build:
+  test:
     <<: *test_config
     steps:
       - *restore_repo
@@ -93,16 +98,52 @@ jobs:
       - store_artifacts:
           path: ./logs
 
+  deploy:
+    <<: *deploy_config
+    steps:
+      - *restore_repo
+      - *restore_mvn
+      - run:
+          lein deploy clojars
+
 workflows:
   version: 2
-  build_and_deploy:
+  build_and_test:
     jobs:
-      - checkout_code
+      - checkout_code:
       - deps:
           context: org-global
           requires:
             - checkout_code
-      - build:
+      - test:
           context: org-global
           requires:
             - deps
+
+  test_and_deploy:
+    jobs:
+      - checkout_code:
+          filters:  # required since `deploy` has tag filters AND requires `build`
+            tags:
+              only: /.*/
+      - deps:
+          context: org-global
+          requires:
+            - checkout_code
+          filters:  # required since `deploy` has tag filters AND requires `build`
+            tags:
+              only: /.*/
+      - test:
+          context: org-global
+          requires:
+            - deps
+          filters:  # required since `deploy` has tag filters AND requires `build`
+            tags:
+              only: /.*/
+      - deploy:
+          context: org-global
+          requires:
+            - test
+          filters:  # required since `deploy` has tag filters AND requires `build`
+            tags:
+              only: /^v.*/

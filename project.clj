@@ -47,8 +47,9 @@
               :repositories
               [["confluent"
                 "https://packages.confluent.io/maven/"]
-               ["clojars"
-                "https://clojars.org/repo/"]]}
+               ["clojars" {:url "https://clojars.org/repo/"
+                           :username :env/clojars-username
+                           :password :env/clojars-password}]]
 
              ;; The dev profile - non-deployment configuration
              :dev
