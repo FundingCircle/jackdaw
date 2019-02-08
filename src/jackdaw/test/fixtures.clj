@@ -1,12 +1,14 @@
 (ns jackdaw.test.fixtures
   ""
   (:require
+   [aleph.http :as http]
    [clojure.tools.logging :as log]
    [jackdaw.client :as kafka]
    [jackdaw.streams :as k]
    [jackdaw.streams.interop :refer [streams-builder]]
    [jackdaw.test.transports.kafka :as kt]
    [jackdaw.test.serde :refer [byte-array-serializer byte-array-deserializer]]
+   [manifold.deferred :as d]
    [clojure.test :as t])
   (:import
    (org.apache.kafka.clients.admin AdminClient NewTopic)
@@ -132,6 +134,31 @@
                              :stream stream}
                             @error))))))))
 
+;; system readyness
+
+(defn service-ready?
+  [{:keys [http-url http-params timeout]}]
+  (fn [t]
+    (let [ok? (fn [x]
+                (and (not (= :timeout x))
+                     (= (:status 200))))
+
+          ready-check @(d/timeout!
+                        (d/future
+                          (loop []
+                            (if-let [result (try
+                                              @(http/get http-url http-params)
+                                              (catch java.net.ConnectException _))]
+                              result
+                              (recur))))
+                        timeout
+                        :timeout)]
+      (if (ok? ready-check)
+        (t)
+        (throw (ex-info (format "service %s not available after waiting for %s"
+                                http-url
+                                timeout)
+                        {}))))))
 
 (defmacro with-fixtures
   [fixtures & body]
