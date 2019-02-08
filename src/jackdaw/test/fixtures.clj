@@ -83,16 +83,16 @@
 ;;; kstream-fixture ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- set-started
-  [app-id started]
+  [app-id started?]
   (reify KafkaStreams$StateListener
     (onChange [_ new-state old-state]
       (log/infof "process %s changed state from %s -> %s"
                  app-id
                  (.name old-state)
                  (.name new-state))
-      (when-not @started
+      (when-not (realized? started?)
         (when (.isRunning new-state)
-          (reset! started true))))))
+          (deliver started? true))))))
 
 (defn- set-error
   [error]
@@ -113,14 +113,15 @@
     (let [builder (k/streams-builder)
           stream (k/kafka-streams (topology builder) config)
           error (atom nil)
-          started (atom false)]
+          started? (promise)]
 
       (.setUncaughtExceptionHandler stream (set-error error))
-      (.setStateListener stream (set-started (get config "application.id") started))
+      (.setStateListener stream (set-started (get config "application.id") started?))
 
       (k/start stream)
 
-      (when @started)
+      (when @started?
+        (log/info "commencing test function"))
 
       (try
         (t)

@@ -1,6 +1,6 @@
 (ns jackdaw.test.commands.write
   (:require
-   [clojure.core.async :as async]
+   [manifold.stream :as s]
    [clojure.tools.logging :as log]
    [jackdaw.client.partitioning :as partitioning]))
 
@@ -54,7 +54,7 @@
            messages (:messages (:producer machine))
            ack (promise)]
        (log/info "Sending" to-send "to topic" topic-name)
-       (async/put! messages (assoc to-send :ack ack))
+       (s/put! messages (assoc to-send :ack ack))
        (deref ack (:timeout opts 1000) {:error :timeout}))
      {:error :unknown-topic
       :topic topic-name

@@ -1,6 +1,5 @@
 (ns jackdaw.test.transports.mock-test
   (:require
-   [clojure.core.async :as async]
    [clojure.test :refer :all]
    [clojure.tools.logging :as log]
    [jackdaw.streams :as k]
@@ -8,7 +7,8 @@
    [jackdaw.test.transports.mock :as mock]
    [jackdaw.test :as jd.test]
    [jackdaw.test.transports :as trns]
-   [jackdaw.test.serde :as serde])
+   [jackdaw.test.serde :as serde]
+   [manifold.stream :as s])
   (:import
    (java.util Properties)
    (org.apache.kafka.streams TopologyTestDriver)))
@@ -80,12 +80,12 @@
             ack (promise)
             msg-key (:id msg)]
 
-        (async/put! messages
-                    {:topic topic
-                     :key msg-key
-                     :value msg
-                     :timestamp (System/currentTimeMillis)
-                     :ack ack})
+        (s/put! messages
+                {:topic topic
+                 :key msg-key
+                 :value msg
+                 :timestamp (System/currentTimeMillis)
+                 :ack ack})
 
         (let [result (deref ack 1000 {:error :timeout})]
           (is (= "test-in" (:topic result)))
@@ -102,12 +102,12 @@
             ack (promise)
             msg-key (:id msg)]
 
-        (async/put! messages
-                    {:topic topic
-                     :key msg-key
-                     :value msg
-                     :timestamp (System/currentTimeMillis)
-                     :ack ack})
+        (s/put! messages
+                {:topic topic
+                 :key msg-key
+                 :value msg
+                 :timestamp (System/currentTimeMillis)
+                 :ack ack})
 
         (testing "the write is acknowledged"
           (let [result (deref ack 1000 {:error :timeout})]
@@ -127,3 +127,4 @@
             (is (= "test-out" (:topic result)))
             (is (= 1 (:key result)))
             (is (= {:id 1 :payload "foo"} (:value result)))))))))
+
