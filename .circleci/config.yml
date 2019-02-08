@@ -90,6 +90,8 @@ jobs:
           docker_layer_caching: true
       - run:
           lein test
+      - store_artifacts:
+          path: ./logs
 
 workflows:
   version: 2
