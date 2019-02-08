@@ -35,6 +35,11 @@ references:
       - image: circleci/clojure:lein-2.8.1
     working_directory: ~/jackdaw
 
+  deploy_config: &deploy_config
+    docker:
+      - image: circleci/clojure:lein-2.8.1
+    working_directory: /home/circleci/jackdaw
+
   test_config: &test_config
     docker:
       - image: circleci/clojure:lein-2.8.1
@@ -70,6 +75,18 @@ jobs:
           key: v1-jackdaw-{{ .Branch }}-{{ .Revision }}
           paths:
             - .
+  checkout_tags:
+    <<: *build_config
+    steps:
+      - *restore_repo
+      - run: git config --global url."https://github.com/".insteadOf "git@github.com:"
+      - run: git config --global url."https://".insteadOf "git://"
+      - run: git fetch --tags
+      - checkout
+      - save_cache:
+          key: v1-jackdaw-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - .
   deps:
     <<: *build_config
     steps:
@@ -81,7 +98,7 @@ jobs:
           key: *mvn_cache_key
           paths:
             - /home/circleci/.m2
-  build:
+  test:
     <<: *test_config
     steps:
       - *restore_repo
@@ -93,16 +110,41 @@ jobs:
       - store_artifacts:
           path: ./logs
 
+  deploy:
+    <<: *deploy_config
+    steps:
+      - *restore_repo
+      - *restore_mvn
+      - run: lein deploy clojars
+
 workflows:
   version: 2
-  build_and_deploy:
+  build_and_test:
     jobs:
       - checkout_code
       - deps:
           context: org-global
           requires:
             - checkout_code
-      - build:
+      - test:
           context: org-global
           requires:
             - deps
+
+  deploy:
+    jobs:
+      - checkout_tags:
+          filters:
+            tags:
+              only: /.*/
+            branches:
+              ignore: /.*/
+      - deploy:
+          context: org-global
+          requires:
+            - checkout_tags
+          filters:
+            tags:
+              only: /^\d+\.\d+\.\d+/
+            branches:
+              ignore: /.*/
