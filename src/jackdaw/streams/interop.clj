@@ -52,7 +52,7 @@
 (defn headers->clj
   [^Headers headers]
   (not-empty
-   (map header->clj (.toArray headers))))
+   (clojure.core/map header->clj (.toArray headers))))
 
 (defn record-context->clj
   [^RecordContext rc]
