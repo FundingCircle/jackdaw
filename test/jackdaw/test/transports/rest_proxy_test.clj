@@ -2,7 +2,6 @@
   (:require
    [aleph.http :as http]
    [clojure.tools.logging :as log]
-   [clojure.core.async :as async]
    [clojure.test :refer :all]
    [jackdaw.streams :as k]
    [jackdaw.test :as jd.test]
@@ -10,7 +9,8 @@
    [jackdaw.test.serde :as serde]
    [jackdaw.test.journal :refer [with-journal watch-for]]
    [jackdaw.test.transports :as trns]
-   [jackdaw.test.transports.rest-proxy :as rest-proxy])
+   [jackdaw.test.transports.rest-proxy :as rest-proxy]
+   [manifold.stream :as s])
   (:import
    (java.util Properties)))
 
@@ -101,7 +101,7 @@
             msg-key (:id msg)]
 
         (log/info "feed: " msg)
-        (async/put! messages
+        (s/put! messages
                     {:topic topic
                      :key msg-key
                      :value msg
@@ -127,7 +127,7 @@
             msg-key (:id msg)]
 
         (log/info "feed: " msg)
-        (async/put! messages
+        (s/put! messages
                     {:topic topic
                      :key msg-key
                      :value msg

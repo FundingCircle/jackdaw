@@ -1,6 +1,7 @@
 (ns jackdaw.test.transports.kafka
   (:require
-   [clojure.core.async :as async]
+   [manifold.stream :as s]
+   [manifold.deferred :as d]
    [clojure.tools.logging :as log]
    [jackdaw.client :as kafka]
    [jackdaw.data :as jd]
@@ -46,11 +47,10 @@
     (try
       (let [m (.poll consumer 1000)]
         (when m
-          (doseq [msg m]
-            (async/onto-chan messages [msg] false))))
+          (s/put-all! messages m)))
       (catch Throwable e
         (log/error (Throwable->map e))
-        (async/put! messages {:error e})))))
+        (s/put! messages {:error e})))))
 
 (defn subscription
   "Subscribes to `topic-collection` and seeks to the end of all partitions. This
@@ -97,27 +97,29 @@
    Must be closed with `close-consumer` when no longer required"
   [kafka-config topic-metadata deserializers]
   (let [continue?   (atom true)
-        messages    (async/chan 1 (comp
-                                   (map #'mk-consumer-record)
-                                   (map #(apply-deserializers deserializers %))))
+        messages    (s/stream 1 (comp
+                                 (map #'mk-consumer-record)
+                                 (map #(apply-deserializers deserializers %))))
         started?    (promise)
         poll        (poller messages)]
 
-    {:process (async/go-loop [consumer (subscription kafka-config
-                                                     (vals topic-metadata))]
-                (when-not (realized? started?)
-                  (deliver started? true)
-                  (log/infof "started kafka consumer: %s"
-                             (select-keys kafka-config ["bootstrap.servers" "group.id"])))
+    {:process (d/loop [consumer (subscription kafka-config
+                                              (vals topic-metadata))]
+                (d/chain (d/future consumer)
+                         (fn [c]
+                           (when-not (realized? started?)
+                             (deliver started? true)
+                             (log/infof "started kafka consumer: %s"
+                                        (select-keys kafka-config ["bootstrap.servers" "group.id"])))
 
-                (if @continue?
-                  (do (poll consumer)
-                      (recur consumer))
-                  (do
-                    (async/close! messages)
-                    (.close consumer)
-                    (log/infof "stopped kafka consumer: %s"
-                               (select-keys kafka-config ["bootstrap.servers" "group.id"])))))
+                           (if @continue?
+                             (do (poll consumer)
+                                 (d/recur consumer))
+                             (do
+                               (s/close! messages)
+                               (.close consumer)
+                               (log/infof "stopped kafka consumer: %s"
+                                          (select-keys kafka-config ["bootstrap.servers" "group.id"])))))))
      :started? started?
      :messages messages
      :continue? continue?}))
@@ -125,7 +127,7 @@
 (defn close-consumer
   [consumer]
   (reset! (:continue? consumer) false)
-  (async/<!! (:process consumer)))
+  (deref (:process consumer)))
 
 (defn build-record
   "Builds a Kafka Producer and assoc it onto the message map"
@@ -156,30 +158,32 @@
    injecting test messages"
   ([kafka-config topic-config serializers]
    (let [producer       (kafka/producer kafka-config byte-array-serde)
-         messages       (async/chan 1 (map (fn [x]
-                                             (log/info "producing: " x)
-                                             (try
-                                               (-> (apply-serializers serializers x)
-                                                   (build-record))
-                                               (catch Exception e
-                                                 (log/error e "kafka producer serialization error")
-                                                 (assoc x
-                                                        :serialization-error e))))))]
+         messages       (s/stream 1 (map (fn [x]
+                                           (log/info "producing: " x)
+                                           (try
+                                             (-> (apply-serializers serializers x)
+                                                 (build-record))
+                                             (catch Exception e
+                                               (log/error e "kafka producer serialization error")
+                                               (assoc x
+                                                      :serialization-error e))))))]
 
      (log/infof "started kafka producer: %s"
                 (select-keys kafka-config ["bootstrap.servers" "group.id"]))
 
-     (async/go-loop [{:keys [producer-record ack serialization-error] :as m} (async/<! messages)]
-       (cond
-         producer-record       (do (kafka/send! producer producer-record (deliver-ack ack))
-                                   (recur (async/<! messages)))
-         serialization-error   (do (deliver ack {:error :serialization-error
-                                                 :message (.getMessage serialization-error)})
-                                   (recur (async/<! messages)))
-         :else (do
-                 (.close producer)
-                 (log/infof "stopped kafka producer: "
-                            (select-keys kafka-config ["bootstrap.servers" "group.id"])))))
+     (d/loop [message (s/take! messages)]
+       (d/chain (d/future message)
+                (fn [{:keys [producer-record ack serialization-error] :as m}]
+                  (cond
+                    producer-record       (do (kafka/send! producer producer-record (deliver-ack ack))
+                                              (d/recur (s/take! messages)))
+                    serialization-error   (do (deliver ack {:error :serialization-error
+                                                            :message (.getMessage serialization-error)})
+                                              (d/recur (s/take! messages)))
+                    :else (do
+                            (.close producer)
+                            (log/infof "stopped kafka producer: "
+                                       (select-keys kafka-config ["bootstrap.servers" "group.id"])))))))
 
      {:producer  producer
       :messages  messages})))
@@ -195,7 +199,7 @@
      :serdes serdes
      :topics topics
      :exit-hooks [(fn []
-                    (async/close! (:messages test-producer)))
+                    (s/close! (:messages test-producer)))
                   (fn []
                     (reset! (:continue? test-consumer) false)
-                    (async/<!! (:process test-consumer)))]}))
+                    @(:process test-consumer))]}))

@@ -1,7 +1,6 @@
 (ns jackdaw.test.transports.kafka-test
   (:require
    [clojure.tools.logging :as log]
-   [clojure.core.async :as async]
    [clojure.test :refer :all]
    [jackdaw.streams :as k]
    [jackdaw.test :as jd.test]
@@ -10,7 +9,8 @@
    [jackdaw.test.serde :as serde]
    [jackdaw.test.transports :as trns]
    [jackdaw.test.transports.mock :as mock]
-   [jackdaw.test.transports.kafka])
+   [jackdaw.test.transports.kafka]
+   [manifold.stream :as s])
   (:import
    (java.util Properties)))
 
@@ -88,12 +88,12 @@
             msg-key (:id msg)]
 
         (log/info "feed: " msg)
-        (async/put! messages
-                    {:topic topic
-                     :key msg-key
-                     :value msg
-                     :timestamp (System/currentTimeMillis)
-                     :ack ack})
+        (s/put! messages
+                {:topic topic
+                 :key msg-key
+                 :value msg
+                 :timestamp (System/currentTimeMillis)
+                 :ack ack})
 
         (let [result (deref ack 1000 {:error :timeout})]
           (is (= "test-in" (:topic-name result)))
@@ -114,12 +114,12 @@
             msg-key (:id msg)]
 
         (log/info "feed: " msg)
-        (async/put! messages
-                    {:topic topic
-                     :key msg-key
-                     :value msg
-                     :timestamp (System/currentTimeMillis)
-                     :ack ack})
+        (s/put! messages
+                {:topic topic
+                 :key msg-key
+                 :value msg
+                 :timestamp (System/currentTimeMillis)
+                 :ack ack})
 
         (testing "the write is acknowledged"
           (let [result (deref ack 1000 {:error :timeout})]

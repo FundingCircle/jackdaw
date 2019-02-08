@@ -2,7 +2,9 @@
   ""
   (:require
    [clojure.tools.logging :as log]
-   [clojure.core.async :as async]))
+   [manifold.stream :as s]
+   [manifold.deferred :as d]))
+
 
 ;; Journal
 ;;
@@ -66,7 +68,7 @@
 (defn journaller
   "Returns an asynchronous process that reads all messages produced by
    the supplied `machine`'s `:consumer` and records them in the journal"
-  [machine]
+  [machine stop?]
   (when-not (:journal machine)
     (log/error machine "no journal available")
     (throw (ex-info "no journal available: " {})))
@@ -76,21 +78,28 @@
     (throw (ex-info "no message stream to journal:" machine)))
 
   (let [{:keys [messages]} (:consumer machine)]
-    (async/go-loop [record (async/<! messages)]
-      (when record
-        (journal-result machine record)
-        (recur (async/<! messages))))))
+    (d/loop [record (s/take! messages)]
+      (d/chain record
+               (fn [record]
+                 (when-not @stop?
+                   (when record
+                     (journal-result machine record)
+                     (d/recur (s/take! messages)))))))))
 
 (defn with-journal
   "Enriches the supplied `machine` with a journaller that will write to
    the supplied `journal`."
   [machine journal]
   (let [machine' (assoc machine :journal journal)
-        jloop (journaller machine')]
+        stop? (atom false)
+        jloop (journaller machine' stop?)]
     (assoc machine'
            :journal journal
            :jloop jloop
            :exit-hooks (concat
                         (:exit-hooks machine)
-                        [#(do (log/debug "closing jloop")
-                              (async/close! jloop))]))))
+                        [#(do
+                            (log/debug "stop accepting journal messages")
+                            (reset! stop? true)
+                            (log/debug "wait for journaller to finish")
+                            @jloop)]))))

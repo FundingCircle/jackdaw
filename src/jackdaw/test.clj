@@ -40,8 +40,8 @@
 ;;                ;;   )
 
 ;;   :exit-hooks  ;; []
-;;   :consumer    {:messages (async/chan)} source of test output
-;;   :producer    {:messages (async/chan)} sink for test-input
+;;   :consumer    {:messages (s/stream)} source of test output
+;;   :producer    {:messages (s/stream)} sink for test-input
 
 ;; The consumer and producer keys are themselves maps that each contains a
 ;; `:messages` channel used for kafka IO. `(get-in machine [:producer :messages])`

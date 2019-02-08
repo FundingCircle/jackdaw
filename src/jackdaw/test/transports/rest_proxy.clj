@@ -3,7 +3,6 @@
    [aleph.http :as http]
    [byte-streams :as bs]
    [clojure.data.json :as json]
-   [clojure.core.async :as async]
    [clojure.tools.logging :as log]
    [jackdaw.client :as kafka]
    [jackdaw.test.commands :as cmd]
@@ -11,6 +10,7 @@
    [jackdaw.test.transports :as t]
    [jackdaw.test.serde :refer :all]
    [jackdaw.test.transports.kafka :refer [mk-producer-record]]
+   [manifold.stream :as s]
    [manifold.deferred :as d])
   (:import
    (java.util UUID Base64)))
@@ -185,8 +185,7 @@
         (when (:error response)
           (log/errorf "rest-proxy fetch error: %s" (:error response)))
         (when (not (:error response))
-          (doseq [msg (:json-body response)]
-            (async/onto-chan messages [msg] false)))))))
+          (s/put-all! messages (:json-body response)))))))
 
 (defn rest-proxy-subscription
   [config topic-metadata]
@@ -208,25 +207,27 @@
         xform       (comp
                      #(apply-deserializers deserializers %)
                      #(undatafy-record topic-metadata %))
-        messages    (async/chan 1 (map xform))
+        messages    (s/stream 1 (map xform))
         started?    (promise)
         poll        (rest-proxy-poller messages)]
 
-    {:process (async/go-loop [consumer (rest-proxy-subscription config topic-metadata)]
-                (poll consumer)
+    {:process (d/loop [consumer (rest-proxy-subscription config topic-metadata)]
+                (d/chain (d/future consumer)
+                         (fn [consumer]
+                           (poll consumer)
 
-                (when-not (realized? started?)
-                  (deliver started? true)
-                  (log/infof "started rest-proxy consumer: %s" (proxy-client-info consumer)))
+                           (when-not (realized? started?)
+                             (deliver started? true)
+                             (log/infof "started rest-proxy consumer: %s" (proxy-client-info consumer)))
 
-                (if @continue?
-                  (do (poll consumer)
-                      (Thread/sleep 500)
-                      (recur consumer))
-                  (do
-                    (async/close! messages)
-                    (destroy-consumer consumer)
-                    (log/infof "stopped rest-proxy consumer: %s" (proxy-client-info consumer)))))
+                           (if @continue?
+                             (do (poll consumer)
+                                 (Thread/sleep 500)
+                                 (d/recur consumer))
+                             (do
+                               (s/close! messages)
+                               (destroy-consumer consumer)
+                               (log/infof "stopped rest-proxy consumer: %s" (proxy-client-info consumer)))))))
      :started? started?
      :messages messages
      :continue? continue?}))
@@ -261,20 +262,22 @@
          xform          (comp
                          build-record
                          #(apply-serializers serializers %))
-         messages       (async/chan 1 (map xform))]
+         messages       (s/stream 1 (map xform))]
 
      (log/infof "started rest-proxy producer: %s" producer)
 
-     (async/go-loop [{:keys [data-record ack serialization-error] :as m} (async/<! messages)]
-       (cond
-         data-record       (do (log/debug "sending data: " data-record)
-                               (topic-post producer data-record (deliver-ack ack))
-                               (recur (async/<! messages)))
-         serialization-error   (do (deliver ack {:error :serialization-error
-                                                 :message (.getMessage serialization-error)})
-                                   (recur (async/<! messages)))
-         :else (do
-                 (log/infof "stopped rest-proxy producer: %s" producer))))
+     (d/loop [message (s/take! messages)]
+       (d/chain message
+                (fn [{:keys [data-record ack serialization-error] :as message}]
+                  (cond
+                    data-record       (do (log/debug "sending data: " data-record)
+                                          (topic-post producer data-record (deliver-ack ack))
+                                          (d/recur (s/take! messages)))
+                    serialization-error   (do (deliver ack {:error :serialization-error
+                                                            :message (.getMessage serialization-error)})
+                                              (d/recur (s/take! messages)))
+                    :else (do
+                            (log/infof "stopped rest-proxy producer: %s" producer))))))
 
      {:producer  producer
       :messages  messages})))
@@ -290,7 +293,7 @@
      :serdes serdes
      :topics topics
      :exit-hooks [(fn []
-                    (async/close! (:messages test-producer)))
+                    (s/close! (:messages test-producer)))
                   (fn []
                     (reset! (:continue? test-consumer) false)
-                    (async/<!! (:process test-consumer)))]}))
+                    @(:process test-consumer))]}))
