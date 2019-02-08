@@ -25,6 +25,8 @@ To use the latest release, add the following to your project:
 
 We welcome any thoughts or patches. You can reach us in [`#jackdaw`](https://clojurians.slack.com/messages/CEA3C7UG0/) (or [open an issue](https://github.com/fundingcircle/jackdaw/issues)).
 
+If you would like to submit a patch, please follow the guidelines for [contributing](https://github.com/FundingCircle/jackdaw/tree/master/CONTRIBUTING.md).
+
 
 ## License
 
