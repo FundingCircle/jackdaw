@@ -7,8 +7,8 @@
   change and should be considered of alpha stability."
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [jackdaw.data :as jd])
-  (:import [org.apache.kafka.clients.admin
-            AdminClient DescribeTopicsOptions]))
+  (:import [org.apache.kafka.clients.admin AdminClient
+            DescribeTopicsOptions DescribeClusterOptions DescribeConfigsOptions]))
 
 (set! *warn-on-reflection* true)
 
@@ -41,7 +41,7 @@
   [^AdminClient client {:keys [topic-name] :as topic}]
   {:pre [(client? client)
          (string? topic-name)]}
-  (contains? (set (list-topics client)) topic-name))
+  (contains? (set (list-topics client)) {:topic-name topic-name}))
 
 (defn retry-exists?
   "Returns `true` if topic exists. Otherwise spins as configured."
@@ -88,7 +88,7 @@
   {:pre [(client? client)
          (sequential? topics)]}
    (->>  (.describeTopics client (map :topic-name topics)
-                     (DescribeTopicsOptions.))
+                          (DescribeTopicsOptions.))
          .all deref
          (map (fn [[k v]] [k (jd/datafy v)]))
          (into {}))))
@@ -102,7 +102,8 @@
   {:pre [(client? client)
           (sequential? topics)]}
   (-> client
-      (.describeConfigs (map #(-> % :topic-name jd/->topic-resource)))
+      (.describeConfigs (map #(-> % :topic-name jd/->topic-resource))
+                        (DescribeConfigsOptions.))
       .all deref vals first jd/datafy))
 
 (defn topics-ready?
@@ -175,7 +176,7 @@
   "Returns a `DescribeClusterResult` describing the cluster."
   [^AdminClient client]
   {:pre [(client? client)]}
-  (-> (.describeCluster client) jd/datafy))
+  (-> (.describeCluster client (DescribeClusterOptions.)) jd/datafy))
 
 (defn get-broker-config
   "Returns the broker config as a map.
@@ -185,5 +186,5 @@
   [^AdminClient client broker-id]
   {:pre [(client? client)]}
   (-> client
-      (.describeConfigs [(jd/->broker-resource (str broker-id))])
+      (.describeConfigs [(jd/->broker-resource (str broker-id))] (DescribeConfigsOptions.))
       .all .get vals first jd/datafy))
