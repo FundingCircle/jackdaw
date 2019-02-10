@@ -24,32 +24,32 @@
 (def client-impl
   {:alter-topics* (fn [this topics]
                    (d/future
-                     (-> (.alterConfigs this topics) .all deref)))
-
+                     (->> (.alterConfigs this topics)
+                          .all deref)))
    :create-topics* (fn [this topics]
                     (d/future
-                      (->> (.createTopics this topics) .all deref)))
-
+                      (->> (.createTopics this topics)
+                           .all deref)))
    :delete-topics*  (fn [this topics]
                       (d/future
-                        (->> (.deleteTopics this topics) .all deref)))
-
+                        (->> (.deleteTopics this topics)
+                             .all deref)))
    :describe-topics* (fn [this topics]
                        (d/future
-                         (->> (.describeTopics this topics) .all deref)))
-
+                         (->> (.describeTopics this topics (DescribeTopicsOptions.))
+                              .all deref)))
    :describe-configs* (fn [this configs]
                         (d/future
-                          (-> (.describeConfigs this configs (DescribeConfigsOptions.))
-                              .all .get)))
+                          (->> (.describeConfigs this configs (DescribeConfigsOptions.))
+                               .all .get)))
    :describe-cluster* (fn [this]
                        (d/future
-                         (-> (.describeCluster this (DescribeClusterOptions.))
-                             jd/datafy)))
-
+                         (->> (.describeCluster this (DescribeClusterOptions.))
+                              jd/datafy)))
    :list-topics* (fn [this]
                   (d/future
-                    (->> (.listTopics this) .names deref)))})
+                    (->> (.listTopics this)
+                         .names deref)))})
 
 (extend AdminClient
   Client

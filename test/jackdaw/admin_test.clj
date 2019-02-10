@@ -1,14 +1,12 @@
 (ns jackdaw.admin-test
   (:require
    [clojure.test :refer :all]
-   [clojure.spec.alpha :as s]
    [jackdaw.admin :as admin]
    [jackdaw.data :as data]
    [manifold.deferred :as d])
   (:import
    (org.apache.kafka.common Node KafkaFuture)
-   (org.apache.kafka.clients.admin MockAdminClient
-    DescribeTopicsOptions DescribeClusterOptions DescribeConfigsOptions)))
+   (org.apache.kafka.clients.admin MockAdminClient)))
 
 (extend MockAdminClient
   admin/Client
@@ -73,7 +71,6 @@
   (with-mock-admin-client test-cluster
     (fn [client]
       (admin/create-topics! client (vals test-topics))
-
       (doseq [[k info] test-topics]
         (is (admin/topic-exists? client info))))))
 
@@ -104,7 +101,6 @@
         (is (set= [:is-internal? :partition-info]
                   (keys topic-info)))))))
 
-
 (deftest test-describe-cluster
   (with-mock-admin-client test-cluster
     (fn [client]
@@ -130,7 +126,6 @@
         (admin/delete-topics! client [foo])
         (is (= [{:topic-name "bar"}]
                (admin/list-topics client)))))))
-
 
 (deftest test-alter-topic-config!
   (with-mock-admin-client test-cluster
