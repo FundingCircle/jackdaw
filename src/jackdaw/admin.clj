@@ -157,7 +157,7 @@
   This can be used to determine if some set of newly created topics
   are healthy yet, or detect whether leader re-election has finished
   following the demise of a Kafka broker."
-  [client topics]
+  [^AdminClient client topics]
   {:pre [(client? client)
          (sequential? topics)]}
   (->> (describe-topics* client (map :topic-name topics))
@@ -182,7 +182,7 @@
   "Given an `AdminClient` and a sequence of topic descriptors having
   `:topic-config`, alters the live configuration of the specified
   topics to correspond to the specified `:topic-config`."
-  [client topics]
+  [^AdminClient client topics]
   {:pre [(client? client)
          (sequential? topics)]}
   @(alter-topics* client (topics->configs topics)))

@@ -17,9 +17,12 @@
 (def kafka-config {"bootstrap.servers" "localhost:9092"
                    "group.id" "kafka-write-test"})
 
+(def +real-rest-proxy-url+
+  "http://localhost:8082")
+
 (defn rest-proxy-config
   [group-id]
-  {:bootstrap-uri "http://localhost:8082"
+  {:bootstrap-uri +real-rest-proxy-url+
    :group-id group-id})
 
 (defn kstream-config
@@ -67,8 +70,9 @@
   (fix/with-fixtures [(fix/topic-fixture kafka-config topic-config)
                       (fix/skip-to-end {:topic test-in
                                         :config kafka-config})
-                      (fix/kstream-fixture (kstream-config app app-id))]
-
+                      (fix/kstream-fixture (kstream-config app app-id))
+                      (fix/service-ready? {:http-url +real-rest-proxy-url+
+                                           :http-timeout 5000})]
     (with-open [machine (jd.test/test-machine (transport))]
       (log/info "begin" app-id)
       (let [result (f machine)]
