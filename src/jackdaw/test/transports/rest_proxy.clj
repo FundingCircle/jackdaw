@@ -30,8 +30,9 @@
 
 (defn- base64-decode
   [decodable]
-  (let [decoder (Base64/getDecoder)]
-    (.decode decoder decodable)))
+  (when decodable
+    (let [decoder (Base64/getDecoder)]
+      (.decode decoder decodable))))
 
 (defn undatafy-record
   [topic-metadata m]
