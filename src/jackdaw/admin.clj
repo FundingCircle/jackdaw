@@ -6,11 +6,54 @@
   Like the underlying `AdminClient` API, this namespace is subject to
   change and should be considered of alpha stability."
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
-  (:require [jackdaw.data :as jd])
+  (:require
+   [jackdaw.data :as jd]
+   [manifold.deferred :as d])
   (:import [org.apache.kafka.clients.admin AdminClient
             DescribeTopicsOptions DescribeClusterOptions DescribeConfigsOptions]))
 
-(set! *warn-on-reflection* true)
+(defprotocol Client
+  (alter-topics* [this topics])
+  (create-topics* [this topics])
+  (delete-topics* [this topics])
+  (describe-topics* [this topics])
+  (describe-configs* [this configs])
+  (describe-cluster* [this])
+  (list-topics* [this]))
+
+(def client-impl
+  {:alter-topics* (fn [this topics]
+                   (d/future
+                     (-> (.alterConfigs this topics) .all deref)))
+
+   :create-topics* (fn [this topics]
+                    (d/future
+                      (->> (.createTopics this topics) .all deref)))
+
+   :delete-topics*  (fn [this topics]
+                      (d/future
+                        (->> (.deleteTopics this topics) .all deref)))
+
+   :describe-topics* (fn [this topics]
+                       (d/future
+                         (->> (.describeTopics this topics) .all deref)))
+
+   :describe-configs* (fn [this configs]
+                        (d/future
+                          (-> (.describeConfigs this configs (DescribeConfigsOptions.))
+                              .all .get)))
+   :describe-cluster* (fn [this]
+                       (d/future
+                         (-> (.describeCluster this (DescribeClusterOptions.))
+                             jd/datafy)))
+
+   :list-topics* (fn [this]
+                  (d/future
+                    (->> (.listTopics this) .names deref)))})
+
+(extend AdminClient
+  Client
+  client-impl)
 
 (defn ->AdminClient
   "Given a Kafka properties map having `\"bootstrap.servers\"`, return
@@ -31,7 +74,10 @@
   topics on the cluster."
   [^AdminClient client]
   {:pre [(client? client)]}
-  (->> client .listTopics .names deref sort
+  (->> @(list-topics* client)
+       ;; We should allow the caller to decide whether they want
+       ;; the result to be sorted or not?
+       sort
        (map #(hash-map :topic-name %))))
 
 (defn topic-exists?
@@ -67,10 +113,9 @@
   See `#'topics-ready?`, `#'topic-exists?` and `#'retry-exists?` for
   tools with which to wait for topics to be ready."
   [^AdminClient client topics]
-{:pre [(client? client)
-       (sequential? topics)]}
-  (->> (.createTopics client (map jd/map->NewTopic topics))
-       .all deref))
+  {:pre [(client? client)
+         (sequential? topics)]}
+  @(create-topics* client (map jd/map->NewTopic topics)))
 
 (defn describe-topics
   "Given an `AdminClient` and an optional collection of topic
@@ -87,11 +132,9 @@
   ([^AdminClient client topics]
   {:pre [(client? client)
          (sequential? topics)]}
-   (->>  (.describeTopics client (map :topic-name topics)
-                          (DescribeTopicsOptions.))
-         .all deref
-         (map (fn [[k v]] [k (jd/datafy v)]))
-         (into {}))))
+   (->> @(describe-topics* client (map :topic-name topics))
+        (map (fn [[k v]] [k (jd/datafy v)]))
+        (into {}))))
 
 (defn describe-topics-configs
   "Given an `AdminClient` and a collection of topic descriptors, returns
@@ -101,10 +144,10 @@
   [^AdminClient client topics]
   {:pre [(client? client)
           (sequential? topics)]}
-  (-> client
-      (.describeConfigs (map #(-> % :topic-name jd/->topic-resource))
-                        (DescribeConfigsOptions.))
-      .all deref vals first jd/datafy))
+  (->> @(describe-configs* client (map #(-> % :topic-name jd/->topic-resource) topics))
+       (reduce-kv (fn [m k v]
+                   (assoc m (jd/datafy k) (jd/datafy v)))
+                  {})))
 
 (defn topics-ready?
   "Given an `AdminClient` and a sequence topic descriptors, return
@@ -117,7 +160,7 @@
   [client topics]
   {:pre [(client? client)
          (sequential? topics)]}
-  (->> (describe-topics client topics)
+  (->> (describe-topics* client (map :topic-name topics))
        (every? (fn [[topic-name {:keys [partition-info]}]]
                  (every? (fn [part-info]
                            (and (boolean (:leader part-info))
@@ -139,10 +182,10 @@
   "Given an `AdminClient` and a sequence of topic descriptors having
   `:topic-config`, alters the live configuration of the specified
   topics to correspond to the specified `:topic-config`."
-  [^AdminClient client topics]
+  [client topics]
   {:pre [(client? client)
          (sequential? topics)]}
-  (-> (.alterConfigs client (topics->configs topics)) .all deref))
+  @(alter-topics* client (topics->configs topics)))
 
 (defn delete-topics!
   "Given an `AdminClient` and a sequence of topic descriptors, marks the
@@ -152,8 +195,8 @@
   request(s) are acknowledged."
   [^AdminClient client topics]
   {:pre [(client? client)
-          (sequential? topics)]}
-  (-> (.deleteTopics client (map :topic-name topics)) .all deref))
+         (sequential? topics)]}
+  @(delete-topics* client (map :topic-name topics)))
 
 (defn partition-ids-of-topics
   "Given an `AdminClient` and an optional sequence of topics, produces a
@@ -176,7 +219,8 @@
   "Returns a `DescribeClusterResult` describing the cluster."
   [^AdminClient client]
   {:pre [(client? client)]}
-  (-> (.describeCluster client (DescribeClusterOptions.)) jd/datafy))
+  (-> @(describe-cluster* client)
+      jd/datafy))
 
 (defn get-broker-config
   "Returns the broker config as a map.
@@ -185,6 +229,5 @@
   using describe-cluster"
   [^AdminClient client broker-id]
   {:pre [(client? client)]}
-  (-> client
-      (.describeConfigs [(jd/->broker-resource (str broker-id))] (DescribeConfigsOptions.))
-      .all .get vals first jd/datafy))
+  (-> @(describe-configs* client [(jd/->broker-resource (str broker-id))])
+      vals first jd/datafy))

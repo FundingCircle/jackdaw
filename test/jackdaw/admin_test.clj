@@ -6,9 +6,18 @@
    [jackdaw.data :as data]
    [manifold.deferred :as d])
   (:import
-   (org.apache.kafka.common Node)
-   (org.apache.kafka.clients.admin
-    MockAdminClient DescribeTopicsOptions DescribeClusterOptions)))
+   (org.apache.kafka.common Node KafkaFuture)
+   (org.apache.kafka.clients.admin MockAdminClient
+    DescribeTopicsOptions DescribeClusterOptions DescribeConfigsOptions)))
+
+(extend MockAdminClient
+  admin/Client
+  (-> admin/client-impl
+      (merge {:alter-topics* (fn [this topics]
+                               (d/future [:altered topics]))
+              :describe-configs* (fn [this configs]
+                                   (d/future
+                                     (into {} (map #(vector % {"some-key" "some-value"}) configs))))})))
 
 (defn set= [a b]
   (= (set a)
@@ -30,10 +39,14 @@
    (cons (Node. id (str host "-" id) 1234)
          (node-seq (inc id) host))))
 
+(defn kfuture []
+  (KafkaFuture.))
+
 (def test-cluster (take 3 (node-seq 0 "test-host")))
 
 (defn with-mock-admin-client [cluster f]
-  (let [client (MockAdminClient. cluster (first cluster))]
+  (let [effects (atom [])
+        client (MockAdminClient. cluster (first cluster))]
     (f client)))
 
 (deftest test-new-topic
@@ -124,10 +137,27 @@
     (fn [client]
       (let [{:keys [foo bar]} test-topics]
         (admin/create-topics! client [foo bar])
+        (is (= :altered
+               (-> (admin/alter-topic-config!
+                    client (map #(update % :replication-factor inc)
+                                [foo bar]))
+                   first)))))))
 
-        (admin/alter-topic-config!
-         client (map #(update % :replication-factor inc)
-                     [foo bar]))
+(deftest test-broker-config
+  (with-mock-admin-client test-cluster
+    (fn [client]
+      (let [{:keys [foo bar]} test-topics]
+        (admin/create-topics! client [foo bar])
+        (= {"some-key" "some-value"}
+           (admin/get-broker-config client 0))))))
 
-        (admin/describe-topics-configs
-         client [foo bar]))))
+(deftest test-describe-topics-config
+  (with-mock-admin-client test-cluster
+    (fn [client]
+      (let [{:keys [foo bar]} test-topics]
+        (admin/create-topics! client [foo bar])
+        (let [description (admin/describe-topics-configs client [foo bar])]
+          (is (set= ["foo" "bar"]
+                    (map :name (keys description))))
+          (doseq [cfg (vals description)]
+            (is (set= {"some-key" "some-value"} cfg))))))))
