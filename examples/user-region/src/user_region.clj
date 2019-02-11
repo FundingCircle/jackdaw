@@ -1,37 +1,25 @@
-(ns user-region.core
+(ns user-region
   "Demonstrates group-by operations and aggregations on KTable.
 
   In this specific example we compute the user count per geo-region
   from a KTable that contains <user, region> information."
   (:gen-class)
-  (:require [clojure.string :as str]
-            [clojure.pprint :as pp]
-            [clojure.tools.logging :refer [info]]
+  (:require [clojure.tools.logging :refer [info]]
             [jackdaw.streams :as j]
-            [jackdaw.serdes.edn :as jse])
+            [jackdaw.serdes.edn :as jse]
+            [clojure.tools.logging :as log])
   (:import [org.apache.kafka.common.serialization Serdes]))
 
 (defn app-config
   "Returns the application config."
   []
-  {"application.id"            "user-activity"
+  {"application.id"            "user-region"
    "bootstrap.servers"         "localhost:9092"
    "cache.max.bytes.buffering" "0"})
 
 (defn topic-names
   []
   ["user-region" "region-user-count"])
-
-(defn user-region-entries
-  []
-  (vector ["alice" "asia"]
-          ["bob" "america"]
-          ["chao" "asia"]
-          ["alice" "europe"] ;; Note: Alice moved from Asia to Europe
-          ["eve" "america"]
-          ["fang" "asia"]
-          ["gandalf" "europe"]
-          ["marina" "europe"]))
 
 (defn topic-config
   ([topic-name]
@@ -51,14 +39,14 @@
   [builder]
   (let [user-region-table (j/ktable builder (topic-config "user-region"))
 
+        ;; Aggregate the user counts of by region
         region-count (-> user-region-table
-                         (j/group-by (fn [[_ v]] (vector v v))
+                         (j/group-by (fn [[_ region]] [region region])
                                      (topic-config nil
                                                    (Serdes/String)
                                                    (Serdes/String)))
                          (j/count))]
 
-    ;; Aggregate the user counts of by region
     (-> region-count
         (j/to-kstream)
         (j/peek (fn [[k v]] (println (str {:key k :value v}))))
@@ -73,14 +61,14 @@
         topology (topology-builder builder)
         app (j/kafka-streams topology app-config)]
     (j/start app)
-    (info "Done")
+    (log/info "Done")
     app))
 
 (defn stop-app
   "Stops the stream processing application."
   [app]
   (j/close app)
-  (info "Done"))
+  (log/info "Done"))
 
 (defn -main
   "Starts the app"
@@ -110,20 +98,38 @@
   ;; Get a list of current topics.
   (list-topics)
 
+  (defn user-region-entries []
+    [["alice" "asia"]
+     ["bob" "america"]
+     ["kim" "asia"]
+     ["alice" "europe"]                                     ;; Note: Alice moved from Asia to Europe
+     ["eve" "america"]
+     ["zhang" "asia"]
+     ["john" "europe"]
+     ["marina" "europe"]])
+
   ;;input user entries with the user as key and region as value
   (doseq [[key value] (user-region-entries)]
     (publish (topic-config "user-region") key value))
 
+  (publish (topic-config "user-region") "alice" "asia")
+
   (get-keyvals (topic-config "region-user-count"))
-  ;( ["asia" 1]
-  ;  ["america" 1]
-  ;  ["asia" 2]
-  ;  ["asia" 1] -> Captures the change of Alice moving to Asia
-  ;  ["europe" 1]
-  ;  ["america" 2]
-  ;  ["asia" 2]
-  ;  ["europe" 2]
-  ;  ["europe" 3])
+  ;; Get something like:
+  ;;( ["asia" 1]
+  ;;  ["america" 1]
+  ;;  ["asia" 2]
+  ;;  ["asia" 1] -> Captures the change of Alice moving to Asia
+  ;;  ["europe" 1]
+  ;;  ["america" 2]
+  ;;  ["asia" 2]
+  ;;  ["europe" 2]
+  ;;  ["europe" 3])
+
+  (publish (topic-config "user-region") "gianni" "asia")
+
+  (get-keyvals (topic-config "region-user-count"))
+  ;; you should now see the "asia" updated to 3 ["asia" 3]
 
   )
 

@@ -7,7 +7,7 @@
             [clojure.tools.logging :as log]
             [clojure.java.shell :refer [sh]]
             [jackdaw.admin :as ja]
-            [user-region.core :as app]))
+            [user-region :as app]))
 
 (def system nil)
 

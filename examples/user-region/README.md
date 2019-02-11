@@ -4,6 +4,8 @@ This tutorial contains a simple stream processing application using Jackdaw and 
 It demonstrates group-by operations and aggregations on KTable by computing the number of users 
 per region.
 
+Inspired by java example here: [https://github.com/confluentinc/kafka-streams-examples/blob/5.1.0-post/src/main/java/io/confluent/examples/streams/UserRegionLambdaExample.java](https://github.com/confluentinc/kafka-streams-examples/blob/5.1.0-post/src/main/java/io/confluent/examples/streams/UserRegionLambdaExample.java)
+
 ## Setting up
 
 Before starting, it is recommended to install the Confluent Platform CLI which can be obtained from [https://www.confluent.io/download/](https://www.confluent.io/download/).
@@ -20,10 +22,9 @@ user-region
 ├── dev
 │   └── system.clj
 ├── src
-│   └── user_region
-│       └── core.clj
+│   └── user_region.clj
 ├── README.md
-├── project.clj
+├── deps.edn
 ```
 
 The `project.clj` file describes the project's dependencies and source paths.
@@ -42,7 +43,7 @@ The topology uses a KTable to the number of users per region.
   (let [user-region-table (j/ktable builder (topic-config "user-region"))
 
         region-count (-> user-region-table
-                         (j/group-by (fn [[_ v]] (vector v v))
+                         (j/group-by (fn [[_ region]] [region region])
                                      (topic-config nil
                                                    (Serdes/String)
                                                    (Serdes/String)))
