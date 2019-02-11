@@ -1,7 +1,7 @@
 (ns jackdaw.specs
   "Specs for `jackdaw`"
-  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [clojure.spec.alpha :as s]))
+
 
 ;; The basic topic
 
@@ -11,25 +11,46 @@
 (s/def :jackdaw.topic/topic
   (s/keys :req-un [::topic-name]))
 
-;; Topics as used by the clients (streams, client)
 
-(s/def ::serde any?)
-(s/def ::key-serde ::serde)
-(s/def ::value-serde ::serde)
+;; The basic serde
 
-(s/def :jackdaw.serialization-clients/topic
-  (s/keys :req-un [::topic-name
-                   ::key-serde
-                   ::value-serde]))
+(s/def ::serde-qualified-keyword qualified-keyword?)
+(s/def ::schema string?)
+(s/def ::schema-filename string?)
+(s/def ::key? boolean?)
 
-;; Topics as needed for creation
+(s/def :jackdaw.serde/serde
+  (s/keys :req-un [::serde-qualified-keyword]
+          :opt-un [::schema
+                   ::schema-filename
+                   ::key?]))
+
+
+;; Topics as used by creation clients
 
 (s/def ::partition-count pos-int?)
-(s/def ::replication-factor integer?)
+(s/def ::replication-factor pos-int?)
 (s/def ::topic-config (s/map-of string? string?))
 
-(s/def :jackdaw.creation-clients/topic
+(s/def :jackdaw.creation-client/topic
   (s/keys :req-un [::topic-name
                    ::partition-count
                    ::replication-factor
                    ::topic-config]))
+
+
+;; Topics as used by publishers and subscribers
+
+(s/def ::key-serde ::jackdaw.serde/serde)
+(s/def ::value-serde ::jackdaw.serde/serde)
+
+(s/def :jackdaw.serde-client/topic
+  (s/keys :req-un [::topic-name
+                   ::key-serde
+                   ::value-serde]))
+
+
+;; Topics where only serdes are needed
+
+(s/def :jackdaw.serde-client/topic
+  (s/keys :req-un [::key-serde ::value-serde]))

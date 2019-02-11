@@ -1,0 +1,19 @@
+{:deps
+ {fundingcircle/jackdaw {:mvn/version "0.5.3-add-back-serdes-resolver-SNAPSHOT"}
+  org.apache.kafka/kafka-streams {:mvn/version "2.1.0"}
+  org.apache.kafka/kafka-streams-test-utils {:mvn/version "2.1.0"}
+  org.clojure/clojure {:mvn/version "1.10.0"}
+  org.clojure/algo.generic {:mvn/version "0.1.3"}
+  org.clojure/tools.logging {:mvn/version "0.4.1"}}
+
+ :mvn/repos
+ {"confluent" {:url "https://packages.confluent.io/maven/"}}
+
+ :paths
+ ["src" "test" "dev" "../dev" "resources"]
+
+ :aliases
+ {:test {:extra-deps {com.cognitect/test-runner
+                      {:git/url "https://github.com/cognitect-labs/test-runner.git"
+                       :sha "028a6d41ac9ac5d5c405dfc38e4da6b4cc1255d5"}}
+         :main-opts ["-m" "cognitect.test-runner"]}}}

@@ -1,5 +1,11 @@
 (ns jackdaw.serdes.avro
-  "Generating Serdes mapping Clojure <-> Avro.
+  "DEPRECATION NOTICE:
+
+  This namespace is deprecated and will soon be removed. Please use
+  jackdaw.serdes.avro.confluent.
+
+
+  Generating Serdes mapping Clojure <-> Avro.
 
   The intentional API of this NS has three main features -
   `SchemaCoercion`, the intentional type registry (of which
@@ -52,7 +58,6 @@
   for all of Avro's fundamental types and most of its compounds.
 
   "
-  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [clojure.tools.logging :as log]
             [clojure.core.cache :as cache]
             [clojure.string :as str]
