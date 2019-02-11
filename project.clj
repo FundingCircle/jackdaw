@@ -67,7 +67,8 @@
                :source-uri "http://github.com/fundingcircle/jackdaw/blob/{version}/{filepath}#L{line}"}}
 
              :test
-             {:resource-paths ["test/resources"]}
+             {:resource-paths ["test/resources"]
+              :plugins [[lein-cloverage "1.0.13"]]}
 
              ;; This is not in fact what lein defines repl to be
              :repl
