@@ -32,7 +32,7 @@ The `project.clj` file describes the project's dependencies and source paths.
 The `dev/system.clj` file contains functions to start, stop, and reset the app. These are required 
 by the `user` namespace for interactive development and should not be invoked directly.
 
-The `user_regionn/core.clj` file describes the app and topology. The app reads from a Kafka 
+The `user_region.clj` file describes the app and topology. The app reads from a Kafka 
 topic called 'user-region', computes the number of users per region, and writes the counts to a 
 topic called  'region-user-count'. 
 
