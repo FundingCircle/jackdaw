@@ -2,7 +2,6 @@
   (:require
    [aleph.http :as http]
    [clojure.tools.logging :as log]
-   [clojure.core.async :as async]
    [clojure.test :refer :all]
    [jackdaw.streams :as k]
    [jackdaw.test :as jd.test]
@@ -10,16 +9,20 @@
    [jackdaw.test.serde :as serde]
    [jackdaw.test.journal :refer [with-journal watch-for]]
    [jackdaw.test.transports :as trns]
-   [jackdaw.test.transports.rest-proxy :as rest-proxy])
+   [jackdaw.test.transports.rest-proxy :as rest-proxy]
+   [manifold.stream :as s])
   (:import
    (java.util Properties)))
 
 (def kafka-config {"bootstrap.servers" "localhost:9092"
                    "group.id" "kafka-write-test"})
 
+(def +real-rest-proxy-url+
+  "http://localhost:8082")
+
 (defn rest-proxy-config
   [group-id]
-  {:bootstrap-uri "http://localhost:8082"
+  {:bootstrap-uri +real-rest-proxy-url+
    :group-id group-id})
 
 (defn kstream-config
@@ -67,8 +70,9 @@
   (fix/with-fixtures [(fix/topic-fixture kafka-config topic-config)
                       (fix/skip-to-end {:topic test-in
                                         :config kafka-config})
-                      (fix/kstream-fixture (kstream-config app app-id))]
-
+                      (fix/kstream-fixture (kstream-config app app-id))
+                      (fix/service-ready? {:http-url +real-rest-proxy-url+
+                                           :http-timeout 5000})]
     (with-open [machine (jd.test/test-machine (transport))]
       (log/info "begin" app-id)
       (let [result (f machine)]
@@ -101,7 +105,7 @@
             msg-key (:id msg)]
 
         (log/info "feed: " msg)
-        (async/put! messages
+        (s/put! messages
                     {:topic topic
                      :key msg-key
                      :value msg
@@ -127,7 +131,7 @@
             msg-key (:id msg)]
 
         (log/info "feed: " msg)
-        (async/put! messages
+        (s/put! messages
                     {:topic topic
                      :key msg-key
                      :value msg

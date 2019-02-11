@@ -1,8 +1,10 @@
 (ns jackdaw.test.commands.watch-test
   (:require
-   [clojure.core.async :as async]
    [jackdaw.test.commands.watch :as watch]
-   [clojure.test :refer :all]))
+   [manifold.stream :as s]
+   [manifold.deferred :as d]
+   [clojure.test :refer :all]
+   [clojure.tools.logging :as log]))
 
 ;; An example of the problem the watcher is trying to solve
 ;; might help.
@@ -20,17 +22,15 @@
 (defn run-watch-cmd [watcher cmd-list]
   (let [journal (agent [])
         machine {:journal journal}
-        result-ch (async/thread
-                    (watch/handle-watch-cmd machine :watch [watcher]))]
+        result-d (d/future (watch/handle-watch-cmd machine :watch [watcher]))]
 
     (doseq [cmd (butlast cmd-list)]
       (send journal conj cmd)
-      (let [result (async/poll! result-ch)]
-        (is (nil? result) result)))
+      (is (not (d/realized? result-d))))
 
     (send journal conj (last cmd-list))
 
-    (async/<!! result-ch)))
+    @result-d))
 
 (deftest test-watch-command
   (testing "watch for $100 revenue"

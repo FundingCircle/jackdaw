@@ -5,20 +5,13 @@
 
   :dependencies [[aleph "0.4.6"]
                  [clj-time "0.15.1"]
-                 [org.clojure/core.async "0.4.490"]
                  [danlentz/clj-uuid "0.1.7"]
-                 [environ "1.1.0"]
                  ;; Confluent does paired releases with Kafka, this should tie
                  ;; off with the kafka version.
                  ;; See https://docs.confluent.io/current/release-notes.html
-                 [io.confluent/kafka-avro-serializer "5.1.0"]
-                 [io.confluent/kafka-connect-avro-converter "5.1.0"]
-                 [io.confluent/kafka-connect-jdbc "5.1.0"]
-                 [io.confluent/kafka-schema-registry "5.1.0" :exclusions [org.slf4j/slf4j-log4j12]]
+
                  [io.confluent/kafka-schema-registry-client "5.1.0"]
-                 [org.apache.kafka/connect-api "2.1.0"]
-                 [org.apache.kafka/connect-json "2.1.0"]
-                 [org.apache.kafka/connect-runtime "2.1.0" :exclusions [org.slf4j/slf4j-log4j12]]
+                 [io.confluent/kafka-avro-serializer "5.1.0"]
                  [org.apache.kafka/kafka-clients "2.1.0"]
                  [org.apache.kafka/kafka-streams "2.1.0"]
                  [org.apache.kafka/kafka_2.11 "2.1.0"]
@@ -27,11 +20,8 @@
                  [org.clojure/tools.logging "0.4.1"]
                  [org.clojure/core.cache "0.7.2"]]
 
-  :plugins [[lein-codox "0.10.3"]
-            [lein-environ "1.1.0"]
-            [me.arrdem/lein-git-version "2.0.8"]]
-
   :aot [jackdaw.serdes.fn-impl]
+  :plugins [[me.arrdem/lein-git-version "2.0.8"]]
 
   :git-version
   {:status-to-version
@@ -56,8 +46,9 @@
               :repositories
               [["confluent"
                 "https://packages.confluent.io/maven/"]
-               ["clojars"
-                "https://clojars.org/repo/"]]}
+               ["clojars" {:url "https://clojars.org/repo/"
+                           :username :env/clojars-username
+                           :password :env/clojars-password}]]}
 
              ;; The dev profile - non-deployment configuration
              :dev
@@ -67,7 +58,10 @@
               :injections [(require 'io.aviso.logging.setup)]
               :dependencies [[io.aviso/logging "0.3.1"]
                              [org.apache.kafka/kafka-streams-test-utils "2.1.0"]
+                             [org.apache.kafka/kafka-clients "2.1.0" :classifier "test"]
                              [org.clojure/test.check "0.9.0"]]
+
+              :plugins [[lein-codox "0.10.3"]]
               :codox
               {:output-path "codox"
                :source-uri "http://github.com/fundingcircle/jackdaw/blob/{version}/{filepath}#L{line}"}}

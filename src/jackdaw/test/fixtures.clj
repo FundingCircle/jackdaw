@@ -1,12 +1,14 @@
 (ns jackdaw.test.fixtures
   ""
   (:require
+   [aleph.http :as http]
    [clojure.tools.logging :as log]
    [jackdaw.client :as kafka]
    [jackdaw.streams :as k]
    [jackdaw.streams.interop :refer [streams-builder]]
    [jackdaw.test.transports.kafka :as kt]
    [jackdaw.test.serde :refer [byte-array-serializer byte-array-deserializer]]
+   [manifold.deferred :as d]
    [clojure.test :as t])
   (:import
    (org.apache.kafka.clients.admin AdminClient NewTopic)
@@ -81,16 +83,16 @@
 ;;; kstream-fixture ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- set-started
-  [app-id started]
+  [app-id started?]
   (reify KafkaStreams$StateListener
     (onChange [_ new-state old-state]
       (log/infof "process %s changed state from %s -> %s"
                  app-id
                  (.name old-state)
                  (.name new-state))
-      (when-not @started
+      (when-not (realized? started?)
         (when (.isRunning new-state)
-          (reset! started true))))))
+          (deliver started? true))))))
 
 (defn- set-error
   [error]
@@ -111,14 +113,15 @@
     (let [builder (k/streams-builder)
           stream (k/kafka-streams (topology builder) config)
           error (atom nil)
-          started (atom false)]
+          started? (promise)]
 
       (.setUncaughtExceptionHandler stream (set-error error))
-      (.setStateListener stream (set-started (get config "application.id") started))
+      (.setStateListener stream (set-started (get config "application.id") started?))
 
       (k/start stream)
 
-      (when @started)
+      (when @started?
+        (log/info "commencing test function"))
 
       (try
         (t)
@@ -132,6 +135,31 @@
                              :stream stream}
                             @error))))))))
 
+;; system readyness
+
+(defn service-ready?
+  [{:keys [http-url http-params timeout]}]
+  (fn [t]
+    (let [ok? (fn [x]
+                (and (not (= :timeout x))
+                     (= (:status 200))))
+
+          ready-check @(d/timeout!
+                        (d/future
+                          (loop []
+                            (if-let [result (try
+                                              @(http/get http-url http-params)
+                                              (catch java.net.ConnectException _))]
+                              result
+                              (recur))))
+                        timeout
+                        :timeout)]
+      (if (ok? ready-check)
+        (t)
+        (throw (ex-info (format "service %s not available after waiting for %s"
+                                http-url
+                                timeout)
+                        {}))))))
 
 (defmacro with-fixtures
   [fixtures & body]
