@@ -267,8 +267,7 @@
 
   Returns the consumer for convenience with `->`, `doto` etc."
   [^Consumer consumer timestamp topics]
-  (let [topic-partitions (->> (mapcat #(partitions-for consumer %) topics)
-                              (map #(select-keys % [:topic-name :partition])))
+  (let [topic-partitions (mapcat #(partitions-for consumer %) topics)
         start-offsets (offsets-for-times consumer
                                          (zipmap topic-partitions
                                                  (repeat timestamp)))]

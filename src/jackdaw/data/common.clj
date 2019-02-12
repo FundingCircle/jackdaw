@@ -4,6 +4,7 @@
           PartitionInfo
           Node TopicPartition TopicPartitionInfo])
 
+
 ;;; Node
 
 (defn->data Node->data
@@ -35,6 +36,18 @@
    :partition (.partition tpi)
    :replicas (mapv datafy (.replicas tpi))})
 
+;;; PartitionInfo
+
+(defn->data PartitionInfo->data
+  ""
+  [^PartitionInfo pi]
+  {:topic-name (.topic pi)
+   :isr (mapv datafy (.inSyncReplicas pi))
+   :leader (datafy (.leader pi))
+   :partition (.partition pi)
+   :replicas (mapv datafy (.replicas pi))
+   :offline-replicas (mapv datafy (.offlineReplicas pi))})
+
 ;;; Topic partition tuples
 
 (defn ^TopicPartition ->TopicPartition
@@ -46,8 +59,8 @@
   "Given a `::topic-parititon`, build an equivalent `TopicPartition`.
 
   Inverts `(datafy ^TopicPartition tp)`."
-  [{:keys [:topic-name
-           :partition]
+  [{:keys [topic-name
+           partition]
     :as m}]
   (->TopicPartition m partition))
 
@@ -75,5 +88,6 @@
   (->TopicPartition {:topic-name "foo"} 1)
   (TopicPartition->data *1)
   (map->TopicPartition *1)
+
   ;; On 1.10+
   (datafy *1))
