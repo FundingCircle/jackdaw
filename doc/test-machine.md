@@ -33,6 +33,18 @@ to these services in a shared environment like uat/staging.
     [my.app :as app]
     [jackdaw.test :as j.t]))
 
+(def local-kafka-config
+  {"bootstrap.servers" "localhost:9092"
+   "group.id" "my-app"})
+
+(def topic-config
+  {:foo {:topic-name "foo"
+         :key-serde (string-serde)
+         :value-serde (json-serde)}
+   :bar {:topic-name "foo"
+         :key-serde (string-serde)
+         :value-serde (edn-serde)}})
+
 (defn local-machine []
   (let [t (trns/transport {:type :kafka
                            :config local-kafka-config
