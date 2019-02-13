@@ -21,6 +21,13 @@ To use the latest release, add the following to your project:
 - [Word Count](https://github.com/FundingCircle/jackdaw/tree/master/examples/word-count)
 - [Simple Ledger](https://github.com/FundingCircle/jackdaw/tree/master/examples/simple-ledger)
 
+## Testing
+
+Start the [required services](doc/testing.md) and then
+
+```
+lein test
+```
 
 ## Contributing
 
