@@ -5,6 +5,7 @@
             [clojure.data.json :as json]
             [clojure.java.io :as io]
             [clojure.pprint :refer [pprint]]
+            [jackdaw.test-config :refer [test-config]]
             [jackdaw.serdes.avro :as avro]
             [jackdaw.serdes.avro.schema-registry :as reg])
   (:import [java.nio ByteBuffer]
@@ -34,8 +35,9 @@
 (defn ->serde [schema-str]
   (let [schema-registry-config
         {:avro.schema-registry/client (reg/mock-client)
-         :avro.schema-registry/url    "localhost:8081"}
-
+         :avro.schema-registry/url    (format "%s:%s"
+                                              (get-in (test-config) [:schema-registry :host])
+                                              (get-in (test-config) [:schema-registry :port]))}
         serde-config
         {:avro/schema schema-str
          :key?        false}]

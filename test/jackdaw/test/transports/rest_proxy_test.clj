@@ -5,6 +5,7 @@
    [clojure.test :refer :all]
    [jackdaw.streams :as k]
    [jackdaw.test :as jd.test]
+   [jackdaw.test-config :refer [test-config]]
    [jackdaw.test.fixtures :as fix]
    [jackdaw.test.serde :as serde]
    [jackdaw.test.journal :refer [with-journal watch-for]]
@@ -14,11 +15,15 @@
   (:import
    (java.util Properties)))
 
-(def kafka-config {"bootstrap.servers" "localhost:9092"
+(def kafka-config {"bootstrap.servers" (format "%s:%s"
+                                               (get-in (test-config) [:broker :host])
+                                               (get-in (test-config) [:broker :port]))
                    "group.id" "kafka-write-test"})
 
 (def +real-rest-proxy-url+
-  "http://localhost:8082")
+  (format "http://%s:%s"
+          (get-in (test-config) [:kafka-rest :host])
+          (get-in (test-config) [:kafka-rest :port])))
 
 (defn rest-proxy-config
   [group-id]
@@ -28,7 +33,9 @@
 (defn kstream-config
   [app app-id]
   {:topology app
-   :config {"bootstrap.servers" "localhost:9092"
+   :config {"bootstrap.servers" (format "%s:%s"
+                                        (get-in (test-config) [:broker :host])
+                                        (get-in (test-config) [:broker :port]))
             "application.id" app-id}})
 
 (defn echo-stream

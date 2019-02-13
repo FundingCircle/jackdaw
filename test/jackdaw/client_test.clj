@@ -4,7 +4,9 @@
             [jackdaw.client :as client]
             [jackdaw.test.fixtures :as fix]
             [jackdaw.test.serde :as serde]
-            [jackdaw.data :as data])
+            [jackdaw.data :as data]
+            [jackdaw.client :as client]
+            [jackdaw.test-config :refer [test-config]])
   (:import [java.util.concurrent LinkedBlockingQueue TimeUnit]
            java.time.Duration
            [org.apache.kafka.clients.consumer Consumer ConsumerRecord ConsumerRecords]
@@ -102,7 +104,6 @@
         (.onCompletion cb nil ex)
         (is (= ex @result))))))
 
-
 (deftest ^:integration send!-test
   (fix/with-fixtures [(fix/topic-fixture (broker-config) test-topics 1000)]
     (with-producer (client/producer (producer-config))
@@ -156,7 +157,9 @@
     (f c)))
 
 (deftest ^:integration consumer-test
-  (let [config {"bootstrap.servers" "localhost:9092"
+  (let [config {"bootstrap.servers" (format "%s:%s"
+                                            (get-in (test-config) [:broker :host])
+                                            (get-in (test-config) [:broker :port]))
                 "key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
                 "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"}
         key-serde (:key-serde foo-topic)
@@ -224,6 +227,14 @@
         (with-producer (client/producer (producer-config))
           (fn [producer]
             (is (= 15 (client/num-partitions producer high-partition-topic)))))))))
+
+(deftest ^:integration producer-test
+  (let [config {"bootstrap.servers" (format "%s:%s"
+                                            (get-in (test-config) [:broker :host])
+                                            (get-in (test-config) [:broker :port]))
+                "key.serializer" "org.apache.kafka.common.serialization.StringSerializer"
+                "value.serializer" "org.apache.kafka.common.serialization.StringSerializer"}]
+    (is (instance? Producer (client/producer config)))))
 
 (defn mock-consumer
   "Returns a consumer that will return the supplied items (as ConsumerRecords)

@@ -4,6 +4,7 @@
    [jackdaw.serdes.avro.schema-registry :as reg]
    [jackdaw.streams :as k]
    [jackdaw.test :as jd.test]
+   [jackdaw.test-config :refer [test-config]]
    [jackdaw.test.commands :as cmd]
    [jackdaw.test.fixtures :as fix]
    [jackdaw.test.serde :as serde]
@@ -36,7 +37,9 @@
                    :key-serde :string
                    :value-serde :json}))
 
-(def kafka-config {"bootstrap.servers" "localhost:9092"
+(def kafka-config {"bootstrap.servers" (format "%s:%s"
+                                               (get-in (test-config) [:broker :host])
+                                               (get-in (test-config) [:broker :port]))
                    "group.id" "kafka-write-test"})
 
 (defn kafka-transport

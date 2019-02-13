@@ -9,13 +9,17 @@
             [jackdaw.data :as jd]
             [jackdaw.serdes.avro :as avro]
             [jackdaw.serdes.avro.schema-registry :as reg]
-            [jackdaw.test.fixtures :as fix])
+            [jackdaw.test.fixtures :as fix]
+            [jackdaw.test-config :refer [test-config]])
   (:import [org.apache.avro Schema$Parser]
            [org.apache.avro.generic GenericData$Record]
            [org.apache.kafka.common.serialization Serde Serdes]))
 
-(def +real-schema-registry-url+
-  "http://localhost:8081")
+(defn ^:private real-schema-registry-url
+  []
+  (format "http://%s:%s"
+          (get-in (test-config) [:schema-registry :host])
+          (get-in (test-config) [:schema-registry :port])))
 
 (def +type-registry+
   (merge avro/+base-schema-type-registry+
@@ -26,7 +30,7 @@
    :avro/schema (slurp (io/resource "resources/example_schema.avsc"))})
 
 (def +real-schema-registry+
-  (let [url +real-schema-registry-url+]
+  (let [url (real-schema-registry-url)]
     {:avro.schema-registry/url    url
      :avro.schema-registry/client (reg/client url 16)}))
 
@@ -47,7 +51,7 @@
           (is (= deserialized msg)))))))
 
 (deftest ^:integration real-schema-registry
-  (fix/with-fixtures [(fix/service-ready? {:http-url +real-schema-registry-url+
+  (fix/with-fixtures [(fix/service-ready? {:http-url (real-schema-registry-url)
                                            :http-timeout 5000})]
     (testing "schema registry set in config"
       (let [serde ^Serde (avro/serde +type-registry+ +real-schema-registry+ +topic-config+)]
@@ -66,8 +70,12 @@
   "A Kafka consumer or streams config."
   (let [id (str "dev-" (java.util.UUID/randomUUID))]
     {"replication.factor" "1", "group.id" id, "application.id" id,
-     "bootstrap.servers"  "localhost:9092"
-     "zookeeper.connect"  "localhost:2181"
+     "bootstrap.servers"  (format "%s:%s"
+                                  (get-in (test-config) [:broker :host])
+                                  (get-in (test-config) [:broker :port]))
+     "zookeeper.connect"  (format "%s:%s"
+                                  (get-in (test-config) [:zookeeper :host])
+                                  (get-in (test-config) [:zookeeper :port]))
      "request.timeout.ms" "1000"}))
 
 ;;;; Schemas
@@ -82,7 +90,7 @@
   (partial avro/serde +type-registry+ +real-schema-registry+))
 
 (deftest ^:integration schema-evolution-test
-  (fix/with-fixtures [(fix/service-ready? {:http-url +real-schema-registry-url+
+  (fix/with-fixtures [(fix/service-ready? {:http-url (real-schema-registry-url)
                                            :http-timeout 5000})]
     (testing "serialize then deserialize several serde versions"
       (let [v1-cache
