@@ -1,9 +1,5 @@
-(ns jackdaw.serdes.avro
-  "Deprecation notice: This namespace is deprecated and will soon be
-  removed. Please use jackdaw.serdes.avro.confluent.
-  --
-
-  Generating Serdes mapping Clojure <-> Avro.
+(ns jackdaw.serdes.avro.confluent
+  "Generating Serdes mapping Clojure <-> Avro.
 
   The intentional API of this NS has three main features -
   `SchemaCoercion`, the intentional type registry (of which
@@ -584,7 +580,7 @@
    {:type "string" :logical-type "uuid"}
    (fn [_ _] (StringUUIDType.))})
 
-(defn serde
+(defn serde'
   "Given a type and logical type registry, a schema registry config with
   either a client or a URL and an Avro topic descriptor, build and
   return a Serde instance."
@@ -636,3 +632,10 @@
         avro-serializer (serializer schema->coercion config)
         avro-deserializer (deserializer schema->coercion config)]
     (Serdes/serdeFrom avro-serializer avro-deserializer)))
+
+(defn serde
+  "TODO"
+  [schema-registry-url schema key?]
+  (serde' +base-schema-type-registry+
+          {:avro.schema-registry/url schema-registry-url}
+          {:avro/schema schema :key? key?}))

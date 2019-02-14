@@ -1,0 +1,12 @@
+{
+  "type": "record",
+  "name": "value_schema",
+  "fields": [
+    {
+      "name": "the_value",
+      "type": {
+        "type": "string"
+      }
+    }
+  ]
+}

@@ -1,4 +1,4 @@
-(ns jackdaw.serdes.avro.integration-test
+(ns jackdaw.serde s.avro.integration-test
   (:require [clj-uuid :as uuid]
             [clojure.core.cache :as cache]
             [clojure.data.json :as json]
@@ -36,7 +36,7 @@
 
 (deftest mock-schema-registry
   (testing "schema can be serialized by registry client"
-    (let [serde ^Serde (avro/serde +type-registry+ +mock-schema-registry+ +topic-config+)]
+    (let [serde ^Serde (avro/serde' +type-registry+ +mock-schema-registry+ +topic-config+)]
       (let [msg {:customer-id (uuid/v4)
                  :address     {:value    "foo"
                                :key-path "foo.bar.baz"}}]
@@ -50,7 +50,7 @@
   (fix/with-fixtures [(fix/service-ready? {:http-url +real-schema-registry-url+
                                            :http-timeout 5000})]
     (testing "schema registry set in config"
-      (let [serde ^Serde (avro/serde +type-registry+ +real-schema-registry+ +topic-config+)]
+      (let [serde ^Serde (avro/serde' +type-registry+ +real-schema-registry+ +topic-config+)]
         (let [msg {:customer-id (uuid/v4)
                    :address     {:value    "foo"
                                  :key-path "foo.bar.baz"}}]
@@ -79,7 +79,7 @@
 ;;;; "versioned" topic configs
 
 (def serde*
-  (partial avro/serde +type-registry+ +real-schema-registry+))
+  (partial avro/serde' +type-registry+ +real-schema-registry+))
 
 (deftest ^:integration schema-evolution-test
   (fix/with-fixtures [(fix/service-ready? {:http-url +real-schema-registry-url+
