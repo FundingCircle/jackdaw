@@ -1,6 +1,5 @@
 (ns jackdaw.streams.specs
   ""
-  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [clojure.spec.alpha :as s]
             [jackdaw.specs :as js]
             [jackdaw.streams :as k]

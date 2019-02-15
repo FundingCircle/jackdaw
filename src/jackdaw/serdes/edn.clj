@@ -1,6 +1,5 @@
 (ns jackdaw.serdes.edn
   "Implements an EDN SerDes (Serializer/Deserializer)."
-  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [clojure.edn]
             [jackdaw.serdes.fn :as jsfn])
   (:import java.nio.charset.StandardCharsets

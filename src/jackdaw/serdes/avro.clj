@@ -52,7 +52,6 @@
   for all of Avro's fundamental types and most of its compounds.
 
   "
-  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [clojure.tools.logging :as log]
             [clojure.core.cache :as cache]
             [clojure.string :as str]

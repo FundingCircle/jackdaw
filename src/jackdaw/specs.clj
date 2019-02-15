@@ -1,6 +1,5 @@
 (ns jackdaw.specs
   "Specs for `jackdaw`"
-  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [clojure.spec.alpha :as s]))
 
 ;; The basic topic

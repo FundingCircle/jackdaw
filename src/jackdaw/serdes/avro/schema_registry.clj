@@ -1,6 +1,5 @@
 (ns jackdaw.serdes.avro.schema-registry
   "Helpers for talking to one of Confluent's Avro schema registries."
-  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:import [io.confluent.kafka.schemaregistry.client
             MockSchemaRegistryClient
             CachedSchemaRegistryClient]))

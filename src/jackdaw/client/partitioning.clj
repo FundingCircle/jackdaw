@@ -32,8 +32,6 @@
   This namespace provides both capabilities via an extended
   `#'->ProducerRecord`, and provides a `#'produce!` identical to that
   in `jackdaw.client` but backed by the partitioning machinery."
-  {:license
-   "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [jackdaw.client :as jc]
             [jackdaw.data :as jd])
   (:import org.apache.kafka.clients.producer.Producer

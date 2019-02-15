@@ -2,7 +2,6 @@
   "Extras for `jackdaw.client` for treating topics as seqs of records.
 
   Pretty handy for testing."
-  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [clojure.tools.logging :as log]
             [jackdaw.client :as jc])
   (:import org.apache.kafka.clients.consumer.Consumer))

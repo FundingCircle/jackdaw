@@ -12,7 +12,6 @@
   thereof.
 
   "
-  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [clojure.walk :refer [stringify-keys keywordize-keys]])
   (:import java.util.Properties))
 

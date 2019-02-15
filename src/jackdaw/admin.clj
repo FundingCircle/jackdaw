@@ -5,7 +5,6 @@
 
   Like the underlying `AdminClient` API, this namespace is subject to
   change and should be considered of alpha stability."
-  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require
    [jackdaw.data :as jd]
    [manifold.deferred :as d])

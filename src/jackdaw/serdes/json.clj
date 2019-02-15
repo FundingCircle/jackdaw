@@ -1,6 +1,5 @@
 (ns jackdaw.serdes.json
   "Implements a JSON SerDes (Serializer/Deserializer)."
-  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [clojure.data.json :as json]
             [jackdaw.serdes.fn :as jsfn])
   (:import java.nio.charset.StandardCharsets

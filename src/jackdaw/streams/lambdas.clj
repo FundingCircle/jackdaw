@@ -1,6 +1,5 @@
 (ns jackdaw.streams.lambdas
   "Wrappers for the Java 'lambda' functions."
-  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:import org.apache.kafka.streams.KeyValue
            [org.apache.kafka.streams.kstream
             Aggregator ForeachAction Initializer KeyValueMapper

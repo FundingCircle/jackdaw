@@ -1,6 +1,5 @@
 (ns jackdaw.serdes.fn-impl
   "FIXME"
-  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:import [org.apache.kafka.common.serialization
             Deserializer Serdes Serializer]))
 
