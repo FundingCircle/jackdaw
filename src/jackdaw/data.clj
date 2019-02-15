@@ -60,7 +60,7 @@
 ;; written a Datafiable entry for.
 
 (defmacro ^:private defn->data [name & body]
-  (let [tag (:tag (meta (ffirst (filter vector? body))))]
+  (let [tag (->> body (filter vector?) ffirst meta :tag)]
     (assert tag "Must be hinted!")
     `(do (defn ~name ~@body)
          (extend-protocol Datafiable
