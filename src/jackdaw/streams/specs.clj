@@ -42,8 +42,9 @@
 (def streams-builder?
   (partial satisfies? IStreamsBuilder))
 
-;; from jackdaw.specs
-(s/def ::topic-config :jackdaw.serde-client/topic)
+(s/def ::topic-config (s/keys :req-un [::topic-name
+                                       ::key-serde
+                                       ::value-serde]))
 (s/def ::topic-configs (s/coll-of ::topic-config))
 
 (s/def ::kstreams (s/coll-of kstream?))
