@@ -1,6 +1,7 @@
 (in-ns 'jackdaw.data)
 
 (import '[org.apache.kafka.common
+          PartitionInfo
           Node TopicPartition TopicPartitionInfo])
 
 ;;; Node
@@ -12,6 +13,17 @@
    :port (.port node)
    :id (.id node)
    :rack (.rack node)})
+
+;;; PartitionInfo
+
+(defn->data PartitionInfo->data
+  [^PartitionInfo pi]
+  {:topic (.topic pi)
+   :isr (mapv datafy (.inSyncReplicas pi))
+   :leader (datafy (.leader pi))
+   :replicas (mapv datafy (.replicas pi))
+   :partition (.partition pi)
+   :offline-replicas (mapv datafy (.offlineReplicas pi))})
 
 ;;; TopicPartitionInfo
 

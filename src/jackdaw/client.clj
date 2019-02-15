@@ -22,6 +22,7 @@
            org.apache.kafka.common.serialization.Serde))
 
 (set! *warn-on-reflection* true)
+(declare assignment)
 
 ;;;; Producer
 
@@ -119,11 +120,6 @@
   [^KafkaConsumer consumer]
   (.subscription consumer))
 
-(defn assignment
-  "Return the assigned topics and partitions of a consumer."
-  [^KafkaConsumer consumer]
-  (map jd/datafy (.assignment consumer)))
-
 (defn subscribe
   "Subscribe a consumer to the specified topics.
 
@@ -160,10 +156,10 @@
   producer."
   [producer-or-consumer {:keys [^String topic-name]}]
   (->> (cond (instance? KafkaConsumer producer-or-consumer)
-             (.partitionsFor ^KafkaConsumer consumer topic-name)
+             (.partitionsFor ^KafkaConsumer producer-or-consumer topic-name)
 
              (instance? KafkaProducer producer-or-consumer)
-             (.partitionsFor ^KafkaProducer consumer topic-name)
+             (.partitionsFor ^KafkaProducer producer-or-consumer topic-name)
 
              :else (throw (ex-info "Got non producer/consumer!"
                                    {:inst producer-or-consumer
@@ -305,3 +301,8 @@
                         (map (fn [^PartitionInfo x]
                                (TopicPartition. (.topic x) (.partition x)))))]
     (apply assign consumer partitions)))
+
+(defn assignment
+  "Return the assigned topics and partitions of a consumer."
+  [^KafkaConsumer consumer]
+  (map jd/datafy (.assignment consumer)))
