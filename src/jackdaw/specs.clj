@@ -26,6 +26,15 @@
                    ::key?]))
 
 
+;; Avro serde
+
+(s/def :jackdaw.serde/confluent-avro-serde
+  (s/keys :req-un [::serde-qualified-keyword
+                   ::key?
+                   (or ::schema ::schema-filename)]))
+
+
+
 ;; Topics as used by creation clients
 
 (s/def ::partition-count pos-int?)
@@ -52,5 +61,5 @@
 
 ;; Topics where only serdes are needed
 
-(s/def :jackdaw.serde-client/topic
+(s/def :jackdaw.serde-only-client/topic
   (s/keys :req-un [::key-serde ::value-serde]))

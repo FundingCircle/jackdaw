@@ -1,22 +1,10 @@
 (ns jackdaw.serdes.resolver
-  "Helper function for creating serdes, mostly helpful for Avro ones"
+  "Helper function for creating serdes."
   (:require [clojure.java.io :as io]
             [clojure.spec.alpha :as s]
             [jackdaw.serdes.avro.confluent]
             [jackdaw.serdes.edn]
             [jackdaw.serdes.json]))
-
-
-(s/def ::serde-qualified-keyword qualified-keyword?)
-(s/def ::schema string?)
-(s/def ::schema-filename string?)
-(s/def ::key? boolean?)
-
-(s/def ::avro-serde
-  (s/keys :req-un [::serde-qualified-keyword
-                   ::key?
-                   (or ::schema ::schema-filename)]))
-
 
 (defn load-schema
   "Takes a serde config and loads the schema from the classpath."
@@ -25,11 +13,8 @@
     (try
       (slurp (io/resource schema-filename))
       (catch Exception _
-        (throw (ex-info (str "Could not find schema " schema-filename)
-                        serde-config))))
-    (throw (ex-info "No :schema-filename defined in serde config"
-                    serde-config))))
-
+        (throw (ex-info (str "Could not find schema " schema-filename) serde-config))))
+    (throw (ex-info "No :schema-filename defined in serde config" serde-config))))
 
 (defn find-serde-var
   "Takes a serde config and returns the var for its
@@ -38,10 +23,9 @@
   (let [the-var (resolve (symbol (namespace serde-qualified-keyword)
                                  (name serde-qualified-keyword)))]
     (when (nil? the-var)
-      (throw (ex-info "Could not resolve :serde-qualified-keyword value to a serde function"
-                      (select-keys serde-config [:serde-qualified-keyword]))))
+      (let [msg "Could not resolve :serde-qualified-keyword value to a serde function"]
+        (throw (ex-info msg (select-keys serde-config [:serde-qualified-keyword]))))
     the-var))
-
 
 (defn serde-resolver
   "Returns a function of arity one which takes a serde config map and
@@ -60,7 +44,8 @@
   only the schema registry URL is required."
 
   [& options]
-  (let [{:keys [type-registry schema-registry-url schema-registry-client]} (apply hash-map options)]
+  (let [{:keys [type-registry schema-registry-url schema-registry-client]}
+        (apply hash-map options)]
 
     (fn [{:keys [serde-qualified-keyword
                  schema
@@ -68,9 +53,10 @@
                  key?]
           :as serde-config}]
 
-      (if (not (s/valid? ::serde-qualified-keyword serde-qualified-keyword))
+      (if (not (s/valid? :jackdaw.specs/serde-qualified-keyword
+                         serde-qualified-keyword))
         (throw (ex-info "Invalid serde config."
-                        (s/explain-data ::serde-qualified-keyword
+                        (s/explain-data :jackdaw.specs/serde-qualified-keyword
                                         serde-qualified-keyword)))
 
         (as-> serde-config %
@@ -82,9 +68,9 @@
           (assoc % ::serde (find-serde-var %))
 
           (if (some? (:schema %))
-            (if (not (s/valid? ::avro-serde %))
+            (if (not (s/valid? :jackdaw.serde/confluent-avro-serde %))
               (throw (ex-info "Invalid serde config."
-                              (s/explain-data ::avro-serde %)))
+                              (s/explain-data :jackdaw.serde/confluent-avro-serde %)))
               ((::serde %) schema-registry-url (:schema %) key?
                {:type-registry type-registry
                 :schema-registry-client schema-registry-client}))
