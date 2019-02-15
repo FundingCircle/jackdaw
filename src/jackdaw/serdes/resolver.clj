@@ -24,7 +24,7 @@
                                  (name serde-qualified-keyword)))]
     (when (nil? the-var)
       (let [msg "Could not resolve :serde-qualified-keyword value to a serde function"]
-        (throw (ex-info msg (select-keys serde-config [:serde-qualified-keyword]))))
+        (throw (ex-info msg (select-keys serde-config [:serde-qualified-keyword])))))
     the-var))
 
 (defn serde-resolver
