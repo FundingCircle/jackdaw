@@ -1,5 +1,5 @@
 (ns jackdaw.client-test
-  (:require [clojure.test :refer [deftest is are testing]]
+  (:require [clojure.test :refer :all]
             [jackdaw.client :as client])
   (:import [java.util.concurrent LinkedBlockingQueue TimeUnit]
            java.time.Duration
