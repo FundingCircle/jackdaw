@@ -71,8 +71,8 @@
      (clj-ktable
       (.table ^StreamsBuilder streams-builder
               ^String topic-name
-              (topic->consumed topic-config)
-              (topic->materialized topic-config))))))
+              ^Consumed (topic->consumed topic-config)
+              ^Materialized (topic->materialized topic-config))))))
 
 (deftype CljStreamsBuilder [^StreamsBuilder streams-builder]
   IStreamsBuilder
@@ -120,9 +120,9 @@
   (left-join
     [_ ktable value-joiner-fn]
     (clj-kstream
-     (.leftJoin kstream
-                (ktable* ktable)
-                (value-joiner value-joiner-fn))))
+     (.leftJoin ^KStream kstream
+                ^KTable (ktable* ktable)
+                ^ValueJoiner (value-joiner value-joiner-fn))))
 
   (left-join
     [_ ktable value-joiner-fn
@@ -137,22 +137,22 @@
   (peek
     [_ peek-fn]
     (clj-kstream
-     (.peek kstream (foreach-action peek-fn))))
+     (.peek kstream ^ForeachAction (foreach-action peek-fn))))
 
   (filter
     [_ predicate-fn]
     (clj-kstream
-     (.filter kstream (predicate predicate-fn))))
+     (.filter kstream ^Predicate (predicate predicate-fn))))
 
   (filter-not
     [_ predicate-fn]
     (clj-kstream
-     (.filterNot kstream (predicate predicate-fn))))
+     (.filterNot kstream ^Predicate (predicate predicate-fn))))
 
   (group-by
     [_ key-value-mapper-fn]
     (clj-kgroupedstream
-     (.groupBy kstream (select-key-value-mapper key-value-mapper-fn))))
+     (.groupBy kstream ^KeyValueMapper (select-key-value-mapper key-value-mapper-fn))))
 
   (group-by
     [_ key-value-mapper-fn topic-config]
@@ -176,11 +176,11 @@
   (flat-map
     [_ key-value-mapper-fn]
     (clj-kstream
-     (.flatMap kstream (key-value-flatmapper key-value-mapper-fn))))
+     (.flatMap kstream ^KeyValueMapper (key-value-flatmapper key-value-mapper-fn))))
 
   (for-each!
     [_ foreach-fn]
-    (.foreach kstream (foreach-action foreach-fn))
+    (.foreach kstream ^ForeachAction (foreach-action foreach-fn))
     nil)
 
   (print!
@@ -191,7 +191,7 @@
   (through
     [_ {:keys [topic-name] :as topic-config}]
     (clj-kstream
-     (.through kstream topic-name (topic->produced topic-config))))
+     (.through kstream topic-name ^Produced (topic->produced topic-config))))
 
   (to!
     [_ {:keys [topic-name] :as topic-config}]
@@ -211,7 +211,8 @@
   (group-by-key
     [_ topic-config]
     (clj-kgroupedstream
-     (.groupByKey ^KStream kstream (topic->serialized topic-config))))
+     (.groupByKey ^KStream kstream
+                  ^Serialized (topic->serialized topic-config))))
 
   (join-windowed
     [_ other-kstream value-joiner-fn windows]
@@ -227,9 +228,9 @@
      {other-value-serde :value-serde}]
     (clj-kstream
      (.join kstream
-            (kstream* other-kstream)
-            (value-joiner value-joiner-fn)
-            windows
+            ^KStream (kstream* other-kstream)
+            ^ValueJoiner (value-joiner value-joiner-fn)
+            ^JoinWindows windows
             (Joined/with key-serde this-value-serde other-value-serde))))
 
   (left-join-windowed
@@ -246,51 +247,52 @@
      {other-value-serde :value-serde}]
     (clj-kstream
      (.leftJoin kstream
-                (kstream* other-kstream)
-                (value-joiner value-joiner-fn)
-                windows
+                ^KStream (kstream* other-kstream)
+                ^ValueJoiner (value-joiner value-joiner-fn)
+                ^JoinWindows windows
                 (Joined/with key-serde value-serde other-value-serde))))
 
   (map
     [_ key-value-mapper-fn]
     (clj-kstream
-     (.map kstream (key-value-mapper key-value-mapper-fn))))
+     (.map kstream ^KeyValueMapper (key-value-mapper key-value-mapper-fn))))
 
   (merge
     [_ other-kstream]
     (clj-kstream
       (.merge kstream
-              (kstream* other-kstream))))
+              ^KStream (kstream* other-kstream))))
 
   (outer-join-windowed
     [_ other-kstream value-joiner-fn windows]
     (clj-kstream
-     (.outerJoin kstream
-                 (kstream* other-kstream)
-                 (value-joiner value-joiner-fn)
-                 windows)))
+     (.outerJoin ^KStream kstream
+                 ^KStream (kstream* other-kstream)
+                 ^ValueJoiner (value-joiner value-joiner-fn)
+                 ^JoinWindows windows)))
 
   (outer-join-windowed
     [_ other-kstream value-joiner-fn windows
      {key-serde :key-serde value-serde :value-serde}
      {other-value-serde :value-serde}]
     (clj-kstream
-     (.outerJoin kstream
-                 (kstream* other-kstream)
-                 (value-joiner value-joiner-fn)
-                 windows
+     (.outerJoin ^KStream kstream
+                 ^KStream (kstream* other-kstream)
+                 ^ValueJoiner (value-joiner value-joiner-fn)
+                 ^JoinWindows windows
                  (Joined/with key-serde value-serde other-value-serde))))
 
   (process!
     [_ processor-supplier-fn state-store-names]
-    (.process kstream
-              (processor-supplier processor-supplier-fn)
+    (.process ^KStream kstream
+              ^ProcessorSupplier (processor-supplier processor-supplier-fn)
               (into-array String state-store-names)))
 
   (select-key
     [_ select-key-value-mapper-fn]
     (clj-kstream
-     (.selectKey kstream (select-key-value-mapper select-key-value-mapper-fn))))
+     (.selectKey ^KStream kstream
+                 ^KeyValueMapper (select-key-value-mapper select-key-value-mapper-fn))))
 
   (transform
     [this transformer-supplier-fn]
@@ -299,9 +301,9 @@
   (transform
     [_ transformer-supplier-fn state-store-names]
     (clj-kstream
-     (.transform kstream
-                 (transformer-supplier transformer-supplier-fn)
-                 (into-array String state-store-names))))
+     (.transform ^KStream kstream
+                 ^TransformerSupplier (transformer-supplier transformer-supplier-fn)
+                 ^"[Ljava.lang.String;" (into-array String state-store-names))))
 
   (transform-values
     [this value-transformer-supplier-fn]
@@ -310,7 +312,7 @@
   (transform-values
     [_ value-transformer-supplier-fn state-store-names]
     (clj-kstream
-     (.transformValues kstream
+     (.transformValues ^KStream kstream
                        ^ValueTransformerSupplier (value-transformer-supplier value-transformer-supplier-fn)
                        ^"[Ljava.lang.String;" (into-array String state-store-names))))
 
@@ -343,19 +345,21 @@
   (left-join
     [_ other-ktable value-joiner-fn]
     (clj-ktable
-     (.leftJoin ktable
-                (ktable* other-ktable)
-                (value-joiner value-joiner-fn))))
+     (.leftJoin ^KTable ktable
+                ^KTable (ktable* other-ktable)
+                ^ValueJoiner (value-joiner value-joiner-fn))))
 
   (filter
     [_ predicate-fn]
     (clj-ktable
-     (.filter ktable (predicate predicate-fn))))
+     (.filter ^KTable ktable
+              ^Predicate (predicate predicate-fn))))
 
   (filter-not
     [_ predicate-fn]
     (clj-ktable
-     (.filterNot ktable (predicate predicate-fn))))
+     (.filterNot ^KTable ktable
+                 ^Predicate (predicate predicate-fn))))
 
   (map-values
     [_ value-mapper-fn]
@@ -366,38 +370,39 @@
   (group-by
     [_ key-value-mapper-fn]
     (clj-kgroupedtable
-     (.groupBy ktable (key-value-mapper key-value-mapper-fn))))
+     (.groupBy ktable ^KeyValueMapper (key-value-mapper key-value-mapper-fn))))
 
   (group-by
     [_ key-value-mapper-fn topic-config]
     (clj-kgroupedtable
      (.groupBy ktable
-               (key-value-mapper key-value-mapper-fn)
-               (topic->serialized topic-config))))
+               ^KeyValueMapper (key-value-mapper key-value-mapper-fn)
+               ^Serialized (topic->serialized topic-config))))
 
   (join
     [_ other-ktable value-joiner-fn]
     (clj-ktable
-     (.join ktable
-            (ktable* other-ktable)
-            (value-joiner value-joiner-fn))))
+     (.join ^KTable ktable
+            ^KTable (ktable* other-ktable)
+            ^ValueJoiner (value-joiner value-joiner-fn))))
 
   (outer-join
     [_ other-ktable value-joiner-fn]
     (clj-ktable
-     (.outerJoin ktable
-                 (ktable* other-ktable)
-                 (value-joiner value-joiner-fn))))
+     (.outerJoin ^KTable ktable
+                 ^KTable (ktable* other-ktable)
+                 ^ValueJoiner (value-joiner value-joiner-fn))))
 
   (to-kstream
     [_]
     (clj-kstream
-     (.toStream ktable)))
+     (.toStream ^KTable ktable)))
 
   (to-kstream
     [_ key-value-mapper-fn]
     (clj-kstream
-     (.toStream ktable (key-value-mapper key-value-mapper-fn))))
+     (.toStream ^KTable ktable
+                ^KeyValueMapper (key-value-mapper key-value-mapper-fn))))
 
   (ktable* [_]
     ktable))
@@ -424,10 +429,10 @@
     [_ initializer-fn adder-fn subtractor-fn
      {:keys [topic-name value-serde]}]
     (clj-ktable
-     (.aggregate kgroupedtable
-                 (initializer initializer-fn)
-                 (aggregator adder-fn)
-                 (aggregator subtractor-fn)
+     (.aggregate ^KGroupedTable kgroupedtable
+                 ^Initializer (initializer initializer-fn)
+                 ^Aggregator (aggregator adder-fn)
+                 ^Aggregator (aggregator subtractor-fn)
                  (doto (Materialized/as ^String topic-name) (.withValueSerde value-serde)))))
 
   (count
@@ -447,7 +452,7 @@
      (.reduce ^KGroupedTable kgroupedtable
               ^Reducer (reducer adder-fn)
               ^Reducer (reducer subtractor-fn)
-              (topic->materialized topic-config))))
+              ^Materialized (topic->materialized topic-config))))
 
   IKGroupedTable
   (kgroupedtable*
@@ -478,14 +483,14 @@
     [_ topic-config]
     (clj-ktable
      (.count ^KGroupedStream kgroupedstream
-             (topic->materialized topic-config))))
+             ^Materialized (topic->materialized topic-config))))
 
   (reduce
     [_ reducer-fn topic-config]
     (clj-ktable
      (.reduce ^KGroupedStream kgroupedstream
               ^Reducer (reducer reducer-fn)
-              (topic->materialized topic-config))))
+              ^Materialized (topic->materialized topic-config))))
 
   IKGroupedStream
   (windowed-by-time
@@ -526,7 +531,7 @@
     [_ topic-config]
     (clj-ktable
      (.count ^TimeWindowedKStream windowed-kstream
-             (topic->materialized topic-config))))
+             ^Materialized (topic->materialized topic-config))))
 
   (reduce
     [_ reducer-fn topic-config]
@@ -564,14 +569,14 @@
     [_ topic-config]
     (clj-ktable
      (.count ^SessionWindowedKStream windowed-kstream
-             (topic->materialized topic-config))))
+             ^Materialized (topic->materialized topic-config))))
 
   (reduce
     [_ reducer-fn topic-config]
     (clj-ktable
      (.reduce ^SessionWindowedKStream windowed-kstream
               ^Reducer (reducer reducer-fn)
-              (topic->materialized topic-config))))
+              ^Materialized (topic->materialized topic-config))))
 
   ISessionWindowedKStream
   (session-windowed-kstream*
