@@ -41,8 +41,8 @@
 
 ;; Topics as used by publishers and subscribers
 
-(s/def ::key-serde ::jackdaw.serde/serde)
-(s/def ::value-serde ::jackdaw.serde/serde)
+(s/def ::key-serde :jackdaw.serde/serde)
+(s/def ::value-serde :jackdaw.serde/serde)
 
 (s/def :jackdaw.serde-client/topic
   (s/keys :req-un [::topic-name
