@@ -14,13 +14,13 @@
 
 ;; The basic serde
 
-(s/def ::serde-qualified-keyword qualified-keyword?)
+(s/def ::serde-keyword qualified-keyword?)
 (s/def ::schema string?)
 (s/def ::schema-filename string?)
 (s/def ::key? boolean?)
 
 (s/def :jackdaw.serde/serde
-  (s/keys :req-un [::serde-qualified-keyword]
+  (s/keys :req-un [::serde-keyword]
           :opt-un [::schema
                    ::schema-filename
                    ::key?]))
@@ -29,7 +29,7 @@
 ;; Avro serde
 
 (s/def :jackdaw.serde/confluent-avro-serde
-  (s/keys :req-un [::serde-qualified-keyword
+  (s/keys :req-un [::serde-keyword
                    ::key?
                    (or ::schema ::schema-filename)]))
 

@@ -25,15 +25,15 @@
    {:topic-name "input"
     :partition-count 1
     :replication-factor 1
-    :key-serde {:serde-qualified-keyword :jackdaw.serdes.edn/serde}
-    :value-serde {:serde-qualified-keyword :jackdaw.serdes.edn/serde}}
+    :key-serde {:serde-keyword :jackdaw.serdes.edn/serde}
+    :value-serde {:serde-keyword :jackdaw.serdes.edn/serde}}
 
    "output"
    {:topic-name "output"
     :partition-count 1
     :replication-factor 1
-    :key-serde {:serde-qualified-keyword :jackdaw.serdes.edn/serde}
-    :value-serde {:serde-qualified-keyword :jackdaw.serdes.edn/serde}}})
+    :key-serde {:serde-keyword :jackdaw.serdes.edn/serde}
+    :value-serde {:serde-keyword :jackdaw.serdes.edn/serde}}})
 
 (def topic-metadata
   (memoize (fn []
@@ -131,10 +131,10 @@
      {:topic-name "input"
       :partition-count 1
       :replication-factor 1
-      :key-serde {:serde-qualified-keyword :jackdaw.serdes.avro.confluent/serde
+      :key-serde {:serde-keyword :jackdaw.serdes.avro.confluent/serde
                   :schema-filename "key-schema.json"
                   :key? true}
-      :value-serde {:serde-qualified-keyword :jackdaw.serdes.avro.confluent/serde
+      :value-serde {:serde-keyword :jackdaw.serdes.avro.confluent/serde
                     :schema-filename "value-schema.json"
                     :key? false}}
 
@@ -142,10 +142,10 @@
      {:topic-name "output"
       :partition-count 1
       :replication-factor 1
-      :key-serde {:serde-qualified-keyword :jackdaw.serdes.avro.confluent/serde
+      :key-serde {:serde-keyword :jackdaw.serdes.avro.confluent/serde
                   :schema-filename "key-schema.json"
                   :key? true}
-      :value-serde {:serde-qualified-keyword :jackdaw.serdes.avro.confluent/serde
+      :value-serde {:serde-keyword :jackdaw.serdes.avro.confluent/serde
                     :schema-filename "value-schema.json"
                     :key? false}}})
 
@@ -190,8 +190,8 @@
      {:topic-name "input"
       :partition-count 1
       :replication-factor 1
-      :key-serde {:serde-qualified-keyword :jackdaw.serdes/string-serde}
-      :value-serde {:serde-qualified-keyword :jackdaw.serdes.avro.confluent/serde
+      :key-serde {:serde-keyword :jackdaw.serdes/string-serde}
+      :value-serde {:serde-keyword :jackdaw.serdes.avro.confluent/serde
                     :schema-filename "value-schema.json"
                     :key? false}}
 
@@ -199,8 +199,8 @@
      {:topic-name "output"
       :partition-count 1
       :replication-factor 1
-      :key-serde {:serde-qualified-keyword :jackdaw.serdes/string-serde}
-      :value-serde {:serde-qualified-keyword :jackdaw.serdes.avro.confluent/serde
+      :key-serde {:serde-keyword :jackdaw.serdes/string-serde}
+      :value-serde {:serde-keyword :jackdaw.serdes.avro.confluent/serde
                     :schema-filename "value-schema.json"
                     :key? false}}})
 

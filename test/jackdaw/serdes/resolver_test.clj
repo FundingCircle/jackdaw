@@ -29,27 +29,27 @@
   (testing "Can resolve various serdes names"
     (is (not (nil?
                (resolver/find-serde-var
-                 {:serde-qualified-keyword :jackdaw.serdes.avro/serde}))))
+                 {:serde-keyword :jackdaw.serdes.avro/serde}))))
     (is (not (nil?
                (resolver/find-serde-var
-                 {:serde-qualified-keyword :jackdaw.serdes/string-serde}))))
+                 {:serde-keyword :jackdaw.serdes/string-serde}))))
     (is (not (nil?
                (resolver/find-serde-var
-                 {:serde-qualified-keyword :jackdaw.serdes.json/serde}))))
+                 {:serde-keyword :jackdaw.serdes.json/serde}))))
     (is (not (nil?
                (resolver/find-serde-var
-                 {:serde-qualified-keyword :jackdaw.serdes.edn/serde})))))
+                 {:serde-keyword :jackdaw.serdes.edn/serde})))))
   (testing "error is thrown if the name is not known"
     (is (thrown-with-msg? ExceptionInfo
-                          #"Could not resolve :serde-qualified-keyword value to a serde function"
+                          #"Could not resolve :serde-keyword value to a serde function"
                           (resolver/find-serde-var
-                            {:serde-qualified-keyword :bibbity.bobbity/boo})))))
+                            {:serde-keyword :bibbity.bobbity/boo})))))
 
 (deftest serdes-resolver-test
   (testing "resolving serdes based on config"
     (testing "string serdes"
       (let [resolver-fn (resolver/serde-resolver)
-            string-config {:serde-qualified-keyword :jackdaw.serdes/string-serde}
+            string-config {:serde-keyword :jackdaw.serdes/string-serde}
             resolved (resolver-fn string-config)]
         (is (instance? Serde resolved))
         (is (instance? Serde resolved))
@@ -62,7 +62,7 @@
     (testing "avro serdes"
       (let [resolver-fn (resolver/serde-resolver :schema-registry-url ""
                                                  :schema-registry-client (reg/mock-client))
-            avro-config {:serde-qualified-keyword :jackdaw.serdes.avro.confluent/serde
+            avro-config {:serde-keyword :jackdaw.serdes.avro.confluent/serde
                          :schema-filename "resources/example_schema.avsc"
                          :key? false}
             resolved (resolver-fn avro-config)
@@ -83,7 +83,7 @@
                                                  :type-registry (merge
                                                                   avro/+base-schema-type-registry+
                                                                   avro/+UUID-type-registry+))
-            avro-config {:serde-qualified-keyword :jackdaw.serdes.avro.confluent/serde
+            avro-config {:serde-keyword :jackdaw.serdes.avro.confluent/serde
                          :schema-filename "resources/example_schema.avsc"
                          :key? false}
             resolved (resolver-fn avro-config)

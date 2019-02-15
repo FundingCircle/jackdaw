@@ -19,23 +19,21 @@
 
 (defn find-serde-var
   "Takes a serde config and returns the var for its
-  :serde-qualified-keyword key."
-  [{:keys [serde-qualified-keyword] :as serde-config}]
-  (let [the-var (resolve (symbol (namespace serde-qualified-keyword)
-                                 (name serde-qualified-keyword)))]
+  :serde-keyword key."
+  [{:keys [serde-keyword] :as serde-config}]
+  (let [the-var (resolve (symbol (namespace serde-keyword) (name serde-keyword)))]
     (when (nil? the-var)
-      (let [msg "Could not resolve :serde-qualified-keyword value to a serde function"]
-        (throw (ex-info msg (select-keys serde-config [:serde-qualified-keyword])))))
+      (let [msg "Could not resolve :serde-keyword value to a serde function"]
+        (throw (ex-info msg (select-keys serde-config [:serde-keyword])))))
     the-var))
 
 (defn serde-resolver
   "Returns a function of arity one which takes a serde config map and
   replaces (resolves) it with the implementation for the serde. The
-  config map consists of a :serde-qualified-keyword key, and
-  optionally, keys to specify the schema or schema filename and
-  whether the serde will be used for an Avro key. The options are
-  extra arguments which may be needed to create the serde, e.g, the
-  schema registry URL.
+  config map consists of a :serde-keyword key, and optionally, keys to
+  specify the schema or schema filename and whether the serde will be
+  used for an Avro key. The options are extra arguments which may be
+  needed to create the serde, e.g, the schema registry URL.
 
   Options:
   schema-registry-url - The URL for the schema registry
@@ -48,17 +46,10 @@
   (let [{:keys [type-registry schema-registry-url schema-registry-client]}
         (apply hash-map options)]
 
-    (fn [{:keys [serde-qualified-keyword
-                 schema
-                 schema-filename
-                 key?]
-          :as serde-config}]
-
-      (if (not (s/valid? :jackdaw.specs/serde-qualified-keyword
-                         serde-qualified-keyword))
+    (fn [{:keys [serde-keyword schema schema-filename key?] :as serde-config}]
+      (if (not (s/valid? :jackdaw.specs/serde-keyword serde-keyword))
         (throw (ex-info "Invalid serde config."
-                        (s/explain-data :jackdaw.specs/serde-qualified-keyword
-                                        serde-qualified-keyword)))
+                        (s/explain-data :jackdaw.specs/serde-keyword serde-keyword)))
 
         (as-> serde-config %
 
