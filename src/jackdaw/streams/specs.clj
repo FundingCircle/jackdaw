@@ -42,14 +42,12 @@
 (def streams-builder?
   (partial satisfies? IStreamsBuilder))
 
-(s/def ::topic-config (s/keys :req-un [::topic-name
-                                       ::key-serde
-                                       ::value-serde]))
+(s/def ::topic-config :jackdaw.serde-client/topic)
 (s/def ::topic-configs (s/coll-of ::topic-config))
 
 (s/def ::kstreams (s/coll-of kstream?))
-(s/def ::kstream-or-ktable (s/or :kstream kstream?
-                                 :ktable ktable?))
+(s/def ::kstream-or-ktable (s/or :kstream kstream? :ktable ktable?))
+
 (s/def ::kgroupedstream-or-kgroupedtable
   (s/or :kgroupedstream kgroupedstream?
         :kgroupedtable kgroupedtable?
