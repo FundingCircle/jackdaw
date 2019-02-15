@@ -4,7 +4,8 @@
             [clojure.spec.alpha :as s]
             [jackdaw.serdes.avro.confluent]
             [jackdaw.serdes.edn]
-            [jackdaw.serdes.json]))
+            [jackdaw.serdes.json]
+            [jackdaw.specs]))
 
 (defn load-schema
   "Takes a serde config and loads the schema from the classpath."
