@@ -40,7 +40,7 @@
 (defn broker-config []
   {"bootstrap.servers" "localhost:9092"})
 
-(defn producer-config [group-id]
+(defn producer-config []
   (-> (broker-config)
       (merge {"key.serializer" (.getName org.apache.kafka.common.serialization.StringSerializer)
               "value.serializer" (.getName org.apache.kafka.common.serialization.StringSerializer)})))
@@ -67,7 +67,7 @@
               :timestamp
               :serialized-key-size :serialized-value-size]
 
-   :partitions-for [:topic :isr :leader :replicas :partition :offline-replicas]})
+   :partitions-for [:topic-name :isr :leader :replicas :partition :offline-replicas]})
 
 (defn response-ok? [response-for x]
   (every? #(contains? x %) (get +response-keys+ response-for)))
@@ -76,7 +76,7 @@
   (= :ok x))
 
 (deftest producer-test
-  (with-producer (client/producer (producer-config "producer-test"))
+  (with-producer (client/producer (producer-config))
     (fn [producer]
       (is (instance? Producer producer)))))
 
@@ -105,7 +105,7 @@
 
 (deftest ^:integration send!-test
   (fix/with-fixtures [(fix/topic-fixture (broker-config) test-topics 1000)]
-    (with-producer (client/producer (producer-config "send-test"))
+    (with-producer (client/producer (producer-config))
       (fn [producer]
         (testing "simple send"
           (let [msg (data/->ProducerRecord {:topic-name "foo"} "1" "one")
@@ -124,7 +124,7 @@
 
 (deftest ^:integration produce!-test
   (fix/with-fixtures [(fix/topic-fixture (broker-config) test-topics 1000)]
-    (with-producer (client/producer (producer-config "produce-test"))
+    (with-producer (client/producer (producer-config))
       (fn [producer]
         (let [{:keys [topic key value partition timestamp headers]}
               {:topic     foo-topic
@@ -216,12 +216,12 @@
             (is (= 15 (client/num-partitions consumer high-partition-topic))))))
 
       (testing "single-partition producer"
-        (with-producer (client/producer (producer-config "partition-test"))
+        (with-producer (client/producer (producer-config))
           (fn [producer]
             (is (= 1 (client/num-partitions producer bar-topic))))))
 
       (testing "multi-partition producer"
-        (with-producer (client/producer (producer-config "partition-test"))
+        (with-producer (client/producer (producer-config))
           (fn [producer]
             (is (= 15 (client/num-partitions producer high-partition-topic)))))))))
 
@@ -256,3 +256,112 @@
            :topic "test-topic"
            :key 2
            :value 2))))
+
+(deftest ^:integration position-all-test
+  (fix/with-fixtures [(fix/topic-fixture (broker-config) test-topics 1000)]
+    (let [key-serde (:key-serde high-partition-topic)
+          value-serde (:value-serde high-partition-topic)]
+
+      (with-consumer (-> (client/consumer (consumer-config "partition-test"))
+                         (client/subscribe [bar-topic]))
+        (fn [consumer]
+          ;; without an initial `poll`, there is no position info
+          (client/poll consumer 0)
+          (is (= {{:topic-name "bar" :partition 0} 0}
+                 (client/position-all consumer))))))))
+
+(defn with-topic-data
+  "Helper for creating a randomly named topic and seeding it with data
+   obtained by invoking the supplied `data` function with the created
+   topic config.
+
+   The topic is deleted after invoking `f`"
+  [data group-id f]
+  (let [topic (str (java.util.UUID/randomUUID))
+        topic-config {:topic-name topic
+                      :partition-count 1
+                      :replication-factor 1
+                      :key-serde :string
+                      :value-serde :string}]
+    (with-open [admin (admin/->AdminClient (broker-config))]
+      (admin/create-topics! admin [topic-config])
+
+      (try
+        (with-producer (client/producer (producer-config))
+          (fn [producer]
+            (doseq [record (data topic-config)]
+              @(client/send! producer record))))
+
+        (with-consumer (client/consumer (consumer-config group-id))
+          (fn [consumer]
+            (f consumer topic-config)))
+
+        (finally
+          (admin/delete-topics! admin [topic-config]))))))
+
+(defn seek-test-data
+  [topic]
+  (->> [[1 "one"]
+        [2 "two"]
+        [3 "three"]
+        [4 "four"]
+        [5 "five"]
+        [6 "six"]
+        [7 "seven"]
+        [8 "eight"]
+        [9 "nine"]
+        [10 "ten"]]
+       (map (fn [[k v]]
+              (let [timestamp k
+                    partition 0]
+                (data/->ProducerRecord topic partition timestamp (str k) v))))))
+
+(deftest seek-test
+  (testing "consumer with automatic subscription"
+    (with-topic-data seek-test-data "seek-test"
+      (fn [consumer topic-config]
+        (testing "seek-to-end"
+          (let [end-pos (-> (client/subscribe consumer [topic-config])
+                            (client/seek-to-end-eager)
+                            (client/position-all)
+                            (vals)
+                            first)]
+            (is (= 10 end-pos))))
+
+        (testing "seek-to-beginning"
+          (let [begin-pos (-> (client/subscribe consumer [topic-config])
+                              (client/seek-to-beginning-eager)
+                              (client/position-all)
+                              (vals)
+                              first)]
+            (is (= 0 begin-pos)))))))
+
+  (testing "consumer with manual assignment"
+    (with-topic-data seek-test-data "seek-test"
+      (fn [consumer topic-config]
+        (testing "seek to ts-next=10"
+          (let [ts-next 10]
+            (as-> consumer $
+              (client/assign-all $ (map :topic-name [topic-config]))
+              (client/seek-to-timestamp $ ts-next [topic-config])
+              (client/position-all $)
+              (is (= [(dec ts-next)]
+                     (vals $))))))
+
+        (testing "seek to ts-next=1"
+          (let [ts-next 1]
+            (as-> consumer $
+              (client/assign-all $ (map :topic-name [topic-config]))
+              (client/seek-to-timestamp $ ts-next [topic-config])
+              (client/position-all $)
+              (is (= [0]
+                     (vals $))))))
+
+        (testing "seek to ts-next=1000"
+          (let [ts-next 1000]
+            (as-> consumer $
+              (client/assign-all $ (map :topic-name [topic-config]))
+              (client/seek-to-timestamp $ ts-next [topic-config])
+              (client/position-all $)
+              (is (= [0]
+                     (vals $))))))))))

@@ -68,6 +68,26 @@
   ;; on 1.10+
   (datafy *1))
 
+;;; OffsetAndTimestamp tuples
+
+(defn ^OffsetAndTimestamp ->OffsetAndTimestamp
+  [{:keys [offset timestamp]}]
+  (OffsetAndTimestamp. offset (long timestamp)))
+
 (defn->data OffsetAndTimestamp->data [^OffsetAndTimestamp ots]
   {:offset (.offset ots)
    :timestamp (.timestamp ots)})
+
+(defn map->OffsetAndTimestamp
+  [{:keys [offset timestamp] :as m}]
+  (->OffsetAndTimestamp m))
+
+(defn as-OffsetAndTimestamp
+  [ot]
+  (cond (instance? OffsetAndTimestamp ot)
+        ot
+
+        (map? ot)
+        (if (= OffsetAndTimestamp (:clojure.datafy/class (meta ot)))
+          (:clojure.datafy/obj (meta ot))
+          (map->OffsetAndTimestamp ot))))
