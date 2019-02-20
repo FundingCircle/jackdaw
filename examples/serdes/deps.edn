@@ -1,5 +1,5 @@
 {:deps
- {fundingcircle/jackdaw {:mvn/version "0.5.3-add-back-serdes-resolver-SNAPSHOT"}
+ {fundingcircle/jackdaw {:mvn/version "0.6.0"}
   org.apache.kafka/kafka-streams {:mvn/version "2.1.0"}
   org.apache.kafka/kafka-streams-test-utils {:mvn/version "2.1.0"}
   org.clojure/clojure {:mvn/version "1.10.0"}
