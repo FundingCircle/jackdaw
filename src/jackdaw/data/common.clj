@@ -36,18 +36,6 @@
    :partition (.partition tpi)
    :replicas (mapv datafy (.replicas tpi))})
 
-;;; PartitionInfo
-
-(defn->data PartitionInfo->data
-  ""
-  [^PartitionInfo pi]
-  {:topic-name (.topic pi)
-   :isr (mapv datafy (.inSyncReplicas pi))
-   :leader (datafy (.leader pi))
-   :partition (.partition pi)
-   :replicas (mapv datafy (.replicas pi))
-   :offline-replicas (mapv datafy (.offlineReplicas pi))})
-
 ;;; Topic partition tuples
 
 (defn ^TopicPartition ->TopicPartition
