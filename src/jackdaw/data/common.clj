@@ -18,7 +18,7 @@
 
 (defn->data PartitionInfo->data
   [^PartitionInfo pi]
-  {:topic (.topic pi)
+  {:topic-name (.topic pi)
    :isr (mapv datafy (.inSyncReplicas pi))
    :leader (datafy (.leader pi))
    :replicas (mapv datafy (.replicas pi))
@@ -62,8 +62,9 @@
         o
 
         (map? o)
-        (or (:clojure.datafy/obj (meta o))
-            (map->TopicPartition o))
+        (if (= TopicPartition (:clojure.datafy/class (meta o)))
+          (:clojure.datafy/obj (meta o))
+          (map->TopicPartition o))
 
         :else
         (throw (ex-info "Unable to build TopicPartition"

@@ -251,8 +251,9 @@
   (->> partition-timestamps
        (map (fn [[topic-partition ts]]
               [(jd/as-TopicPartition topic-partition) (long ts)]))
+       (into {})
        (.offsetsForTimes consumer)
-       (map (fn [[k v]] [(jd/datafy k) (jd/datafy v)]))
+       (map (fn [[k v]] [k v]))
        (into {})))
 
 (defn seek-to-timestamp
@@ -267,12 +268,10 @@
   Returns the consumer for convenience with `->`, `doto` etc."
   [^Consumer consumer timestamp topics]
   (let [topic-partitions (->> (mapcat #(partitions-for consumer %) topics)
-                              (mapcat vals)
-                              (into {}))
+                              (map #(select-keys % [:topic-name :partition])))
         start-offsets (offsets-for-times consumer
                                          (zipmap topic-partitions
                                                  (repeat timestamp)))]
-
     (doseq [[^TopicPartition topic-partition
              ^OffsetAndTimestamp timestamp-offset] start-offsets]
       ;; timestamp-offset is nil if the topic has no messages
