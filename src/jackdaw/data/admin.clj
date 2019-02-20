@@ -7,9 +7,11 @@
 ;;; ConfigEntry
 
 (defn ->ConfigEntry
-  ""
-  ^ConfigEntry [^String k ^String v]
-  (ConfigEntry. k v))
+  "value can be a string else is a map where value is the :value key"
+  ^ConfigEntry [^String k v]
+  (if (string? v)
+    (ConfigEntry. k v)
+    (ConfigEntry. k (:value v))))
 
 (defn->data ConfigEntry->data
   ""

@@ -136,10 +136,11 @@
   current value."
   [^AdminClient client topics]
   {:pre [(client? client)
-          (sequential? topics)]}
+         (sequential? topics)]}
   (->> @(describe-configs* client (map #(-> % :topic-name jd/->topic-resource) topics))
+       (into {})
        (reduce-kv (fn [m k v]
-                   (assoc m (jd/datafy k) (jd/datafy v)))
+                    (assoc m (jd/datafy k) (jd/datafy v)))
                   {})))
 
 (defn topics-ready?

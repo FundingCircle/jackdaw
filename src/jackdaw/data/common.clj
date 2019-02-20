@@ -4,6 +4,7 @@
           PartitionInfo
           Node TopicPartition TopicPartitionInfo])
 
+
 ;;; Node
 
 (defn->data Node->data
@@ -46,8 +47,8 @@
   "Given a `::topic-parititon`, build an equivalent `TopicPartition`.
 
   Inverts `(datafy ^TopicPartition tp)`."
-  [{:keys [:topic-name
-           :partition]
+  [{:keys [topic-name
+           partition]
     :as m}]
   (->TopicPartition m partition))
 
@@ -75,5 +76,6 @@
   (->TopicPartition {:topic-name "foo"} 1)
   (TopicPartition->data *1)
   (map->TopicPartition *1)
+
   ;; On 1.10+
   (datafy *1))
