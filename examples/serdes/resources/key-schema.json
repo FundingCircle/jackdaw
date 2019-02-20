@@ -1,0 +1,12 @@
+{
+  "type": "record",
+  "name": "key_schema",
+  "fields": [
+    {
+      "name": "the_key",
+      "type": {
+        "type": "string"
+      }
+    }
+  ]
+}
