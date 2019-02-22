@@ -23,6 +23,7 @@
   "Starts ZooKeeper and Kafka."
   []
   (sh "confluent" "destroy")
+  (println "schema-registry is down")
   (println "kafka is down")
   (println "zookeeper is down"))
 
@@ -30,7 +31,7 @@
   "Starts ZooKeeper and Kafka."
   []
   (with-out-str (stop))
-  (doseq [s ["zookeeper" "kafka"]]
+  (doseq [s ["zookeeper" "kafka" "schema-registry"]]
     (do (while (not-up s)
           (sh "confluent" "start" s)
           (Thread/sleep 1000))

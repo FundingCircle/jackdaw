@@ -22,6 +22,7 @@
            org.apache.kafka.common.serialization.Serde))
 
 (set! *warn-on-reflection* true)
+(declare assignment)
 
 ;;;; Producer
 
@@ -57,13 +58,13 @@
   either [RecordMetdata, nil] or [nil, Exception] respectively if the
   record was sent or if an exception was encountered."
   ([producer record]
-   (-> (.send ^Producer producer ^ProducerRecord record)
-       deref jd/datafy delay))
+   (let [send-future (.send ^Producer producer ^ProducerRecord record)]
+     (delay (jd/datafy @send-future))))
   ([producer record callback-fn]
-   (-> (.send ^Producer producer
-              ^ProducerRecord record
-              ^Callback (callback callback-fn))
-       deref jd/datafy delay)))
+   (let [send-future (.send ^Producer producer
+                            ^ProducerRecord record
+                            ^Callback (callback callback-fn))]
+     (delay (jd/datafy @send-future)))))
 
 (defn produce!
   "Helper wrapping `#'send!`.
@@ -75,16 +76,16 @@
           (jd/->ProducerRecord topic value)))
   ([producer topic key value]
    (send! producer
-          (jd/->ProducerRecord topic value)))
+          (jd/->ProducerRecord topic key value)))
   ([producer topic partition key value]
    (send! producer
-          (jd/->ProducerRecord topic partition topic value)))
+          (jd/->ProducerRecord topic partition key value)))
   ([producer topic partition timestamp key value]
    (send! producer
-          (jd/->ProducerRecord topic partition timestamp topic value)))
+          (jd/->ProducerRecord topic partition timestamp key value)))
   ([producer topic partition timestamp key value headers]
    (send! producer
-          (jd/->ProducerRecord topic partition timestamp topic value headers))))
+          (jd/->ProducerRecord topic partition timestamp key value headers))))
 
 ;;;; Consumer
 
@@ -118,11 +119,6 @@
   are subscribed to."
   [^KafkaConsumer consumer]
   (.subscription consumer))
-
-(defn assignment
-  "Return the assigned topics and partitions of a consumer."
-  [^KafkaConsumer consumer]
-  (map jd/datafy (.assignment consumer)))
 
 (defn subscribe
   "Subscribe a consumer to the specified topics.
@@ -160,10 +156,10 @@
   producer."
   [producer-or-consumer {:keys [^String topic-name]}]
   (->> (cond (instance? KafkaConsumer producer-or-consumer)
-             (.partitionsFor ^KafkaConsumer consumer topic-name)
+             (.partitionsFor ^KafkaConsumer producer-or-consumer topic-name)
 
              (instance? KafkaProducer producer-or-consumer)
-             (.partitionsFor ^KafkaProducer consumer topic-name)
+             (.partitionsFor ^KafkaProducer producer-or-consumer topic-name)
 
              :else (throw (ex-info "Got non producer/consumer!"
                                    {:inst producer-or-consumer
@@ -255,8 +251,9 @@
   (->> partition-timestamps
        (map (fn [[topic-partition ts]]
               [(jd/as-TopicPartition topic-partition) (long ts)]))
+       (into {})
        (.offsetsForTimes consumer)
-       (map (fn [[k v]] [(jd/datafy k) (jd/datafy v)]))
+       (map (fn [[k v]] [k v]))
        (into {})))
 
 (defn seek-to-timestamp
@@ -271,12 +268,10 @@
   Returns the consumer for convenience with `->`, `doto` etc."
   [^Consumer consumer timestamp topics]
   (let [topic-partitions (->> (mapcat #(partitions-for consumer %) topics)
-                              (mapcat vals)
-                              (into {}))
+                              (map #(select-keys % [:topic-name :partition])))
         start-offsets (offsets-for-times consumer
                                          (zipmap topic-partitions
                                                  (repeat timestamp)))]
-
     (doseq [[^TopicPartition topic-partition
              ^OffsetAndTimestamp timestamp-offset] start-offsets]
       ;; timestamp-offset is nil if the topic has no messages
@@ -305,3 +300,8 @@
                         (map (fn [^PartitionInfo x]
                                (TopicPartition. (.topic x) (.partition x)))))]
     (apply assign consumer partitions)))
+
+(defn assignment
+  "Return the assigned topics and partitions of a consumer."
+  [^KafkaConsumer consumer]
+  (map jd/datafy (.assignment consumer)))

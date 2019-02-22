@@ -1,43 +1,39 @@
 (ns jackdaw.serdes.json
-  "Implements JSON serializer, deserializer, and SerDe."
+  "Implements a JSON SerDes (Serializer/Deserializer)."
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [clojure.data.json :as json]
-            [clojure.java.io :as io]
-            [jackdaw.serdes.fn :as sfn])
+            [jackdaw.serdes.fn :as jsfn])
   (:import java.nio.charset.StandardCharsets
-           [org.apache.kafka.common.serialization Deserializer Serdes Serializer]))
+           org.apache.kafka.common.serialization.Serdes))
 
 (set! *warn-on-reflection* true)
 
-(defn bytes-to-string
-  "Convert a byte array to string."
-  [^bytes data]
-  (String. data StandardCharsets/UTF_8))
-
-(defn string-to-bytes
-  "Convert a string to byte array."
+(defn to-bytes
+  "Converts a string to a byte array."
   [data]
   (.getBytes ^String data StandardCharsets/UTF_8))
 
-(defn json-serializer
-  "Create a JSON serializer"
-  []
-  (sfn/new-serializer {:serialize (fn [_ _ data]
-                                    (when data
-                                      (-> data
-                                          json/write-str
-                                          string-to-bytes)))}))
+(defn from-bytes
+  "Converts a byte array to a string."
+  [^bytes data]
+  (String. data StandardCharsets/UTF_8))
 
-(defn json-deserializer
-  "Create a JSON deserializer"
+(defn serializer
+  "Returns a JSON serializer."
   []
-  (sfn/new-deserializer {:deserialize (fn [_ _ data]
-                                        (when data
-                                          (-> data
-                                              bytes-to-string
-                                              (json/read-str :key-fn keyword))))}))
+  (jsfn/new-serializer {:serialize (fn [_ _ data]
+                                     (when data
+                                       (to-bytes (json/write-str data))))}))
 
-(defn json-serde
-  "Create a JSON serde."
+(defn deserializer
+  "Returns a JSON deserializer."
   []
-  (Serdes/serdeFrom (json-serializer) (json-deserializer)))
+  (jsfn/new-deserializer {:deserialize (fn [_ _ data]
+                                         (when data
+                                           (-> (from-bytes data)
+                                               (json/read-str :key-fn keyword))))}))
+
+(defn serde
+  "Returns a JSON serde."
+  []
+  (Serdes/serdeFrom (serializer) (deserializer)))

@@ -1,5 +1,11 @@
 (ns jackdaw.serdes.avro
-  "Generating Serdes mapping Clojure <-> Avro.
+  "DEPRECATION NOTICE:
+
+  This namespace is deprecated and will soon be removed. Please use
+  jackdaw.serdes.avro.confluent.
+
+
+  Generating Serdes mapping Clojure <-> Avro.
 
   The intentional API of this NS has three main features -
   `SchemaCoercion`, the intentional type registry (of which
@@ -52,7 +58,6 @@
   for all of Avro's fundamental types and most of its compounds.
 
   "
-  {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [clojure.tools.logging :as log]
             [clojure.core.cache :as cache]
             [clojure.string :as str]
@@ -484,7 +489,7 @@
 (defn- base-config [registry-url]
   {"schema.registry.url" registry-url})
 
-(defn- avro-serializer [schema->coercion serde-config]
+(defn- serializer [schema->coercion serde-config]
   (let [{:keys [registry-client registry-url avro-schema key?]} serde-config
         base-serializer (KafkaAvroSerializer. registry-client)
         ;; This is invariant across subject schema changes, shockingly.
@@ -505,7 +510,7 @@
     (.configure clj-serializer (base-config registry-url) key?)
     clj-serializer))
 
-(defn- avro-deserializer [schema->coercion serde-config]
+(defn- deserializer [schema->coercion serde-config]
   (let [{:keys [registry-client registry-url avro-schema key?]} serde-config
         base-deserializer (KafkaAvroDeserializer. registry-client)
         methods {:close       (fn [_]
@@ -580,7 +585,7 @@
    {:type "string" :logical-type "uuid"}
    (fn [_ _] (StringUUIDType.))})
 
-(defn avro-serde
+(defn serde
   "Given a type and logical type registry, a schema registry config with
   either a client or a URL and an Avro topic descriptor, build and
   return a Serde instance."
@@ -629,6 +634,6 @@
                              (get @coercion-cache %))
 
         ;; The final serdes based on the (cached) coercion stack.
-        serializer (avro-serializer schema->coercion config)
-        deserializer (avro-deserializer schema->coercion config)]
-    (Serdes/serdeFrom serializer deserializer)))
+        avro-serializer (serializer schema->coercion config)
+        avro-deserializer (deserializer schema->coercion config)]
+    (Serdes/serdeFrom avro-serializer avro-deserializer)))

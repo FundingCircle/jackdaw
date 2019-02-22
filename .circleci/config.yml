@@ -1,82 +1,157 @@
 ---
 version: 2
 
+references:
+  repo_cache_key: &repo_cache_key
+    v1-jackdaw-{{ .Branch }}-{{ .Revision }}
+
+  repo_cache_backup_1: &repo_cache_backup_1
+    v1-jackdaw-{{ .Branch }}
+
+  repo_cache_backup_2: &repo_cache_backup_2
+    v1-jackdaw
+
+  restore_repo: &restore_repo
+    restore_cache:
+      keys:
+        - *repo_cache_key
+        - *repo_cache_backup_1
+        - *repo_cache_backup_2
+
+  mvn_cache_key: &mvn_cache_key
+    v1-jackdaw-deps-{{ checksum "project.clj" }}
+
+  mvn_cache_backup: &mvn_cache_backup
+    v1-jackdaw-deps
+
+  restore_mvn: &restore_mvn
+    restore_cache:
+      keys:
+        - *mvn_cache_key
+        - *mvn_cache_backup
+
+  build_config: &build_config
+    docker:
+      - image: circleci/clojure:lein-2.8.1
+    working_directory: ~/jackdaw
+
+  deploy_config: &deploy_config
+    docker:
+      - image: circleci/clojure:lein-2.8.1
+    working_directory: /home/circleci/jackdaw
+
+  test_config: &test_config
+    docker:
+      - image: circleci/clojure:lein-2.8.1
+      - image: confluentinc/cp-zookeeper:5.1.0
+        environment:
+          ZOOKEEPER_CLIENT_PORT: 2181
+      - image: confluentinc/cp-kafka:5.1.0
+        environment:
+          KAFKA_BROKER_ID: 1
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+          KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+          KAFKA_ZOOKEEPER_CONNECT: localhost:2181
+      - image: confluentinc/cp-schema-registry:5.1.0
+        environment:
+          SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: localhost:2181
+          SCHEMA_REGISTRY_HOST_NAME: localhost
+          SCHEMA_REGISTRY_LISTENERS: http://localhost:8081
+      - image: confluentinc/cp-kafka-rest:5.1.0
+        environment:
+          KAFKA_REST_ZOOKEEPER_CONNECT: localhost:2181
+          KAFKA_REST_LISTENERS: http://0.0.0.0:8082
+          KAFKA_REST_SCHEMA_REGISTRY: http://localhost:8081
+          KAFKA_REST_HOST_NAME: localhost
+    working_directory: ~/jackdaw
+
 jobs:
-  build:
-    docker:
-      - image: quay.io/fundingcircle/clojure:latest
-        auth:
-          username: $DOCKER_USERNAME
-          password: $DOCKER_PASSWORD
-    environment:
-      _JAVA_OPTIONS: "-Xms1024m -Xmx3072m"
+  checkout_code:
+    <<: *build_config
     steps:
+      - *restore_repo
       - checkout
-      - &restore-cache
-        restore_cache:
-          keys:
-            - libs-cache-{{ checksum "project.clj" }}-{{ checksum ".circleci/config.yml" }}
-            - libs-cache-{{ checksum "project.clj" }}
-            - libs-cache-
-      - run:
-          command: nohup confluent start
-      - run:
-          command: confluent status
       - save_cache:
-          key: libs-cache-{{ checksum "project.clj" }}-{{ checksum ".circleci/config.yml" }}
+          key: v1-jackdaw-{{ .Branch }}-{{ .Revision }}
           paths:
-            - ~/.m2/
-      - run:
-          command: lein test
-
-  deploy-staging:
-    docker:
-      - image: circleci/clojure:latest
-    environment:
-      GIT_AUTHOR_NAME: CircleCI
-      GIT_AUTHOR_EMAIL: circleci@circleci.com
-
+            - .
+  checkout_tags:
+    <<: *build_config
     steps:
+      - *restore_repo
+      - run: git config --global url."https://github.com/".insteadOf "git@github.com:"
+      - run: git config --global url."https://".insteadOf "git://"
+      - run: git fetch --tags
       - checkout
-      - *restore-cache
-      - run:
-          command: git config --global user.name $GIT_AUTHOR_NAME
-      - run:
-          command: git config --global user.email $GIT_AUTHOR_EMAIL
-      - run:
-          command: lein deploy snapshots
-  deploy-release:
-    docker:
-      - image: circleci/clojure:latest
-    environment:
-      GIT_AUTHOR_NAME: CircleCI
-      GIT_AUTHOR_EMAIL: circleci@circleci.com
-
+      - save_cache:
+          key: v1-jackdaw-{{ .Branch }}-{{ .Revision }}
+          paths:
+            - .
+  deps:
+    <<: *build_config
     steps:
-      - checkout
-      - *restore-cache
+      - *restore_repo
+      - *restore_mvn
       - run:
-          command: git config --global user.name $GIT_AUTHOR_NAME
+          lein with-profiles +test deps
+      - save_cache:
+          key: *mvn_cache_key
+          paths:
+            - /home/circleci/.m2
+  test:
+    <<: *test_config
+    steps:
+      - *restore_repo
+      - *restore_mvn
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run:
-          command: git config --global user.email $GIT_AUTHOR_EMAIL
+          lein with-profile +test cloverage --codecov
+      - store_artifacts:
+          path: ./logs
+      - store_artifacts:
+          path: target/coverage
+      - store_test_results:
+          path: target/test-results
       - run:
-          command: lein deploy
+          name: Report Test Coverage
+          command: bash <(curl -s https://codecov.io/bash)
+
+  deploy:
+    <<: *deploy_config
+    steps:
+      - *restore_repo
+      - *restore_mvn
+      - run: lein deploy clojars
 
 workflows:
   version: 2
-  build_and_deploy:
+  build_and_test:
     jobs:
-      - build:
+      - checkout_code
+      - deps:
           context: org-global
-      - deploy-staging:
           requires:
-            - build
-          filters:
-            branches:
-              ignore: master
-      - deploy-release:
+            - checkout_code
+      - test:
+          context: org-global
           requires:
-            - build
+            - deps
+
+  deploy:
+    jobs:
+      - checkout_tags:
           filters:
+            tags:
+              only: /.*/
             branches:
-              only: master
+              ignore: /.*/
+      - deploy:
+          context: org-global
+          requires:
+            - checkout_tags
+          filters:
+            tags:
+              only: /^\d+\.\d+\.\d+/
+            branches:
+              ignore: /.*/

@@ -79,16 +79,16 @@
 
   See `#'record-key->key-fn` for an example of annotating a topic with
   a `key-fn` function."
-  ([^Producer producer {:keys [topic-name ::key-fn] :as t} value]
+  ([^Producer producer {:keys [key-fn] :as t} value]
    (if key-fn
      (->ProducerRecord producer t (key-fn value) value)
-     (jd/->ProducerRecord ^String topic-name value)))
-  ([^Producer producer {:keys [topic-name ::partition-fn] :as t} key value]
+     (jd/->ProducerRecord t value)))
+  ([^Producer producer {:keys [partition-fn] :as t} key value]
    (if partition-fn
      (as-> (jc/num-partitions producer t) %
        (partition-fn t key value %)
        (->ProducerRecord producer t % key value))
-     (jd/->ProducerRecord ^String topic-name key value)))
+     (jd/->ProducerRecord t key value)))
   ([^Producer producer topic partition key value]
    (jd/->ProducerRecord topic (int partition) key value))
   ([^Producer producer topic partition timestamp key value]

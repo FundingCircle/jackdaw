@@ -1,15 +1,15 @@
 (ns jackdaw.serdes.edn
-  "FIXME"
+  "Implements an EDN SerDes (Serializer/Deserializer)."
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [clojure.edn]
-            [jackdaw.serdes.fn :as j.s.fn])
+            [jackdaw.serdes.fn :as jsfn])
   (:import java.nio.charset.StandardCharsets
            org.apache.kafka.common.serialization.Serdes))
 
 (set! *warn-on-reflection* true)
 
 (defn to-bytes
-  "Convert a string to byte array."
+  "Converts a string to a byte array."
   [data]
   (.getBytes ^String data StandardCharsets/UTF_8))
 
@@ -21,18 +21,24 @@
 (defn serializer
   "Returns an EDN serializer."
   []
-  (j.s.fn/new-serializer {:serialize (fn [_ _ data]
-                                       (when data
-                                         (to-bytes (prn-str data))))}))
+  (jsfn/new-serializer {:serialize (fn [_ _ data]
+                                     (when data
+                                       (to-bytes
+                                        (binding [*print-length* false
+                                                  *print-level* false]
+                                          (prn-str data)))))}))
 
 (defn deserializer
   "Returns an EDN deserializer."
-  []
-  (j.s.fn/new-deserializer {:deserialize (fn [_ _ data]
-                                           (-> (from-bytes data)
-                                               clojure.edn/read-string))}))
+  ([]
+   (deserializer {}))
+  ([opts]
+   (let [opts (into {} opts)]
+     (jsfn/new-deserializer {:deserialize (fn [_ _ data]
+                                            (->> (from-bytes data)
+                                                 (clojure.edn/read-string opts)))}))))
 
 (defn serde
-  "Returns EDN serde."
-  []
-  (Serdes/serdeFrom (serializer) (deserializer)))
+  "Returns an EDN serde."
+  [& [opts]]
+  (Serdes/serdeFrom (serializer) (deserializer opts)))

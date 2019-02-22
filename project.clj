@@ -1,34 +1,27 @@
 (defproject fundingcircle/jackdaw "_"
   :description "A Clojure library for the Apache Kafka distributed streaming platform."
 
-  :dependencies [[clj-time "0.13.0"]
-                 [com.taoensso/nippy "2.12.2"]
+  :repositories [["confluent" {:url "https://packages.confluent.io/maven/"}]]
+
+  :dependencies [[aleph "0.4.6"]
+                 [clj-time "0.15.1"]
                  [danlentz/clj-uuid "0.1.7"]
-                 [environ "1.1.0"]
                  ;; Confluent does paired releases with Kafka, this should tie
                  ;; off with the kafka version.
                  ;; See https://docs.confluent.io/current/release-notes.html
-                 [io.confluent/kafka-avro-serializer "5.0.0"]
-                 [io.confluent/kafka-connect-avro-converter "5.0.0"]
-                 [io.confluent/kafka-connect-jdbc "5.0.0"]
-                 [io.confluent/kafka-schema-registry "5.0.0"]
-                 [io.confluent/kafka-schema-registry-client "5.0.0"]
-                 [org.apache.kafka/connect-api "2.0.0"]
-                 [org.apache.kafka/connect-json "2.0.0"]
-                 [org.apache.kafka/connect-runtime "2.0.0"]
-                 [org.apache.kafka/kafka-clients "2.0.0"]
-                 [org.apache.kafka/kafka-streams "2.0.0"]
-                 [org.apache.kafka/kafka_2.11 "2.0.0"]
-                 [org.clojure/clojure "1.9.0"]
-                 [org.clojure/data.json "0.2.6"]
-                 [org.clojure/tools.logging "0.3.1"]
-                 [org.clojure/core.cache "0.7.1"]]
 
-  :plugins [[lein-codox "0.10.3"]
-            [lein-environ "1.1.0"]
-            [me.arrdem/lein-git-version "2.0.8"]]
+                 [io.confluent/kafka-schema-registry-client "5.1.0"]
+                 [io.confluent/kafka-avro-serializer "5.1.0"]
+                 [org.apache.kafka/kafka-clients "2.1.0"]
+                 [org.apache.kafka/kafka-streams "2.1.0"]
+                 [org.apache.kafka/kafka_2.11 "2.1.0"]
+                 [org.clojure/clojure "1.9.0" :scope "provided"]
+                 [org.clojure/data.json "0.2.6"]
+                 [org.clojure/tools.logging "0.4.1"]
+                 [org.clojure/core.cache "0.7.2"]]
 
   :aot [jackdaw.serdes.fn-impl]
+  :plugins [[me.arrdem/lein-git-version "2.0.8"]]
 
   :git-version
   {:status-to-version
@@ -53,29 +46,29 @@
               :repositories
               [["confluent"
                 "https://packages.confluent.io/maven/"]
-               ["clojars"
-                "https://clojars.org/repo/"]]}
+               ["clojars" {:url "https://clojars.org/repo/"
+                           :username :env/clojars-username
+                           :password :env/clojars-password}]]}
 
              ;; The dev profile - non-deployment configuration
              :dev
              {:source-paths
               ["dev"]
 
+              :injections [(require 'io.aviso.logging.setup)]
+              :dependencies [[io.aviso/logging "0.3.1"]
+                             [org.apache.kafka/kafka-streams-test-utils "2.1.0"]
+                             [org.apache.kafka/kafka-clients "2.1.0" :classifier "test"]
+                             [org.clojure/test.check "0.9.0"]]
+
+              :plugins [[lein-codox "0.10.3"]]
               :codox
               {:output-path "codox"
                :source-uri "http://github.com/fundingcircle/jackdaw/blob/{version}/{filepath}#L{line}"}}
 
              :test
              {:resource-paths ["test/resources"]
-              :dependencies   [[arohner/wait-for "1.0.2"]
-                               [clj-http "2.3.0"]
-                               [environ "1.1.0"]
-                               [junit "4.12"]
-                               [org.apache.kafka/kafka-streams-test-utils "2.0.0" :scope "test"]
-                               [org.clojure/java.jdbc "0.7.0-beta2"]
-                               [org.clojure/test.check "0.9.0"]
-                               [org.clojure/tools.nrepl "0.2.12"]
-                               [org.xerial/sqlite-jdbc "3.19.3"]]}
+              :plugins [[lein-cloverage "1.0.13"]]}
 
              ;; This is not in fact what lein defines repl to be
              :repl

@@ -2,6 +2,7 @@
   "doc-string"
   (:require [clojure.java.shell :refer [sh]]
             [jackdaw.client :as jc]
+            [jackdaw.client.log :as jcl]
             [jackdaw.admin :as ja]
             [jackdaw.serdes.edn :as jse]
             [jackdaw.streams :as j]
@@ -75,9 +76,9 @@
   {"bootstrap.servers" "localhost:9092"})
 
 (defn kafka-consumer-config
-  []
+  [group-id]
   {"bootstrap.servers" "localhost:9092"
-   "group.id" "jackdaw-user-consumer"
+   "group.id" group-id
    "auto.offset.reset" "earliest"
    "enable.auto.commit" "false"})
 
@@ -105,22 +106,24 @@
   "Takes a topic config, consumes from a Kafka topic, and returns a
   seq of maps."
   ([topic-config]
-   (get-records topic-config 30))
+   (get-records topic-config 200))
 
-  ([topic-config timeout]
-   (with-open [client (jc/subscribed-consumer (kafka-consumer-config)
-                                              [topic-config])]
-     (jc/poll client timeout))))
+  ([topic-config polling-interval-ms]
+   (let [client-config (kafka-consumer-config
+                        (str (java.util.UUID/randomUUID)))]
+     (with-open [client (jc/subscribed-consumer client-config
+                                                [topic-config])]
+       (doall (jcl/log client 100 seq))))))
 
 
 (defn get-keyvals
   "Takes a topic config, consumes from a Kafka topic, and returns a
   seq of key-value pairs."
   ([topic-config]
-   (get-keyvals topic-config 30))
+   (get-keyvals topic-config 20))
 
-  ([topic-config timeout]
-   (map (juxt :key :value) (get-records topic-config timeout))))
+  ([topic-config polling-interval-ms]
+   (map (juxt :key :value) (get-records topic-config polling-interval-ms))))
 
 
 ;;; ------------------------------------------------------------

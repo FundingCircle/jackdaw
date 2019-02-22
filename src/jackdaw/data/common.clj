@@ -1,7 +1,9 @@
 (in-ns 'jackdaw.data)
 
 (import '[org.apache.kafka.common
+          PartitionInfo
           Node TopicPartition TopicPartitionInfo])
+
 
 ;;; Node
 
@@ -12,6 +14,17 @@
    :port (.port node)
    :id (.id node)
    :rack (.rack node)})
+
+;;; PartitionInfo
+
+(defn->data PartitionInfo->data
+  [^PartitionInfo pi]
+  {:topic-name (.topic pi)
+   :isr (mapv datafy (.inSyncReplicas pi))
+   :leader (datafy (.leader pi))
+   :replicas (mapv datafy (.replicas pi))
+   :partition (.partition pi)
+   :offline-replicas (mapv datafy (.offlineReplicas pi))})
 
 ;;; TopicPartitionInfo
 
@@ -34,8 +47,8 @@
   "Given a `::topic-parititon`, build an equivalent `TopicPartition`.
 
   Inverts `(datafy ^TopicPartition tp)`."
-  [{:keys [:topic-name
-           :partition]
+  [{:keys [topic-name
+           partition]
     :as m}]
   (->TopicPartition m partition))
 
@@ -50,8 +63,9 @@
         o
 
         (map? o)
-        (or (:clojure.datafy/obj (meta o))
-            (map->TopicPartition o))
+        (if (= TopicPartition (:clojure.datafy/class (meta o)))
+          (:clojure.datafy/obj (meta o))
+          (map->TopicPartition o))
 
         :else
         (throw (ex-info "Unable to build TopicPartition"
@@ -62,5 +76,6 @@
   (->TopicPartition {:topic-name "foo"} 1)
   (TopicPartition->data *1)
   (map->TopicPartition *1)
+
   ;; On 1.10+
   (datafy *1))

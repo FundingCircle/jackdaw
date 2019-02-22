@@ -12,7 +12,7 @@
 
   If fuse-fn was provided, stops after fuse-fn returns false."
   ([^Consumer consumer polling-interval-ms]
-   (seq consumer polling-interval-ms (constantly true)))
+   (log consumer polling-interval-ms (constantly true)))
   ([^Consumer consumer polling-interval-ms fuse-fn]
    (let [r (jc/poll consumer polling-interval-ms)]
      (if (fuse-fn r)
@@ -27,11 +27,11 @@
 
   Stops when current time > end-at."
   [^Consumer consumer polling-interval-ms end-at-ms]
-  (seq consumer
-       polling-interval-ms
-       (fn [_]
-         (< (System/currentTimeMillis)
-            end-at-ms))))
+  (seq (log consumer
+            polling-interval-ms
+            (fn [_]
+              (< (System/currentTimeMillis)
+                 end-at-ms)))))
 
 (defn log-until-inactivity
   "Given a consumer, returns a lazy sequence of datafied consumer records.
@@ -58,6 +58,6 @@
 (defn count-messages
   "Consumes all of the messages on a topic to determine the current count"
   [config topic]
-  (with-open [^Consumer consumer (-> (jc/subscribed-consumer config topic)
+  (with-open [^Consumer consumer (-> (jc/subscribed-consumer config [topic])
                                      (jc/seek-to-beginning-eager))]
     (count (log-until-inactivity consumer 2000))))

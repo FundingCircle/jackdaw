@@ -39,7 +39,7 @@
         serde-config
         {:avro/schema schema-str
          :key?        false}]
-    (avro/avro-serde +registry+ schema-registry-config serde-config)))
+    (avro/serde +registry+ schema-registry-config serde-config)))
 
 (defn deserialize [serde topic x]
   (let [deserializer (.deserializer serde)]
@@ -483,5 +483,5 @@
     (is (= (String. (round-trip serde "bananas" (.getBytes "hello")))
            "hello"))
 
-    (is (thrown? org.apache.kafka.common.errors.SerializationException
+    (is (thrown? java.lang.IllegalArgumentException
                  (round-trip serde "bananas" {:hello 3})))))

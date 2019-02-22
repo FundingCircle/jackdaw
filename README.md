@@ -8,6 +8,7 @@ Jackdaw is a Clojure library for the Apache Kafka distributed streaming platform
 To use the latest release, add the following to your project:
 
 [![Clojars Project](https://img.shields.io/clojars/v/fundingcircle/jackdaw.svg)](https://clojars.org/fundingcircle/jackdaw)
+[![Code Coverage](https://codecov.io/gh/FundingCircle/jackdaw/branch/master/graph/badge.svg)](https://codecov.io/gh/FundingCircle/jackdaw)
 
 ## Documentation
 
