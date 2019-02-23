@@ -1,6 +1,8 @@
 (defproject fundingcircle/jackdaw "_"
   :description "A Clojure library for the Apache Kafka distributed streaming platform."
 
+  :url "https://github.com/FundingCircle/jackdaw/"
+
   :repositories [["confluent" {:url "https://packages.confluent.io/maven/"}]]
 
   :dependencies [[aleph "0.4.6"]
