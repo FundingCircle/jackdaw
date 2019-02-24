@@ -5,6 +5,7 @@
    [clojure.tools.logging :as log]
    [jackdaw.client :as kafka]
    [jackdaw.data :as jd]
+   [jackdaw.test.journal :as j]
    [jackdaw.test.commands :as cmd]
    [jackdaw.test.transports :as t]
    [jackdaw.test.serde :refer [apply-serializers apply-deserializers
@@ -99,7 +100,8 @@
   (let [continue?   (atom true)
         messages    (s/stream 1 (comp
                                  (map #'mk-consumer-record)
-                                 (map #(apply-deserializers deserializers %))))
+                                 (map #(apply-deserializers deserializers %))
+                                 (map #(assoc % :topic (j/reverse-lookup topic-metadata (:topic %))))))
         started?    (promise)
         poll        (poller messages)]
 
@@ -159,7 +161,6 @@
   ([kafka-config topic-config serializers]
    (let [producer       (kafka/producer kafka-config byte-array-serde)
          messages       (s/stream 1 (map (fn [x]
-                                           (log/info "producing: " x)
                                            (try
                                              (-> (apply-serializers serializers x)
                                                  (build-record))
