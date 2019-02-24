@@ -132,7 +132,10 @@
                             (jd.test/test-machine))]
 
       ;; We now have a test-machine (in this case, running against our local dev cluster)
-      ;; and can use `run-tests` to execute test commands and see their effect on the journal
+      ;; and can use `run-tests` to execute test commands and see their effect on the journal.
+      ;; In this case, the last command is a `:watch` for the word 'understand'. We know
+      ;; based on the test-input that this should be the last word to appear in the output
+      ;; so when it shows up, we can start to make assertions against the journal
 
       (let [{:keys [results journal]} (->> (concat
                                             (write-lines)
