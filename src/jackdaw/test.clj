@@ -129,10 +129,12 @@
     ;; run commands, stopping if one fails.
     {:results (loop [results []
                      cmd-list commands]
-                (let [r (exe (first cmd-list))]
-                  (if (or (contains? r :error) (empty? (rest cmd-list)))
-                    (conj results r)
-                    (recur (conj results r) (rest cmd-list)))))
+                (cond
+                  (first cmd-list) (let [r (exe (first cmd-list))]
+                                     (if (or (contains? r :error) (empty? (rest cmd-list)))
+                                       (conj results r)
+                                       (recur (conj results r) (rest cmd-list))))
+                  :else results))
      :journal @(:journal machine)}))
 
 (defn identity-transport
