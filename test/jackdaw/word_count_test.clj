@@ -118,7 +118,7 @@
   (fix/with-fixtures [(fix/topic-fixture broker-config word-count-topics
                                          {:timeout-ms 10000
                                           :delete-first? false})
-                      (fix/reset-application app-config)
+                      (fix/reset-application-fixture app-config)
                       (fix/kstream-fixture {:topology (word-count input output)
                                             :config app-config})]
     ;; The fixtures above ensure that

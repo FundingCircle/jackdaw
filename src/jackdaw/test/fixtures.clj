@@ -67,7 +67,7 @@
             (clojure.java.io/delete-file file silently))]
     (delete-f (clojure.java.io/file fname))))
 
-(defn reset-application [app-config]
+(defn reset-application-fixture [app-config]
   (fn [t]
     (let [rt (StreamsResetter.)
           app-id (get app-config "application.id")
