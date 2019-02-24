@@ -2,6 +2,7 @@
   ""
   (:require
    [aleph.http :as http]
+   [clojure.java.io :as io]
    [clojure.tools.logging :as log]
    [jackdaw.client :as kafka]
    [jackdaw.streams :as k]
@@ -12,7 +13,8 @@
    [clojure.test :as t])
   (:import
    (org.apache.kafka.clients.admin AdminClient NewTopic)
-   (org.apache.kafka.streams KafkaStreams$StateListener)))
+   (org.apache.kafka.streams KafkaStreams$StateListener)
+   (kafka.tools StreamsResetter)))
 
 ;;; topic-fixture ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -54,6 +56,35 @@
            (.get timeout-ms java.util.concurrent.TimeUnit/MILLISECONDS))
        (log/info "topic-fixture: created topics: " (keys topic-config))
        (t)))))
+
+;;; application reset ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn delete-files-recursively [fname & [silently]]
+  (letfn [(delete-f [file]
+            (when (.isDirectory file)
+              (doseq [child-file (.listFiles file)]
+                (delete-f child-file)))
+            (clojure.java.io/delete-file file silently))]
+    (delete-f (clojure.java.io/file fname))))
+
+(defn reset-application [app-config]
+  (fn [t]
+    (let [rt (StreamsResetter.)
+          app-id (get app-config "application.id")
+          app-state (format "%s/%s"
+                            (or (get app-config "state.dir")
+                                "/tmp/kafka-streams")
+                            app-id)]
+      (when (.exists (io/as-file app-state))
+        (delete-files-recursively app-state))
+      (log/info "deleted app state")
+      (let [args (->> ["--application-id" (get app-config "application.id")
+                       "--bootstrap-servers" "localhost:9092"]
+                      (into-array String))]
+
+        (if (zero? (.run rt args))
+          (t)
+          (throw (ex-info "failed to reset application. check logs for details" {})))))))
 
 ;;; skip-to-end ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
