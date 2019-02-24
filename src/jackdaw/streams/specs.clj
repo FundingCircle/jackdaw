@@ -276,7 +276,7 @@
 
 (s/fdef k/count
         :args (s/cat :kgrouped ::kgroupedstream-or-kgroupedtable
-                     :topic-config ::topic-config)
+                     :topic-config (s/? ::topic-config))
         :ret ktable?)
 
 (s/fdef k/reduce

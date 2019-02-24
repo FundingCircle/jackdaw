@@ -80,11 +80,18 @@
       (log/info "deleted app state")
       (let [args (->> ["--application-id" (get app-config "application.id")
                        "--bootstrap-servers" "localhost:9092"]
-                      (into-array String))]
+                      (into-array String))
+            result (with-open [w (java.io.StringWriter.)]
+                     (binding [*out* w]
+                       (let [status (.run rt args)]
+                         (flush)
+                         {:status status
+                          :log (str w)})))]
 
-        (if (zero? (.run rt args))
+        (if (zero? (:status result))
           (t)
-          (throw (ex-info "failed to reset application. check logs for details" {})))))))
+          (throw (ex-info "failed to reset application. check logs for details"
+                          result)))))))
 
 ;;; skip-to-end ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

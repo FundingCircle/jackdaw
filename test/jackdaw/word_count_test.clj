@@ -1,28 +1,9 @@
 (ns jackdaw.word-count-test
-  (:require
-   [clojure.tools.logging :as log]
-   [clojure.java.io :as io]
-   [clojure.java.shell :as sh]
-   [clojure.edn :as edn]
-   [clojure.test :refer :all]
-
-   [manifold.deferred :as d]
-
-   [jackdaw.serdes.avro.schema-registry :as reg]
-   [jackdaw.streams :as k]
-   [jackdaw.test :as jd.test]
-   [jackdaw.test.commands :as cmd]
-   [jackdaw.test.fixtures :as fix]
-   [jackdaw.test.serde :as serde]
-   [jackdaw.test.transports :as trns]
-   [jackdaw.test.transports.kafka]
-   [jackdaw.test.transports.mock]
-   [jackdaw.test.middleware :refer [with-status]])
-  (:import
-   (java.util Properties)
-   (java.io File)
-   (org.apache.kafka.streams TopologyTestDriver)
-   (org.apache.kafka.common.serialization Serdes)))
+  (:require [clojure.test :refer :all]
+            [jackdaw.streams :as k]
+            [jackdaw.test :as jd.test]
+            [jackdaw.test.fixtures :as fix])
+  (:import org.apache.kafka.common.serialization.Serdes))
 
 ;;; Example of using the test-machine ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -33,7 +14,12 @@
 ;; and provide an implementation in Clojure, and test it using the
 ;; test-machine.
 ;;
-;; First the app....
+;; First the app. All pretty simple stuff.
+;;
+;;   - Parse each line into a list of words
+;;   - Group By each unique word
+;;   - Count the records in each group
+;;   - Write the counts to the output topic
 
 (defn parse-line
   [line]
@@ -55,7 +41,8 @@
       builder)))
 
 ;; In order to use the app builder defined above, we need to provide
-;; it with topic definitions for the input/output topics
+;; it with topic definitions for the input/output topics. In a real app, you
+;; might consider loading this type of configuration from an EDN file
 
 (def input
   {:topic-name "streams-plaintext-input"
@@ -75,7 +62,14 @@
   {:input input
    :output output})
 
-;; In order to *run* the app, we need to provide a test configuration
+;; For testing, we need to configure a few elements
+;;
+;;  - the "broker config" is shared by both the app and test configs and is
+;;    needed to connect to kafka
+;;  - the "app config" is a StreamsConfig and is supplied when building
+;;    the app topology
+;;  - the "test config" is a ConsumerConfig and is supplied when creating the
+;;    consumer used by the test machine
 
 (def broker-config
   {"bootstrap.servers" "localhost:9092"})
@@ -115,9 +109,7 @@
                    (get-in journal [:topics :output]))) 2000]])
 
 (deftest test-word-count-demo
-  (fix/with-fixtures [(fix/topic-fixture broker-config word-count-topics
-                                         {:timeout-ms 10000
-                                          :delete-first? false})
+  (fix/with-fixtures [(fix/topic-fixture broker-config word-count-topics)
                       (fix/reset-application-fixture app-config)
                       (fix/kstream-fixture {:topology (word-count input output)
                                             :config app-config})]
@@ -129,6 +121,13 @@
     ;;   * the word-count app is started (and then stopped after the test is complete)
 
     (with-open [machine (-> (jd.test/kafka-transport test-config word-count-topics)
+
+                            ;; The input to the test-machine is a "transport". This
+                            ;; allows us to use different transports for different
+                            ;; scenarios. In this case, the `kafka-transport`
+                            ;; connects directly to kafka brokers to read/write
+                            ;; messages.
+
                             (jd.test/test-machine))]
 
       ;; We now have a test-machine (in this case, running against our local dev cluster)
@@ -142,8 +141,12 @@
                                             (watch-for-output "understand"))
                                            (jd.test/run-test machine))
             wc (fn [word]
-                 ;; A helper to extract the latest value from the word-count ktable
-                 ;; as observed by the test-consumer
+                 ;; A simple helper to extract the latest value from the word-count ktable
+                 ;; as observed by the test-consumer.
+                 ;;
+                 ;; The journal collects all records as a vector of maps representing
+                 ;; ConsumerRecords for each topic. Since we're inspecting a mutating
+                 ;; table, we want to get the `last` matching record for `word`.
                  (->> (get-in journal [:topics :output])
                       (filter (fn [r]
                                 (= (:key r) word)))
