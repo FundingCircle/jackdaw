@@ -9,6 +9,7 @@ To use the latest release, add the following to your project:
 
 [![Clojars Project](https://img.shields.io/clojars/v/fundingcircle/jackdaw.svg)](https://clojars.org/fundingcircle/jackdaw)
 [![Code Coverage](https://codecov.io/gh/FundingCircle/jackdaw/branch/master/graph/badge.svg)](https://codecov.io/gh/FundingCircle/jackdaw)
+[![cljdoc badge](https://cljdoc.org/badge/fundingcircle/jackdaw)](https://cljdoc.org/d/fundingcircle/jackdaw/CURRENT)
 
 ## Documentation
 
