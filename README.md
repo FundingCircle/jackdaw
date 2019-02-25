@@ -1,16 +1,11 @@
+[![Clojars Project](https://img.shields.io/clojars/v/fundingcircle/jackdaw.svg)](https://clojars.org/fundingcircle/jackdaw)
+[![CircleCI](https://circleci.com/gh/FundingCircle/jackdaw.svg?style=svg)](https://circleci.com/gh/FundingCircle/jackdaw)
+[![Code Coverage](https://codecov.io/gh/FundingCircle/jackdaw/branch/master/graph/badge.svg)](https://codecov.io/gh/FundingCircle/jackdaw)
+[![cljdoc badge](https://cljdoc.org/badge/fundingcircle/jackdaw)](https://cljdoc.org/d/fundingcircle/jackdaw/CURRENT)
+
 <img align="left" src="doc/images/jackdaw-logo.png" width=125/>
 
 Jackdaw is a Clojure library for the Apache Kafka distributed streaming platform. With Jackdaw, you can create and list topics using the AdminClient API, produce and consume records using the Producer and Consumer APIs, and create stream processing applications using the Streams API. Jackdaw also contains functions to serialize and deserialize records as JSON, EDN, and Avro, as well as functions for writing unit and integration tests.
-
-
-## Installation
-
-To use the latest release, add the following to your project:
-
-[![CircleCI](https://circleci.com/gh/FundingCircle/jackdaw.svg?style=svg)](https://circleci.com/gh/FundingCircle/jackdaw)
-[![Clojars Project](https://img.shields.io/clojars/v/fundingcircle/jackdaw.svg)](https://clojars.org/fundingcircle/jackdaw)
-[![Code Coverage](https://codecov.io/gh/FundingCircle/jackdaw/branch/master/graph/badge.svg)](https://codecov.io/gh/FundingCircle/jackdaw)
-[![cljdoc badge](https://cljdoc.org/badge/fundingcircle/jackdaw)](https://cljdoc.org/d/fundingcircle/jackdaw/CURRENT)
 
 ## Documentation
 
