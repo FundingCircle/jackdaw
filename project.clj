@@ -47,12 +47,13 @@
               :license {:name "BSD 3-clause"
                         :url "http://opensource.org/licenses/BSD-3-Clause"}
 
-              :repositories
+              :deploy-repositories
               [["confluent"
                 "https://packages.confluent.io/maven/"]
                ["clojars" {:url "https://clojars.org/repo/"
-                           :username :env/clojars-username
-                           :password :env/clojars-password}]]}
+                           :username :env/clojars_username
+                           :password :env/clojars_password
+                           :signing {:gpg-key "fundingcirclebot@fundingcircle.com"}}]]}
 
              ;; The dev profile - non-deployment configuration
              :dev
