@@ -27,8 +27,8 @@
 
 (set! *warn-on-reflection* true)
 
-(defn topic->consumed [{:keys [key-serde value-serde]}]
-  (Consumed/with key-serde value-serde))
+(defn topic->consumed [{:keys [key-serde value-serde timestamp-extractor reset-policy]}]
+  (Consumed/with key-serde value-serde timestamp-extractor reset-policy))
 
 (defn topic->produced [{:keys [key-serde value-serde]}]
   (Produced/with key-serde value-serde))
