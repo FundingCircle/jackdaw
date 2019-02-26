@@ -46,11 +46,12 @@
              {:url "https://github.com/FundingCircle/jackdaw"
               :license {:name "BSD 3-clause"
                         :url "http://opensource.org/licenses/BSD-3-Clause"}
+              :repositories
+              [["confluent"
+                "https://packages.confluent.io/maven/"]]
 
               :deploy-repositories
-              [["confluent"
-                "https://packages.confluent.io/maven/"]
-               ["clojars" {:url "https://clojars.org/repo/"
+              [["clojars" {:url "https://clojars.org/repo/"
                            :username :env/clojars_username
                            :password :env/clojars_password
                            :signing {:gpg-key "fundingcirclebot@fundingcircle.com"}}]]}
