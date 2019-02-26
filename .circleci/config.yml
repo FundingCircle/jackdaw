@@ -79,15 +79,21 @@ jobs:
     <<: *deploy_config
     steps:
       - *restore_repo
-      # Temporary workaround for https://discuss.circleci.com/t/22437
+      # Workaround required for https://discuss.circleci.com/t/22437
+      #
+      # This is required to prevent the warning that appears about connecting
+      # to a host for the first time when we attempt to fetch the tags from
+      # github.
+      #
+      # The `add-key` script checks the fingerprint of the ssh key returned
+      # by github against the fingerprint published below on their website
+      # to protect against MITM attacks
+      #
+      #  https://help.github.com/en/articles/githubs-ssh-key-fingerprints
+      #
       - run: |
-          if [ -n "$CIRCLE_TAG" ]
-          then
-            mkdir -p ~/.ssh
-            echo 'github.com ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ==' \
-              >> ~/.ssh/known_hosts
-            git fetch --force origin "refs/tags/${CIRCLE_TAG}:refs/tags/${CIRCLE_TAG}"
-          fi
+          .circleci/bin/add-key github.com nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8
+          git fetch --force origin "refs/tags/${CIRCLE_TAG}:refs/tags/${CIRCLE_TAG}"
       - checkout
       - save_cache:
           key: v1-jackdaw-{{ .Branch }}-{{ .Revision }}
