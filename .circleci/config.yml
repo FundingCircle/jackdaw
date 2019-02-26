@@ -129,6 +129,8 @@ jobs:
       - *restore_repo
       - *restore_mvn
       - run:
+          openssl aes-256-cbc -a -d -in secret-file-cipher -out .circleci/fundingcirclebot.key -k $DEPLOY_KEY
+      - run:
           name: Prepare signing key
           command: |
             gpg --yes --batch --import /home/circleci/jackdaw/.circleci/fundingcirclebot.key
