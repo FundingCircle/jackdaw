@@ -28,16 +28,16 @@
          (into []))))
 
 (defn word-count
-  [in out]
+  [{:keys [input output]}]
   (fn [builder]
-    (let [counts (-> (k/kstream builder in)
+    (let [counts (-> (k/kstream builder input)
                      (k/flat-map-values (fn [line]
                                           (parse-line line)))
                      (k/group-by (fn [[k v]]
                                    v))
                      (k/count)
                      (k/to-kstream))]
-      (k/to counts out)
+      (k/to counts output)
       builder)))
 
 ;; In order to use the app builder defined above, we need to provide
@@ -108,18 +108,22 @@
              (some #(= word (:key %))
                    (get-in journal [:topics :output]))) 2000]])
 
-(deftest test-word-count-demo
-  (fix/with-fixtures [(fix/topic-fixture broker-config word-count-topics)
-                      (fix/reset-application-fixture app-config)
-                      (fix/kstream-fixture {:topology (word-count input output)
-                                            :config app-config})]
-    ;; The fixtures above ensure that
-    ;;
-    ;;   * the necessary topics are created
-    ;;   * the application reset tool is run to delete any state left-over from
-    ;;     prior test-runs
-    ;;   * the word-count app is started (and then stopped after the test is complete)
+(def integration-fixtures
+  "The integration fixtures ensure that
 
+     * the necessary topics are created (after deleting them if necessary)
+     * the application reset tool is run to delete any intermediate topics
+       left-over from prior test-runs
+     * the word-count app is started (and then stopped after the test is complete)"
+  [(fix/topic-fixture broker-config word-count-topics {:delete-first? true})
+   (fix/reset-application-fixture app-config)
+   (fix/kstream-fixture {:topology (word-count word-count-topics)
+                         :config app-config
+                         :cleanup-first? true})])
+
+
+(deftest test-word-count-demo
+  (fix/with-fixtures integration-fixtures
     (with-open [machine (-> (jd.test/kafka-transport test-config word-count-topics)
 
                             ;; The input to the test-machine is a "transport". This

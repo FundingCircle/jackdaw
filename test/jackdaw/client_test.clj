@@ -104,7 +104,7 @@
 
 
 (deftest ^:integration send!-test
-  (fix/with-fixtures [(fix/topic-fixture (broker-config) test-topics 1000)]
+  (fix/with-fixtures [(fix/topic-fixture (broker-config) test-topics {:timeout-ms 1000})]
     (with-producer (client/producer (producer-config))
       (fn [producer]
         (testing "simple send"
@@ -123,7 +123,7 @@
             (is (callback-ok? @on-callback))))))))
 
 (deftest ^:integration produce!-test
-  (fix/with-fixtures [(fix/topic-fixture (broker-config) test-topics 1000)]
+  (fix/with-fixtures [(fix/topic-fixture (broker-config) test-topics {:timeout-ms 1000})]
     (with-producer (client/producer (producer-config))
       (fn [producer]
         (let [{:keys [topic key value partition timestamp headers]}
@@ -191,7 +191,7 @@
                  (client/assignment consumer))))))))
 
 (deftest ^:integration partitions-for-test
-  (fix/with-fixtures [(fix/topic-fixture (broker-config) test-topics 1000)]
+  (fix/with-fixtures [(fix/topic-fixture (broker-config) test-topics {:timeout-ms 1000})]
     (let [key-serde (:key-serde high-partition-topic)
           value-serde (:value-serde high-partition-topic)]
 
@@ -258,7 +258,7 @@
            :value 2))))
 
 (deftest ^:integration position-all-test
-  (fix/with-fixtures [(fix/topic-fixture (broker-config) test-topics 1000)]
+  (fix/with-fixtures [(fix/topic-fixture (broker-config) test-topics {:timeout-ms 1000})]
     (let [key-serde (:key-serde high-partition-topic)
           value-serde (:value-serde high-partition-topic)]
 

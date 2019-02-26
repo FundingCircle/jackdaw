@@ -4,6 +4,7 @@
    [aleph.http :as http]
    [clojure.java.io :as io]
    [clojure.tools.logging :as log]
+   [jackdaw.admin :as admin]
    [jackdaw.client :as kafka]
    [jackdaw.streams :as k]
    [jackdaw.streams.interop :refer [streams-builder]]
@@ -47,51 +48,48 @@
   "Returns a fixture function that creates all the topics named in the supplied
    topic config before running a test function."
   ([kafka-config topic-config]
-   (topic-fixture kafka-config topic-config 10000))
+   (topic-fixture kafka-config topic-config {}))
 
-  ([kafka-config topic-config timeout-ms]
+  ([kafka-config topic-config {:keys [timeout-ms delete-first?]
+                               :or {timeout-ms 10000
+                                    delete-first? false}}]
    (fn [t]
      (with-open [client (AdminClient/create kafka-config)]
+       (let [topics-to-delete (let [current-topics (set (-> (list-topics client)
+                                                            .names
+                                                            .get))]
+                                (filter #(contains? current-topics (:topic-name %))
+                                        (vals topic-config)))]
+         (when (and delete-first?
+                    (not (empty? topics-to-delete)))
+           (admin/delete-topics! client topics-to-delete)
+           (Thread/sleep 500)))
+
        (-> (create-topics client kafka-config topic-config)
            (.get timeout-ms java.util.concurrent.TimeUnit/MILLISECONDS))
        (log/info "topic-fixture: created topics: " (keys topic-config))
        (t)))))
 
-;;; application reset ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(defn delete-files-recursively [fname & [silently]]
-  (letfn [(delete-f [file]
-            (when (.isDirectory file)
-              (doseq [child-file (.listFiles file)]
-                (delete-f child-file)))
-            (clojure.java.io/delete-file file silently))]
-    (delete-f (clojure.java.io/file fname))))
+;;; reset-application-fixture ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn reset-application-fixture [app-config]
   (fn [t]
     (let [rt (StreamsResetter.)
           app-id (get app-config "application.id")
-          app-state (format "%s/%s"
-                            (or (get app-config "state.dir")
-                                "/tmp/kafka-streams")
-                            app-id)]
-      (when (.exists (io/as-file app-state))
-        (delete-files-recursively app-state))
-      (log/info "deleted app state")
-      (let [args (->> ["--application-id" (get app-config "application.id")
-                       "--bootstrap-servers" "localhost:9092"]
-                      (into-array String))
-            result (with-open [w (java.io.StringWriter.)]
-                     (binding [*out* w]
-                       (let [status (.run rt args)]
-                         (flush)
-                         {:status status
-                          :log (str w)})))]
+          args (->> ["--application-id" (get app-config "application.id")
+                     "--bootstrap-servers" "localhost:9092"]
+                    (into-array String))
+          result (with-open [w (java.io.StringWriter.)]
+                   (binding [*out* w]
+                     (let [status (.run rt args)]
+                       (flush)
+                       {:status status
+                        :log (str w)})))]
 
         (if (zero? (:status result))
           (t)
           (throw (ex-info "failed to reset application. check logs for details"
-                          result)))))))
+                          result))))))
 
 ;;; skip-to-end ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -146,12 +144,15 @@
 
    `compose-fixtures` or `join-fixtures` may be used to build fixtures combine
    topologies"
-  [{:keys [topology config]}]
+  [{:keys [topology config cleanup-first?]}]
   (fn [t]
     (let [builder (k/streams-builder)
           stream (k/kafka-streams (topology builder) config)
           error (atom nil)
           started? (promise)]
+
+      (when cleanup-first?
+        (.cleanUp stream))
 
       (.setUncaughtExceptionHandler stream (set-error error))
       (.setStateListener stream (set-started (get config "application.id") started?))
