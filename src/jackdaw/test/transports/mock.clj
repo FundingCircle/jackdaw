@@ -68,9 +68,13 @@
     (let [fetch (fn [[k t]]
                   {:topic k
                    :output (loop [collected []]
-                             (if-let [o (.readOutput driver k
-                                                     byte-array-deserializer
-                                                     byte-array-deserializer)]
+                             (if-let [o (try
+                                          (.readOutput driver (:topic-name t)
+                                                       byte-array-deserializer
+                                                       byte-array-deserializer)
+                                          (catch Exception e
+                                            (log/error "read error: " (.getMessage e))
+                                            (throw e)))]
                                (recur (conj collected o))
                                collected))})
           topic-batches (->> topic-config
@@ -89,7 +93,8 @@
   (let [continue? (atom true)
         messages  (s/stream 1 (comp
                                (map (with-output-record topic-config))
-                               (map #(apply-deserializers deserializers %))))
+                               (map #(apply-deserializers deserializers %))
+                               (map #(assoc % :topic (j/reverse-lookup topic-config (:topic %))))))
 
         started?  (promise)
         poll      (poller messages topic-config)]
@@ -138,7 +143,11 @@
   (let [serdes        (serde-map topics)
         test-consumer (mock-consumer driver topics (get serdes :deserializers))
         record-fn     (fn [input-record]
-                        (.pipeInput driver input-record))
+                        (try
+                          (.pipeInput driver input-record)
+                          (catch Exception e
+                            (log/error "write error: " (.getMessage e))
+                            (throw e))))
         test-producer (when @(:started? test-consumer)
                         (mock-producer driver topics (get serdes :serializers)
                                        record-fn))]

@@ -1,15 +1,12 @@
-(ns word-count-test
+(ns word-count-e2e-test
   (:require
    [word-count :as wc]
    [jackdaw.streams :as k]
-   [jackdaw.streams.protocols :refer [streams-builder*]]
-   [jackdaw.streams.mock :as mock]
    [jackdaw.test :as jd.test]
    [jackdaw.test.fixtures :as fix]
-   [clojure.test :as t :refer [deftest is testing]])
-  (:import
-   (java.util Properties)
-   (org.apache.kafka.streams TopologyTestDriver)))
+   [clojure.test :as t :refer [deftest is testing]]))
+
+;(clojure.tools.logging/info "yolo")
 
 (def broker-config
   {"bootstrap.servers" "localhost:9092"})
@@ -53,25 +50,14 @@
        last
        :value))
 
-(defn props-for [x]
-  (doto (Properties.)
-    (.putAll (reduce-kv (fn [m k v]
-                          (assoc m (str k) (str v)))
-                        {}
-                        x))))
-
-(defn mock-transport-config
-  []
-  {:driver (let [builder (k/streams-builder)
-                 app (wc/word-count wc/word-count-topics)
-                 topology (.build (streams-builder* (app builder)))]
-             (TopologyTestDriver.
-              topology
-              (props-for wc/app-config)))})
+(def test-config
+  {:broker-config broker-config
+   :topic-config wc/word-count-topics
+   :kstream-config app-config})
 
 (deftest test-word-count-demo
-  (fix/with-fixtures [(fix/empty-state-fixture wc/app-config)]
-    (fix/with-test-machine (jd.test/mock-transport (mock-transport-config) wc/word-count-topics)
+  (fix/with-fixtures [(fix/integration-fixture wc/word-count test-config)]
+    (fix/with-test-machine (jd.test/kafka-transport test-consumer-config wc/word-count-topics)
       (fn [machine]
         (let [lines ["As Gregor Samsa awoke one morning from uneasy dreams"
                      "he found himself transformed in his bed into an enormous insect"
