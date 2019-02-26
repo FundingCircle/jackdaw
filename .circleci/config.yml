@@ -148,6 +148,17 @@ jobs:
             export REAL_GPG=$(which gpg)
 
             lein do jar, pom, deploy clojars
+    
+  deploy_snapshot:
+    <<: *deploy_config
+    steps:
+      - *restore_repo
+      - *restore_mvn
+      - run:
+          name: Deploy to Clojars
+          command: |
+            lein do jar, pom, deploy clojars
+
 workflows:
   version: 2
   build_and_test:
@@ -161,6 +172,15 @@ workflows:
           context: org-global
           requires:
             - deps
+      - deploy_snapshot:
+          context: org-global
+          requires:
+            - test
+          filters:
+            tags:
+              ignore: /.*/
+            branches:
+              ignore: /master/
 
   checkout_and_deploy:
     jobs:
@@ -176,6 +196,6 @@ workflows:
             - checkout_tags
           filters:
             tags:
-              only: /^\d+\.\d+\.\d+.*$/
+              only: /^\d+\.\d+\.\d+$/
             branches:
               ignore: /.*/
