@@ -163,15 +163,12 @@ workflows:
     jobs:
       - checkout_code
       - deps:
-          context: org-global
           requires:
             - checkout_code
       - test:
-          context: org-global
           requires:
             - deps
       - deploy_snapshot:
-          context: org-global
           requires:
             - test
           filters:
@@ -189,7 +186,6 @@ workflows:
             branches:
               ignore: /.*/
       - deploy:
-          context: org-global
           requires:
             - checkout_tags
           filters:
