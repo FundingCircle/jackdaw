@@ -63,12 +63,7 @@
               :dependencies [[io.aviso/logging "0.3.1"]
                              [org.apache.kafka/kafka-streams-test-utils "2.1.0"]
                              [org.apache.kafka/kafka-clients "2.1.0" :classifier "test"]
-                             [org.clojure/test.check "0.9.0"]]
-
-              :plugins [[lein-codox "0.10.3"]]
-              :codox
-              {:output-path "codox"
-               :source-uri "http://github.com/fundingcircle/jackdaw/blob/{version}/{filepath}#L{line}"}}
+                             [org.clojure/test.check "0.9.0"]]}
 
              :test
              {:resource-paths ["test/resources"]
