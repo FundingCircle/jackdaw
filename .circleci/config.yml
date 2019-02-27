@@ -92,7 +92,7 @@ jobs:
       #  https://help.github.com/en/articles/githubs-ssh-key-fingerprints
       #
       - run: |
-          .circleci/bin/add-key github.com nThbg6kXUpJWGl7E1IGOCspRomTxdCARLviKw6E5SY8
+          .circleci/bin/add-key github.com $GITHUB_SSH_FINGERPRINT
           git fetch --force origin "refs/tags/${CIRCLE_TAG}:refs/tags/${CIRCLE_TAG}"
       - checkout
       - save_cache:
@@ -135,11 +135,9 @@ jobs:
       - *restore_repo
       - *restore_mvn
       - run:
-          openssl aes-256-cbc -a -d -in secret-file-cipher -out .circleci/fundingcirclebot.key -k $DEPLOY_KEY
-      - run:
           name: Prepare signing key
           command: |
-            gpg --yes --batch --import /home/circleci/jackdaw/.circleci/fundingcirclebot.key
+            echo $GPG_PRIVATE_KEY |base64 --decode |gpg --yes --batch --import
 
       - run:
           name: Deploy to Clojars
