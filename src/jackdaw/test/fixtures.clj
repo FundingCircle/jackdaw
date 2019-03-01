@@ -45,31 +45,38 @@
     (-> (.createTopics client required)
         (.all))))
 
+(def default-topic-opts {:timeout-ms 10000
+                         :delete-first? false})
+(defn parse-opts
+  [opts]
+  (if (integer? opts)
+    (assoc default-topic-opts :timeout-ms opts)
+    (merge default-topic-opts opts)))
+
 (defn topic-fixture
   "Returns a fixture function that creates all the topics named in the supplied
    topic config before running a test function."
   ([kafka-config topic-config]
    (topic-fixture kafka-config topic-config {}))
 
-  ([kafka-config topic-config {:keys [timeout-ms delete-first?]
-                               :or {timeout-ms 10000
-                                    delete-first? false}}]
+  ([kafka-config topic-config opts]
    (fn [t]
-     (with-open [client (AdminClient/create kafka-config)]
-       (let [topics-to-delete (let [current-topics (set (-> (list-topics client)
-                                                            .names
-                                                            .get))]
-                                (filter #(contains? current-topics (:topic-name %))
-                                        (vals topic-config)))]
-         (when (and delete-first?
-                    (not (empty? topics-to-delete)))
-           (admin/delete-topics! client topics-to-delete)
-           (Thread/sleep 500)))
+     (let [{:keys [timeout-ms delete-first?]} (parse-opts opts)]
+       (with-open [client (AdminClient/create kafka-config)]
+         (let [topics-to-delete (let [current-topics (set (-> (list-topics client)
+                                                              .names
+                                                              .get))]
+                                  (filter #(contains? current-topics (:topic-name %))
+                                          (vals topic-config)))]
+           (when (and delete-first?
+                      (not (empty? topics-to-delete)))
+             (admin/delete-topics! client topics-to-delete)
+             (Thread/sleep 500)))
 
-       (-> (create-topics client kafka-config topic-config)
-           (.get timeout-ms java.util.concurrent.TimeUnit/MILLISECONDS))
-       (log/info "topic-fixture: created topics: " (keys topic-config))
-       (t)))))
+         (-> (create-topics client kafka-config topic-config)
+             (.get timeout-ms java.util.concurrent.TimeUnit/MILLISECONDS))
+         (log/info "topic-fixture: created topics: " (keys topic-config))
+         (t))))))
 
 ;;; empty-state-fixture ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

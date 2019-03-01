@@ -6,8 +6,6 @@
    [jackdaw.test.fixtures :as fix]
    [clojure.test :as t :refer [deftest is testing]]))
 
-;(clojure.tools.logging/info "yolo")
-
 (def broker-config
   {"bootstrap.servers" "localhost:9092"})
 
@@ -55,9 +53,20 @@
    :topic-config wc/word-count-topics
    :kstream-config app-config})
 
+(defn get-env [k]
+  (get (System/getenv) k))
+
+(defn e2e-transport
+  [consumer-config topics]
+  (if-let [rest-proxy-url (get-env "REST_PROXY_URL")]
+    (jd.test/rest-proxy-transport {:bootstrap-uri rest-proxy-url
+                                   :group-id (get consumer-config "group.id")}
+                                  topics)
+    (jd.test/kafka-transport consumer-config topics)))
+
 (deftest test-word-count-demo
   (fix/with-fixtures [(fix/integration-fixture wc/word-count test-config)]
-    (fix/with-test-machine (jd.test/kafka-transport test-consumer-config wc/word-count-topics)
+    (fix/with-test-machine (e2e-transport test-consumer-config wc/word-count-topics)
       (fn [machine]
         (let [lines ["As Gregor Samsa awoke one morning from uneasy dreams"
                      "he found himself transformed in his bed into an enormous insect"

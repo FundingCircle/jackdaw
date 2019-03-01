@@ -28,6 +28,7 @@
    [jackdaw.test.transports.identity]
    [jackdaw.test.transports.kafka]
    [jackdaw.test.transports.mock]
+   [jackdaw.test.transports.rest-proxy]
    [jackdaw.test.journal :refer [with-journal]]
    [jackdaw.test.middleware :refer [with-timing with-status with-journal-snapshots]]))
 
