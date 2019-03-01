@@ -21,7 +21,6 @@
 (def app-config
   {"application.id" "word-count"
    "bootstrap.servers" "localhost:9092"
-   "cache.max.bytes.buffering" "0"
    "default.key.serde" (-> (Serdes/String) .getClass .getName)
    "default.value.serde" (-> (Serdes/String) .getClass .getName)})
 
