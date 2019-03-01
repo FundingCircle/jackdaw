@@ -1,25 +1,25 @@
 (ns word-count-test
-  "This illustrates the use of the TopologyTestDriver and jackdaw.test
-  to test Kafka Streams topologies."
+  "This illustrates the use of the TopologyTestDriver and
+  jackdaw.streams.mock to test Kafka Streams apps."
   (:require [word-count :as sut]
             [jackdaw.streams.mock :as jsm]
             [clojure.test :refer :all]))
 
 
 (deftest build-topology-unit-test
-  (testing "word-count unit test"
-    (let [driver (jsm/build-driver sut/build-topology)
+  (testing "Word Count unit test"
+    (let [driver (-> (sut/topology-builder sut/topic-metadata)
+                     jsm/build-driver)
           publish (partial jsm/publish driver)
           get-keyvals (partial jsm/get-keyvals driver)]
 
-      (publish (sut/topic-config "input") nil
+      (publish (:input (sut/topic-metadata)) nil
                "all streams lead to kafka")
-
-      (publish (sut/topic-config "input") nil
+      (publish (:input (sut/topic-metadata)) nil
                "hello kafka streams")
 
-      (let [keyvals (get-keyvals (sut/topic-config "output"))
-            counts (reduce (fn [p [k v]] (assoc p k v)) {} keyvals)]
+      (let [keyvals (get-keyvals (:output (sut/topic-metadata)))
+            counts (reduce (fn [m [k v]] (assoc m k v)) {} keyvals)]
 
         (is (= 8 (count keyvals)))
 

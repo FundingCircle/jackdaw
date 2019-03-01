@@ -1,9 +1,13 @@
 {:deps
- {fundingcircle/jackdaw {:mvn/version "0.6.0"}
+ {fundingcircle/jackdaw {:mvn/version "0.6.1-word_count_improvements-SNAPSHOT"
+                         :exclusions [org.apache.zookeeper/zookeeper]}
   org.apache.kafka/kafka-streams {:mvn/version "2.1.0"}
   org.apache.kafka/kafka-streams-test-utils {:mvn/version "2.1.0"}
   org.clojure/clojure {:mvn/version "1.10.0"}
-  org.clojure/tools.logging {:mvn/version "0.4.1"}}
+  org.clojure/algo.generic {:mvn/version "0.1.3"}
+  org.clojure/tools.logging {:mvn/version "0.4.1"}
+  ch.qos.logback/logback-classic {:mvn/version "1.2.3"}
+  org.codehaus.janino/janino {:mvn/version "3.0.12"}}
 
  :mvn/repos
  {"confluent" {:url "https://packages.confluent.io/maven/"}}

@@ -24,7 +24,7 @@
                  [org.clojure/tools.logging "0.4.1"]
                  [org.clojure/core.cache "0.7.2"]]
 
-  :aot [jackdaw.serdes.fn-impl]
+  :aot [jackdaw.serdes.fn-impl jackdaw.serdes.edn]
   :plugins [[me.arrdem/lein-git-version "2.0.8"]]
 
   :git-version
