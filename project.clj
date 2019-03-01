@@ -34,8 +34,10 @@
        tag
        (let [[_ prefix patch] (re-find #"(\d+\.\d+)\.(\d+)" tag)
              patch            (Long/parseLong patch)
-             patch+           (inc patch)]
-         (format "%s.%d-%s-SNAPSHOT" prefix patch+ branch))))}
+             patch+           (inc patch)
+             branch+          (-> branch
+                                  (.replaceAll "[^a-zA-Z0-9]" "_"))]
+         (format "%s.%d-%s-SNAPSHOT" prefix patch+ branch+))))}
 
   :profiles {;; Provide an alternative to :leiningen/default, used to include :shared
              :default
