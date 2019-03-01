@@ -209,13 +209,20 @@
 (defn integration-fixture
   [build-fn {:keys [broker-config
                     topic-config
-                    kstream-config]}]
+                    kstream-config
+                    enable?]}]
   (t/join-fixtures
-   [(topic-fixture broker-config topic-config {:delete-first true})
-    (reset-application-fixture kstream-config)
-    (kstream-fixture {:topology (build-fn topic-config)
-                      :config kstream-config
-                      :cleanup-first? true})]))
+   (if enable?
+     (do
+       (log/info "enabled intregration fixtures")
+       [(topic-fixture broker-config topic-config {:delete-first true})
+        (reset-application-fixture kstream-config)
+        (kstream-fixture {:topology (build-fn topic-config)
+                          :config kstream-config
+                          :cleanup-first? true})])
+     (do
+       (log/info "disabled integration fixtures")
+       [(empty-state-fixture kstream-config)]))))
 
 ;; system readyness
 
