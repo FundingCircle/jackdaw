@@ -106,14 +106,14 @@
   "Takes a topic config, consumes from a Kafka topic, and returns a
   seq of maps."
   ([topic-config]
-   (get-records topic-config 200))
+   (get-records topic-config 100))
 
   ([topic-config polling-interval-ms]
    (let [client-config (kafka-consumer-config
                         (str (java.util.UUID/randomUUID)))]
      (with-open [client (jc/subscribed-consumer client-config
                                                 [topic-config])]
-       (doall (jcl/log client 100 seq))))))
+       (doall (jcl/log client polling-interval-ms seq))))))
 
 
 (defn get-keyvals
