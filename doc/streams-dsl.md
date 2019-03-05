@@ -18,6 +18,16 @@ docs](https://cljdoc.org/d/fundingcircle/jackdaw/CURRENT/api/jackdaw.streams)
 should be consulted for full details but the essential elements of a typical
 streams app are described below
 
+## Why?
+
+Kafka Streams may be a good choice if you'd like to apply complex transformations
+or aggregations to one or more data streams that can be made available as Kafka
+topics, and you'd like to make the resulting output highly available.
+
+If it's just a simple transformation you're after, you might consider
+[SMT Transforms](https://docs.confluent.io/current/connect/transforms/index.html)
+in combination with Kafka Connect.
+
 ### Topic Definition
 
 ```
