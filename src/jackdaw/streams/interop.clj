@@ -33,6 +33,9 @@
 (defn topic->produced [{:keys [key-serde value-serde]}]
   (Produced/with key-serde value-serde))
 
+(defn topic->produced-with-partition [{:keys [key-serde value-serde]} partition-fn]
+  (Produced/with key-serde value-serde partition-fn))
+
 (defn topic->serialized [{:keys [key-serde value-serde]}]
   (Serialized/with key-serde value-serde))
 
@@ -192,6 +195,12 @@
     [_ {:keys [topic-name] :as topic-config}]
     (clj-kstream
      (.through kstream topic-name ^Produced (topic->produced topic-config))))
+
+  (through
+    [_ {:keys [topic-name] :as topic-config} partition-fn]
+    (clj-kstream
+     (.through kstream topic-name ^Produced
+      (topic->produced-with-partition topic-config (->FnStreamPartitioner partition-fn)))))
 
   (to!
     [_ {:keys [topic-name] :as topic-config}]
