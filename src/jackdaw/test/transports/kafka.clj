@@ -6,7 +6,7 @@
    [jackdaw.client :as kafka]
    [jackdaw.data :as jd]
    [jackdaw.test.commands :as cmd]
-   [jackdaw.test.transports :as t]
+   [jackdaw.test.transports :as t :refer [deftransport]]
    [jackdaw.test.serde :refer [apply-serializers apply-deserializers
                                serde-map
                                byte-array-serde]])
@@ -188,7 +188,7 @@
      {:producer  producer
       :messages  messages})))
 
-(defmethod t/transport :kafka
+(deftransport :kafka
   [{:keys [config topics]}]
   (let [serdes        (serde-map topics)
         test-consumer (consumer config topics (get serdes :deserializers))

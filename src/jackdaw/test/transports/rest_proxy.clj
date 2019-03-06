@@ -7,7 +7,7 @@
    [jackdaw.client :as kafka]
    [jackdaw.test.commands :as cmd]
    [jackdaw.test.journal :as j]
-   [jackdaw.test.transports :as t]
+   [jackdaw.test.transports :as t :refer [deftransport]]
    [jackdaw.test.serde :refer :all]
    [jackdaw.test.transports.kafka :refer [mk-producer-record]]
    [manifold.stream :as s]
@@ -283,7 +283,7 @@
      {:producer  producer
       :messages  messages})))
 
-(defmethod t/transport :confluent-rest-proxy
+(deftransport :confluent-rest-proxy
   [{:keys [config topics]}]
   (let [serdes        (serde-map topics)
         test-consumer (rest-proxy-consumer config topics (get serdes :deserializers))
