@@ -1,5 +1,6 @@
 (ns jackdaw.test.fixtures-test
   (:require
+   [clojure.java.io :as io]
    [clojure.test :refer :all]
    [jackdaw.test.fixtures :refer :all])
   (:import
@@ -30,4 +31,5 @@
   (with-fixtures [(topic-fixture kafka-config {"foo" topic-foo})]
     (with-open [client (AdminClient/create kafka-config)]
       (is (topic-exists? client topic-foo)))))
-                                 
+
+

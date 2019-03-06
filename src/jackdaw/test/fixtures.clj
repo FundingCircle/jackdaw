@@ -2,6 +2,7 @@
   ""
   (:require
    [aleph.http :as http]
+   [clojure.java.io :as io]
    [clojure.tools.logging :as log]
    [jackdaw.client :as kafka]
    [jackdaw.streams :as k]
