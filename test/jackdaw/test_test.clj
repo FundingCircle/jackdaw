@@ -96,6 +96,12 @@
           (is (= :ok (:status (first results))))
           (is (= :error (:status (second results)))))))))
 
+(deftest test-empty-test
+  (with-open [t (jd.test/test-machine (kafka-transport))]
+    (let [{:keys [results journal]} (jd.test/run-test t [])]
+      (is (= {:topics {}} journal))
+      (is (= [] results)))))
+
 (deftest test-write-then-watch
   (testing "write then watch"
     (fix/with-fixtures [(fix/topic-fixture kafka-config {"foo" foo-topic})]
