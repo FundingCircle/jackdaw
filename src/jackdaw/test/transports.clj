@@ -1,11 +1,23 @@
 (ns jackdaw.test.transports)
 
+(defonce +transports+ (atom #{}))
+
 (defmulti transport (fn [config]
                       (:type config)))
+
+(defn supported-transports []
+  @+transports+)
 
 (defmethod transport :default
   [cfg]
   (throw (ex-info "unable to find transport to satisfy config" {})))
+
+(defmacro deftransport [transport-type args & body]
+  `(do
+     (defmethod transport ~transport-type
+       ~args
+       ~@body)
+     (swap! +transports+ conj ~transport-type)))
 
 (defn with-transport
   [machine transport]

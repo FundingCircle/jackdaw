@@ -3,7 +3,7 @@
    [clojure.tools.logging :as log]
    [jackdaw.client :as kafka]
    [jackdaw.test.journal :as j]
-   [jackdaw.test.transports :as t]
+   [jackdaw.test.transports :as t :refer [deftransport]]
    [jackdaw.test.serde :refer [byte-array-serializer byte-array-deserializer
                                apply-serializers apply-deserializers serde-map]]
    [manifold.stream :as s]
@@ -132,8 +132,7 @@
                    (log/infof "stopped mock producer: %s" {:driver driver})))))
     {:messages messages}))
 
-
-(defmethod t/transport :mock
+(deftransport :mock
   [{:keys [driver topics]}]
   (let [serdes        (serde-map topics)
         test-consumer (mock-consumer driver topics (get serdes :deserializers))

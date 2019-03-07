@@ -28,6 +28,7 @@
    [jackdaw.test.transports.identity]
    [jackdaw.test.transports.kafka]
    [jackdaw.test.transports.mock]
+   [jackdaw.test.transports.rest-proxy]
    [jackdaw.test.journal :refer [with-journal]]
    [jackdaw.test.middleware :refer [with-timing with-status with-journal-snapshots]]))
 
@@ -129,10 +130,12 @@
     ;; run commands, stopping if one fails.
     {:results (loop [results []
                      cmd-list commands]
-                (let [r (exe (first cmd-list))]
-                  (if (or (contains? r :error) (empty? (rest cmd-list)))
-                    (conj results r)
-                    (recur (conj results r) (rest cmd-list)))))
+                (cond
+                  (first cmd-list) (let [r (exe (first cmd-list))]
+                                     (if (or (contains? r :error) (empty? (rest cmd-list)))
+                                       (conj results r)
+                                       (recur (conj results r) (rest cmd-list))))
+                  :else results))
      :journal @(:journal machine)}))
 
 (defn identity-transport

@@ -8,8 +8,6 @@
    [jackdaw.test.fixtures :as fix]
    [jackdaw.test.serde :as serde]
    [jackdaw.test.transports :as trns]
-   [jackdaw.test.transports.kafka]
-   [jackdaw.test.transports.mock]
    [jackdaw.test.middleware :refer [with-status]])
   (:import
    (java.util Properties)
@@ -98,6 +96,12 @@
           (is (= :ok (:status (first results))))
           (is (= :error (:status (second results)))))))))
 
+(deftest test-empty-test
+  (with-open [t (jd.test/test-machine (kafka-transport))]
+    (let [{:keys [results journal]} (jd.test/run-test t [])]
+      (is (= {:topics {}} journal))
+      (is (= [] results)))))
+
 (deftest test-write-then-watch
   (testing "write then watch"
     (fix/with-fixtures [(fix/topic-fixture kafka-config {"foo" foo-topic})]
@@ -154,3 +158,10 @@
               (is (= {:id "msg3" :payload "you only live twice"}
                      (-> ((by-id "foo" "msg3") journal)
                          :value))))))))))
+
+(deftest test-transports-loaded
+  (let [transports (trns/supported-transports)]
+    (is (contains? transports :identity))
+    (is (contains? transports :kafka))
+    (is (contains? transports :mock))
+    (is (contains? transports :confluent-rest-proxy))))
