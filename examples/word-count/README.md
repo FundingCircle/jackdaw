@@ -1,124 +1,137 @@
 # Word Count
 
-This tutorial contains a simple stream processing application using Jackdaw and Kafka Streams.
+This is the classic 'word count' example done as a stream processing
+application using the Jackdaw Streams API.
+
 
 ## Setting up
 
-Before starting, it is recommended to install the Confluent Platform CLI which can be obtained from [https://www.confluent.io/download/](https://www.confluent.io/download/).
+Before starting, it is recommended to downloand and install the
+Confluent CLI which can be obtained from
+[https://www.confluent.io/download/](https://www.confluent.io/download/).
 
-To install Clojure: [https://clojure.org/guides/getting_started](https://clojure.org/guides/getting_started).
+To install Clojure:
+[https://clojure.org/guides/getting_started](https://clojure.org/guides/getting_started).
+
 
 ## Project structure
 
 The project structure looks like this:
 ```
-$ tree word-count
-word-count
-├── README.md
+tree
+.
 ├── deps.edn
 ├── dev
 │   └── system.clj
+├── README.md
+├── resources
+│   ├── logback.xml
+│   └── metamorphosis.txt
 ├── src
 │   └── word_count.clj
 └── test
     └── word_count_test.clj
+
+4 directories, 7 files
 ```
 
-The `deps.edn` file describes the project's dependencies and source paths.
+The `deps.edn` file describes the project's source paths and
+dependencies.
 
-The `system.clj` file contains functions to start, stop, and reset the app. These are required by the `user` namespace for interactive development and should not be invoked directly.
+The `system.clj` file contains functions to start and stop the
+app. These are used by the `user` namespace for interactive
+development.
 
-The `word_count.clj` file describes the app and topology. Word Count reads from a Kafka topic called 'input', logs the key and value, and writes the counts to a topic called 'output'. The topology uses a KTable to track how many times words are seen:
+The `word_count.clj` file describes the app and the topology. The
+application reads from a Kafka topic called `input` and splits the
+input value into words. It puts the count on a Kafka topic called
+`output` for each word seen:
 ```
-  (defn build-topology
-    [builder]
-    (let [text-input (-> (j/kstream builder (topic-config "input"))
-                         (j/peek (fn [[k v]]
-                                   (info (str {:key k :value v})))))
+(defn topology-builder
+  [topic-metadata]
+  (fn [builder]
+    (let [text-input (-> (j/kstream builder (:input (topic-metadata)))
+                         (j/peek (fn [[k v]] (info (str {:key k :value v})))))
 
-          count (-> text-input
-                    (j/flat-map-values (fn [v]
-                                         (str/split (str/lower-case v)
-                                                    #"\W+")))
-                    (j/group-by (fn [[_ v]] v)
-                                (topic-config nil (Serdes/String)
-                                              (Serdes/String)))
-                    (j/count))]
+          counts (-> text-input
+                     (j/flat-map-values split-lines)
+                     (j/group-by (fn [[_ v]] v))
+                     (j/count))]
 
-      (-> count
+      (-> counts
           (j/to-kstream)
-          (j/to (topic-config "output")))
+          (j/to (:output (topic-metadata))))
 
-      builder))
+      builder)))
 ```
 
-The `word_count_test.clj` file contains a test.
+The `word_count_test.clj` file contains a test
+
 
 ## Running the app
 
-Let's get started! Fire up a Clojure REPL and load the `word-count` namespace. Then, start ZooKeeper and Kafka. If these services are already running, you may skip this step:
+Let's get started! Start Confluent Platform using the Confluent CLI
+`start` command.
 ```
-user> (confluent/start)
-INFO zookeeper is up (confluent:288)
-INFO kafka is up (confluent:288)
-nil
+<path-to-confluent>/bin/confluent start
 ```
 
-Now, start the app.
+Then change to the Word Count project directory and start a REPL.
 ```
-user> (start)
-INFO topic 'input' is created (jackdaw.admin.client:288)
-INFO topic 'output' is created (jackdaw.admin.client:288)
-INFO word-count is up (word-count:288)
-{:app #object[org.apache.kafka.streams.KafkaStreams 0x72a2b1d3 "org.apache.kafka.streams.KafkaStreams@72a2b1d3"]}
+cd <path-to-jackdaw>/examples/word-count
+clj
 ```
 
-The `user/start` function creates two Kafka topics needed by Word Count and starts it.
-
-For the full list of topics, type:
+You should see output like the following:
 ```
-user> (get-topics)
-#{"word-count-KSTREAM-AGGREGATE-STATE-STORE-0000000004-repartition"
-  "output"
-  "__confluent.support.metrics"
-  "input"
-  "word-count-KSTREAM-AGGREGATE-STATE-STORE-0000000004-changelog"}
+Clojure 1.10.0
+user=>
 ```
 
-With the app running, place a couple of records on the input stream:
+Enter the following at the `user=>` prompt:
 ```
-(publish (topic-config "input") nil "all streams lead to kafka")
-INFO {:key nil, :value "all streams lead to kafka"} (word-count:288)
-nil
-user> (publish (topic-config "input") nil "hello kafka streams")
-INFO {:key nil, :value "hello kafka streams"} (word-count:288)
-nil
+(reset)
 ```
 
-Word Count logs the key and value to the standard output.
-
-To read from the output stream:
+If you see output like the following, congratulations, the app is
+running!
 ```
-user> (get-keyvals (topic-config "output"))
-(("all" 1)
- ("streams" 1)
- ("lead" 1)
- ("to" 1)
- ("kafka" 1)
- ("hello" 1)
- ("kafka" 2)
- ("streams" 2))
+23:01:25.939 [main] INFO  system - internal state is deleted
+23:01:26.093 [main] INFO  word-count - word-count is up
+{:app #object[org.apache.kafka.streams.KafkaStreams 0xb8b2184 "org.apache.kafka.streams.KafkaStreams@b8b2184"]}
 ```
 
-This concludes this tutorial.
+Let's put a couple of records on the input topic:
+```
+(publish (:input (topic-metadata)) nil "all streams lead to kafka")
+(publish (:input (topic-metadata)) nil "hello kafka streams")
+```
 
-## Interactive development
+We can also get the result:
+```
+(get-keyvals (:output (topic-metadata)))
+```
 
-For interactive development, reload the file and invoke `user/reset`. These stops the app, deletes topics and internal state using a regex, and recreates the topics and restarts the app. The details are in the `system` namespace.
+You should see output like the following:
+```
+(["all" 1]
+ ["streams" 1]
+ ["lead" 1]
+ ["to" 1]
+ ["kafka" 1]
+ ["hello" 1]
+ ["kafka" 2]
+ ["streams" 2])
+```
+
+For more a more in depth walkthrough, see the comment block in the
+`word_count.clj` file.
+
 
 ## Running tests
 
-To run tests, load the `word-count-test` namespace and invoke a test runner using your editor, or from the command line:
+To run tests, load the `word-count-test` namespace in your editor and
+invoke a test runner, or from the command line:
 ```
 clj -Atest
 ```
