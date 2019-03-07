@@ -5,8 +5,11 @@
             [jackdaw.serdes.fn :as jsfn])
   (:import java.nio.charset.StandardCharsets
            org.apache.kafka.common.serialization.Serde
-           org.apache.kafka.common.serialization.Serdes))
-
+           org.apache.kafka.common.serialization.Serdes)
+  (:gen-class
+   :implements [org.apache.kafka.common.serialization.Serde]
+   :prefix "EdnSerde-"
+   :name jackdaw.serdes.EdnSerde))
 
 (set! *warn-on-reflection* true)
 
@@ -44,12 +47,6 @@
   "Returns an EDN serde."
   [& [opts]]
   (Serdes/serdeFrom (serializer) (deserializer opts)))
-
-
-(gen-class
- :name jackdaw.serdes.EdnSerde
- :prefix EdnSerde-
- :implements [org.apache.kafka.common.serialization.Serde])
 
 (def EdnSerde-configure
   (constantly nil))

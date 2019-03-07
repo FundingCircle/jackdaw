@@ -5,15 +5,14 @@
   The application reads from a Kafka topic called `input` and splits
   the input value into words. It puts the count on a Kafka topic
   called `output` for each word seen."
-  (:gen-class)
-  (:require [clojure.algo.generic.functor :refer [fmap]]
-            [clojure.string :as str]
-            [clojure.java.io :as io]
-            [clojure.tools.logging :refer [info]]
-            [jackdaw.serdes.edn :as jse]
-            [jackdaw.serdes.resolver :as resolver]
-            [jackdaw.streams :as j]))
-
+  (:require
+   [clojure.string :as str]
+   [clojure.java.io :as io]
+   [clojure.tools.logging :refer [info]]
+   [jackdaw.serdes.edn :as jse]
+   [jackdaw.serdes.resolver :as resolver]
+   [jackdaw.streams :as j])
+  (:gen-class))
 
 (def ^{:const true
        :doc "A topic metadata map.
@@ -42,15 +41,16 @@
   (resolver/serde-resolver))
 
 (def topic-metadata
-  "Returns the topic metadata map with serdes resolved."
-  (memoize (fn []
-             (fmap #(assoc % :key-serde (resolve-serde (:key-serde %))
-                           :value-serde (resolve-serde (:value-serde %)))
-                   +topic-metadata+))))
+  (reduce-kv (fn [m k v]
+               (assoc m k
+                      (assoc v
+                             :key-serde (resolve-serde (:key-serde v))
+                             :value-serde (resolve-serde (:value-serde v)))))
+             {}
+             +topic-metadata+))
 
-(defn app-config
+(def app-config
   "Returns the application config."
-  []
   {"application.id"            "word-count"
    "bootstrap.servers"         "localhost:9092"
    "default.key.serde"         "jackdaw.serdes.EdnSerde"
@@ -68,7 +68,7 @@
   the topology."
   [topic-metadata]
   (fn [builder]
-    (let [text-input (-> (j/kstream builder (:input (topic-metadata)))
+    (let [text-input (-> (j/kstream builder (:input topic-metadata))
                          (j/peek (fn [[k v]] (info (str {:key k :value v})))))
 
           counts (-> text-input
@@ -78,7 +78,7 @@
 
       (-> counts
           (j/to-kstream)
-          (j/to (:output (topic-metadata))))
+          (j/to (:output topic-metadata)))
 
       builder)))
 
