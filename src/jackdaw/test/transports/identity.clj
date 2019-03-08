@@ -4,7 +4,7 @@
    [manifold.stream :as s]
    [manifold.deferred :as d]
    [jackdaw.test.journal :as j]
-   [jackdaw.test.transports :as t]))
+   [jackdaw.test.transports :as t :refer [deftransport]]))
 
 (defn identity-consumer
   [stream]
@@ -17,7 +17,7 @@
   (let [messages (s/stream 1)]
     {:messages messages}))
 
-(defmethod t/transport :identity
+(deftransport :identity
   [{:keys [topics]}]
   (let [ch (s/stream 1)
         test-consumer (identity-consumer ch)

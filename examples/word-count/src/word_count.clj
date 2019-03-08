@@ -1,69 +1,93 @@
 (ns word-count
-  "This tutorial contains a simple stream processing application using
-  Jackdaw and Kafka Streams.
+  "This is the classic 'word count' example done as a stream
+  processing application using the Jackdaw Streams API.
 
-  It begins with an app template which is then extended through a
-  series of examples to illustrate key concepts in Kafka Streams using
-  an interactive workflow. The result is a simple word counter.
+  The application reads from a Kafka topic called `input` and splits
+  the input value into words. It puts the count on a Kafka topic
+  called `output` for each word seen."
+  (:require
+   [clojure.string :as str]
+   [clojure.java.io :as io]
+   [clojure.tools.logging :refer [info]]
+   [jackdaw.serdes.edn :as jse]
+   [jackdaw.serdes.resolver :as resolver]
+   [jackdaw.streams :as j])
+  (:gen-class))
 
-  This follows the treatment outlined in
-  `https://kafka.apache.org/20/documentation/streams/tutorial`."
-  (:gen-class)
-  (:require [clojure.string :as str]
-            [clojure.java.io :as io]
-            [clojure.tools.logging :refer [info]]
-            [jackdaw.streams :as j]
-            [jackdaw.serdes.edn :as jse])
-  (:import [org.apache.kafka.common.serialization Serdes]))
+(def ^{:const true
+       :doc "A topic metadata map.
 
+  Provides all the information needed to create the topics used by the
+  application. It also describes the serdes used to read and write to
+  the topics."}
 
-;;; Topic Configuration
-;;;
+  +topic-metadata+
 
-(defn topic-config
-  "Takes a topic name and (optionally) a key and value serde and
-  returns a topic configuration map, which may be used to create a
-  topic or produce/consume records."
-  ([topic-name]
-   (topic-config topic-name (jse/serde) (jse/serde)))
-
-  ([topic-name key-serde value-serde]
-   {:topic-name topic-name
+  {:input
+   {:topic-name "input"
     :partition-count 1
     :replication-factor 1
-    :key-serde key-serde
-    :value-serde value-serde}))
+    :key-serde {:serde-keyword :jackdaw.serdes.edn/serde}
+    :value-serde {:serde-keyword :jackdaw.serdes.edn/serde}}
 
-(defn topic-names
-  []
-  ["input" "output"])
+   :output
+   {:topic-name "output"
+    :partition-count 1
+    :replication-factor 1
+    :key-serde {:serde-keyword :jackdaw.serdes.edn/serde}
+    :value-serde {:serde-keyword :jackdaw.serdes.edn/serde}}})
 
+(def resolve-serde
+  (resolver/serde-resolver))
 
-;;; App Template
-;;;
+(def topic-metadata
+  (reduce-kv (fn [m k v]
+               (assoc m k
+                      (assoc v
+                             :key-serde (resolve-serde (:key-serde v))
+                             :value-serde (resolve-serde (:value-serde v)))))
+             {}
+             +topic-metadata+))
 
-(defn app-config
+(def app-config
   "Returns the application config."
-  []
-  {"application.id" "word-count"
-   "bootstrap.servers" "localhost:9092"
+  {"application.id"            "word-count"
+   "bootstrap.servers"         "localhost:9092"
+   "default.key.serde"         "jackdaw.serdes.EdnSerde"
+   "default.value.serde"       "jackdaw.serdes.EdnSerde"
    "cache.max.bytes.buffering" "0"})
 
-(defn build-topology
-  "Returns a topology builder.
+(defn split-lines
+  "Takes an input string and returns a list of words with the
+  whitespace removed."
+  [input-string]
+  (str/split (str/lower-case input-string) #"\W+"))
 
-  WARNING: This is just a stub. Before publishing to the input topic,
-  evaluate one of the `build-topology` functions in the comment forms
-  below."
-  [builder]
-  builder)
+(defn topology-builder
+  "Takes a topic metadata function and returns a function that builds
+  the topology."
+  [topic-metadata]
+  (fn [builder]
+    (let [text-input (-> (j/kstream builder (:input topic-metadata))
+                         (j/peek (fn [[k v]] (info (str {:key k :value v})))))
+
+          counts (-> text-input
+                     (j/flat-map-values split-lines)
+                     (j/group-by (fn [[_ v]] v))
+                     (j/count))]
+
+      (-> counts
+          (j/to-kstream)
+          (j/to (:output topic-metadata)))
+
+      builder)))
 
 (defn start-app
   "Starts the stream processing application."
-  [app-config]
+  [topic-metadata app-config]
   (let [builder (j/streams-builder)
-        topology (build-topology builder)
-        app (j/kafka-streams topology app-config)]
+        topology ((topology-builder topic-metadata) builder)
+        app (j/kafka-streams topology (app-config))]
     (j/start app)
     (info "word-count is up")
     app))
@@ -76,167 +100,187 @@
 
 (defn -main
   [& _]
-  (start-app (app-config)))
+  (start-app topic-metadata app-config))
 
 
 (comment
-  ;;; Start
-  ;;;
+  ;; You can use this comment block to explore the Word Count
+  ;; application.
 
-  ;; Needed to invoke the forms from this namespace. When typing
-  ;; directly in the REPL, skip this step.
-  (require '[user :refer :all :exclude [topic-config]])
+  ;; This comment block introduces an interactive development
+  ;; workflow. With only a few keystrokes, the application can be
+  ;; reset, explored, modified, and then reset again [Note 1]. Using
+  ;; this workflow, we can treat Kafka Streams apps much like we do
+  ;; pure functions. We can supply inputs at the REPL, and we can
+  ;; change them and see what they do.
 
-
-  ;; Start ZooKeeper and Kafka.
-  ;; This requires the Confluent Platform CLI which may be obtained
-  ;; from `https://www.confluent.io/download/`. If ZooKeeper and Kafka
-  ;; are already running, skip this step.
-  (confluent/start)
-
-
-  ;; Create the `input` and `output` topics, and start the app.
-  (start)
+  ;; [Note 1] Stuart Sierra, "My Clojure Workflow, Reloaded"
+  ;; http://thinkrelevance.com/blog/2013/06/04/clojure-workflow-reloaded
 
 
-  ;; Get a list of current topics.
-  (list-topics)
+  ;; STEP 1: Download and Start Confluent Platform
+
+  ;; For serious development, Confluent Platform can be supervised by
+  ;; an operating system service manager, e.g., launchd or
+  ;; systemd. However, if you want to get up and running quickly,
+  ;; download the Confluent CLI from
+  ;; `https://www.confluent.io/download/` and add the install location
+  ;; to your PATH. Then start Confluent Platform using the Confluent
+  ;; CLI `start` command.
+  ;; ```
+  ;; <path-to-confluent>/bin/confluent start
+  ;; ```
+  ;;
+  ;; The Confluent CLI requires Java 8. If ZooKeeper and Kafka are
+  ;; already running, skip this step.
 
 
-  )
+  ;; STEP 2: Launch a Clojure REPL and Call `reset`
 
+  ;; Install Clojure via your favorite package manager, e.g.,
+  ;; Homebrew, APT, or DNF. Then change to the Word Count project
+  ;; directory and start a REPL.
+  ;;
+  ;; For example, using Homebrew and the CLI tools:
+  ;; ```
+  ;; brew install clojure
+  ;; cd <path-to-jackdaw>/examples/word-count
+  ;; clj
+  ;; ```
+  ;;
+  ;; You should see output like the following:
+  ;; ```
+  ;; Clojure 1.10.0
+  ;; user=>
+  ;; ```
 
-(comment
-  ;;; Example: Pipe
-  ;;;
-  ;;; Reads from a Kafka topic called `input`, logs the key and value,
-  ;;; and writes these to a Kafka topic called `output`.
-  ;;;
-  ;;; This topology reads and writes using `jackdaw.serdes.edn/serde`,
-  ;;; and logs using `jackdaw.streams/peek` which wraps
-  ;;; `KStream#peek`.
-
-  (defn build-topology
-    [builder]
-    (-> (j/kstream builder (topic-config "input"))
-        (j/peek (fn [[k v]]
-                  (info (str {:key k :value v}))))
-        (j/to (topic-config "output")))
-    builder)
-
-
+  ;; Enter the following at the `user=>` prompt:
   (reset)
 
+  ;; You should see output like the following indicating the topics
+  ;; were created and the app is running.
+  ;;
+  ;; ```
+  ;; 23:01:25.939 [main] INFO  system - internal state is deleted
+  ;; 23:01:26.093 [main] INFO  word-count - word-count is up
+  ;; {:app #object[org.apache.kafka.streams.KafkaStreams 0xb8b2184 "org.apache.kafka.streams.KafkaStreams@b8b2184"]}
+  ;; ```
 
-  (publish (topic-config "input") nil "this is a pipe")
+  ;; Emacs users:
+  ;;
+  ;; Install Cider (https://github.com/clojure-emacs/cider). After
+  ;; installing, open a project file, e.g. this one, and use
+  ;; `M-x cider-jack-in` to start a REPL. You can evaluate forms using
+  ;; `C-x C-e` and `C-c C-v C-f e`. The latter sends output to
+  ;; *cider-results*.
 
+  ;; The following `require` is needed because the functons to reset
+  ;; app state and produce and consume records are defined in the
+  ;; `user` namespace but we want to evaluate them from this one.
 
-  (get-keyvals (topic-config "output"))
+  ;; Evaluate the form using `C-x C-e`:
+  (require '[user :refer :all])
 
-
+  ;; Evaluate the form using `C-c C-v C-f e`:
   (reset)
 
-
-  (get-keyvals (topic-config "output"))
-
-
-  )
+  ;; For the rest of the comment block, it is assumed you can evaluate
+  ;; the forms. If you have a basic REPL, use copy-paste.
 
 
-(comment
-  ;;; Example: Word Count
-  ;;;
-  ;;; Create business logic using pure functions
+  ;; STEP 3: Publish Inputs and Get Outputs
 
-  (defn split-lines
-    [input-string]
-    (str/split (str/lower-case input-string) #"\W+"))
+  ;; Evaluate the form:
+  (publish (:input (topic-metadata)) nil "all streams lead to kafka")
 
+  ;; Evaluate the form:
+  (publish (:input (topic-metadata)) nil "hello kafka streams")
 
-  (defn counts
-    [input-string]
-    (->> input-string
-         split-lines
-         (group-by identity)
-         (reduce (fn [counts [word occurrences]]
-                      (assoc counts word (count occurrences)))
-                 {})))
+  ;; Wait approximately five seconds, then evaluate the form:
+  (get-keyvals (:output (topic-metadata)))
 
+  ;; You should see output like the following:
+  ;; ```
+  ;; (["all" 1]
+  ;;  ["streams" 1]
+  ;;  ["lead" 1]
+  ;;  ["to" 1]
+  ;;  ["kafka" 1]
+  ;;  ["hello" 1]
+  ;;  ["kafka" 2]
+  ;;  ["streams" 2])
+  ;; ```
 
-  (counts (str/join " " ["all streams lead to kafka"
-                         "hello kafka streams"]))
+  ;; Notice the double occurances of "streams" and "kafka". This
+  ;; happens because at an earlier point the count for each of these
+  ;; was 'one' and then later became 'two'. To see only the current
+  ;; counts, we can transform the result into a map.
 
+  ;; Evaluate the form:
+  (->> (get-keyvals (:output (topic-metadata)))
+       (into {})
+       (sort-by second)
+       reverse)
 
-  )
-
-
-(comment
-  ;;; Example: Word Count
-  ;;;
-  ;;; Reads from a Kafka topic called `input`, logs the key and value,
-  ;;; writes the counts to a topic called `output`.
-  ;;;
-  ;;; This topology uses a KTable to track how many times words are
-  ;;; seen. The KTable is created by the combined use of
-  ;;; `KStream#groupBy` and `KGroupedStream#count`.
-
-  (defn build-topology
-    [builder]
-    (let [text-input (j/kstream builder (topic-config "input"))
-
-          counts (-> text-input
-                     (j/flat-map-values split-lines)
-                     (j/group-by (fn [[_ v]] v)
-                                 (topic-config nil (Serdes/String)
-                                               (Serdes/String)))
-                     (j/count))]
-
-      (-> counts
-          (j/to-kstream)
-          (j/to (topic-config "output")))
-
-      builder))
+  ;; You should see output like the following:
+  ;; ```
+  ;; (["kafka" 2]
+  ;;  ["streams" 2]
+  ;;  ["hello" 1]
+  ;;  ["to" 1]
+  ;;  ["lead" 1]
+  ;;  ["all" 1])
 
 
+  ;; This preceding example has a fairly small dataset. Let's make it
+  ;; larger.
+
+
+  ;; The classpath contains a copy of The Metamorphosis. We will load
+  ;; and split the dataset by the newlines and publish the fragments
+  ;; to `input` topic as separate records. As before, we get the
+  ;; counts from the 'output' topic.
+
+  ;; Evaluate the form:
   (reset)
 
-
-  (publish (topic-config "input") nil "all streams lead to kafka")
-
-
-  (get-keyvals (topic-config "output"))
-
-
-  (publish (topic-config "input") nil "hello kafka streams")
-
-
-  (get-keyvals (topic-config "output"))
-
-
-  (reverse (sort-by second (into {} (get-keyvals (topic-config "output")))))
-
-
-  (list-topics)
-
-
-  (get-keyvals (topic-config (str "word-count-KSTREAM-AGGREGATE-"
-                                  "STATE-STORE-0000000003-changelog")
-                             (Serdes/String)
-                             (Serdes/Long)))
-
-
-  (reset)
-
-
+  ;; Evaluate the form:
   (let [text-input (slurp (io/resource "metamorphosis.txt"))
         values (str/split text-input #"\n")]
-
     (doseq [v values]
-      (publish (topic-config "input") nil v)
-      (println v))
-    (println "THE END"))
+      (publish (:input (topic-metadata)) nil v)
+      (info v))
+    (info "The End"))
 
-  (reverse (sort-by second (into {} (get-keyvals (topic-config "output")))))
+  ;; Wait until the log contains "The End". Then evaluate the form:
+  (->> (get-keyvals (:output (topic-metadata)))
+       (into {})
+       (sort-by second)
+       reverse)
 
+  ;; You should see output like the following:
+  ;; ```
+  ;; (["the" 1148]
+  ;;  ["to" 753]
+  ;;  ["and" 642]
+  ;;  ["he" 590]
+  ;;  ["his" 550]
+  ;;  ["of" 429]
+  ;;  ["was" 409]
+  ;;  ["it" 370]
+  ;;  ["had" 352]
+  ;;  ["in" 348]
+  ;;  ["that" 345]
+  ;;  ["gregor" 298]
+  ;;  ["a" 285]
+  ;;  ["as" 242]
+  ;;  ["she" 200]
+  ;;  ["with" 199]
+  ;;  ["s" 194]
+  ;;  ["him" 188]
+  ;;  ["her" 187]
+  ;;  ["would" 187]
+  ;;  ...)
+  ;; ```
 
   )

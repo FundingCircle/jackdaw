@@ -1,8 +1,9 @@
 (ns system
   "Functions to start and stop the system, used for interactive
   development.
-  The `system/start` and `system/stop` functions are required by the
-  `user` namespace and should not be called directly."
+
+  These functions are required by the `user` namespace and should not
+  be called directly."
   (:require [clojure.string :as str]
             [clojure.tools.logging :as log]
             [clojure.java.shell :refer [sh]]
@@ -50,7 +51,10 @@
   (when system
     (word-count/stop-app (:app system)))
   (re-delete-topics (re-pattern (str "("
-                                     (str/join "|" (word-count/topic-names))
+                                     (->> (word-count/topic-metadata)
+                                          keys
+                                          (map name)
+                                          (str/join "|"))
                                      "|"
                                      (application-id (word-count/app-config))
                                      ".*)")))
@@ -62,5 +66,5 @@
   be called directly."
   []
   (with-out-str (stop))
-  (create-topics (map word-count/topic-config (word-count/topic-names)))
-  {:app (word-count/start-app (word-count/app-config))})
+  (create-topics (vals (word-count/topic-metadata)))
+  {:app (word-count/start-app word-count/topic-metadata word-count/app-config)})

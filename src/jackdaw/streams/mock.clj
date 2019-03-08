@@ -30,8 +30,10 @@
     (TopologyTestDriver.
      topology
      (doto (Properties.)
-       (.put "bootstrap.servers" "fake")
-       (.put "application.id" (str (java.util.UUID/randomUUID)))))))
+       (.put "application.id"      (str (java.util.UUID/randomUUID)))
+       (.put "bootstrap.servers"   "fake")
+       (.put "default.key.serde"   "jackdaw.serdes.EdnSerde")
+       (.put "default.value.serde" "jackdaw.serdes.EdnSerde")))))
 
 (defn send
   "Publishes message to a topic."

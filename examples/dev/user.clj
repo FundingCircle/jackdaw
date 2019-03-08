@@ -6,7 +6,6 @@
             [jackdaw.admin :as ja]
             [jackdaw.serdes.edn :as jse]
             [jackdaw.streams :as j]
-            [confluent]
             [system])
   (:import org.apache.kafka.common.serialization.Serdes))
 
