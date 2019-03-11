@@ -87,7 +87,7 @@
   [topic-metadata app-config]
   (let [builder (j/streams-builder)
         topology ((topology-builder topic-metadata) builder)
-        app (j/kafka-streams topology (app-config))]
+        app (j/kafka-streams topology app-config)]
     (j/start app)
     (info "word-count is up")
     app))
@@ -191,13 +191,13 @@
   ;; STEP 3: Publish Inputs and Get Outputs
 
   ;; Evaluate the form:
-  (publish (:input (topic-metadata)) nil "all streams lead to kafka")
+  (publish (:input topic-metadata) nil "all streams lead to kafka")
 
   ;; Evaluate the form:
-  (publish (:input (topic-metadata)) nil "hello kafka streams")
+  (publish (:input topic-metadata) nil "hello kafka streams")
 
   ;; Wait approximately five seconds, then evaluate the form:
-  (get-keyvals (:output (topic-metadata)))
+  (get-keyvals (:output topic-metadata))
 
   ;; You should see output like the following:
   ;; ```
@@ -217,7 +217,7 @@
   ;; counts, we can transform the result into a map.
 
   ;; Evaluate the form:
-  (->> (get-keyvals (:output (topic-metadata)))
+  (->> (get-keyvals (:output topic-metadata))
        (into {})
        (sort-by second)
        reverse)
@@ -248,12 +248,12 @@
   (let [text-input (slurp (io/resource "metamorphosis.txt"))
         values (str/split text-input #"\n")]
     (doseq [v values]
-      (publish (:input (topic-metadata)) nil v)
+      (publish (:input topic-metadata) nil v)
       (info v))
     (info "The End"))
 
   ;; Wait until the log contains "The End". Then evaluate the form:
-  (->> (get-keyvals (:output (topic-metadata)))
+  (->> (get-keyvals (:output topic-metadata))
        (into {})
        (sort-by second)
        reverse)

@@ -1,0 +1,26 @@
+<configuration>
+  <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>log/jackdaw.log</file>
+    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+      <!-- rollover daily -->
+      <fileNamePattern>log/jackdaw-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+
+      <!-- each file should be at most 64MB, keep 14 days worth of history, but at most 512MB -->
+      <maxFileSize>64MB</maxFileSize>
+      <maxHistory>14</maxHistory>
+      <totalSizeCap>512MB</totalSizeCap>
+
+      <!-- short-lived processes should clean up old logs -->
+      <cleanHistoryOnStart>true</cleanHistoryOnStart>
+
+    </rollingPolicy>
+
+    <encoder>
+      <pattern>%-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <root level="INFO">
+    <appender-ref ref="FILE" />
+  </root>
+</configuration>

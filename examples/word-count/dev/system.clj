@@ -51,14 +51,14 @@
   (when system
     (word-count/stop-app (:app system)))
   (re-delete-topics (re-pattern (str "("
-                                     (->> (word-count/topic-metadata)
+                                     (->> word-count/topic-metadata
                                           keys
                                           (map name)
                                           (str/join "|"))
                                      "|"
-                                     (application-id (word-count/app-config))
+                                     (application-id word-count/app-config)
                                      ".*)")))
-  (destroy-state-stores (word-count/app-config)))
+  (destroy-state-stores word-count/app-config))
 
 (defn start
   "Creates topics, and starts the app.
@@ -66,5 +66,5 @@
   be called directly."
   []
   (with-out-str (stop))
-  (create-topics (vals (word-count/topic-metadata)))
+  (create-topics (vals word-count/topic-metadata))
   {:app (word-count/start-app word-count/topic-metadata word-count/app-config)})
