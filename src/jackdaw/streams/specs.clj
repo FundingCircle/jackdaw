@@ -10,7 +10,8 @@
                      IKGroupedStream IKStream IKTable
                      ITimeWindowedKStream ISessionWindowedKStream]])
   (:import org.apache.kafka.common.serialization.Serde
-           org.apache.kafka.streams.kstream.JoinWindows))
+           org.apache.kafka.streams.kstream.JoinWindows
+           org.apache.kafka.streams.processor.TimestampExtractor))
 
 (def global-ktable?
   (partial satisfies? IGlobalKTable))
@@ -39,17 +40,24 @@
 (def serde?
   (partial instance? Serde))
 
+(def timestamp-extractor?
+  (partial instance? TimestampExtractor))
+
 (def streams-builder?
   (partial satisfies? IStreamsBuilder))
 
 (s/def ::topic-name string?)
 (s/def ::key-serde any?)
 (s/def ::value-serde any?)
+(s/def ::timestamp-extractor timestamp-extractor?)
+(s/def ::reset-policy keyword?)
 
 (s/def ::topic-config
   (s/keys :req-un [::topic-name
                    ::key-serde
-                   ::value-serde]))
+                   ::value-serde]
+          :opt-un [::timestamp-extractor
+                   ::reset-policy]))
 
 (s/def ::topic-configs (s/coll-of ::topic-config))
 
