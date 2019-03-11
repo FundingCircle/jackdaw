@@ -100,7 +100,8 @@
   (through
     [kstream topic-config]
     "Materializes a stream to a topic, and returns a new KStream that will
-    consume messages from the topic.")
+    consume messages from the topic. Messages in the new topic will be partitioned
+    based on the output of the optional partition function that represents StreamPartitioner class")
 
   (to!
     [kstream topic-config]

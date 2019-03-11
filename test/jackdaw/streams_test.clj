@@ -198,20 +198,44 @@
           (System/setOut std-out)))))
 
   (testing "through"
-    (let [topic-a (mock/topic "topic-a")
-          topic-b (mock/topic "topic-b")
-          topic-c (mock/topic "topic-c")
-          driver (mock/build-driver (fn [builder]
-                                      (-> builder
-                                          (k/kstream topic-a)
-                                          (k/through topic-b)
-                                          (k/to topic-c))))
-          publish (partial mock/publish driver topic-a)]
+    (testing "without partitions"
+      (let [topic-a (mock/topic "topic-a")
+            topic-b (mock/topic "topic-b")
+            topic-c (mock/topic "topic-c")
+            driver (mock/build-driver (fn [builder]
+                                        (-> builder
+                                            (k/kstream topic-a)
+                                            (k/through topic-b)
+                                            (k/to topic-c))))
+            publish (partial mock/publish driver topic-a)]
 
-      (publish 1 1)
+        (publish 1 1)
 
-      (is (= [[1 1]] (mock/get-keyvals driver topic-b)))
-      (is (= [[1 1]] (mock/get-keyvals driver topic-c)))))
+        (is (= [[1 1]] (mock/get-keyvals driver topic-b)))
+        (is (= [[1 1]] (mock/get-keyvals driver topic-c)))))
+    (testing "with partition"
+      (let [topic-a (mock/topic "topic-a")
+            topic-b (assoc (mock/topic "topic-b") :partition-fn (fn [topic-name key value partition-count]
+                                                                  (int 10)))
+            topic-c (mock/topic "topic-c")
+            driver (mock/build-driver (fn [builder]
+                                        (-> builder
+                                            (k/kstream topic-a)
+                                            (k/through topic-b)
+                                            (k/to topic-c))))
+            publish (partial mock/publish driver topic-a)]
+
+        (publish 1 1)
+
+
+        (is (= [{:key 1
+               :value 1
+               :partition 10}] (map #(select-keys % [:key :value :partition])
+                                      (mock/get-records driver
+                                                        topic-b))))
+
+        (is (= [[1 1]] (mock/get-keyvals driver topic-c))))))
+
 
   (testing "to"
     (let [topic-a (mock/topic "topic-a")
@@ -333,8 +357,8 @@
 
       (produce-a 1 1 1)
       (produce-b 100 2 2)
-      (is (= [1 1] (mock/consume driver topic-c)))
-      (is (= [2 2] (mock/consume driver topic-c)))))
+      (is (= [1 1] ((juxt :key :value) (mock/consume driver topic-c))))
+      (is (= [2 2] ((juxt :key :value) (mock/consume driver topic-c))))))
 
   (testing "outer-join-windowed"
     (let [topic-a (mock/topic "topic-a")
@@ -876,3 +900,4 @@
             (is (= 2 (count keyvals)))
             (is (= [1 1] (first keyvals)))
             (is (= [1 6] (second keyvals)))))))))
+

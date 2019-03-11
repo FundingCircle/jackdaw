@@ -3,13 +3,18 @@
   (:require [clojure.spec.alpha :as s]))
 
 
+
 ;; The basic topic
 
 (s/def ::topic-name
   string?)
 
+(s/def ::partition-fn
+  fn?)
+
 (s/def :jackdaw.topic/topic
-  (s/keys :req-un [::topic-name]))
+  (s/keys :req-un [::topic-name]
+          :opt-un [::partition-fn]))
 
 
 ;; The basic serde
@@ -47,7 +52,6 @@
                    ::replication-factor
                    ::topic-config]))
 
-
 ;; Topics as used by publishers and subscribers
 
 (s/def ::key-serde :jackdaw.serde/serde)
@@ -56,7 +60,8 @@
 (s/def :jackdaw.serde-client/topic
   (s/keys :req-un [::topic-name
                    ::key-serde
-                   ::value-serde]))
+                   ::value-serde]
+          :opt-un [::partition-fn]))
 
 
 ;; Topics where only serdes are needed

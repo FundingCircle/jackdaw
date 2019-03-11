@@ -30,8 +30,10 @@
 (defn topic->consumed [{:keys [key-serde value-serde]}]
   (Consumed/with key-serde value-serde))
 
-(defn topic->produced [{:keys [key-serde value-serde]}]
-  (Produced/with key-serde value-serde))
+(defn topic->produced [{:keys [key-serde value-serde partition-fn]}]
+  (if partition-fn
+    (Produced/with key-serde value-serde (->FnStreamPartitioner partition-fn))
+    (Produced/with key-serde value-serde)))
 
 (defn topic->serialized [{:keys [key-serde value-serde]}]
   (Serialized/with key-serde value-serde))
