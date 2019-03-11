@@ -216,7 +216,7 @@
     (testing "with partition"
       (let [topic-a (mock/topic "topic-a")
             topic-b (assoc (mock/topic "topic-b") :partition-fn (fn [key value partition-count]
-                                                                  (10)))
+                                                                  10))
             topic-c (mock/topic "topic-c")
             driver (mock/build-driver (fn [builder]
                                         (-> builder
