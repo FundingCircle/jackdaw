@@ -227,13 +227,12 @@
 
         (publish 1 1)
 
-        (let [opts {:extractor mock/datafying-extractor}]
-          (is (= [{:key 1
-                 :value 1
-                 :partition 10}] (map #(select-keys % [:key :value :partition])
-                                        (mock/get-keyvals driver
-                                                          topic-b
-                                                          opts)))))
+
+        (is (= [{:key 1
+               :value 1
+               :partition 10}] (map #(select-keys % [:key :value :partition])
+                                      (mock/get-records driver
+                                                        topic-b))))
 
         (is (= [[1 1]] (mock/get-keyvals driver topic-c))))))
 

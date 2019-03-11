@@ -45,6 +45,7 @@
 (s/def ::topic-name string?)
 (s/def ::key-serde any?)
 (s/def ::value-serde any?)
+(s/def ::partition-fn fn?)
 
 (s/def ::topic-config
   (s/keys :req-un [::topic-name

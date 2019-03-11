@@ -81,6 +81,7 @@
   ([test-driver topic-config time-ms k v]
    ((producer test-driver topic-config) time-ms k v)))
 
+; XXX(Ozum): rename to key-val-extractor ?
 (defn producer-record
   [x]
   [(.key x) (.value x)])
@@ -100,12 +101,17 @@
     (when record
       (extractor record))))
 
+(defn repeatedly-consume
+  [test-driver topic-config extractor]
+  (take-while some? (repeatedly (partial consume test-driver topic-config extractor))))
+
 (defn get-keyvals
-  ([test-driver topic-config opts]
-    (let [{:keys [extractor]} opts]
-      (take-while some? (repeatedly (partial consume test-driver topic-config extractor)))))
-  ([test-driver topic-config]
-    (get-keyvals test-driver topic-config {:extractor producer-record})))
+  [test-driver topic-config]
+    (repeatedly-consume test-driver topic-config producer-record))
+
+(defn get-records
+  [test-driver topic-config]
+    (repeatedly-consume test-driver topic-config datafying-extractor))
 
 (defn build-driver [f]
   (let [builder (streams-builder)]
