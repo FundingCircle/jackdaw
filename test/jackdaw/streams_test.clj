@@ -212,11 +212,11 @@
         (publish 1 1)
 
         (is (= [[1 1]] (mock/get-keyvals driver topic-b)))
-        (is (= [[1 1]] (mock/get-keyvals driver topic-c))))))
+        (is (= [[1 1]] (mock/get-keyvals driver topic-c)))))
     (testing "with partition"
       (let [topic-a (mock/topic "topic-a")
-            topic-b (assoc (mock/topic "topic-b") :partition-fn (fn [key value partition-count]
-                                                                  10))
+            topic-b (assoc (mock/topic "topic-b") :partition-fn (fn [topic-name key value partition-count]
+                                                                  (int 10)))
             topic-c (mock/topic "topic-c")
             driver (mock/build-driver (fn [builder]
                                         (-> builder
@@ -227,7 +227,14 @@
 
         (publish 1 1)
 
-        (is (= [[1 1 10]] (mock/get-keyvals driver topic-b)))
+        (let [opts {:extractor mock/datafying-extractor}]
+          (is (= [{:key 1
+                 :value 1
+                 :partition 10}] (map #(select-keys % [:key :value :partition])
+                                        (mock/get-keyvals driver
+                                                          topic-b
+                                                          opts)))))
+
         (is (= [[1 1]] (mock/get-keyvals driver topic-c))))))
 
 
@@ -351,8 +358,8 @@
 
       (produce-a 1 1 1)
       (produce-b 100 2 2)
-      (is (= [1 1] (mock/consume driver topic-c)))
-      (is (= [2 2] (mock/consume driver topic-c)))))
+      (is (= [1 1] (mock/consume driver topic-c mock/producer-record)))
+      (is (= [2 2] (mock/consume driver topic-c mock/producer-record)))))
 
   (testing "outer-join-windowed"
     (let [topic-a (mock/topic "topic-a")
@@ -894,3 +901,4 @@
             (is (= 2 (count keyvals)))
             (is (= [1 1] (first keyvals)))
             (is (= [1 6] (second keyvals)))))))))
+

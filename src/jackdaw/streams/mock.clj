@@ -5,7 +5,8 @@
   (:require [jackdaw.streams.protocols :as k]
             [jackdaw.streams.configurable :refer [config configure]]
             [jackdaw.streams.configured :as configured]
-            [jackdaw.streams.interop :as interop])
+            [jackdaw.streams.interop :as interop]
+            [jackdaw.data :as data])
   (:import java.nio.file.Files
            java.nio.file.attribute.FileAttribute
            org.apache.kafka.streams.TopologyTestDriver
@@ -82,22 +83,29 @@
 
 (defn producer-record
   [x]
-  [(.key x) (.value x) (.partition x)])
+  [(.key x) (.value x)])
+
+(defn datafying-extractor
+  [x]
+  (data/datafy x))
 
 (defn consume
   [test-driver
    {:keys [topic-name
            ^Serde key-serde
-           ^Serde value-serde]}]
+           ^Serde value-serde]} extractor]
   (let [record (.readOutput test-driver topic-name
                             (.deserializer key-serde)
                             (.deserializer value-serde))]
     (when record
-      (producer-record record))))
+      (extractor record))))
 
 (defn get-keyvals
-  [test-driver topic-config]
-  (take-while some? (repeatedly (partial consume test-driver topic-config))))
+  ([test-driver topic-config opts]
+    (let [{:keys [extractor]} opts]
+      (take-while some? (repeatedly (partial consume test-driver topic-config extractor)))))
+  ([test-driver topic-config]
+    (get-keyvals test-driver topic-config {:extractor producer-record})))
 
 (defn build-driver [f]
   (let [builder (streams-builder)]
