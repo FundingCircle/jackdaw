@@ -50,9 +50,7 @@
   (s/keys :req-un [::topic-name
                    ::partition-count
                    ::replication-factor
-                   ::topic-config]
-          :opt-un [::partition-fn]))
-
+                   ::topic-config]))
 
 ;; Topics as used by publishers and subscribers
 
