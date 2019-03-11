@@ -57,6 +57,10 @@
             (assoc % :schema (load-schema %))
             %)
 
+          (if (some? schema)
+            (assoc % :schema schema)
+            %)
+
           (assoc % ::serde (find-serde-var %))
 
           (if (some? (:schema %))
