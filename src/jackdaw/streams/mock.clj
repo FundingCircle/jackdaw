@@ -82,7 +82,7 @@
 
 (defn producer-record
   [x]
-  [(.key x) (.value x)])
+  [(.key x) (.value x) (.partition x)])
 
 (defn consume
   [test-driver
