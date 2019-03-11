@@ -49,7 +49,8 @@
 (s/def ::topic-config
   (s/keys :req-un [::topic-name
                    ::key-serde
-                   ::value-serde]))
+                   ::value-serde]
+          :opt-un [::partition-fn]))
 
 (s/def ::topic-configs (s/coll-of ::topic-config))
 
