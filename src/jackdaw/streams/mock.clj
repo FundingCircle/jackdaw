@@ -81,11 +81,6 @@
   ([test-driver topic-config time-ms k v]
    ((producer test-driver topic-config) time-ms k v)))
 
-; XXX(Ozum): rename to key-val-extractor ? Remove it completely?
-(defn producer-record
-  [x]
-  [(.key x) (.value x)])
-
 (defn consume
   [test-driver
    {:keys [topic-name
@@ -100,12 +95,6 @@
 (defn repeatedly-consume
   [test-driver topic-config]
   (take-while some? (repeatedly (partial consume test-driver topic-config))))
-
-; XXX(Ozum): these functions can be simplified with a macro which would be used like
-; (repeatedly (get-keyval driver topic-config))
-(defn get-keyval
-  [test-driver topic-config]
-    ((juxt :key :value) (consume test-driver topic-config)))
 
 (defn get-keyvals
   [test-driver topic-config]
