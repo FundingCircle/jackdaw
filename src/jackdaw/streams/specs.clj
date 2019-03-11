@@ -51,13 +51,15 @@
 (s/def ::value-serde any?)
 (s/def ::timestamp-extractor timestamp-extractor?)
 (s/def ::reset-policy keyword?)
+(s/def ::partition-fn fn?)
 
 (s/def ::topic-config
   (s/keys :req-un [::topic-name
                    ::key-serde
                    ::value-serde]
           :opt-un [::timestamp-extractor
-                   ::reset-policy]))
+                   ::reset-policy
+                   ::partition-fn]))
 
 (s/def ::topic-configs (s/coll-of ::topic-config))
 

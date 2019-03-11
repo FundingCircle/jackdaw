@@ -36,8 +36,10 @@
                            (str/upper-case (name reset-policy))))]
     (Consumed/with key-serde value-serde timestamp-extractor reset-policy)))
 
-(defn topic->produced [{:keys [key-serde value-serde]}]
-  (Produced/with key-serde value-serde))
+(defn topic->produced [{:keys [key-serde value-serde partition-fn]}]
+  (if partition-fn
+    (Produced/with key-serde value-serde (->FnStreamPartitioner partition-fn))
+    (Produced/with key-serde value-serde)))
 
 (defn topic->serialized [{:keys [key-serde value-serde]}]
   (Serialized/with key-serde value-serde))
