@@ -81,37 +81,39 @@
   ([test-driver topic-config time-ms k v]
    ((producer test-driver topic-config) time-ms k v)))
 
-; XXX(Ozum): rename to key-val-extractor ?
+; XXX(Ozum): rename to key-val-extractor ? Remove it completely?
 (defn producer-record
   [x]
   [(.key x) (.value x)])
-
-(defn datafying-extractor
-  [x]
-  (data/datafy x))
 
 (defn consume
   [test-driver
    {:keys [topic-name
            ^Serde key-serde
-           ^Serde value-serde]} extractor]
+           ^Serde value-serde]}]
   (let [record (.readOutput test-driver topic-name
                             (.deserializer key-serde)
                             (.deserializer value-serde))]
     (when record
-      (extractor record))))
+      (data/datafy record))))
 
 (defn repeatedly-consume
-  [test-driver topic-config extractor]
-  (take-while some? (repeatedly (partial consume test-driver topic-config extractor))))
+  [test-driver topic-config]
+  (take-while some? (repeatedly (partial consume test-driver topic-config))))
+
+; XXX(Ozum): these functions can be simplified with a macro which would be used like
+; (repeatedly (get-keyval driver topic-config))
+(defn get-keyval
+  [test-driver topic-config]
+    ((juxt :key :value) (consume test-driver topic-config)))
 
 (defn get-keyvals
   [test-driver topic-config]
-    (repeatedly-consume test-driver topic-config producer-record))
+    (map #((juxt :key :value) %) (repeatedly-consume test-driver topic-config)))
 
 (defn get-records
   [test-driver topic-config]
-    (repeatedly-consume test-driver topic-config datafying-extractor))
+    (repeatedly-consume test-driver topic-config))
 
 (defn build-driver [f]
   (let [builder (streams-builder)]

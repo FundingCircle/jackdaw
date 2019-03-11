@@ -357,8 +357,8 @@
 
       (produce-a 1 1 1)
       (produce-b 100 2 2)
-      (is (= [1 1] (mock/consume driver topic-c mock/producer-record)))
-      (is (= [2 2] (mock/consume driver topic-c mock/producer-record)))))
+      (is (= [1 1] (mock/get-keyval driver topic-c)))
+      (is (= [2 2] (mock/get-keyval driver topic-c)))))
 
   (testing "outer-join-windowed"
     (let [topic-a (mock/topic "topic-a")
