@@ -3,6 +3,6 @@
   (:gen-class)
   (:import [org.apache.kafka.common.serialization Serdes]))
 
-(defn string-serde
+(defn ^{:deprecated "Use jackdaw.serdes.string/serde instead"} string-serde
   []
   (Serdes/String))
