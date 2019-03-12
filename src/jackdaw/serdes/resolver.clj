@@ -5,6 +5,7 @@
             [jackdaw.serdes.avro.confluent]
             [jackdaw.serdes.edn]
             [jackdaw.serdes.json]
+            [jackdaw.serdes]
             [jackdaw.specs]))
 
 (defn load-schema
