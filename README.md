@@ -9,15 +9,13 @@ This is because we are using the `datafy` protocol which was only introduced in 
 
 ## Documentation
 
-- [API docs](https://cljdoc.org/d/fundingcircle/jackdaw)
-
+You can find all the documentation on [cljdoc](https://cljdoc.org/d/fundingcircle/jackdaw).
 
 ## Examples
 
 - [Pipe](https://github.com/FundingCircle/jackdaw/tree/master/examples/pipe)
 - [Word Count](https://github.com/FundingCircle/jackdaw/tree/master/examples/word-count)
 - [Simple Ledger](https://github.com/FundingCircle/jackdaw/tree/master/examples/simple-ledger)
-
 
 ## Contributing
 
