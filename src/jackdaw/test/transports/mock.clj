@@ -68,7 +68,7 @@
     (let [fetch (fn [[k t]]
                   {:topic k
                    :output (loop [collected []]
-                             (if-let [o (.readOutput driver k
+                             (if-let [o (.readOutput driver (:topic-name t)
                                                      byte-array-deserializer
                                                      byte-array-deserializer)]
                                (recur (conj collected o))
@@ -89,7 +89,8 @@
   (let [continue? (atom true)
         messages  (s/stream 1 (comp
                                (map (with-output-record topic-config))
-                               (map #(apply-deserializers deserializers %))))
+                               (map #(apply-deserializers deserializers %))
+                               (map #(assoc % :topic (j/reverse-lookup topic-config (:topic %))))))
 
         started?  (promise)
         poll      (poller messages topic-config)]

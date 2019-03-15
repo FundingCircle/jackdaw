@@ -38,8 +38,7 @@
   [topic-metadata m]
   (-> m
       (update :key base64-decode)
-      (update :value base64-decode)
-      (assoc :topic (j/reverse-lookup topic-metadata (:topic m)))))
+      (update :value base64-decode)))
 
 (def content-types
   {:byte-array "application/vnd.kafka.binary.v2+json"
@@ -206,6 +205,7 @@
   [config topic-metadata deserializers]
   (let [continue?   (atom true)
         xform       (comp
+                     #(assoc % :topic (j/reverse-lookup topic-metadata (:topic %)))
                      #(apply-deserializers deserializers %)
                      #(undatafy-record topic-metadata %))
         messages    (s/stream 1 (map xform))

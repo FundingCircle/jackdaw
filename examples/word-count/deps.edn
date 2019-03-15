@@ -1,5 +1,5 @@
 {:deps
- {fundingcircle/jackdaw {:mvn/version "0.6.2-rolling_file_appender-SNAPSHOT" :exclusions [org.apache.zookeeper/zookeeper]}
+ {fundingcircle/jackdaw {:mvn/version "0.6.2-word_count_e2e_test-SNAPSHOT" :exclusions [org.apache.zookeeper/zookeeper]}
   org.apache.kafka/kafka-streams {:mvn/version "2.1.0"}
   org.apache.kafka/kafka-streams-test-utils {:mvn/version "2.1.0"}
   org.clojure/clojure {:mvn/version "1.10.0"}
