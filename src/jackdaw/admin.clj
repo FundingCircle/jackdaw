@@ -88,7 +88,7 @@
   (cond (topic-exists? client topic)
         true
 
-        (= num-retries 0)
+        (zero? num-retries)
         false
 
         :else

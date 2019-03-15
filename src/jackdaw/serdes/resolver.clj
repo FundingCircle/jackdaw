@@ -47,7 +47,7 @@
         (apply hash-map options)]
 
     (fn [{:keys [serde-keyword schema schema-filename key?] :as serde-config}]
-      (if (not (s/valid? :jackdaw.specs/serde-keyword serde-keyword))
+      (if-not (s/valid? :jackdaw.specs/serde-keyword serde-keyword)
         (throw (ex-info "Invalid serde config."
                         (s/explain-data :jackdaw.specs/serde-keyword serde-keyword)))
 
@@ -64,7 +64,7 @@
           (assoc % ::serde (find-serde-var %))
 
           (if (some? (:schema %))
-            (if (not (s/valid? :jackdaw.serde/confluent-avro-serde %))
+            (if-not (s/valid? :jackdaw.serde/confluent-avro-serde %)
               (throw (ex-info "Invalid serde config."
                               (s/explain-data :jackdaw.serde/confluent-avro-serde %)))
               ((::serde %) schema-registry-url (:schema %) key?

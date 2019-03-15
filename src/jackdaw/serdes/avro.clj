@@ -319,7 +319,7 @@
     (instance? GenericData$EnumSymbol x))
 
   (avro->clj [_ avro-enum]
-    (-> (.toString avro-enum)
+    (-> (str avro-enum)
         (unmangle)
         (keyword)))
 

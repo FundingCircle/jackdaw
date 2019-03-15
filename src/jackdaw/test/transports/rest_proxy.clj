@@ -185,7 +185,7 @@
       (let [response @(handle-proxy-request http/get url headers body)]
         (when (:error response)
           (log/errorf "rest-proxy fetch error: %s" (:error response)))
-        (when (not (:error response))
+        (when-not (:error response)
           (s/put-all! messages (:json-body response)))))))
 
 (defn rest-proxy-subscription
@@ -277,8 +277,7 @@
                     serialization-error   (do (deliver ack {:error :serialization-error
                                                             :message (.getMessage serialization-error)})
                                               (d/recur (s/take! messages)))
-                    :else (do
-                            (log/infof "stopped rest-proxy producer: %s" producer))))))
+                    :else (log/infof "stopped rest-proxy producer: %s" producer)))))
 
      {:producer  producer
       :messages  messages})))
