@@ -15,9 +15,9 @@
   "Timing middleware. Adds timing information to the response map"
   [f]
   (fn [machine cmd]
-    (let [start (. System (nanoTime))
+    (let [start (System/nanoTime)
           result (f machine cmd)
-          end (. System (nanoTime))
+          end (System/nanoTime)
           millis (fn [t]
                    (/ (double t) 1000000.0))]
       (assoc result

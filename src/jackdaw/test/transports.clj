@@ -2,8 +2,7 @@
 
 (defonce +transports+ (atom #{}))
 
-(defmulti transport (fn [config]
-                      (:type config)))
+(defmulti transport :type)
 
 (defn supported-transports []
   @+transports+)
@@ -28,4 +27,3 @@
       (throw (ex-info "no messages channel provided by selected transport"
                       {})))
     machine'))
-

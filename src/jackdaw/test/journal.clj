@@ -62,8 +62,7 @@
   (let [journal (:journal machine)]
     (if-let [err (agent-error journal)]
       (throw err)
-      (do
-        (send journal journal-read [:topics (:topic record)] [record])))))
+      (send journal journal-read [:topics (:topic record)] [record]))))
 
 (defn journaller
   "Returns an asynchronous process that reads all messages produced by

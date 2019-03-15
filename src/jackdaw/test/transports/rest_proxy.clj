@@ -4,12 +4,9 @@
    [byte-streams :as bs]
    [clojure.data.json :as json]
    [clojure.tools.logging :as log]
-   [jackdaw.client :as kafka]
-   [jackdaw.test.commands :as cmd]
    [jackdaw.test.journal :as j]
    [jackdaw.test.transports :as t :refer [deftransport]]
    [jackdaw.test.serde :refer :all]
-   [jackdaw.test.transports.kafka :refer [mk-producer-record]]
    [manifold.stream :as s]
    [manifold.deferred :as d])
   (:import
@@ -56,10 +53,6 @@
              :headers headers
              :body (when body
                      (json/write-str body))}
-
-        accept? (fn [id]
-                  (= (content-types id)
-                     (get headers "Accept")))
 
         content-available? (fn [response]
                              (not (= 204 (:status response))))]
