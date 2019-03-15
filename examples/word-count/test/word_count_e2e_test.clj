@@ -53,8 +53,7 @@
   {:broker-config broker-config
    :topic-config wc/topic-metadata
    :kstream-config (assoc wc/app-config "cache.max.bytes.buffering" "0")
-   :enable? (or (get-env "REST_PROXY_URL")
-                (get-env "BOOTSTRAP_SERVERS"))})
+   :enable? (get-env "BOOTSTRAP_SERVERS")})
 
 (defn props-for [x]
   (doto (Properties.)

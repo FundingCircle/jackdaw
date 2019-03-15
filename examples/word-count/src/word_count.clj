@@ -14,6 +14,11 @@
    [jackdaw.streams :as j])
   (:gen-class))
 
+(defn get-env [k default]
+  (get (System/getenv) k default))
+
+(def bootstrap-servers (get-env "BOOTSTRAP_SERVERS" "localhost:9092"))
+
 (def ^{:const true
        :doc "A topic metadata map.
 
@@ -52,7 +57,7 @@
 (def app-config
   "Returns the application config."
   {"application.id"            "word-count"
-   "bootstrap.servers"         "localhost:9092"
+   "bootstrap.servers"         bootstrap-servers
    "default.key.serde"         "jackdaw.serdes.EdnSerde"
    "default.value.serde"       "jackdaw.serdes.EdnSerde"
    "cache.max.bytes.buffering" "0"})
