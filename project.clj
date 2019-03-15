@@ -7,25 +7,12 @@
 
   :repositories [["confluent" {:url "https://packages.confluent.io/maven/"}]]
 
-  :dependencies [[aleph "0.4.6"]
-                 [clj-time "0.15.1"]
-                 [danlentz/clj-uuid "0.1.7"]
-                 ;; Confluent does paired releases with Kafka, this should tie
-                 ;; off with the kafka version.
-                 ;; See https://docs.confluent.io/current/release-notes.html
-
-                 [io.confluent/kafka-schema-registry-client "5.1.0"]
-                 [io.confluent/kafka-avro-serializer "5.1.0"]
-                 [org.apache.kafka/kafka-clients "2.1.0"]
-                 [org.apache.kafka/kafka-streams "2.1.0"]
-                 [org.apache.kafka/kafka_2.11 "2.1.0"]
-                 [org.clojure/clojure "1.9.0" :scope "provided"]
-                 [org.clojure/data.json "0.2.6"]
-                 [org.clojure/tools.logging "0.4.1"]
-                 [org.clojure/core.cache "0.7.2"]]
-
   :aot [jackdaw.serdes.fn-impl jackdaw.serdes.edn]
-  :plugins [[me.arrdem/lein-git-version "2.0.8"]]
+  :plugins [[me.arrdem/lein-git-version "2.0.8"]
+            [lein-tools-deps "0.4.3"]]
+
+  :middleware [lein-tools-deps.plugin/resolve-dependencies-with-deps-edn]
+  :lein-tools-deps/config {:config-files [:install :user :project]}
 
   :git-version
   {:status-to-version
