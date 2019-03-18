@@ -56,8 +56,8 @@
                    :key-serde :long
                    :value-serde :edn}))
 
-(def topic-config {"test-in" test-in
-                   "test-out" test-out})
+(def topic-config {:test-in test-in
+                   :test-out test-out})
 
 (defn rest-proxy-transport
   [config topics]
@@ -147,13 +147,13 @@
         (testing "the journal is updated"
           (let [result (watch-for t (fn [journal]
                                       (log/info "jrnl:" journal)
-                                      (->> (get-in journal [:topics "test-out"])
+                                      (->> (get-in journal [:topics :test-out])
                                            (filter (fn [m]
                                                      (= 2 (get-in m [:value :id]))))
                                            first))
                                   10000
                                   "failed to find test-out=2")]
 
-            (is (= "test-out" (:topic result)))
+            (is (= :test-out (:topic result)))
             (is (= 2 (:key result)))
             (is (= {:id 2 :payload "foo"} (:value result)))))))))
