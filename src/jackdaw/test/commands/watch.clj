@@ -18,9 +18,7 @@
 (defn handle-watch-cmd
   [machine cmd params]
   (let [[query info timeout] (apply watch-params params)
-        condition? (fn [journal]
-                     (query journal))
-        journal (:journal machine)]
+        condition? query]
     (j/watch-for machine condition? timeout info)))
 
 (def command-map

@@ -4,12 +4,9 @@
    [byte-streams :as bs]
    [clojure.data.json :as json]
    [clojure.tools.logging :as log]
-   [jackdaw.client :as kafka]
-   [jackdaw.test.commands :as cmd]
    [jackdaw.test.journal :as j]
    [jackdaw.test.transports :as t :refer [deftransport]]
    [jackdaw.test.serde :refer :all]
-   [jackdaw.test.transports.kafka :refer [mk-producer-record]]
    [manifold.stream :as s]
    [manifold.deferred :as d])
   (:import
@@ -56,10 +53,6 @@
              :headers headers
              :body (when body
                      (json/write-str body))}
-
-        accept? (fn [id]
-                  (= (content-types id)
-                     (get headers "Accept")))
 
         content-available? (fn [response]
                              (not (= 204 (:status response))))]
@@ -185,7 +178,7 @@
       (let [response @(handle-proxy-request http/get url headers body)]
         (when (:error response)
           (log/errorf "rest-proxy fetch error: %s" (:error response)))
-        (when (not (:error response))
+        (when-not (:error response)
           (s/put-all! messages (:json-body response)))))))
 
 (defn rest-proxy-subscription
@@ -277,8 +270,7 @@
                     serialization-error   (do (deliver ack {:error :serialization-error
                                                             :message (.getMessage serialization-error)})
                                               (d/recur (s/take! messages)))
-                    :else (do
-                            (log/infof "stopped rest-proxy producer: %s" producer))))))
+                    :else (log/infof "stopped rest-proxy producer: %s" producer)))))
 
      {:producer  producer
       :messages  messages})))

@@ -55,7 +55,7 @@
   each message formatted like \"key:value\""
   [streams-builder]
   (let [processor-supplier (-> streams-builder config ::processor-supplier)
-        processed (into [] (.processed processor-supplier))]
+        processed (vec (.processed processor-supplier))]
     (.clear (.processed processor-supplier))
     processed))
 

@@ -1,7 +1,7 @@
 (ns jackdaw.data
   "This namespace aims to provide `->T`, `(datafy T)`, and `data->T` as
   a round-tripping of Katka's (client) record types.
-  
+
   Note that for some types, particularly Kafka's `-Result` types no
   `->T` constructors are provided as there are no consumers within the
   Kafka API for these records they are merely packed results.
