@@ -1,0 +1,47 @@
+# Contributing to Jackdaw
+
+If you discover issues, have ideas for improvements or new features,
+please report them to the [issue tracker][1] of the repository or
+submit a pull request. Please, try to follow these guidelines when you
+do so.
+
+## Issue reporting
+
+* Check that the issue has not already been reported.
+* Check that the issue has not already been fixed in the latest code
+  (a.k.a. `master`).
+* Open an issue with a descriptive title and a clear, concise and precise statement of the problem 
+* Mention any pertinent information about the "stack" you are using
+* Mention the version (or versions) of Jackdaw you're trying to use
+
+* Include any relevant code to the issue summary.
+
+### Reporting bugs
+
+When reporting bugs it's a good idea to go through the [Troubleshooting section
+of the manual][7].  Adding information like the backtrace and any sample messages
+and/or topic configurations used to the bug report makes it easier to track down bugs.
+Some steps to reproduce a bug reliably would also make a huge difference.
+
+## Pull requests
+
+* Read the [Hacking on Jackdaw][8] manual section.
+* Read [how to properly contribute to open source projects on Github][2].
+* Use a topic branch to easily amend a pull request later, if necessary.
+* Try not to update existing conventions of any code that you change.
+* Make sure that the unit tests are passing (`lein test`).
+* Write [good commit messages][3].
+* Mention related tickets in the commit messages (e.g. `[Fix #N] Add command ...`).
+* Update the [changelog][6].
+* [Squash related commits together][5].
+* Open a [pull request][4] that relates to *only* one subject with a clear title
+  and description in grammatically correct, complete sentences.
+
+[1]: https://github.com/FundingCircle/jackdaw/issues
+[2]: http://gun.io/blog/how-to-github-fork-branch-and-pull-request
+[3]: http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
+[4]: https://help.github.com/articles/using-pull-requests
+[5]: http://gitready.com/advanced/2009/02/10/squashing-commits-with-rebase.html
+[6]: https://github.com/FundingCircle/jackdaw/blob/master/CHANGELOG.md
+[7]: https://github.com/FundingCircle/jackdaw/blob/master/doc/trouble-shooting.md
+[8]: https://github.com/FundingCircle/jackdaw/blob/master/doc/hacking-on-jackdaw.md
