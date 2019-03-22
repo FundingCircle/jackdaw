@@ -44,6 +44,19 @@
     (-> (.createTopics client required)
         (.all))))
 
+(defn- delete-topics
+  [client kafka-config topic-config]
+  (let [deletable (->> topic-config
+                       (filter (fn [[k v]]
+                                 (.contains (-> (list-topics client)
+                                                .names
+                                                .get)
+                                            (:topic-name v))))
+                       (map (fn [[k v]]
+                              (:topic-name v))))]
+    (-> (.deleteTopics client deletable)
+        (.all))))
+
 (defn topic-fixture
   "Returns a fixture function that creates all the topics named in the supplied
    topic config before running a test function."
@@ -209,25 +222,20 @@
 
 (defn integration-fixture
   [build-fn {:keys [broker-config
-                    topic-config
-                    kstream-config
+                    topic-metadata
+                    app-config
                     enable?]}]
   (t/join-fixtures
    (if enable?
      (do
        (log/info "enabled intregration fixtures")
-       [(topic-fixture broker-config topic-config)
-        (reset-application-fixture kstream-config)
-        (kstream-fixture {:topology (build-fn topic-config)
-                          :config kstream-config})])
+       [(topic-fixture broker-config topic-metadata)
+        (reset-application-fixture app-config)
+        (kstream-fixture {:topology (build-fn topic-metadata)
+                          :config app-config})])
      (do
        (log/info "disabled integration fixtures")
-       [(empty-state-fixture kstream-config)]))))
-
-(defn with-test-machine
-  [transport f]
-  (with-open [machine (jdt/test-machine transport)]
-    (f machine)))
+       [(empty-state-fixture app-config)]))))
 
 (defmacro with-fixtures
   [fixtures & body]
