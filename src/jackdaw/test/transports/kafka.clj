@@ -159,7 +159,6 @@
   ([kafka-config topic-config serializers]
    (let [producer       (kafka/producer kafka-config byte-array-serde)
          messages       (s/stream 1 (map (fn [x]
-                                           (log/info "producing: " x)
                                            (try
                                              (-> (apply-serializers serializers x)
                                                  (build-record))
