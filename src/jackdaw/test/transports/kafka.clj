@@ -82,9 +82,9 @@
   ([{:keys [topic-name]} key value]
    (ProducerRecord. ^String topic-name key value))
   ([{:keys [topic-name]} partition key value]
-   (ProducerRecord. ^String topic-name ^Integer partition key value))
+   (ProducerRecord. ^String topic-name ^Integer (int partition) key value))
   ([{:keys [topic-name]} partition timestamp key value]
-   (ProducerRecord. ^String topic-name ^Integer partition ^Long timestamp key value)))
+   (ProducerRecord. ^String topic-name ^Integer (int partition) ^Long timestamp key value)))
 
 (defn consumer
   "Creates an asynchronous Kafka Consumer of all topics defined in the
