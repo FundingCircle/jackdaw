@@ -53,7 +53,6 @@
      (let [to-send (create-message topic-map message opts)
            messages (:messages (:producer machine))
            ack (promise)]
-       (log/info "Sending" to-send "to topic" topic-name)
        (s/put! messages (assoc to-send :ack ack))
        (deref ack (:timeout opts 1000) {:error :timeout}))
      {:error :unknown-topic
