@@ -202,3 +202,22 @@
   (trns/transport {:type :confluent-rest-proxy
                    :config config
                    :topics topics}))
+
+(defn with-test-machine
+  "Convenience wrapper for the test-machine.
+
+   Creates a test-machine using the supplied `transport` and then
+   passes it to the supplied `f`. Typical usage would look something
+   like this:
+
+   ```
+   (with-test-machine (test-transport)
+     (fn [machine]
+       (let [{:keys [results journal]} (run-test machine test-commands)]
+         (is (every? ok? results))
+         (is (= (expected-topic-output test-commands)
+                (actual-topic-output journal))))))
+   ```"
+  [transport f]
+  (with-open [machine (test-machine transport)]
+    (f machine)))
