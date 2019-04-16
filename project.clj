@@ -9,12 +9,14 @@
 
   :dependencies [[aleph "0.4.6"]
                  [clj-time "0.15.1"]
-                 [danlentz/clj-uuid "0.1.7"]
+                 [danlentz/clj-uuid "0.1.7"
+                  :exclusions [primitive-math]]
                  ;; Confluent does paired releases with Kafka, this should tie
                  ;; off with the kafka version.
                  ;; See https://docs.confluent.io/current/release-notes.html
 
-                 [io.confluent/kafka-schema-registry-client "5.1.2"]
+                 [io.confluent/kafka-schema-registry-client "5.1.2"
+                  :exclusions [com.fasterxml.jackson.core/jackson-databind]]
                  [io.confluent/kafka-avro-serializer "5.1.2"]
                  [org.apache.kafka/kafka-clients "2.2.0"]
                  [org.apache.kafka/kafka-streams "2.2.0"]
