@@ -19,11 +19,10 @@ do so.
 * Check that the issue has not already been reported.
 * Check that the issue has not already been fixed in the latest code
   (a.k.a. `master`).
-* Open an issue with a descriptive title and a clear, concise and precise statement of the problem 
+* Open an issue with a descriptive title and a clear, concise and precise statement of the problem
 * Mention any pertinent information about the "stack" you are using
   (including Kafka broker/client versions)
 * Mention the version (or versions) of Jackdaw you're trying to use
-
 * Include any relevant code to the issue summary.
 
 ### Reporting bugs

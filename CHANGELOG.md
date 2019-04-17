@@ -1,10 +1,30 @@
 # Changelog
 
-## [Unreleased]
+## [Unrelaesed]
+
+### Added
+
+ * start keeping a changelog (#122)
+ * added test-machine example to the word-count example application (#120)
+
+### Changed
+
+ * make the test for the rest-proxy transport use keywords to identify topics (#120)
+ * fix a typo in the `service-ready?` test fixture (#121)
+ * ensure that any user-supplied partitions are cast to `int` before handing
+   them to the underlying kafka producer (#124)
+
+### Removed
+
+ * deleted a couple of overly verbose logging statements (#124)
+
+## [0.6.3] - [2019-03-28]
 
 ### Added
 
 ### Changed
+
+ * upgraded Kafka dependency to 2.2.0 (#123)
 
 ### Removed
 
