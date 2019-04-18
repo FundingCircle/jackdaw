@@ -457,6 +457,199 @@
                                                              "topic"
                                                              (uuid/to-string uuid/+null+))))))))
 
+(deftest accept-unmangled-input
+  (let [schema {:name "testRecord"
+                :type "record"
+                :fields [{:name "string_field"
+                          :type "string"}
+                         {:name "long_field"
+                          :type "long"}
+                         {:name "optional_field"
+                          :type ["null" "int"]
+                          :default nil}
+                         {:name "nil_field"
+                          :type "null"}
+                         {:name "default_field"
+                          :type "long"
+                          :default 1}
+                         {:name "bytes_field"
+                          :type "bytes"}
+                         {:name "enum_field"
+                          :type {:type "enum"
+                                 :name "weird_values"
+                                 :symbols ["a_1" "B3"]}}
+                         {:name "map_field"
+                          :type ["null" {:type "map"
+                                         :values bananas-schema}]}
+                         {:name "array_field"
+                          :type ["null" {:name "subrecords"
+                                         :type "array"
+                                         :items "banana"}]}
+                         {:name "uuid_field"
+                          :type {:type "string",
+                                 :logicalType "uuid"}}]}
+        schema-str (json/write-str schema)
+        serde      (->serde schema-str)]
+
+    (is (= (round-trip serde "bananas"
+                       {:string_field "hello"
+                        :long_field 3
+                        :optional_field 3
+                        :nil_field nil
+                        :default_field 1
+                        :bytes_field (ByteBuffer/wrap (.getBytes "hello"))
+                        :enum_field "a_1"
+                        :map_field {"banana" {:color "yellow"}
+                                    "ripe b4nana$" {:color "yellow-green"}}
+
+                        :array_field [{:color "yellow"}]
+                        :uuid_field uuid/+null+})
+           {:string-field "hello"
+            :long-field 3
+            :default-field 1
+            :nil-field nil
+            :bytes-field (ByteBuffer/wrap (.getBytes "hello"))
+            :map-field {"banana" {:color "yellow"}
+                        "ripe b4nana$" {:color "yellow-green"}}
+            :enum-field :a-1
+            :optional-field 3
+            :array-field [{:color "yellow"}]
+            :uuid-field uuid/+null+}))
+
+    (is (= (round-trip serde "bananas"
+                       {:string_field "hello"
+                        :long_field 3
+                        :optional_field 3
+                        :nil_field nil
+                        :default_field 1
+                        :bytes_field (ByteBuffer/wrap (.getBytes "hello"))
+                        :enum_field :a_1
+                        :map_field {"banana" {:color "yellow"}
+                                    "ripe b4nana$" {:color "yellow-green"}}
+
+                        :array_field [{:color "yellow"}]
+                        :uuid_field uuid/+null+})
+           {:string-field "hello"
+            :long-field 3
+            :default-field 1
+            :nil-field nil
+            :bytes-field (ByteBuffer/wrap (.getBytes "hello"))
+            :map-field {"banana" {:color "yellow"}
+                        "ripe b4nana$" {:color "yellow-green"}}
+            :enum-field :a-1
+            :optional-field 3
+            :array-field [{:color "yellow"}]
+            :uuid-field uuid/+null+}))
+
+
+    (is (= (round-trip serde "bananas"
+                       {"string_field" "hello"
+                        "long_field" 3
+                        "optional_field" 3
+                        "nil_field" nil
+                        "default_field" 1
+                        "bytes_field" (ByteBuffer/wrap (.getBytes "hello"))
+                        "enum_field" "a_1"
+                        "map_field" {"banana" {"color" "yellow"}
+                                     "ripe b4nana$" {"color" "yellow-green"}}
+                        "array_field" [{"color" "yellow"}]
+                        "uuid_field" uuid/+null+})
+           {:string-field "hello"
+            :long-field 3
+            :default-field 1
+            :nil-field nil
+            :bytes-field (ByteBuffer/wrap (.getBytes "hello"))
+            :map-field {"banana" {:color "yellow"}
+                        "ripe b4nana$" {:color "yellow-green"}}
+            :enum-field :a-1
+            :optional-field 3
+            :array-field [{:color "yellow"}]
+            :uuid-field uuid/+null+}))))
+
+(deftest no-mangling-test
+  (binding [jackdaw.serdes.avro/*mangle-names* false]
+    (let [schema {:name "testRecord"
+                  :type "record"
+                  :fields [{:name "string_field"
+                            :type "string"}
+                           {:name "long_field"
+                            :type "long"}
+                           {:name "optional_field"
+                            :type ["null" "int"]
+                            :default nil}
+                           {:name "nil_field"
+                            :type "null"}
+                           {:name "default_field"
+                            :type "long"
+                            :default 1}
+                           {:name "bytes_field"
+                            :type "bytes"}
+                           {:name "enum_field"
+                            :type {:type "enum"
+                                   :name "weird_values"
+                                   :symbols ["a_1" "B3"]}}
+                           {:name "map_field"
+                            :type ["null" {:type "map"
+                                           :values bananas-schema}]}
+                           {:name "array_field"
+                            :type ["null" {:name "subrecords"
+                                           :type "array"
+                                           :items "banana"}]}
+                           {:name "uuid_field"
+                            :type {:type "string",
+                                   :logicalType "uuid"}}]}
+          schema-str (json/write-str schema)
+          serde      (->serde schema-str)]
+
+      (is (= (round-trip serde "bananas"
+                           {:string_field "hello"
+                            :long_field 3
+                            :optional_field 3
+                            :nil_field nil
+                            :default_field 1
+                            :bytes_field (ByteBuffer/wrap (.getBytes "hello"))
+                            :enum_field :a_1
+                            :map_field {"banana" {:color "yellow"}
+                                        "ripe b4nana$" {:color "yellow-green"}}
+
+                            :array_field [{:color "yellow"}]
+                            :uuid_field uuid/+null+})
+               {:string_field "hello"
+                :long_field 3
+                :default_field 1
+                :nil_field nil
+                :bytes_field (ByteBuffer/wrap (.getBytes "hello"))
+                :map_field {"banana" {:color "yellow"}
+                            "ripe b4nana$" {:color "yellow-green"}}
+                :enum_field :a_1
+                :optional_field 3
+                :array_field [{:color "yellow"}]
+                :uuid_field uuid/+null+}))
+
+      (is (= (round-trip serde "bananas"
+                           {"string_field" "hello"
+                            "long_field" 3
+                            "optional_field" 3
+                            "nil_field" nil
+                            "default_field" 1
+                            "bytes_field" (ByteBuffer/wrap (.getBytes "hello"))
+                            "enum_field" "a_1"
+                            "map_field" {"banana" {"color" "yellow"}
+                                         "ripe b4nana$" {"color" "yellow-green"}}
+                            "array_field" [{"color" "yellow"}]
+                            "uuid_field" uuid/+null+})
+               {:string_field "hello"
+                :long_field 3
+                :default_field 1
+                :nil_field nil
+                :bytes_field (ByteBuffer/wrap (.getBytes "hello"))
+                :map_field {"banana" {:color "yellow"}
+                            "ripe b4nana$" {:color "yellow-green"}}
+                :enum_field :a_1
+                :optional_field 3
+                :array_field [{:color "yellow"}]
+                :uuid_field uuid/+null+})))))
+
 (deftest schemaless-test
   (let [serde (->serde nil)]
     (is (= (round-trip serde "bananas" "hello")

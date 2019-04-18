@@ -86,11 +86,20 @@
      (when schema-str
        (.parse (Schema$Parser.) ^String schema-str)))))
 
+(def ^:dynamic *mangle-names*
+  "When true, record field names will be mangled during schema parse and
+  record de/serialization.  Default value is `true`."
+  true)
+
 (defn- ^String mangle [^String n]
-  (str/replace n #"-" "_"))
+  (if *mangle-names* (str/replace n #"-" "_") n))
 
 (defn- ^String unmangle [^String n]
-  (str/replace n #"_" "-"))
+  (if *mangle-names* (str/replace n #"_" "-") n))
+
+(defn- ->field-key
+  [field-name]
+  (keyword (unmangle field-name)))
 
 (defn- dispatch-on-type-fields
   [^Schema schema]
@@ -398,7 +407,7 @@
             (comp (map first)
                   (map (fn [^Schema$Field field]
                          (let [field-name (.name field)
-                               field-key (keyword (unmangle field-name))
+                               field-key (->field-key field-name)
                                [_ field-coercion :as entry] (get field->schema+coercion field-key)
                                value (.get ^GenericData$Record avro-record field-name)]
                            (when-not field-coercion
@@ -425,7 +434,7 @@
                                       new-k
                                       (.getName schema))
                               {:path path, :clj-data clj-map})))
-            (let [[_ field-coercion] (get field->schema+coercion k)
+            (let [[_ field-coercion] (get field->schema+coercion (->field-key new-k))
                   new-v (clj->avro field-coercion v (conj path k))]
               (.set record-builder new-k new-v))))
 
@@ -442,7 +451,7 @@
   [schema->coercion ^Schema schema]
   (let [fields (into {}
                      (map (fn [^Schema$Field field]
-                            [(keyword (unmangle (.name field)))
+                            [(->field-key (.name field))
                              [field (schema->coercion (.schema field))]]))
                      (.getFields schema))]
     (RecordType. schema fields)))
