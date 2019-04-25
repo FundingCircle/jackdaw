@@ -70,8 +70,21 @@
       (log/info "completed" test-id)
       result)))
 
+(deftest test-driver-closed-after-use
+  (let [driver-closed? (atom false)
+        driver (reify java.io.Closeable
+                 (close [this]
+                   (reset! driver-closed? true)))
+        transport (trns/transport {:type :mock
+                                   :driver driver
+                                   :topics {}})]
+    (with-open [machine (jd.test/test-machine transport)]
+      (is (not @driver-closed?)))
+
+    (is @driver-closed?)))
+
 (deftest test-mock-transport
-  (with-mock-transport {:test-id "test-mock-transport"}
+  (with-mock-transport {:test-id "test-mock"}
     (fn [t]
       (let [msg {:id 1 :payload "foo"}
             topic test-in
@@ -93,7 +106,7 @@
           (is (integer? (:offset result))))))))
 
 (deftest test-mock-transport-with-journal
-  (with-mock-transport {:test-id "test-mock-transport-with-journal"}
+  (with-mock-transport {:test-id "test-mock"}
     (fn [t]
       (let [msg {:id 1 :payload "foo"}
             topic test-in

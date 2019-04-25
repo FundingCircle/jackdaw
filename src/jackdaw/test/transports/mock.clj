@@ -147,6 +147,7 @@
      :serdes serdes
      :topics topics
      :exit-hooks [(fn []
+                    (.close driver)
                     (s/close! (:messages test-producer))
                     (reset! (:continue? test-consumer) false)
                     @(:process test-consumer))]}))
