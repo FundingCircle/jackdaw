@@ -273,7 +273,7 @@
                      :initializer-fn ::lambdas/initializer-fn
                      :adder-fn ::lambdas/aggregator-fn
                      :subtractor-fn (s/? ::lambdas/aggregator-fn)
-                     :topic-config ::topic-config)
+                     :topic-config (s/? ::topic-config))
         :ret ktable?)
 
 (s/fdef k/count
@@ -285,7 +285,7 @@
         :args (s/cat ::kgrouped ::kgroupedstream-or-kgroupedtable
                      :adder-or-reducer-fn ifn?
                      :subtractor-fn (s/? ifn?)
-                     :topic-config ::topic-config)
+                     :topic-config (s/? ::topic-config))
         :ret ktable?)
 
 ;; IKGroupedTable

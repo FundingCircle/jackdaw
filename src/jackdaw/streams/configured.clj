@@ -385,6 +385,12 @@
      config
      (aggregate kgroupedtable initializer-fn adder-fn subtractor-fn topic-config)))
 
+  (aggregate
+    [_ initializer-fn adder-fn subtractor-fn]
+    (configured-ktable
+     config
+     (aggregate kgroupedtable initializer-fn adder-fn subtractor-fn)))
+
   (count
     [_]
     (configured-ktable
@@ -402,6 +408,12 @@
     (configured-ktable
      config
      (reduce kgroupedtable adder-fn subtractor-fn topic-config)))
+
+  (reduce
+    [_ adder-fn subtractor-fn]
+    (configured-ktable
+     config
+     (reduce kgroupedtable adder-fn subtractor-fn)))
 
   IKGroupedTable
   (kgroupedtable*
@@ -430,6 +442,12 @@
      config
      (aggregate kgroupedstream initializer-fn aggregator-fn topic-config)))
 
+  (aggregate
+    [_ initializer-fn aggregator-fn]
+    (configured-ktable
+     config
+     (aggregate kgroupedstream initializer-fn aggregator-fn)))
+
   (count
     [_]
     (configured-ktable
@@ -448,18 +466,24 @@
      config
      (reduce kgroupedstream reducer-fn topic-config)))
 
+  (reduce
+    [_ reducer-fn]
+    (configured-ktable
+     config
+     (reduce kgroupedstream reducer-fn)))
+
   IKGroupedStream
   (windowed-by-time
     [_ windows]
     (configured-time-windowed-kstream
-      config
-      (windowed-by-time kgroupedstream windows)))
+     config
+     (windowed-by-time kgroupedstream windows)))
 
   (windowed-by-session
     [_ windows]
     (configured-session-windowed-kstream
-      config
-      (windowed-by-session kgroupedstream windows)))
+     config
+     (windowed-by-session kgroupedstream windows)))
 
   (kgroupedstream*
     [_]
@@ -495,6 +519,12 @@
     (configured-ktable
      config
      (reduce kgroupedstream reducer-fn topic-config)))
+
+  (reduce
+    [_ reducer-fn]
+    (configured-ktable
+     config
+     (reduce kgroupedstream reducer-fn)))
 
   ITimeWindowedKStream
   (time-windowed-kstream*

@@ -200,7 +200,8 @@
   "Methods shared between `IKGroupedTable` and `IKGroupedStream`."
   (aggregate
     [kgrouped initializer-fn adder-fn subtractor-fn topic-config]
-    [kgrouped initializer-fn aggregator-fn topic-config]
+    [kgrouped initializer-fn aggregator-fn subtractor-fn-or-topic-config]
+    [kgrouped initializer-fn aggregator-fn]
     "Aggregates values by key into a new KTable.")
 
   (count
@@ -210,7 +211,8 @@
 
   (reduce
     [kgrouped adder-fn subtractor-fn topic-config]
-    [kgrouped reducer-fn topic-config]
+    [kgrouped reducer-fn subtractor-fn-or-topic-config]
+    [kgrouped reducer-fn]
     "Combines values of a stream by key into a new KTable."))
 
 (defprotocol IKGroupedTable

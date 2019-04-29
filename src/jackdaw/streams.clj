@@ -247,10 +247,12 @@
 
 (defn aggregate
   "Aggregates values by key into a new KTable."
+  ([kgrouped initializer-fn adder-fn]
+   (p/aggregate kgrouped initializer-fn adder-fn))
+  ([kgrouped initializer-fn aggregator-fn subtractor-fn-or-topic-config]
+   (p/aggregate kgrouped initializer-fn aggregator-fn subtractor-fn-or-topic-config))
   ([kgrouped initializer-fn adder-fn subtractor-fn topic-config]
-   (p/aggregate kgrouped initializer-fn adder-fn subtractor-fn topic-config))
-  ([kgrouped initializer-fn aggregator-fn topic-config]
-   (p/aggregate kgrouped initializer-fn aggregator-fn topic-config)))
+   (p/aggregate kgrouped initializer-fn adder-fn subtractor-fn topic-config)))
 
 (defn count
   "Counts the number of records by key into a new KTable."
@@ -263,8 +265,10 @@
   "Combines values of a stream by key into a new KTable."
   ([kgrouped adder-fn subtractor-fn topic-config]
    (p/reduce kgrouped adder-fn subtractor-fn topic-config))
-  ([kgrouped reducer-fn topic-config]
-   (p/reduce kgrouped reducer-fn topic-config)))
+  ([kgrouped reducer-fn subtractor-fn-or-topic-config]
+   (p/reduce kgrouped reducer-fn subtractor-fn-or-topic-config))
+  ([kgrouped reducer-fn]
+   (p/reduce kgrouped reducer-fn)))
 
 ;; IKGroupedTable
 
