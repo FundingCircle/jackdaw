@@ -651,7 +651,7 @@
         (is (= [1 1] (first keyvals)))
         (is (= [1 2] (last keyvals))))))
 
-  (testing "reduce"
+  (testing "reduce: explicit kv store"
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
           driver (mock/build-driver (fn [builder]
@@ -673,7 +673,29 @@
         (is (= [0 3] (second keyvals)))
         (is (= [1 2] (nth keyvals 2))))))
 
-  (testing "aggregate"
+  (testing "reduce: implicit kv store"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/group-by (fn [[k v]] (long (/ k 10))) topic-a)
+                                          (k/reduce +)
+                                          (k/to-kstream)
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
+
+      (publish 1 1)
+      (publish 1 2)
+      (publish 10 2)
+
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= 3 (count keyvals)))
+        (is (= [0 1] (first keyvals)))
+        (is (= [0 3] (second keyvals)))
+        (is (= [1 2] (nth keyvals 2))))))
+
+  (testing "aggregate: explicit kv store"
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
           driver (mock/build-driver (fn [builder]
@@ -683,6 +705,29 @@
                                           (k/aggregate (constantly -10)
                                                        (fn [acc [k v]] (+ acc v))
                                                        topic-a)
+                                          (k/to-kstream)
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
+
+      (publish 1 1)
+      (publish 1 2)
+      (publish 10 2)
+
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= 3 (count keyvals)))
+        (is (= [0 -9] (first keyvals)))
+        (is (= [0 -7] (second keyvals)))
+        (is (= [1 -8] (nth keyvals 2))))))
+
+  (testing "aggregate: implicit kv store"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/group-by (fn [[k v]] (long (/ k 10))) topic-a)
+                                          (k/aggregate (constantly -10)
+                                                       (fn [acc [k v]] (+ acc v)))
                                           (k/to-kstream)
                                           (k/to topic-b))))
           publish (partial mock/publish driver topic-a)]
@@ -773,7 +818,7 @@
         (is (= [1 3] (nth keyvals 4)))))))
 
 (deftest grouped-table
-  (testing "aggregate"
+  (testing "aggregate: explicit kv store"
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")]
 
@@ -786,6 +831,34 @@
                                                                (fn [acc [k v]] (+ acc v))
                                                                (fn [acc [k v]] (- acc v))
                                                                topic-b)
+                                                  (k/to-kstream)
+                                                  (k/to topic-b))))]
+        (let [publish (partial mock/publish driver topic-a)]
+
+          (publish 1 1)
+          (publish 2 2)
+          (publish 2 nil)
+          (publish 10 3)
+
+          (let [keyvals (mock/get-keyvals driver topic-b)]
+            (is (= 4 (count keyvals)))
+            (is (= [0 1] (first keyvals)))
+            (is (= [0 3] (second keyvals)))
+            (is (= [0 1] (nth keyvals 2)))
+            (is (= [1 3] (nth keyvals 3))))))))
+
+  (testing "aggregate: implicit kv store"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")]
+
+      (with-open [driver (mock/build-driver (fn [builder]
+                                              (-> (k/ktable builder topic-a)
+                                                  (k/group-by (fn [[k v]]
+                                                                [(long (/ k 10)) v])
+                                                              topic-a)
+                                                  (k/aggregate (constantly 0)
+                                                               (fn [acc [k v]] (+ acc v))
+                                                               (fn [acc [k v]] (- acc v)))
                                                   (k/to-kstream)
                                                   (k/to topic-b))))]
         (let [publish (partial mock/publish driver topic-a)]
@@ -825,7 +898,7 @@
             (is (= [2 1] (first keyvals)))
             (is (= [2 2] (second keyvals))))))))
 
-  (testing "reduce"
+  (testing "reduce: explicit kv store"
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")]
 
@@ -835,6 +908,32 @@
                                                                 [(long (/ k 10)) v])
                                                               topic-a)
                                                   (k/reduce + - topic-b)
+                                                  (k/to-kstream)
+                                                  (k/to topic-b))))]
+        (let [publish (partial mock/publish driver topic-a)]
+
+          (publish 1 1)
+          (publish 2 2)
+          (publish 2 nil)
+          (publish 10 3)
+
+          (let [keyvals (mock/get-keyvals driver topic-b)]
+            (is (= 4 (count keyvals)))
+            (is (= [0 1] (first keyvals)))
+            (is (= [0 3] (second keyvals)))
+            (is (= [0 1] (nth keyvals 2)))
+            (is (= [1 3] (nth keyvals 3))))))))
+
+  (testing "reduce: implicit kv store"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")]
+
+      (with-open [driver (mock/build-driver (fn [builder]
+                                              (-> (k/ktable builder topic-a)
+                                                  (k/group-by (fn [[k v]]
+                                                                [(long (/ k 10)) v])
+                                                              topic-a)
+                                                  (k/reduce + -)
                                                   (k/to-kstream)
                                                   (k/to topic-b))))]
         (let [publish (partial mock/publish driver topic-a)]

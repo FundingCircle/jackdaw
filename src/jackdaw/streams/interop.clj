@@ -437,6 +437,14 @@
                  ^Aggregator (aggregator subtractor-fn)
                  (doto (Materialized/as ^String topic-name) (.withValueSerde value-serde)))))
 
+  (aggregate
+    [_ initializer-fn adder-fn subtractor-fn]
+    (clj-ktable
+     (.aggregate ^KGroupedTable kgroupedtable
+                 ^Initializer (initializer initializer-fn)
+                 ^Aggregator (aggregator adder-fn)
+                 ^Aggregator (aggregator subtractor-fn))))
+
   (count
     [_]
     (clj-ktable
@@ -455,6 +463,13 @@
               ^Reducer (reducer adder-fn)
               ^Reducer (reducer subtractor-fn)
               ^Materialized (topic->materialized topic-config))))
+
+  (reduce
+    [_ adder-fn subtractor-fn]
+    (clj-ktable
+     (.reduce ^KGroupedTable kgroupedtable
+              ^Reducer (reducer adder-fn)
+              ^Reducer (reducer subtractor-fn))))
 
   IKGroupedTable
   (kgroupedtable*
@@ -476,6 +491,13 @@
                  ^Aggregator (aggregator aggregator-fn)
                  (doto (Materialized/as ^String topic-name) (.withValueSerde value-serde)))))
 
+  (aggregate
+    [_ initializer-fn aggregator-fn]
+    (clj-ktable
+     (.aggregate ^KGroupedStream kgroupedstream
+                 ^Initializer (initializer initializer-fn)
+                 ^Aggregator (aggregator aggregator-fn))))
+
   (count
     [_]
     (clj-ktable
@@ -493,6 +515,12 @@
      (.reduce ^KGroupedStream kgroupedstream
               ^Reducer (reducer reducer-fn)
               ^Materialized (topic->materialized topic-config))))
+
+  (reduce
+    [_ reducer-fn]
+    (clj-ktable
+     (.reduce ^KGroupedStream kgroupedstream
+              ^Reducer (reducer reducer-fn))))
 
   IKGroupedStream
   (windowed-by-time
