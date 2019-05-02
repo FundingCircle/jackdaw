@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unrelaesed]
+## [0.6.4] - [2019-05-02]
 
 ### Added
 
@@ -17,6 +17,8 @@
  * Make sure mock dirver is closed after use (#128)
  * Fix Jackdaw version for Word Count example (#131)
  * Add new arrities for aggregate and reduce (#132)
+ * Add sign-off to contributing file (#123)
+ * Update changelog for 0.6.4 release (#124)
 
 ### Removed
 
