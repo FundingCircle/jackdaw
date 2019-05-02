@@ -7,10 +7,10 @@ of software distributed by Funding Circle, you reserve all right, title, and
 interest in and to your contributions. All contributions are subject to the
 following DCO + License terms.
 
-[DCO + License][9]
+[DCO + License][1]
 
 If you discover issues, have ideas for improvements or new features,
-please report them to the [issue tracker][1] of the repository or
+please report them to the [issue tracker][2] of the repository or
 submit a pull request. Please, try to follow these guidelines when you
 do so.
 
@@ -28,28 +28,30 @@ do so.
 ### Reporting bugs
 
 When reporting bugs it's a good idea to go through the [Troubleshooting section
-of the manual][7].  Adding information like the backtrace and any sample messages
+of the manual][8].  Adding information like the backtrace and any sample messages
 and/or topic configurations used to the bug report makes it easier to track down bugs.
 Some steps to reproduce a bug reliably would also make a huge difference.
 
 ## Pull requests
 
-* Read [how to properly contribute to open source projects on Github][2].
-* Keep style and feature PRs separate. Feel free to discuss proposals in #jackdaw[8]
+* Read [how to properly contribute to open source projects on Github][3].
+* Keep style and feature PRs separate. Feel free to discuss proposals in #jackdaw[9]
 * Make sure that the unit tests are passing (`lein test`).
-* Write [good commit messages][3] and sign each commit (`git commit -s -m 'Added foo feature'`).
+* Write [good commit messages][4] and sign each commit (`git commit -s -m 'Add foo feature'`).
 * Mention related tickets in the commit messages (e.g. `[Fix #N] Add command ...`).
-* Update the [changelog][6].
-* [Squash related commits together][5].
-* Open a [pull request][4] that relates to *only* one subject with a clear title
+* Update the [changelog][7].
+* [Squash related commits together][6].
+* Open a [pull request][5] that relates to *only* one subject with a clear title
   and description in grammatically correct, complete sentences.
+* [Sign off][10] on all commits, which certifies that you agree to the [DCO + License][1].
 
-[1]: https://github.com/FundingCircle/jackdaw/issues
-[2]: http://gun.io/blog/how-to-github-fork-branch-and-pull-request
-[3]: http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
-[4]: https://help.github.com/articles/using-pull-requests
-[5]: http://gitready.com/advanced/2009/02/10/squashing-commits-with-rebase.html
-[6]: https://github.com/FundingCircle/jackdaw/blob/master/CHANGELOG.md
-[7]: https://github.com/FundingCircle/jackdaw/blob/master/doc/trouble-shooting.md
-[8]: https://clojurians.slack.com/messages/CEA3C7UG0/
-[9]: https://github.com/FundingCircle/jackdaw/tree/master/doc/DCO_+_LICENSE
+[1]: https://github.com/FundingCircle/jackdaw/tree/master/doc/DCO_+_LICENSE
+[2]: https://github.com/FundingCircle/jackdaw/issues
+[3]: http://gun.io/blog/how-to-github-fork-branch-and-pull-request
+[4]: http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html
+[5]: https://help.github.com/articles/using-pull-requests
+[6]: http://gitready.com/advanced/2009/02/10/squashing-commits-with-rebase.html
+[7]: https://github.com/FundingCircle/jackdaw/blob/master/CHANGELOG.md
+[8]: https://github.com/FundingCircle/jackdaw/blob/master/doc/trouble-shooting.md
+[9]: https://clojurians.slack.com/messages/CEA3C7UG0/
+[10]: https://www.kernel.org/doc/html/v4.17/process/submitting-patches.html#sign-your-work-the-developer-s-certificate-of-origin
