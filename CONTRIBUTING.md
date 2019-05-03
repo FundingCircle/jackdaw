@@ -25,8 +25,6 @@ do so.
 * Mention the version (or versions) of Jackdaw you're trying to use
 * Include any relevant code to the issue summary.
 
-### Reporting bugs
-
 When reporting bugs it's a good idea to go through the [Troubleshooting section
 of the manual][8].  Adding information like the backtrace and any sample messages
 and/or topic configurations used to the bug report makes it easier to track down bugs.

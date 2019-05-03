@@ -1,6 +1,6 @@
 {:deps
  {danlentz/clj-uuid {:mvn/version "0.1.7"}
-  fundingcircle/jackdaw {:mvn/version "0.6.0"}
+  fundingcircle/jackdaw {:mvn/version "0.6.4"}
   org.apache.kafka/kafka-streams {:mvn/version "2.1.0"}
   org.apache.kafka/kafka-streams-test-utils {:mvn/version "2.1.0"}
   org.clojure/clojure {:mvn/version "1.10.0"}
