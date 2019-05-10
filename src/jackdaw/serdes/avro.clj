@@ -185,6 +185,16 @@
 
 ;; Note that clojure.core/float? recognizes both single and double precision floating point values.
 
+(defn num-coercable?
+  "Checks whether `x` can be coerced to a number with `coercion-fn`
+  (such as `long`)."
+  [x coercion-fn]
+  (try
+    (coercion-fn (bigint x))
+    true
+    (catch RuntimeException e
+      false)))
+
 (defrecord DoubleType []
   SchemaCoercion
   (match-clj? [_ x] (float? x))
@@ -206,17 +216,9 @@
     (validate-clj! this x path "float")
     x))
 
-(defn int-range? [x]
-  (<= Integer/MIN_VALUE x Integer/MAX_VALUE))
-
-(defn int-castable? [x]
-  (and (int? x)
-       (int-range? x)))
-
 (defrecord IntType []
   SchemaCoercion
-  (match-clj? [_ x]
-    (int-castable? x))
+  (match-clj? [_ x] (num-coercable? x int))
   (match-avro? [_ x] (int? x))
   (avro->clj [_ x] x)
   (clj->avro [this x path]
@@ -225,8 +227,7 @@
 
 (defrecord LongType []
   SchemaCoercion
-  (match-clj? [_ x]
-    (int? x))
+  (match-clj? [_ x] (num-coercable? x long))
   (match-avro? [_ x] (int? x))
   (avro->clj [_ x] x)
   (clj->avro [this x path]
