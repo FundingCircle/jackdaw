@@ -4,7 +4,7 @@
    [clojure.tools.logging :as log]
    [jackdaw.client.partitioning :as partitioning]))
 
-(defn default-partition-fn [topic-map k]
+(defn default-partition-fn [topic-name topic-map k v]
   (int (partitioning/default-partition topic-map k nil (:partition-count topic-map))))
 
 (defn create-message [topic-map message opts]
@@ -32,7 +32,7 @@
             (key-fn message))
         partn (if-let [explicit-partition (:partition opts)]
                 explicit-partition
-                (partition-fn topic-map k))
+                (partition-fn (:topic-name topic-map) topic-map k message))
         timestamp (:timestamp opts (System/currentTimeMillis))]
     (if (or (< partn 0)
             (> partn (dec (:partition-count topic-map))))
