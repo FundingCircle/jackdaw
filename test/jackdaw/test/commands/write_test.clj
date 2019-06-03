@@ -88,7 +88,7 @@
         msg {:id 1 :a 2 :b 3 :payload "yolo"}]
 
     (testing "fallback to global default"
-      (is (= (write/default-partition-fn foos 1)
+      (is (= (write/default-partition-fn (:topic-name foos) foos 1 msg)
              (-> (write/create-message foos msg opts)
                  :partition))))
 
