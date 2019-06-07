@@ -15,4 +15,10 @@
               (pprint/pprint params))
 
    :do (fn [machine cmd [do-fn]]
-         (do-fn @(:journal machine)))})
+         (do-fn @(:journal machine)))
+
+   :do! (fn [machine cmd [do-fn]]
+          (do-fn (:journal machine)))
+
+   :inspect (fn [machine cmd [inspect-fn]]
+              (inspect-fn machine))})
