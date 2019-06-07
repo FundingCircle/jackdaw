@@ -100,7 +100,16 @@ specific arguments. Currently the following commands are the supported.
   :sleep    [sleep-ms]           Sleeps for `sleep-ms` milliseconds
   :println  [args]               Prints the supplied args to stdout
   :pprint   [args]               Pretty prints the supplied args to stdout
-  :do       [f]                  Execute arbitrary function
+  :do       [f]                  Execute arbitrary function. The function should take
+                                 a single argument, and will be passed the journal
+                                 state (content of the journal atom).
+  :do!      [f]                  Execute arbitrary function. The function should take
+                                 a single argument, and will be passed the journal
+                                 atom itself. Allows monitoring of the joural or
+                                 the like to be injected.
+  :inspect  [f]                  A debugging command, again executes an arbitrary
+                                 function of a single argument. This function will
+                                 be passed the entire test machine state.
 ```
 
 ### Test Results
