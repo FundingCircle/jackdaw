@@ -4,6 +4,7 @@
    [byte-streams :as bs]
    [clojure.data.json :as json]
    [clojure.tools.logging :as log]
+   [clojure.stacktrace :as stacktrace]
    [jackdaw.test.journal :as j]
    [jackdaw.test.transports :as t :refer [deftransport]]
    [jackdaw.test.serde :refer :all]
@@ -253,10 +254,15 @@
    injecting test messages"
   ([config topics serializers]
    (let [producer       (rest-proxy-client config)
-         xform          (comp
-                         build-record
-                         #(apply-serializers serializers %))
-         messages       (s/stream 1 (map xform))]
+         messages       (s/stream 1 (map (fn [x]
+                                           (try
+                                             (-> (apply-serializers serializers x)
+                                                 (build-record))
+                                             (catch Exception e
+                                               (let [trace (with-out-str
+                                                             (stacktrace/print-cause-trace e))]
+                                                 (log/error e trace))
+                                               (assoc x :serialization-error e))))))]
 
      (log/infof "started rest-proxy producer: %s" producer)
 
@@ -264,12 +270,14 @@
        (d/chain message
                 (fn [{:keys [data-record ack serialization-error] :as message}]
                   (cond
-                    data-record       (do (log/debug "sending data: " data-record)
-                                          (topic-post producer data-record (deliver-ack ack))
-                                          (d/recur (s/take! messages)))
                     serialization-error   (do (deliver ack {:error :serialization-error
                                                             :message (.getMessage serialization-error)})
                                               (d/recur (s/take! messages)))
+
+                    data-record       (do (log/debug "sending data: " data-record)
+                                          (topic-post producer data-record (deliver-ack ack))
+                                          (d/recur (s/take! messages)))
+
                     :else (log/infof "stopped rest-proxy producer: %s" producer)))))
 
      {:producer  producer
