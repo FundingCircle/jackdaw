@@ -31,5 +31,19 @@
           machine {:journal journal}
           do-fn (fn [j]
                   (is (= j @journal)))]
-      ((cmd/command-map :do) machine nil [do-fn]))))
+      ((cmd/command-map :do) machine nil [do-fn])))
+
+  (testing "do!"
+    (let [journal (agent {})
+          machine {:journal journal}
+          do-fn (fn [j]
+                  (is (= j journal)))]
+      ((cmd/command-map :do!) machine nil [do-fn])))
+
+  (testing "inspect"
+    (let [journal (agent {})
+          machine {:journal journal}
+          do-fn (fn [m]
+                  (is (= m machine)))]
+      ((cmd/command-map :inspect) machine nil [do-fn]))))
 
