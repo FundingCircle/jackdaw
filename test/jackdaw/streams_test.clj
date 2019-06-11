@@ -790,7 +790,7 @@
         (is (= ["a" 3] (second keyvals)))
         (is (= ["a" 4] (nth keyvals 2))))))
 
-  (testing "windowed-by-session"
+  (testing "windowed-by-session: reduce"
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
           driver (mock/build-driver (fn [builder]
@@ -815,7 +815,43 @@
         (is (= [0 nil] (second keyvals)))
         (is (= [0 3] (nth keyvals 2)))
         (is (= [0 3] (nth keyvals 3)))
-        (is (= [1 3] (nth keyvals 4)))))))
+        (is (= [1 3] (nth keyvals 4))))))
+
+  (testing "windowed-by-session: aggregate"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/group-by-key)
+                                          (k/window-by-session (SessionWindows/with 1000))
+                                          (k/aggregate (constantly 0)
+                                                       (fn [agg [k v]]
+                                                         (+ agg v))
+                                                       ;; Merger
+                                                       (fn [k agg1 agg2]
+                                                         (+ agg1 agg2))
+                                                       topic-a)
+                                          (k/to-kstream)
+                                          (k/map (fn [[k v]] [(.key k) v]))
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
+
+      (publish  100 1 4)
+      (publish 1000 1 3)
+      (publish 1200 1 3)
+      (publish 5000 1 2)
+      (publish 5100 2 1)
+
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= 7 (count keyvals)))
+        (is (= [1 4] (first keyvals)))
+        (is (= [1 nil] (second keyvals)))
+        (is (= [1 7] (nth keyvals 2)))
+        (is (= [1 nil] (nth keyvals 3)))
+        (is (= [1 10] (nth keyvals 4)))
+        (is (= [1 2] (nth keyvals 5)))
+        (is (= [2 1] (nth keyvals 6)))))))
 
 (deftest grouped-table
   (testing "aggregate: explicit kv store"

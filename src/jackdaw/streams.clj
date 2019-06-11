@@ -251,8 +251,8 @@
    (p/aggregate kgrouped initializer-fn adder-fn))
   ([kgrouped initializer-fn aggregator-fn subtractor-fn-or-topic-config]
    (p/aggregate kgrouped initializer-fn aggregator-fn subtractor-fn-or-topic-config))
-  ([kgrouped initializer-fn adder-fn subtractor-fn topic-config]
-   (p/aggregate kgrouped initializer-fn adder-fn subtractor-fn topic-config)))
+  ([kgrouped initializer-fn adder-fn subtractor-or-merger-fn topic-config]
+   (p/aggregate kgrouped initializer-fn adder-fn subtractor-or-merger-fn topic-config)))
 
 (defn count
   "Counts the number of records by key into a new KTable."
