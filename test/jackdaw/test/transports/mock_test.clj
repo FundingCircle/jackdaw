@@ -129,13 +129,14 @@
             (is (integer? (:offset result)))))
 
         (testing "the journal is updated"
-          (let [result (watch-for t (fn [journal]
-                                      (->> (get-in journal [:topics "test-out"])
-                                           (filter (fn [m]
-                                                     (= 1 (get-in m [:value :id]))))
-                                           first))
-                                  1000
-                                  "failed to find test-out=2")]
+          (let [result (-> (watch-for t (fn [journal]
+                                          (->> (get-in journal [:topics "test-out"])
+                                               (filter (fn [m]
+                                                         (= 1 (get-in m [:value :id]))))
+                                               first))
+                                      1000
+                                      "failed to find test-out=2")
+                           :info)]
 
             (is (= "test-out" (:topic result)))
             (is (= 1 (:key result)))

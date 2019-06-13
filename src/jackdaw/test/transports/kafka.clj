@@ -156,6 +156,7 @@
                                    :serialized-key-size
                                    :serialized-value-size]))))))
 
+
 (defn producer
   "Creates an asynchronous kafka producer to be used by a test-machine for for
    injecting test messages"

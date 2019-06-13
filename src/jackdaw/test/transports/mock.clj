@@ -125,27 +125,29 @@
                                         (let [trace (with-out-str
                                                              (stacktrace/print-cause-trace e))]
                                           (log/error e trace))
-                                        (assoc x :serialization-error e))))))]
+                                        (assoc x :serialization-error e))))))
 
-    (log/infof "started mock producer: %s" {:driver driver})
+        _ (log/infof "started mock producer: %s" {:driver driver})
 
-    (d/loop [message (s/take! messages)]
-      (d/chain message
-        (fn [{:keys [input-record ack serialization-error] :as message}]
-          (cond
-            serialization-error  (do (deliver ack {:error :serialization-error
-                                                   :message (.getMessage serialization-error)})
-                                     (d/recur (s/take! messages)))
+        producer-loop (d/loop [message (s/take! messages)]
+                        (d/chain message
+                          (fn [{:keys [input-record ack serialization-error] :as message}]
+                            (cond
+                              serialization-error  (do (deliver ack {:error :serialization-error
+                                                                     :message (.getMessage serialization-error)})
+                                                       (d/recur (s/take! messages)))
 
-            input-record         (do (on-input input-record)
-                                     (deliver ack {:topic (.topic input-record)
-                                                   :partition (.partition input-record)
-                                                   :offset (.offset input-record)})
-                                     (d/recur (s/take! messages)))
+                              input-record         (do (on-input input-record)
+                                                       (deliver ack {:topic (.topic input-record)
+                                                                     :partition (.partition input-record)
+                                                                     :offset (.offset input-record)})
+                                                       (d/recur (s/take! messages)))
 
-            :else (do
-                    (log/infof "stopped mock producer: %s" {:driver driver}))))))
-    {:messages messages}))
+                              :else (do
+                                      (log/infof "stopped mock producer: %s" {:driver driver}))))))]
+
+    {:messages messages
+     :producer-loop producer-loop}))
 
 (deftransport :mock
   [{:keys [driver topics]}]
@@ -170,4 +172,5 @@
                     (.close driver)
                     (s/close! (:messages test-producer))
                     (reset! (:continue? test-consumer) false)
+                    @(:producer-loop test-producer)
                     @(:process test-consumer))]}))

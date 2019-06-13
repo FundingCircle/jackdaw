@@ -20,10 +20,8 @@
         check-condition (fn [new]
                           (when-let [result (condition? new)]
                             (remove-watch journal id)
-                            (if (boolean? result)
-                              (deliver p {:result :found})
-                              (deliver p result))))]
-
+                            (deliver p {:result :found
+                                        :info result})))]
     (add-watch journal id (fn [k r old new]
                             (check-condition new)))
     ;; don't rely on watcher to 'check-condition'

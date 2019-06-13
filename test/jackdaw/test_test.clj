@@ -1,6 +1,7 @@
 (ns jackdaw.test-test
   (:require
    [clojure.test :refer :all]
+   [clojure.data.json :as json]
    [jackdaw.serdes.avro.schema-registry :as reg]
    [jackdaw.streams :as k]
    [jackdaw.test :as jd.test]
@@ -70,6 +71,7 @@
                                       params)))
                            with-status)
              :journal (atom {})}]
+
       (testing "works properly"
         (let [{:keys [results journal]}
               (jd.test/run-test m [[:min [1 2 3]]
@@ -88,13 +90,15 @@
           (is (= :error (:status (second results))))))
 
       (testing "execution stops on an unknown command"
-        (let [{:keys [results journal]}
-              (jd.test/run-test m [[:min [1 2 3]]
-                                   [:foo 2]
-                                   [:max [1 2 3]]])]
-          (is (= 2 (count results)))
-          (is (= :ok (:status (first results))))
-          (is (= :error (:status (second results)))))))))
+        (is (thrown? NullPointerException
+         (let [{:keys [results journal]}
+               (jd.test/run-test m [[:min [1 2 3]]
+                                    [:foo 2]
+                                    [:max [1 2 3]]])]
+           (is (= 2 (count results)))
+           (is (= :ok (:status (first results))))
+           (is (= :error (:status (second results)))))))))))
+
 
 (deftest test-empty-test
   (with-open [t (jd.test/test-machine (kafka-transport))]
@@ -158,6 +162,143 @@
               (is (= {:id "msg3" :payload "you only live twice"}
                      (-> ((by-id "foo" "msg3") journal)
                          :value))))))))))
+
+(defn echo-stream
+  "Makes a dummy stream processor that reads some topic and then
+   promptly ignores it"
+  [in out]
+  (fn [builder]
+    (let [in (-> (k/kstream builder in)
+                 (k/map (fn [[k v]]
+                          [k v])))]
+      (k/to in out)
+      builder)))
+
+(defn bad-topology
+  [in out]
+  (fn [builder]
+    (let [in (-> (k/kstream builder in)
+                 (k/map (fn [[k v]]
+                          (throw (ex-info "bad topology" {})))))]
+      (k/to in out)
+      builder)))
+
+(defn bad-key-fn
+  [msg]
+  (throw (ex-info "bad-key-fn" {})))
+
+(defn bad-watch-fn
+  [journal]
+  (throw (ex-info "bad-watch-fn" {})))
+
+(deftest test-machine-happy-path
+  (let [error-raised (atom nil)]
+    (try
+      (jd.test/with-test-machine (trns/transport {:type :mock
+                                                  :driver (jd.test/mock-test-driver (echo-stream test-in test-out)
+                                                                                    {"bootstrap.servers" "localhost:9092"
+                                                                                     "application.id" "test-echo-stream"})
+                                                  :topics {:in test-in
+                                                           :out test-out}})
+        (fn [machine]
+          (jd.test/run-test machine
+                            [[:write! :in {:id "1" :payload "foo"} {:key-fn :id}]
+                             [:write! :in {:id "2" :payload "bar"} {:key-fn :id}]
+                             [:watch (fn [journal]
+                                       (when (->> (get-in journal [:topics :out])
+                                                  (filter (fn [r]
+                                                            (= (get-in r [:value :id]) "2")))
+                                                  (not-empty))
+                                         true)) {:timeout 2000}]])))
+      (catch Exception e
+        (reset! error-raised e)))
+    (is (not @error-raised))))
+
+(deftest test-bad-topology-error
+  (let [error-raised (atom nil)]
+    (try
+      (jd.test/with-test-machine (trns/transport {:type :mock
+                                                  :driver (jd.test/mock-test-driver (bad-topology test-in test-out)
+                                                                                    {"bootstrap.servers" "localhost:9092"
+                                                                                     "application.id" "test-echo-stream"})
+                                                  :topics {:in test-in
+                                                           :out test-out}})
+        (fn [machine]
+          (jd.test/run-test machine
+                            [[:write! :in {:id "1" :payload "foo"} {:key-fn :id}]
+                             [:write! :in {:id "2" :payload "bar"} {:key-fn :id}]
+                             [:watch (fn [journal]
+                                       (->> (get-in journal [:topics :out])
+                                            (filter (fn [r]
+                                                      (= (:id r) "2")))
+                                            (not-empty)))]])))
+      (catch Exception e
+        (reset! error-raised e)))
+    (is @error-raised)))
+
+(deftest test-write-command-error
+  (let [error-raised (atom nil)]
+    (try
+      (jd.test/with-test-machine (trns/transport {:type :mock
+                                                  :driver (jd.test/mock-test-driver (echo-stream test-in test-out)
+                                                                                    {"bootstrap.servers" "localhost:9092"
+                                                                                     "application.id" "test-echo-stream"})
+                                                  :topics {:in test-in
+                                                           :out test-out}})
+        (fn [machine]
+          (jd.test/run-test machine
+                            [[:write! :in {:id "1" :payload "foo"} {:key-fn bad-key-fn}]
+                             [:write! :in {:id "2" :payload "bar"} {:key-fn :id}]
+                             [:watch (fn [journal]
+                                       (->> (get-in journal [:topics :out])
+                                            (filter (fn [r]
+                                                      (= (:id r) "2")))
+                                            (not-empty)))]])))
+      (catch Exception e
+        (reset! error-raised e)))
+    (is @error-raised)))
+
+(deftest test-write-command-error
+  (let [error-raised (atom nil)]
+    (try
+      (jd.test/with-test-machine (trns/transport {:type :mock
+                                                  :driver (jd.test/mock-test-driver (echo-stream test-in test-out)
+                                                                                    {"bootstrap.servers" "localhost:9092"
+                                                                                     "application.id" "test-echo-stream"})
+                                                  :topics {:in test-in
+                                                           :out test-out}})
+        (fn [machine]
+          (jd.test/run-test machine
+                            [[:write! :in {:id "1" :payload "foo"} {:key-fn bad-key-fn}]
+                             [:write! :in {:id "2" :payload "bar"} {:key-fn :id}]
+                             [:watch (fn [journal]
+                                       (->> (get-in journal [:topics :out])
+                                            (filter (fn [r]
+                                                      (= (:id r) "2")))
+                                            (not-empty)))]])))
+      (catch Exception e
+        (reset! error-raised e)))
+    (is @error-raised)))
+
+(deftest test-watch-command-error
+  (let [error-raised (atom nil)]
+    (try
+      (jd.test/with-test-machine (trns/transport {:type :mock
+                                                  :driver (jd.test/mock-test-driver (echo-stream test-in test-out)
+                                                                                    {"bootstrap.servers" "localhost:9092"
+                                                                                     "application.id" "test-echo-stream"})
+                                                  :topics {:in test-in
+                                                           :out test-out}})
+        (fn [machine]
+          (jd.test/run-test machine
+                            [[:write! :in {:id "1" :payload "foo"} {:key-fn :id}]
+                             [:write! :in {:id "2" :payload "bar"} {:key-fn :id}]
+                             [:watch (fn [journal]
+                                       (bad-watch-fn journal))]])))
+      (catch Exception e
+        (reset! error-raised e)))
+    (is @error-raised)))
+
 
 (deftest test-transports-loaded
   (let [transports (trns/supported-transports)]
