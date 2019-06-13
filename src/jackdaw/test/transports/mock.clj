@@ -129,25 +129,25 @@
 
         _ (log/infof "started mock producer: %s" {:driver driver})
 
-        producer-loop (d/loop [message (s/take! messages)]
-                        (d/chain message
-                          (fn [{:keys [input-record ack serialization-error] :as message}]
-                            (cond
-                              serialization-error  (do (deliver ack {:error :serialization-error
-                                                                     :message (.getMessage serialization-error)})
-                                                       (d/recur (s/take! messages)))
+        process (d/loop [message (s/take! messages)]
+                  (d/chain message
+                    (fn [{:keys [input-record ack serialization-error] :as message}]
+                      (cond
+                        serialization-error  (do (deliver ack {:error :serialization-error
+                                                               :message (.getMessage serialization-error)})
+                                                 (d/recur (s/take! messages)))
 
-                              input-record         (do (on-input input-record)
-                                                       (deliver ack {:topic (.topic input-record)
-                                                                     :partition (.partition input-record)
-                                                                     :offset (.offset input-record)})
-                                                       (d/recur (s/take! messages)))
+                        input-record         (do (on-input input-record)
+                                                 (deliver ack {:topic (.topic input-record)
+                                                               :partition (.partition input-record)
+                                                               :offset (.offset input-record)})
+                                                 (d/recur (s/take! messages)))
 
-                              :else (do
-                                      (log/infof "stopped mock producer: %s" {:driver driver}))))))]
+                        :else (do
+                                (log/infof "stopped mock producer: %s" {:driver driver}))))))]
 
     {:messages messages
-     :producer-loop producer-loop}))
+     :process process}))
 
 (deftransport :mock
   [{:keys [driver topics]}]
@@ -172,5 +172,5 @@
                     (.close driver)
                     (s/close! (:messages test-producer))
                     (reset! (:continue? test-consumer) false)
-                    @(:producer-loop test-producer)
+                    @(:process test-producer)
                     @(:process test-consumer))]}))
