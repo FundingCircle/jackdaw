@@ -170,29 +170,29 @@
                                                (let [trace (with-out-str
                                                              (stacktrace/print-cause-trace e))]
                                                  (log/error e trace))
-                                               (assoc x :serialization-error e))))))]
+                                               (assoc x :serialization-error e))))))
 
-     (log/infof "started kafka producer: %s"
-                (select-keys kafka-config ["bootstrap.servers" "group.id"]))
+         _ (log/infof "started kafka producer: %s"
+                      (select-keys kafka-config ["bootstrap.servers" "group.id"]))
+         process (d/loop [message (s/take! messages)]
+                   (d/chain (d/future message)
+                     (fn [{:keys [producer-record ack serialization-error] :as m}]
+                       (cond
+                         serialization-error   (do (deliver ack {:error :serialization-error
+                                                                 :message (.getMessage serialization-error)})
+                                                   (d/recur (s/take! messages)))
 
-     (d/loop [message (s/take! messages)]
-       (d/chain (d/future message)
-                (fn [{:keys [producer-record ack serialization-error] :as m}]
-                  (cond
-                    serialization-error   (do (deliver ack {:error :serialization-error
-                                                            :message (.getMessage serialization-error)})
-                                              (d/recur (s/take! messages)))
+                         producer-record       (do (kafka/send! producer producer-record (deliver-ack ack))
+                                                   (d/recur (s/take! messages)))
 
-                    producer-record       (do (kafka/send! producer producer-record (deliver-ack ack))
-                                              (d/recur (s/take! messages)))
-
-                    :else (do
-                            (.close producer)
-                            (log/infof "stopped kafka producer: "
-                                       (select-keys kafka-config ["bootstrap.servers" "group.id"])))))))
+                         :else (do
+                                 (.close producer)
+                                 (log/infof "stopped kafka producer: "
+                                            (select-keys kafka-config ["bootstrap.servers" "group.id"])))))))]
 
      {:producer  producer
-      :messages  messages})))
+      :messages  messages
+      :process   process})))
 
 (deftransport :kafka
   [{:keys [config topics]}]
@@ -208,4 +208,5 @@
                     (s/close! (:messages test-producer)))
                   (fn []
                     (reset! (:continue? test-consumer) false)
-                    @(:process test-consumer))]}))
+                    @(:process test-consumer)
+                    @(:process test-producer))]}))

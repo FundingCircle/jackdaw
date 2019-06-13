@@ -262,26 +262,25 @@
                                                (let [trace (with-out-str
                                                              (stacktrace/print-cause-trace e))]
                                                  (log/error e trace))
-                                               (assoc x :serialization-error e))))))]
+                                               (assoc x :serialization-error e))))))
+         _ (log/infof "started rest-proxy producer: %s" producer)
+         process (d/loop [message (s/take! messages)]
+                   (d/chain message
+                     (fn [{:keys [data-record ack serialization-error] :as message}]
+                       (cond
+                         serialization-error   (do (deliver ack {:error :serialization-error
+                                                                 :message (.getMessage serialization-error)})
+                                                   (d/recur (s/take! messages)))
 
-     (log/infof "started rest-proxy producer: %s" producer)
+                         data-record       (do (log/debug "sending data: " data-record)
+                                               (topic-post producer data-record (deliver-ack ack))
+                                               (d/recur (s/take! messages)))
 
-     (d/loop [message (s/take! messages)]
-       (d/chain message
-                (fn [{:keys [data-record ack serialization-error] :as message}]
-                  (cond
-                    serialization-error   (do (deliver ack {:error :serialization-error
-                                                            :message (.getMessage serialization-error)})
-                                              (d/recur (s/take! messages)))
-
-                    data-record       (do (log/debug "sending data: " data-record)
-                                          (topic-post producer data-record (deliver-ack ack))
-                                          (d/recur (s/take! messages)))
-
-                    :else (log/infof "stopped rest-proxy producer: %s" producer)))))
+                         :else (log/infof "stopped rest-proxy producer: %s" producer)))))]
 
      {:producer  producer
-      :messages  messages})))
+      :messages  messages
+      :process   process})))
 
 (deftransport :confluent-rest-proxy
   [{:keys [config topics]}]
@@ -297,4 +296,5 @@
                     (s/close! (:messages test-producer)))
                   (fn []
                     (reset! (:continue? test-consumer) false)
-                    @(:process test-consumer))]}))
+                    @(:process test-consumer)
+                    @(:process test-producer))]}))
