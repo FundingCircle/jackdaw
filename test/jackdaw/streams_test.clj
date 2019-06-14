@@ -467,7 +467,22 @@
         (is (= 3 (count keyvals)))
         (is (= [1 1] (first keyvals)))
         (is (= [1 3] (second keyvals )))
-        (is (= [1 7] (nth keyvals 2)))))))
+        (is (= [1 7] (nth keyvals 2))))))
+
+  (testing "kstreams"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          topic-c (mock/topic "topic-c")
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstreams [topic-a topic-b])
+                                          (k/to topic-c))))
+          publish (partial mock/publish driver)]
+
+      (publish topic-a 1 1)
+      (publish topic-b 2 2)
+
+      (is (= [[1 1] [2 2]] (mock/get-keyvals driver topic-c))))))
 
 (deftest KTable
   (testing "filter"

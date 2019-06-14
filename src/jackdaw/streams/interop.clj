@@ -92,7 +92,9 @@
     (clj-kstream
      (let [topic-names (clojure.core/map :topic-name topic-configs)]
        (.stream streams-builder
-                ^Collection topic-names))))
+                ^Collection topic-names
+                ;; Assume all the topics use the same serdes.
+                ^Consumed (topic->consumed (first topic-configs))))))
 
   (ktable
     [_ {:keys [topic-name] :as topic-config}]
