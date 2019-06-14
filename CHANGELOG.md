@@ -1,11 +1,25 @@
 # Changelog
 
+## [0.6.5] - [2019-06-14]
+
+### Added
+
+ * Add Add `:do!` and `:inspect` test commands (#141)
+
+### Changed
+
+ * Fix regression in multi-topic stream constructor (#143)
+ * Stop swallowing errors in test-machine (#144)
+ * Include kafka-streams-test-utils so users don't have to (#138)
+
 ## [0.6.4] - [2019-05-02]
 
 ### Added
 
  * Add changelog and contributing files (#122)
  * Add test-machine example to the word-count example application (#120)
+ * Add new arities for aggregate and reduce (#132)
+ * Add sign-off to contributing file (#123)
 
 ### Changed
 
@@ -16,8 +30,6 @@
  * Fix a typo in the `service-ready?` test fixture (#121)
  * Make sure mock dirver is closed after use (#128)
  * Fix Jackdaw version for Word Count example (#131)
- * Add new arrities for aggregate and reduce (#132)
- * Add sign-off to contributing file (#123)
  * Update changelog for 0.6.4 release (#124)
 
 ### Removed
