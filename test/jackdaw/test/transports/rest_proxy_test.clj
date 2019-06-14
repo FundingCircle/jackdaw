@@ -145,15 +145,15 @@
             (is (integer? (:offset result)))))
 
         (testing "the journal is updated"
-          (let [result (watch-for t (fn [journal]
-                                      (log/info "jrnl:" journal)
-                                      (->> (get-in journal [:topics :test-out])
-                                           (filter (fn [m]
-                                                     (= 2 (get-in m [:value :id]))))
-                                           first))
-                                  10000
-                                  "failed to find test-out=2")]
-
+          (let [result (-> (watch-for t (fn [journal]
+                                          (log/info "jrnl:" journal)
+                                          (->> (get-in journal [:topics :test-out])
+                                               (filter (fn [m]
+                                                         (= 2 (get-in m [:value :id]))))
+                                               first))
+                                      20000
+                                      "failed to find test-out=2")
+                           :info)]
             (is (= :test-out (:topic result)))
             (is (= 2 (:key result)))
             (is (= {:id 2 :payload "foo"} (:value result)))))))))

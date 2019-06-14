@@ -1,5 +1,6 @@
 (ns jackdaw.test.transports.mock
   (:require
+   [clojure.stacktrace :as stacktrace]
    [clojure.tools.logging :as log]
    [jackdaw.client :as kafka]
    [jackdaw.test.journal :as j]
@@ -115,30 +116,51 @@
 
 (defn mock-producer
   [driver topic-config serializers on-input]
-  (let [messages (s/stream 1 (comp
-                              (map #(apply-serializers serializers %))
-                              (map (with-input-record topic-config))))]
+  (let [build-record (with-input-record topic-config)
+        messages (s/stream 1 (map (fn [x]
+                                    (try
+                                      (-> (apply-serializers serializers x)
+                                          (build-record))
+                                      (catch Exception e
+                                        (let [trace (with-out-str
+                                                             (stacktrace/print-cause-trace e))]
+                                          (log/error e trace))
+                                        (assoc x :serialization-error e))))))
 
-    (log/infof "started mock producer: %s" {:driver driver})
+        _ (log/infof "started mock producer: %s" {:driver driver})
 
-    (d/loop [message (s/take! messages)]
-      (d/chain message
-               (fn [{:keys [input-record ack] :as message}]
-                 (if input-record
-                   (do (on-input input-record)
-                       (deliver ack {:topic (.topic input-record)
-                                     :partition (.partition input-record)
-                                     :offset (.offset input-record)})
-                       (d/recur (s/take! messages)))
-                   (log/infof "stopped mock producer: %s" {:driver driver})))))
-    {:messages messages}))
+        process (d/loop [message (s/take! messages)]
+                  (d/chain message
+                    (fn [{:keys [input-record ack serialization-error] :as message}]
+                      (cond
+                        serialization-error  (do (deliver ack {:error :serialization-error
+                                                               :message (.getMessage serialization-error)})
+                                                 (d/recur (s/take! messages)))
+
+                        input-record         (do (on-input input-record)
+                                                 (deliver ack {:topic (.topic input-record)
+                                                               :partition (.partition input-record)
+                                                               :offset (.offset input-record)})
+                                                 (d/recur (s/take! messages)))
+
+                        :else (do
+                                (log/infof "stopped mock producer: %s" {:driver driver}))))))]
+
+    {:messages messages
+     :process process}))
 
 (deftransport :mock
   [{:keys [driver topics]}]
   (let [serdes        (serde-map topics)
         test-consumer (mock-consumer driver topics (get serdes :deserializers))
         record-fn     (fn [input-record]
-                        (.pipeInput driver input-record))
+                        (try
+                          (.pipeInput driver input-record)
+                          (catch Exception e
+                            (let [trace (with-out-str
+                                          (stacktrace/print-cause-trace e))]
+                              (log/error e trace))
+                            (throw e))))
         test-producer (when @(:started? test-consumer)
                         (mock-producer driver topics (get serdes :serializers)
                                        record-fn))]
@@ -150,4 +172,5 @@
                     (.close driver)
                     (s/close! (:messages test-producer))
                     (reset! (:continue? test-consumer) false)
+                    @(:process test-producer)
                     @(:process test-consumer))]}))

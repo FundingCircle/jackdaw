@@ -1,8 +1,9 @@
 (ns jackdaw.test.transports.kafka
   (:require
+   [clojure.tools.logging :as log]
+   [clojure.stacktrace :as stacktrace]
    [manifold.stream :as s]
    [manifold.deferred :as d]
-   [clojure.tools.logging :as log]
    [jackdaw.client :as kafka]
    [jackdaw.data :as jd]
    [jackdaw.test.commands :as cmd]
@@ -155,6 +156,7 @@
                                    :serialized-key-size
                                    :serialized-value-size]))))))
 
+
 (defn producer
   "Creates an asynchronous kafka producer to be used by a test-machine for for
    injecting test messages"
@@ -165,29 +167,32 @@
                                              (-> (apply-serializers serializers x)
                                                  (build-record))
                                              (catch Exception e
-                                               (log/error e "kafka producer serialization error")
-                                               (assoc x
-                                                      :serialization-error e))))))]
+                                               (let [trace (with-out-str
+                                                             (stacktrace/print-cause-trace e))]
+                                                 (log/error e trace))
+                                               (assoc x :serialization-error e))))))
 
-     (log/infof "started kafka producer: %s"
-                (select-keys kafka-config ["bootstrap.servers" "group.id"]))
+         _ (log/infof "started kafka producer: %s"
+                      (select-keys kafka-config ["bootstrap.servers" "group.id"]))
+         process (d/loop [message (s/take! messages)]
+                   (d/chain (d/future message)
+                     (fn [{:keys [producer-record ack serialization-error] :as m}]
+                       (cond
+                         serialization-error   (do (deliver ack {:error :serialization-error
+                                                                 :message (.getMessage serialization-error)})
+                                                   (d/recur (s/take! messages)))
 
-     (d/loop [message (s/take! messages)]
-       (d/chain (d/future message)
-                (fn [{:keys [producer-record ack serialization-error] :as m}]
-                  (cond
-                    producer-record       (do (kafka/send! producer producer-record (deliver-ack ack))
-                                              (d/recur (s/take! messages)))
-                    serialization-error   (do (deliver ack {:error :serialization-error
-                                                            :message (.getMessage serialization-error)})
-                                              (d/recur (s/take! messages)))
-                    :else (do
-                            (.close producer)
-                            (log/infof "stopped kafka producer: "
-                                       (select-keys kafka-config ["bootstrap.servers" "group.id"])))))))
+                         producer-record       (do (kafka/send! producer producer-record (deliver-ack ack))
+                                                   (d/recur (s/take! messages)))
+
+                         :else (do
+                                 (.close producer)
+                                 (log/infof "stopped kafka producer: "
+                                            (select-keys kafka-config ["bootstrap.servers" "group.id"])))))))]
 
      {:producer  producer
-      :messages  messages})))
+      :messages  messages
+      :process   process})))
 
 (deftransport :kafka
   [{:keys [config topics]}]
@@ -203,4 +208,5 @@
                     (s/close! (:messages test-producer)))
                   (fn []
                     (reset! (:continue? test-consumer) false)
-                    @(:process test-consumer))]}))
+                    @(:process test-consumer)
+                    @(:process test-producer))]}))

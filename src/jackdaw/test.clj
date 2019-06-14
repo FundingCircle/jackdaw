@@ -20,6 +20,7 @@
    kafka cluster shared with other users."
   (:require
    [clojure.tools.logging :as log]
+   [jackdaw.streams :as k]
    [jackdaw.test.commands :refer [with-handler command-handler]]
    [jackdaw.test.commands.base]
    [jackdaw.test.commands.write]
@@ -30,7 +31,10 @@
    [jackdaw.test.transports.mock]
    [jackdaw.test.transports.rest-proxy]
    [jackdaw.test.journal :refer [with-journal]]
-   [jackdaw.test.middleware :refer [with-timing with-status with-journal-snapshots]]))
+   [jackdaw.test.middleware :refer [with-timing with-status with-journal-snapshots]])
+  (:import
+   (java.util Properties)
+   (org.apache.kafka.streams TopologyTestDriver)))
 
 ;; Information about the internal architecture. Extract this out to a wiki or
 ;; something.
@@ -121,12 +125,7 @@
    to ensure that all resources are correcly torn down."
   [machine commands]
   (let [exe (fn [cmd]
-              (try
-                ((:executor machine) machine cmd)
-                (catch Exception e
-                  (log/error e "Uncaught exception while executing test command")
-                  {:status :error
-                   :error e})))]
+              ((:executor machine) machine cmd))]
     ;; run commands, stopping if one fails.
     {:results (loop [results []
                      cmd-list commands]
@@ -221,3 +220,19 @@
   [transport f]
   (with-open [machine (test-machine transport)]
     (f machine)))
+
+(defn- set-properties
+  [properties m]
+  (doseq [[k v] m]
+    (.setProperty properties k v))
+  properties)
+
+(defn mock-test-driver
+  [build-fn app-config]
+  (let [builder (k/streams-builder)
+        topology (let [builder (build-fn builder)]
+                   (-> (k/streams-builder* builder)
+                       .build))
+        props (-> (Properties.)
+                  (set-properties app-config))]
+    (TopologyTestDriver. topology props)))

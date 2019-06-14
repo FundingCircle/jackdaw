@@ -4,6 +4,7 @@
    [byte-streams :as bs]
    [clojure.data.json :as json]
    [clojure.tools.logging :as log]
+   [clojure.stacktrace :as stacktrace]
    [jackdaw.test.journal :as j]
    [jackdaw.test.transports :as t :refer [deftransport]]
    [jackdaw.test.serde :refer :all]
@@ -253,27 +254,33 @@
    injecting test messages"
   ([config topics serializers]
    (let [producer       (rest-proxy-client config)
-         xform          (comp
-                         build-record
-                         #(apply-serializers serializers %))
-         messages       (s/stream 1 (map xform))]
+         messages       (s/stream 1 (map (fn [x]
+                                           (try
+                                             (-> (apply-serializers serializers x)
+                                                 (build-record))
+                                             (catch Exception e
+                                               (let [trace (with-out-str
+                                                             (stacktrace/print-cause-trace e))]
+                                                 (log/error e trace))
+                                               (assoc x :serialization-error e))))))
+         _ (log/infof "started rest-proxy producer: %s" producer)
+         process (d/loop [message (s/take! messages)]
+                   (d/chain message
+                     (fn [{:keys [data-record ack serialization-error] :as message}]
+                       (cond
+                         serialization-error   (do (deliver ack {:error :serialization-error
+                                                                 :message (.getMessage serialization-error)})
+                                                   (d/recur (s/take! messages)))
 
-     (log/infof "started rest-proxy producer: %s" producer)
+                         data-record       (do (log/debug "sending data: " data-record)
+                                               (topic-post producer data-record (deliver-ack ack))
+                                               (d/recur (s/take! messages)))
 
-     (d/loop [message (s/take! messages)]
-       (d/chain message
-                (fn [{:keys [data-record ack serialization-error] :as message}]
-                  (cond
-                    data-record       (do (log/debug "sending data: " data-record)
-                                          (topic-post producer data-record (deliver-ack ack))
-                                          (d/recur (s/take! messages)))
-                    serialization-error   (do (deliver ack {:error :serialization-error
-                                                            :message (.getMessage serialization-error)})
-                                              (d/recur (s/take! messages)))
-                    :else (log/infof "stopped rest-proxy producer: %s" producer)))))
+                         :else (log/infof "stopped rest-proxy producer: %s" producer)))))]
 
      {:producer  producer
-      :messages  messages})))
+      :messages  messages
+      :process   process})))
 
 (deftransport :confluent-rest-proxy
   [{:keys [config topics]}]
@@ -289,4 +296,5 @@
                     (s/close! (:messages test-producer)))
                   (fn []
                     (reset! (:continue? test-consumer) false)
-                    @(:process test-consumer))]}))
+                    @(:process test-consumer)
+                    @(:process test-producer))]}))
