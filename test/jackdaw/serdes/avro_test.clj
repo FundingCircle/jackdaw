@@ -117,6 +117,26 @@
       (is (avro/match-clj? schema-type clj-data))
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
       (is (= avro-data (avro/clj->avro schema-type clj-data [])))))
+
+  (testing "coercable int"
+    (let [avro-schema (parse-schema {:type "int"})
+          schema-type (schema-type avro-schema)
+          clj-data (bigint "2")
+          avro-data 2]
+      (is (avro/match-clj? schema-type clj-data))
+      (is (= clj-data (avro/avro->clj schema-type avro-data)))
+      (is (= avro-data (avro/clj->avro schema-type clj-data [])))))
+
+  (testing "coercable long"
+    (let [avro-schema (parse-schema {:type "long"})
+          schema-type (schema-type avro-schema)
+          clj-data (bigint (str (inc Integer/MAX_VALUE)))
+          avro-data (long (inc Integer/MAX_VALUE))]
+      (avro/match-clj? schema-type clj-data)
+      (is (avro/match-clj? schema-type clj-data))
+      (is (= clj-data (avro/avro->clj schema-type avro-data)))
+      (is (= avro-data (avro/clj->avro schema-type clj-data [])))))
+
   (testing "long"
     (let [avro-schema (parse-schema {:type "long"
                                      :name "amount_cents"
