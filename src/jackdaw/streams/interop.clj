@@ -319,18 +319,18 @@
                        ^"[Ljava.lang.String;" (into-array String state-store-names))))
 
   (join-global
-    [_ global-kstream key-value-mapper-fn joiner-fn]
+    [_ global-ktable key-value-mapper-fn joiner-fn]
     (clj-kstream
      (.join kstream
-            ^GlobalKTable (global-ktable* global-kstream)
+            ^GlobalKTable (global-ktable* global-ktable)
             ^KeyValueMapper (select-key-value-mapper key-value-mapper-fn)
             ^ValueJoiner (value-joiner joiner-fn))))
 
   (left-join-global
-    [_ global-kstream key-value-mapper-fn joiner-fn]
+    [_ global-ktable key-value-mapper-fn joiner-fn]
     (clj-kstream
      (.leftJoin kstream
-                ^GlobalKTable (global-ktable* global-kstream)
+                ^GlobalKTable (global-ktable* global-ktable)
                 ^KeyValueMapper (select-key-value-mapper key-value-mapper-fn)
                 ^ValueJoiner (value-joiner joiner-fn))))
 
