@@ -4,8 +4,8 @@
    [clojure.tools.logging :as log]
    [jackdaw.client.partitioning :as partitioning]))
 
-(defn default-partition-fn [topic-name topic-map k v]
-  (int (partitioning/default-partition topic-map k nil (:partition-count topic-map))))
+(defn default-partition-fn [topic-map topic-name k v partition-count]
+  (int (partitioning/default-partition topic-map k nil partition-count)))
 
 (defn create-message [topic-map message opts]
   ;; By default the message will use the `:id` field as the key on kafka
@@ -26,13 +26,13 @@
                    :id)
         partition-fn (or (:partition-fn opts)
                          (:partition-fn topic-map)
-                         default-partition-fn)
+                         (partial default-partition-fn topic-map))
         k (if-let [explicit-key (:key opts)]
             explicit-key
             (key-fn message))
         partn (if-let [explicit-partition (:partition opts)]
                 explicit-partition
-                (partition-fn (:topic-name topic-map) topic-map k message))
+                (partition-fn (:topic-name topic-map) k message (:partition-count topic-map)))
         timestamp (:timestamp opts (System/currentTimeMillis))]
     (if (or (< partn 0)
             (> partn (dec (:partition-count topic-map))))
