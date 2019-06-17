@@ -4,7 +4,7 @@
   (:import org.apache.kafka.streams.KeyValue
            [org.apache.kafka.streams.kstream
             Aggregator ForeachAction Initializer KeyValueMapper
-            Predicate Reducer TransformerSupplier ValueJoiner
+            Merger Predicate Reducer TransformerSupplier ValueJoiner
             ValueMapper ValueTransformerSupplier]
            [org.apache.kafka.streams.processor
             Processor ProcessorSupplier StreamPartitioner]))
@@ -78,6 +78,16 @@
   single parameter, and returns a list of `[key value]`."
   [key-value-flatmapper-fn]
   (FnKeyValueFlatMapper. key-value-flatmapper-fn))
+
+(deftype FnMerger [merger-fn]
+  Merger
+  (apply [this agg-key aggregate1 aggregate2]
+    (merger-fn agg-key aggregate1 aggregate2)))
+
+(defn merger
+  "Packages up a Clojure fn in a kstream merger (merges together two SessionWindows aggregate values)."
+  ^Merger [merger-fn]
+  (FnMerger. merger-fn))
 
 (deftype FnPredicate [predicate-fn]
   Predicate

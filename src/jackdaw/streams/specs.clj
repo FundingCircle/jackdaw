@@ -272,7 +272,7 @@
         :args (s/cat :kgrouped ::kgroupedstream-or-kgroupedtable
                      :initializer-fn ::lambdas/initializer-fn
                      :adder-fn ::lambdas/aggregator-fn
-                     :subtractor-fn (s/? ::lambdas/aggregator-fn)
+                     :subtractor-or-merger-fn (s/? (s/alt ::lambdas/aggregator-fn ::lambdas/merger-fn))
                      :topic-config (s/? ::topic-config))
         :ret ktable?)
 

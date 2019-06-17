@@ -18,7 +18,7 @@
            [org.apache.kafka.streams.kstream
             Aggregator Consumed GlobalKTable Initializer Joined
             JoinWindows KGroupedStream KGroupedTable KStream KTable
-            KeyValueMapper Materialized Predicate Printed Produced
+            KeyValueMapper Materialized Merger Predicate Printed Produced
             Reducer Serialized SessionWindowedKStream SessionWindows
             TimeWindowedKStream ValueJoiner ValueMapper
             ValueMapperWithKey ValueTransformerSupplier Windows]
@@ -585,11 +585,12 @@
 (deftype CljSessionWindowedKStream [^SessionWindowedKStream windowed-kstream]
   IKGroupedBase
   (aggregate
-    [_ initializer-fn aggregator-fn {:keys [topic-name value-serde]}]
+    [_ initializer-fn aggregator-fn merger-fn {:keys [topic-name value-serde]}]
     (clj-ktable
      (.aggregate ^SessionWindowedKStream windowed-kstream
                  ^Initializer (initializer initializer-fn)
                  ^Aggregator (aggregator aggregator-fn)
+                 ^Merger (merger merger-fn)
                  (doto (Materialized/as ^String topic-name) (.withValueSerde value-serde)))))
 
   (count

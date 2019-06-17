@@ -539,10 +539,10 @@
 (deftype ConfiguredSessionWindowedKStream [config kgroupedstream]
   IKGroupedBase
   (aggregate
-    [_ initializer-fn aggregator-fn topic-config]
+    [_ initializer-fn aggregator-fn merger-fn topic-config]
     (configured-ktable
      config
-     (aggregate kgroupedstream initializer-fn aggregator-fn topic-config)))
+     (aggregate kgroupedstream initializer-fn aggregator-fn merger-fn topic-config)))
 
   (count
     [_]
