@@ -490,7 +490,7 @@
   {"schema.registry.url" registry-url})
 
 (defn- serializer [schema->coercion serde-config]
-  (let [{:keys [registry-client registry-url avro-schema key?]} serde-config
+  (let [{:keys [registry-client registry-url avro-schema key? coercion-disabled?]} serde-config
         base-serializer (KafkaAvroSerializer. registry-client)
         ;; This is invariant across subject schema changes, shockingly.
         coercion-type (schema->coercion avro-schema)
@@ -500,7 +500,9 @@
                               (.configure base-serializer base-config key?))
                  :serialize (fn [_ topic data]
                               (try
-                                (.serialize base-serializer topic (clj->avro coercion-type data []))
+                                (.serialize base-serializer topic (if coercion-disabled?
+                                                                    data
+                                                                    (clj->avro coercion-type data [])))
                                 (catch clojure.lang.ExceptionInfo e
                                   (let [data (-> e
                                                  ex-data
@@ -511,7 +513,7 @@
     clj-serializer))
 
 (defn- deserializer [schema->coercion serde-config]
-  (let [{:keys [registry-client registry-url avro-schema key?]} serde-config
+  (let [{:keys [registry-client registry-url avro-schema key? coercion-disabled?]} serde-config
         base-deserializer (KafkaAvroDeserializer. registry-client)
         methods {:close       (fn [_]
                                 (.close base-deserializer))
@@ -524,7 +526,8 @@
                                     ;; a ^GenericContainer. ^GenericContainer is only produced when
                                     ;; there was a schema associated with the deserialized data, and
                                     ;; only then do we use the coercion stack machinery.
-                                    (if (instance? GenericContainer avro-data)
+                                    (if (and (instance? GenericContainer avro-data)
+                                             (not coercion-disabled?))
                                       (let [schema (.getSchema ^GenericContainer avro-data)
                                             coercion-type (schema->coercion schema)]
                                         (assert (match-avro? coercion-type avro-data))
@@ -595,7 +598,8 @@
     :as   registry-config}
    {:keys [avro/schema
            avro/coercion-cache
-           key?]
+           key?
+           coercion-disabled?]
     :as   topic-config}]
 
   (when-not url
@@ -609,13 +613,14 @@
      (IllegalArgumentException.
       ":avro/coercion-cache in the schema config must be either absent/nil, or an atom containing a cache")))
 
-  (let [config {:key?            key?
-                :registry-url    url
-                :registry-client (or client
-                                     (registry/client url 128))
+  (let [config {:key?               key?
+                :coercion-disabled? coercion-disabled?
+                :registry-url       url
+                :registry-client    (or client
+                                        (registry/client url 128))
                 ;; Provide the old behavior by default, or fall through to the
                 ;; new behavior of getting the right schema when possible.
-                :avro-schema     (parse-schema-str schema)}
+                :avro-schema        (parse-schema-str schema)}
 
         ;; Coercion stack caching
         ;;
