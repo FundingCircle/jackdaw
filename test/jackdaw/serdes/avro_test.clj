@@ -457,198 +457,86 @@
                                                              "topic"
                                                              (uuid/to-string uuid/+null+))))))))
 
+(def mangling-test-schema
+  {:name "testRecord"
+   :type "record"
+   :fields [{:name "enum_field"
+             :type {:type "enum"
+                    :name "weird_values"
+                    :symbols ["a_1" "B3"]}}
+            {:name "map_field"
+             :type ["null" {:type "map"
+                            :values bananas-schema}]}
+            {:name "array_field"
+             :type ["null" {:name "subrecords"
+                            :type "array"
+                            :items "banana"}]}]})
+
 (deftest accept-unmangled-input
-  (let [schema {:name "testRecord"
-                :type "record"
-                :fields [{:name "string_field"
-                          :type "string"}
-                         {:name "long_field"
-                          :type "long"}
-                         {:name "optional_field"
-                          :type ["null" "int"]
-                          :default nil}
-                         {:name "nil_field"
-                          :type "null"}
-                         {:name "default_field"
-                          :type "long"
-                          :default 1}
-                         {:name "bytes_field"
-                          :type "bytes"}
-                         {:name "enum_field"
-                          :type {:type "enum"
-                                 :name "weird_values"
-                                 :symbols ["a_1" "B3"]}}
-                         {:name "map_field"
-                          :type ["null" {:type "map"
-                                         :values bananas-schema}]}
-                         {:name "array_field"
-                          :type ["null" {:name "subrecords"
-                                         :type "array"
-                                         :items "banana"}]}
-                         {:name "uuid_field"
-                          :type {:type "string",
-                                 :logicalType "uuid"}}]}
-        schema-str (json/write-str schema)
-        serde      (->serde schema-str)]
+  "Ensure that it is possible to serialize non-idiomatic but perfectly
+  valid clojure maps. For eg. string values for enums,stringified keys
+  and keys with underscores with in the input."
+  (let [serde (-> mangling-test-schema
+                  json/write-str
+                  ->serde)]
 
     (is (= (round-trip serde "bananas"
-                       {:string_field "hello"
-                        :long_field 3
-                        :optional_field 3
-                        :nil_field nil
-                        :default_field 1
-                        :bytes_field (ByteBuffer/wrap (.getBytes "hello"))
-                        :enum_field "a_1"
-                        :map_field {"banana" {:color "yellow"}
-                                    "ripe b4nana$" {:color "yellow-green"}}
-
-                        :array_field [{:color "yellow"}]
-                        :uuid_field uuid/+null+})
-           {:string-field "hello"
-            :long-field 3
-            :default-field 1
-            :nil-field nil
-            :bytes-field (ByteBuffer/wrap (.getBytes "hello"))
-            :map-field {"banana" {:color "yellow"}
+                       {:enum-field "a_1"
+                        :map-field {"banana" {"color" "yellow"}
+                                    "ripe b4nana$" {"color" "yellow-green"}}
+                        :array-field [{"color" "yellow"}]})
+           {:map-field {"banana" {:color "yellow"}
                         "ripe b4nana$" {:color "yellow-green"}}
             :enum-field :a-1
-            :optional-field 3
-            :array-field [{:color "yellow"}]
-            :uuid-field uuid/+null+}))
-
-    (is (= (round-trip serde "bananas"
-                       {:string_field "hello"
-                        :long_field 3
-                        :optional_field 3
-                        :nil_field nil
-                        :default_field 1
-                        :bytes_field (ByteBuffer/wrap (.getBytes "hello"))
-                        :enum_field :a_1
-                        :map_field {"banana" {:color "yellow"}
-                                    "ripe b4nana$" {:color "yellow-green"}}
-
-                        :array_field [{:color "yellow"}]
-                        :uuid_field uuid/+null+})
-           {:string-field "hello"
-            :long-field 3
-            :default-field 1
-            :nil-field nil
-            :bytes-field (ByteBuffer/wrap (.getBytes "hello"))
-            :map-field {"banana" {:color "yellow"}
-                        "ripe b4nana$" {:color "yellow-green"}}
-            :enum-field :a-1
-            :optional-field 3
-            :array-field [{:color "yellow"}]
-            :uuid-field uuid/+null+}))
+            :array-field [{:color "yellow"}]})
+        "Accept unmangled values for enums and maps")
 
 
     (is (= (round-trip serde "bananas"
-                       {"string_field" "hello"
-                        "long_field" 3
-                        "optional_field" 3
-                        "nil_field" nil
-                        "default_field" 1
-                        "bytes_field" (ByteBuffer/wrap (.getBytes "hello"))
-                        "enum_field" "a_1"
-                        "map_field" {"banana" {"color" "yellow"}
+                       {"enum_field" "a_1"
+                        "map-field" {"banana" {"color" "yellow"}
                                      "ripe b4nana$" {"color" "yellow-green"}}
-                        "array_field" [{"color" "yellow"}]
-                        "uuid_field" uuid/+null+})
-           {:string-field "hello"
-            :long-field 3
-            :default-field 1
-            :nil-field nil
-            :bytes-field (ByteBuffer/wrap (.getBytes "hello"))
-            :map-field {"banana" {:color "yellow"}
+                        :array_field [{"color" "yellow"}]})
+           {:map-field {"banana" {:color "yellow"}
                         "ripe b4nana$" {:color "yellow-green"}}
             :enum-field :a-1
-            :optional-field 3
-            :array-field [{:color "yellow"}]
-            :uuid-field uuid/+null+}))))
+            :array-field [{:color "yellow"}]})
+        "Accept maps with string keys and keys with underscores")))
+
 
 (deftest no-mangling-test
+  "Ensure that the deserialiser does not 'idiomise' values of enums
+  and keys of maps to ' the `jackdaw.serdes.avro/*mangle-names*` is
+  set to false."
   (binding [jackdaw.serdes.avro/*mangle-names* false]
-    (let [schema {:name "testRecord"
-                  :type "record"
-                  :fields [{:name "string_field"
-                            :type "string"}
-                           {:name "long_field"
-                            :type "long"}
-                           {:name "optional_field"
-                            :type ["null" "int"]
-                            :default nil}
-                           {:name "nil_field"
-                            :type "null"}
-                           {:name "default_field"
-                            :type "long"
-                            :default 1}
-                           {:name "bytes_field"
-                            :type "bytes"}
-                           {:name "enum_field"
-                            :type {:type "enum"
-                                   :name "weird_values"
-                                   :symbols ["a_1" "B3"]}}
-                           {:name "map_field"
-                            :type ["null" {:type "map"
-                                           :values bananas-schema}]}
-                           {:name "array_field"
-                            :type ["null" {:name "subrecords"
-                                           :type "array"
-                                           :items "banana"}]}
-                           {:name "uuid_field"
-                            :type {:type "string",
-                                   :logicalType "uuid"}}]}
-          schema-str (json/write-str schema)
-          serde      (->serde schema-str)]
+    (let [serde (-> mangling-test-schema
+                    json/write-str
+                    ->serde)]
+      (is (= (round-trip serde "bananas"
+                         {:enum_field :a_1
+                          :map_field {"banana" {:color "yellow"}
+                                      "ripe b4nana$" {:color "yellow-green"}}
+
+                          :array_field [{:color "yellow"}]})
+             {:enum_field :a_1
+              :map_field {"banana" {:color "yellow"}
+                          "ripe b4nana$" {:color "yellow-green"}}
+              :array_field [{:color "yellow"}]})
+          "Enum values are not idiomised when mangling is turned off")
+
 
       (is (= (round-trip serde "bananas"
-                           {:string_field "hello"
-                            :long_field 3
-                            :optional_field 3
-                            :nil_field nil
-                            :default_field 1
-                            :bytes_field (ByteBuffer/wrap (.getBytes "hello"))
-                            :enum_field :a_1
-                            :map_field {"banana" {:color "yellow"}
-                                        "ripe b4nana$" {:color "yellow-green"}}
+                         {:enum_field :a_1
+                          :map_field {"banana" {:color "yellow"}
+                                      "ripe b4nana$" {:color "yellow-green"}}
 
-                            :array_field [{:color "yellow"}]
-                            :uuid_field uuid/+null+})
-               {:string_field "hello"
-                :long_field 3
-                :default_field 1
-                :nil_field nil
-                :bytes_field (ByteBuffer/wrap (.getBytes "hello"))
-                :map_field {"banana" {:color "yellow"}
-                            "ripe b4nana$" {:color "yellow-green"}}
-                :enum_field :a_1
-                :optional_field 3
-                :array_field [{:color "yellow"}]
-                :uuid_field uuid/+null+}))
+                          :array_field [{:color "yellow"}]})
+             {:enum_field :a_1
+              :map_field {"banana" {:color "yellow"}
+                          "ripe b4nana$" {:color "yellow-green"}}
+              :array_field [{:color "yellow"}]})
+          "keys of maps are not idiomised when mangling is turned off"))))
 
-      (is (= (round-trip serde "bananas"
-                           {"string_field" "hello"
-                            "long_field" 3
-                            "optional_field" 3
-                            "nil_field" nil
-                            "default_field" 1
-                            "bytes_field" (ByteBuffer/wrap (.getBytes "hello"))
-                            "enum_field" "a_1"
-                            "map_field" {"banana" {"color" "yellow"}
-                                         "ripe b4nana$" {"color" "yellow-green"}}
-                            "array_field" [{"color" "yellow"}]
-                            "uuid_field" uuid/+null+})
-               {:string_field "hello"
-                :long_field 3
-                :default_field 1
-                :nil_field nil
-                :bytes_field (ByteBuffer/wrap (.getBytes "hello"))
-                :map_field {"banana" {:color "yellow"}
-                            "ripe b4nana$" {:color "yellow-green"}}
-                :enum_field :a_1
-                :optional_field 3
-                :array_field [{:color "yellow"}]
-                :uuid_field uuid/+null+})))))
 
 (deftest schemaless-test
   (let [serde (->serde nil)]
