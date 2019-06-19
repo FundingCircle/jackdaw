@@ -370,6 +370,24 @@
 
 (def complex-schema-str (json/write-str complex-schema))
 
+(deftest correct-union-record-is-picked-for-coercion
+  (let [schema {:type   "record",
+                :name   "myrecord",
+                :fields [{:name "myunion",
+                          :type [{:type   "record",
+                                  :name   "recordtype1",
+                                  :fields [{:name "field1", :type "string"}]}
+                                 {:type   "record",
+                                  :name   "recordtype2",
+                                  :fields [{:name "field2", :type "string"}]}]}]}
+        serde  (->serde (json/write-str schema))]
+
+    (is (= {:myunion {:field1 "hello"}}
+           (round-trip serde "whatever" {:myunion {:field1 "hello"}})))
+
+    (is (= {:myunion {:field2 "hello"}}
+           (round-trip serde "whatever" {:myunion {:field2 "hello"}})))))
+
 (deftest record-serde-test
   (let [serde (->serde complex-schema-str)
         valid-map {:string-field "hello"
