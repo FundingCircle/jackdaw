@@ -30,6 +30,20 @@ of the manual][8].  Adding information like the backtrace and any sample message
 and/or topic configurations used to the bug report makes it easier to track down bugs.
 Some steps to reproduce a bug reliably would also make a huge difference.
 
+## Signoff on Commits
+
+```
+# signoff an individual commit
+git commit -s -m 'Add foo feature'
+
+# signoff all commits by default
+git config format.signoff true
+
+# git alias to rebase sequence of commits to include signoff
+[alias]
+  signoff-rebase = "!EDITOR='sed -i -re s/^pick/e/' sh -c 'git rebase -i $1 && while test -f .git/rebase-merge/interactive; do git commit --amend --signoff --no-edit && git rebase --continue; done' -"
+```
+
 ## Pull requests
 
 * Read [how to properly contribute to open source projects on Github][3].
