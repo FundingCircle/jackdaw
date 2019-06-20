@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.6.6] - [2019-06-20]
+
+### Added
+
+ * Auto-coercion of clojure numbers if possible (#135)
+ * Added more explicit information about commit signing Contributing guide (#150)
+
+### Fixed
+
+ * Merger instance required for session window aggregation (#142)
+ * Fixed mis-leading parameter names relating to global ktables (#147)
+ * Select matching record from union during serialization (#149)
+ * Fixed typo in one of the code examples in the streams guide (#151)
+
 ## [0.6.5] - [2019-06-14]
 
 ### Added
