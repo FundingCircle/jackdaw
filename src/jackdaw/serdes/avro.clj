@@ -390,8 +390,12 @@
               field->schema+coercion)))
 
   (match-avro? [_ avro-record]
-    (or (instance? GenericData$Record avro-record)
-        (nil? avro-record)))
+    (cond
+      (nil? avro-record) true
+
+      (instance? GenericData$Record avro-record)
+      (let [^GenericData$Record generic-data-record avro-record]
+        (= schema (.getSchema generic-data-record)))))
 
   (avro->clj [_ avro-record]
     (when avro-record
