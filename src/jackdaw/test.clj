@@ -202,7 +202,7 @@
                    :config config
                    :topics topics}))
 
-(defn with-test-machine
+(defn with-test-machine*
   "Convenience wrapper for the test-machine.
 
    Creates a test-machine using the supplied `transport` and then
@@ -220,6 +220,12 @@
   [transport f]
   (with-open [machine (test-machine transport)]
     (f machine)))
+
+(defmacro with-test-machine
+  [transport & body]
+  `(with-open [machine (test-machine ~transport)]
+     (jackdaw.test/run-test machine
+                            ~body)))
 
 (defn- set-properties
   [properties m]

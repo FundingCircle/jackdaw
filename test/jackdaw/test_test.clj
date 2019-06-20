@@ -200,16 +200,16 @@
                                                                                      "application.id" "test-echo-stream"})
                                                   :topics {:in test-in
                                                            :out test-out}})
-        (fn [machine]
-          (jd.test/run-test machine
-                            [[:write! :in {:id "1" :payload "foo"} {:key-fn :id}]
-                             [:write! :in {:id "2" :payload "bar"} {:key-fn :id}]
-                             [:watch (fn [journal]
-                                       (when (->> (get-in journal [:topics :out])
-                                                  (filter (fn [r]
-                                                            (= (get-in r [:value :id]) "2")))
-                                                  (not-empty))
-                                         true)) {:timeout 2000}]])))
+
+        [[:write! :in {:id "1" :payload "foo"} {:key-fn :id}]
+         [:write! :in {:id "2" :payload "bar"} {:key-fn :id}]
+         [:watch (fn [journal]
+                   (when (->> (get-in journal [:topics :out])
+                              (filter (fn [r]
+                                        (= (get-in r [:value :id]) "2")))
+                              (not-empty))
+                     true)) {:timeout 2000}]])
+
       (catch Exception e
         (reset! error-raised e)))
     (is (not @error-raised))))
@@ -223,15 +223,14 @@
                                                                                      "application.id" "test-echo-stream"})
                                                   :topics {:in test-in
                                                            :out test-out}})
-        (fn [machine]
-          (jd.test/run-test machine
-                            [[:write! :in {:id "1" :payload "foo"} {:key-fn :id}]
-                             [:write! :in {:id "2" :payload "bar"} {:key-fn :id}]
-                             [:watch (fn [journal]
-                                       (->> (get-in journal [:topics :out])
-                                            (filter (fn [r]
-                                                      (= (:id r) "2")))
-                                            (not-empty)))]])))
+        
+        [[:write! :in {:id "1" :payload "foo"} {:key-fn :id}]
+         [:write! :in {:id "2" :payload "bar"} {:key-fn :id}]
+         [:watch (fn [journal]
+                   (->> (get-in journal [:topics :out])
+                        (filter (fn [r]
+                                  (= (:id r) "2")))
+                        (not-empty)))]])
       (catch Exception e
         (reset! error-raised e)))
     (is @error-raised)))
@@ -245,15 +244,14 @@
                                                                                      "application.id" "test-echo-stream"})
                                                   :topics {:in test-in
                                                            :out test-out}})
-        (fn [machine]
-          (jd.test/run-test machine
-                            [[:write! :in {:id "1" :payload "foo"} {:key-fn bad-key-fn}]
-                             [:write! :in {:id "2" :payload "bar"} {:key-fn :id}]
-                             [:watch (fn [journal]
-                                       (->> (get-in journal [:topics :out])
-                                            (filter (fn [r]
-                                                      (= (:id r) "2")))
-                                            (not-empty)))]])))
+        
+        [[:write! :in {:id "1" :payload "foo"} {:key-fn bad-key-fn}]
+         [:write! :in {:id "2" :payload "bar"} {:key-fn :id}]
+         [:watch (fn [journal]
+                   (->> (get-in journal [:topics :out])
+                        (filter (fn [r]
+                                  (= (:id r) "2")))
+                        (not-empty)))]])
       (catch Exception e
         (reset! error-raised e)))
     (is @error-raised)))
@@ -289,12 +287,10 @@
                                                                                      "application.id" "test-echo-stream"})
                                                   :topics {:in test-in
                                                            :out test-out}})
-        (fn [machine]
-          (jd.test/run-test machine
-                            [[:write! :in {:id "1" :payload "foo"} {:key-fn :id}]
-                             [:write! :in {:id "2" :payload "bar"} {:key-fn :id}]
-                             [:watch (fn [journal]
-                                       (bad-watch-fn journal))]])))
+        [[:write! :in {:id "1" :payload "foo"} {:key-fn :id}]
+         [:write! :in {:id "2" :payload "bar"} {:key-fn :id}]
+         [:watch (fn [journal]
+                   (bad-watch-fn journal))]])
       (catch Exception e
         (reset! error-raised e)))
     (is @error-raised)))
