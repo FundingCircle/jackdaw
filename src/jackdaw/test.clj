@@ -222,10 +222,9 @@
     (f machine)))
 
 (defmacro with-test-machine
-  [transport & body]
-  `(with-open [machine (test-machine ~transport)]
-     (jackdaw.test/run-test machine
-                            ~body)))
+  [transport-config instructions]
+  `(with-open [machine (jackdaw.test.transports/test-machine ~transport-config)]
+     (jackdaw.test/run-test machine ~instructions)))
 
 (defn- set-properties
   [properties m]
