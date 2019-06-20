@@ -64,7 +64,7 @@ streams app are described below
 (defn topology-builder
   [topic-metadata]
   (fn [builder]
-    (let [text-input (j/kstream builder (:input topic-metadata))]
+    (let [text-input (j/kstream builder (:input topic-metadata))
 
           counts (-> text-input
                      (j/flat-map-values split-lines)
