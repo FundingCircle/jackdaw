@@ -2,7 +2,7 @@
   "Helper function for creating serdes."
   (:require [clojure.java.io :as io]
             [clojure.spec.alpha :as s]
-            [jackdaw.serdes.avro.confluent]
+            [jackdaw.serdes.avro.confluent :as c-avro]
             [jackdaw.serdes.edn]
             [jackdaw.serdes.json]
             [jackdaw.serdes]
@@ -48,27 +48,18 @@
         (apply hash-map options)]
 
     (fn [{:keys [serde-keyword schema schema-filename key?] :as serde-config}]
-      (if-not (s/valid? :jackdaw.specs/serde-keyword serde-keyword)
+      (when-not (s/valid? :jackdaw.specs/serde-keyword serde-keyword)
         (throw (ex-info "Invalid serde config."
-                        (s/explain-data :jackdaw.specs/serde-keyword serde-keyword)))
-
-        (as-> serde-config %
-
-          (if (some? schema-filename)
-            (assoc % :schema (load-schema %))
-            %)
-
-          (if (some? schema)
-            (assoc % :schema schema)
-            %)
-
-          (assoc % ::serde (find-serde-var %))
-
-          (if (some? (:schema %))
-            (if-not (s/valid? :jackdaw.serde/confluent-avro-serde %)
-              (throw (ex-info "Invalid serde config."
-                              (s/explain-data :jackdaw.serde/confluent-avro-serde %)))
-              ((::serde %) schema-registry-url (:schema %) key?
-               {:type-registry type-registry
-                :schema-registry-client schema-registry-client}))
-            ((::serde %))))))))
+                        (s/explain-data :jackdaw.specs/serde-keyword serde-keyword))))
+      (let [schema (cond
+                     schema-filename (load-schema serde-config)
+                     schema          schema)
+            serde-fn (find-serde-var serde-config)]
+        (case serde-keyword
+          :jackdaw.serdes.avro.confluent/serde
+          (if-not (s/valid? :jackdaw.serde/confluent-avro-serde serde-config)
+            (throw (ex-info "Invalid serde config."
+                            (s/explain-data :jackdaw.serde/confluent-avro-serde serde-config)))
+            (serde-fn schema-registry-url schema key? {:type-registry type-registry
+                                                       :schema-registry-client schema-registry-client}))
+          (serde-fn))))))

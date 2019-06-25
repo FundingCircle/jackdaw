@@ -516,15 +516,19 @@
     clj-serializer))
 
 (defn- deserializer [schema->coercion serde-config]
-  (let [{:keys [registry-client registry-url avro-schema key?]} serde-config
-        base-deserializer (KafkaAvroDeserializer. registry-client)
+  (let [{:keys [registry-client registry-url avro-schema key?
+                deserializer-properties]} serde-config
+        base-deserializer (KafkaAvroDeserializer. registry-client (let [min-props {"schema.registry.url" registry-url}]
+                                                                    (merge min-props deserializer-properties)))
         methods {:close       (fn [_]
                                 (.close base-deserializer))
                  :configure   (fn [_ base-config key?]
                                 (.configure base-deserializer base-config key?))
                  :deserialize (fn [_ topic raw-data]
                                 (try
-                                  (let [avro-data (.deserialize base-deserializer topic raw-data)]
+                                  (let [avro-data (if (get deserializer-properties "specific.avro.reader")
+                                                    (.deserialize base-deserializer topic raw-data avro-schema)
+                                                    (.deserialize base-deserializer topic raw-data))]
                                     ;; Note that `.deserialize` will return EITHER a Java Object, or
                                     ;; a ^GenericContainer. ^GenericContainer is only produced when
                                     ;; there was a schema associated with the deserialized data, and
@@ -532,7 +536,9 @@
                                     (if (instance? GenericContainer avro-data)
                                       (let [schema (.getSchema ^GenericContainer avro-data)
                                             coercion-type (schema->coercion schema)]
-                                        (assert (match-avro? coercion-type avro-data))
+                                        ;; This assertion fails when we try to deserialize with a custom reader spec
+                                        ;; but should we leave it in when 'specific.avro.reader' is false?
+                                        ;; (assert (match-avro? coercion-type avro-data))
                                         (avro->clj coercion-type avro-data))
                                       ;; Schemaless data can't have coercion
                                       avro-data))
@@ -600,7 +606,8 @@
     :as   registry-config}
    {:keys [avro/schema
            avro/coercion-cache
-           key?]
+           key?
+           deserializer-properties]
     :as   topic-config}]
 
   (when-not url
@@ -640,5 +647,5 @@
 
         ;; The final serdes based on the (cached) coercion stack.
         avro-serializer (serializer schema->coercion config)
-        avro-deserializer (deserializer schema->coercion config)]
+        avro-deserializer (deserializer schema->coercion (assoc config :deserializer-properties deserializer-properties))]
     (Serdes/serdeFrom avro-serializer avro-deserializer)))
