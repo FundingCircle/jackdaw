@@ -9,7 +9,7 @@
 
   :dependencies [[aleph "0.4.6"]
                  [clj-time "0.15.1"]
-                 [danlentz/clj-uuid "0.1.7"
+                 [danlentz/clj-uuid "0.1.9"
                   :exclusions [primitive-math]]
                  ;; Confluent does paired releases with Kafka, this should tie
                  ;; off with the kafka version.
@@ -18,10 +18,10 @@
                  [io.confluent/kafka-schema-registry-client "5.1.2"
                   :exclusions [com.fasterxml.jackson.core/jackson-databind]]
                  [io.confluent/kafka-avro-serializer "5.1.2"]
-                 [org.apache.kafka/kafka-clients "2.2.0"]
-                 [org.apache.kafka/kafka-streams "2.2.0"]
-                 [org.apache.kafka/kafka_2.11 "2.2.0"]
-                 [org.apache.kafka/kafka-streams-test-utils "2.2.0"]
+                 [org.apache.kafka/kafka-clients "2.3.0"]
+                 [org.apache.kafka/kafka-streams "2.3.0"]
+                 [org.apache.kafka/kafka_2.11 "2.3.0"]
+                 [org.apache.kafka/kafka-streams-test-utils "2.3.0"]
                  [org.clojure/clojure "1.9.0" :scope "provided"]
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/tools.logging "0.4.1"]
@@ -68,8 +68,8 @@
 
               :injections [(require 'io.aviso.logging.setup)]
               :dependencies [[io.aviso/logging "0.3.1"]
-                             [org.apache.kafka/kafka-streams-test-utils "2.2.0"]
-                             [org.apache.kafka/kafka-clients "2.2.0" :classifier "test"]
+                             [org.apache.kafka/kafka-streams-test-utils "2.3.0"]
+                             [org.apache.kafka/kafka-clients "2.3.0" :classifier "test"]
                              [org.clojure/test.check "0.9.0"]]}
 
              :test
