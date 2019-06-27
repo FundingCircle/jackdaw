@@ -31,15 +31,23 @@
   (avro/make-coercion-stack
    +registry+))
 
-(defn ->serde [schema-str]
-  (let [schema-registry-config
-        {:avro.schema-registry/client (reg/mock-client)
-         :avro.schema-registry/url    "localhost:8081"}
+(defn ->serde
+  ([schema-str]
+   (->serde schema-str (reg/mock-client)))
 
-        serde-config
-        {:avro/schema schema-str
-         :key?        false}]
-    (avro/serde +registry+ schema-registry-config serde-config)))
+  ([schema-str registry-client]
+   (let [serde-config {:avro/schema schema-str
+                       :key?        false}]
+     (->serde schema-str registry-client serde-config)))
+
+  ([schema-str registry-client serde-config]
+   (let [serde-config (merge {:avro/schema schema-str
+                              :key?        false}
+                             serde-config)
+         schema-registry-config
+         {:avro.schema-registry/client registry-client
+          :avro.schema-registry/url    "localhost:8081"}]
+     (avro/serde +registry+ schema-registry-config serde-config))))
 
 (defn deserialize [serde topic x]
   (let [deserializer (.deserializer serde)]
@@ -58,6 +66,15 @@
         deserializer (.deserializer serde)]
     (.deserialize deserializer topic
                   (.serialize serializer topic x))))
+
+(defn decoupled-round-trip [write-serde
+                            read-serde
+                            topic x xform]
+  (let [serializer (.serializer write-serde)
+        deserializer (.deserializer read-serde)]
+    (->> (.serialize serializer topic x)
+         (.deserialize deserializer topic)
+         xform)))
 
 (defn byte-buffer->string [^ByteBuffer buffer]
   (String. (.array buffer)))
@@ -523,3 +540,42 @@
 
     (is (thrown? java.lang.IllegalArgumentException
                  (round-trip serde "bananas" {:hello 3})))))
+
+
+(deftest decoupled-reader-simple-string-schema
+  (let [reg-client (reg/mock-client)
+        write-schema (json/write-str {:type "string"})
+        read-schema nil
+        write-serde (->serde write-schema reg-client)
+        read-serde (->serde read-schema reg-client)]
+
+    (is (= "yolo" (decoupled-round-trip write-serde
+                                        read-serde
+                                        "bananas"
+                                        "yolo"
+                                        identity)))))
+
+(deftest decoupled-reader-compatible-schema
+  (let [reg-client (reg/mock-client)
+        write-schema (-> {:name "testRecord"
+                          :type "record"
+                          :fields [{:name "a"
+                                    :type "string"}]}
+                         json/write-str)
+        read-schema (-> {:name "testRecord"
+                         :type "record"
+                         :fields [{:name "a"
+                                   :type "string"}
+                                  {:name "b"
+                                   :type "string"
+                                   :default "yolo"}]}
+                        json/write-str)]
+
+    (testing "use custom reader schema"
+      (is (= {:a "hello"
+              :b "yolo"}
+             (decoupled-round-trip (->serde write-schema reg-client)
+                                   (->serde read-schema reg-client {:deserializer-properties {"specific.avro.reader" true}})
+                                   "bananas"
+                                   {:a "hello"}
+                                   identity))))))
