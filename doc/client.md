@@ -6,11 +6,16 @@ The Jackdaw Client API wraps the core Kafka `Producer`<sup>[1](#producerapi)</su
 `Consumer`<sup>[2](#consumerapi)</sup> APIs and provides functions for building or
 unpacking some of the supporting objects like Callbacks, Serdes, ConsumerRecords etc.
 
+Higher level concepts in the kafka ecosystem like Kafka Streams, Kafka Connect, and KSQL all
+build on these core APIs so acquiring a deep understanding will be rewarded with increased
+understanding of the many associated technologies.
+
 While Kafka's surface API is quite small, the functionality it provides is deep. You
 can get up and running very quickly with a simple example but to fully understand it's
 capabilities there is no substitute for reading the upstream documentation. The
-scope of this guide therefore is limited to demonstrating how to use API via Jackdaw
-and connecting the relevant parts of the documentation for further reading.
+scope of this guide is therefore limited to demonstrating how to use API via Jackdaw
+and connecting the reader to the relevant parts of the upstream documentation for
+further reading.
 
 ## Producing
 
@@ -22,14 +27,15 @@ important options.
  * "bootstrap.servers=localhost:9092" tells the producer to establish a connection with
    the kafka broker running on the default port at localhost
 
- * "client.id=com.foo.my-producer" means that the string com.foo.my-producer will be used
-   in all requests to brokers so that they can be distinguished by more than just host and IP.
-   It will also form part of name of the metrics reported by both brokers and the producing
-   application itself
+ * "client.id=foo" means that the string 'foo' will be used in all requests to brokers so
+   that they can be distinguished by more than just host and IP. It will also form part of
+   name of the metrics reported by both brokers and the producing application itself
 
  * "acks=all" means that the leader will wait for the full set of in-sync replicas to
    acknowledge the result and complete the response. This is the slowest but most durable
-	 setting.
+   setting. The default is '1' which means that the leader will respond as soon as the record
+   has been written to it's own log. This allows faster throughput at the cost of reduced
+   durability.
 
 Producers are usually created using the `with-open` macro so that they are automatically
 closed either when evaluation reaches the end of the body or an exception is thrown. By
@@ -42,7 +48,7 @@ for the result of the Kafka `.send` call which includes metadata like the timest
 and offset of the written record.
 
 The [KafkaProducer javadocs](https://kafka.apache.org/20/javadoc/org/apache/kafka/clients/producer/KafkaProducer.html)
-provides more detailed information about how the producer works behind the scenes.
+provide more detailed information about how the producer works behind the scenes.
 
 
 ```
@@ -53,7 +59,7 @@ provides more detailed information about how the producer works behind the scene
 (def producer-config
   {"bootstrap.servers" "localhost:9092"
    "acks" "all"
-   "client.id" "com.foo.my-producer"})
+   "client.id" "foo"})
 
 (with-open [my-producer (jc/producer producer-config)]
   @(jc/produce! my-producer "foo" "1" "hi mom!"))
@@ -85,7 +91,7 @@ write the record to standard out to demonstrate the keys that are available in e
 see what other keys are available, see data/consumer.clj<sup>[6](#consumerdata)</sup>
 
 The [KafkaConsumer javadocs](https://kafka.apache.org/20/javadoc/org/apache/kafka/clients/consumer/KafkaConsumer.html)
-provides more detailed information about how the consumer works behind the scenes.
+provide more detailed information about how the consumer works behind the scenes.
 
 ```
 (ns consumer-example
