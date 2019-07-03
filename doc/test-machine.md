@@ -134,7 +134,7 @@ see the functions in the jackdaw.test.fixtures namespace.
 
 ### Wrapping up
 
-You make find it helpful to write a function to tie it all together and invoke
+You may find it helpful to write a function to tie it all together and invoke
 your test function `f` with a machine after performing any setup required. Since
 this typically involves some knowledge of the system under test, it's likely
 better that you write this macro yourself so that you can tailor it to your own
