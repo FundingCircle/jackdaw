@@ -121,7 +121,7 @@
             (is (= :ok (:status write-result)))
 
             (doseq [record-meta record-meta-fields]
-              (is (contains? write-result record-meta))))
+              (is (contains? (:result write-result) record-meta))))
 
           (testing "watch result"
             (is (= :ok (:status watch-result))))

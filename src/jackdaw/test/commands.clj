@@ -21,7 +21,8 @@
     (if handler
       ;; Happy
       (let [result (handler machine cmd params)]
-        (assoc result
+        (assoc {}
+               :result result
                :cmd cmd
                :params params))
       ;; else Sad
