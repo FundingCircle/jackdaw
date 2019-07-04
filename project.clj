@@ -71,7 +71,7 @@
                              [org.apache.kafka/kafka-streams-test-utils "2.2.0"]
                              [org.apache.kafka/kafka-clients "2.2.0" :classifier "test"]
                              [org.clojure/test.check "0.9.0"]]
-              :plugins [[jonase/eastwood "0.3.3"]]}
+              :plugins [[jonase/eastwood "0.3.6"]]}
 
              :test
              {:resource-paths ["test/resources"]

@@ -1,4 +1,4 @@
-(ns jackdaw.client-test
+(ns jackdaw.client.partitioning-test
   (:require
    [clojure.test :refer :all]
    [jackdaw.client :as client]
