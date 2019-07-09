@@ -20,7 +20,7 @@
        boolean))
 
 (defn stop
-  "Starts ZooKeeper and Kafka."
+  "Stops ZooKeeper and Kafka."
   []
   (sh "confluent" "destroy")
   (println "schema-registry is down")
