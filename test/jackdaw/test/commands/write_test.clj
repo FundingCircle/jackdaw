@@ -87,10 +87,10 @@
         opts {}
         msg {:id 1 :a 2 :b 3 :payload "yolo"}]
 
-    (testing "fallback to global default"
-      (is (= (write/default-partition-fn foos 1)
-             (-> (write/create-message foos msg opts)
-                 :partition))))
+      (testing "fallback to global default"
+          (is (= (write/default-partition-fn foos (:topic-name foos) 1 msg 1)
+                 (-> (write/create-message foos msg opts)
+                     :partition))))
 
     (testing "topic with :partition-fn"
       (let [foos (assoc foos :partition-fn (constantly 2))]
@@ -124,7 +124,7 @@
     (testing "partition must be < partition count"
         (is (thrown-with-msg? ExceptionInfo #"Invalid partition number for topic"
                (-> (write/create-message foos msg {:partition 5})
-                     :partition))))))
+                   :partition))))))
 
 (deftest test-create-message
   (test-key-defaults)
