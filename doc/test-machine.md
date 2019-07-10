@@ -56,7 +56,7 @@ to these services in a shared environment like uat/staging.
   (let [t (trns/transport {:type :confluent-rest-proxy
                            :config remote-kafka-config
                            :topics topic-config})]
-   (j.t/test-machine {:transport t})))
+   (j.t/test-machine t)))
 ```
 
 ### Serialization/Deserialization
