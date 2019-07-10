@@ -31,7 +31,8 @@ to these services in a shared environment like uat/staging.
 (ns my.app-test
   (:require
     [my.app :as app]
-    [jackdaw.test :as j.t]))
+    [jackdaw.test :as j.t]
+    [jackdaw.test.transports :as trns]))
 
 (def local-kafka-config
   {"bootstrap.servers" "localhost:9092"
@@ -49,13 +50,13 @@ to these services in a shared environment like uat/staging.
   (let [t (trns/transport {:type :kafka
                            :config local-kafka-config
                            :topics topic-config})]
-    (test-machine {:transport t})))
+    (j.t/test-machine {:transport t})))
     
 (def remote-machine []
   (let [t (trns/transport {:type :confluent-rest-proxy
                            :config remote-kafka-config
                            :topics topic-config})]
-   (test-machine {:transport t})))
+   (j.t/test-machine {:transport t})))
 ```
 
 ### Serialization/Deserialization
@@ -93,7 +94,7 @@ type of operation this command represents, and subsequent items being command
 specific arguments. Currently the following commands are the supported.
 
 ```clojure
-  :write!   [topic-id msg opts]  Writes to the 
+  :write!   [topic-id msg opts]  Writes a message to the topic (Opts supports :key-fn, :partition, :partition-fn, :key, :timeout)
   :watch    [f opts]             Blocks until `(f @journal)` returns truthy
   :stop     []                   Stops processing commands. All subsequent commands
                                  are ignored
