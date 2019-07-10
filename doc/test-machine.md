@@ -83,7 +83,7 @@ cleanly when you are finished with a machine.
 ```clojure
 (deftest test-my-app
   (with-open [machine (local-machine))]
-    (let [result (run-test machine test-commands)]
+    (let [result (j.t/run-test machine test-commands)]
       (is (all-ok? result))))
 ```
 
