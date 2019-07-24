@@ -430,14 +430,13 @@
 (deftype CljKGroupedTable [^KGroupedTable kgroupedtable]
   IKGroupedBase
   (aggregate
-    [_ initializer-fn adder-fn subtractor-fn
-     {:keys [topic-name value-serde]}]
+    [_ initializer-fn adder-fn subtractor-fn topic]
     (clj-ktable
      (.aggregate ^KGroupedTable kgroupedtable
                  ^Initializer (initializer initializer-fn)
                  ^Aggregator (aggregator adder-fn)
                  ^Aggregator (aggregator subtractor-fn)
-                 (doto (Materialized/as ^String topic-name) (.withValueSerde value-serde)))))
+                 ^Materialized (topic->materialized topic))))
 
   (aggregate
     [_ initializer-fn adder-fn subtractor-fn]
@@ -486,12 +485,12 @@
 (deftype CljKGroupedStream [^KGroupedStream kgroupedstream]
   IKGroupedBase
   (aggregate
-    [_ initializer-fn aggregator-fn {:keys [topic-name value-serde]}]
+    [_ initializer-fn aggregator-fn topic]
     (clj-ktable
      (.aggregate ^KGroupedStream kgroupedstream
                  ^Initializer (initializer initializer-fn)
                  ^Aggregator (aggregator aggregator-fn)
-                 (doto (Materialized/as ^String topic-name) (.withValueSerde value-serde)))))
+                 ^Materialized (topic->materialized topic))))
 
   (aggregate
     [_ initializer-fn aggregator-fn]
@@ -547,12 +546,12 @@
 (deftype CljTimeWindowedKStream [^TimeWindowedKStream windowed-kstream]
   IKGroupedBase
   (aggregate
-    [_ initializer-fn aggregator-fn {:keys [topic-name value-serde]}]
+    [_ initializer-fn aggregator-fn topic]
     (clj-ktable
      (.aggregate ^TimeWindowedKStream windowed-kstream
                  ^Initializer (initializer initializer-fn)
                  ^Aggregator (aggregator aggregator-fn)
-                 (doto (Materialized/as ^String topic-name) (.withValueSerde value-serde)))))
+                 ^Materialized (topic->materialized topic))))
 
   (count
     [_]
@@ -585,13 +584,13 @@
 (deftype CljSessionWindowedKStream [^SessionWindowedKStream windowed-kstream]
   IKGroupedBase
   (aggregate
-    [_ initializer-fn aggregator-fn merger-fn {:keys [topic-name value-serde]}]
+    [_ initializer-fn aggregator-fn merger-fn topic]
     (clj-ktable
      (.aggregate ^SessionWindowedKStream windowed-kstream
                  ^Initializer (initializer initializer-fn)
                  ^Aggregator (aggregator aggregator-fn)
                  ^Merger (merger merger-fn)
-                 (doto (Materialized/as ^String topic-name) (.withValueSerde value-serde)))))
+                 ^Materialized (topic->materialized topic))))
 
   (count
     [_]
