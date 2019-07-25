@@ -2,7 +2,7 @@
   ""
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [clojure.spec.alpha :as s]
-            [jackdaw.specs :as js]
+            [jackdaw.specs]
             [jackdaw.streams :as k]
             [jackdaw.streams.lambdas :as lambdas]
             [jackdaw.streams.protocols

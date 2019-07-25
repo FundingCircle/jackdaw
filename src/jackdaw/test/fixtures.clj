@@ -4,10 +4,8 @@
    [aleph.http :as http]
    [clojure.java.io :as io]
    [clojure.tools.logging :as log]
-   [jackdaw.client :as kafka]
    [jackdaw.streams :as k]
    [jackdaw.streams.interop :refer [streams-builder]]
-   [jackdaw.test :as jdt]
    [jackdaw.test.transports.kafka :as kt]
    [jackdaw.test.serde :refer [byte-array-serializer byte-array-deserializer]]
    [manifold.deferred :as d]
@@ -28,7 +26,7 @@
 
 (defn list-topics
   [client]
-   (.listTopics client))
+  (.listTopics client))
 
 (defn- create-topics
   "Creates "

@@ -5,8 +5,7 @@
   It begins with Pipe which is then extended using an interactive
   workflow. The result is a simple ledger."
   (:gen-class)
-  (:require [clojure.string :as str]
-            [clojure.spec.alpha :as s]
+  (:require [clojure.spec.alpha :as s]
             [clojure.tools.logging :refer [info]]
             [clj-uuid :as uuid]
             [jackdaw.streams :as j]
@@ -105,10 +104,7 @@
 
 
   ;; Read from the output stream.
-  (get-keyvals (topic-config "ledger-transaction-added"))
-
-
-  )
+  (get-keyvals (topic-config "ledger-transaction-added")))
 
 
 (comment
@@ -200,10 +196,7 @@
 
 
   ;; Read from the output stream.
-  (get-keyvals (topic-config "ledger-transaction-added"))
-
-
-  )
+  (get-keyvals (topic-config "ledger-transaction-added")))
 
 
 (comment
@@ -281,10 +274,7 @@
 
 
   ;; Read from the output stream (again).
-  (get-keyvals (topic-config "ledger-transaction-added"))
-
-
-  )
+  (get-keyvals (topic-config "ledger-transaction-added")))
 
 
 (comment
@@ -337,10 +327,7 @@
 
   ;; Read from the output stream ("foo" only).
   (->> (get-keyvals (topic-config "ledger-transaction-added"))
-       (filter (fn [[k v]] (= "foo" k))))
-
-
-  )
+       (filter (fn [[k v]] (= "foo" k)))))
 
 
 (comment
@@ -424,7 +411,4 @@
 
   ;; Read from the output stream ("foo" only).
   (->> (get-keyvals (topic-config "ledger-transaction-added"))
-       (filter (fn [[k v]] (= "foo" k))))
-
-
-  )
+       (filter (fn [[k v]] (= "foo" k)))))

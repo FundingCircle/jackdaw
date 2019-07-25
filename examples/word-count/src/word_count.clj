@@ -261,7 +261,7 @@
   (->> (get-keyvals (:output topic-metadata))
        (into {})
        (sort-by second)
-       reverse)
+       reverse))
 
   ;; You should see output like the following:
   ;; ```
@@ -287,5 +287,3 @@
   ;;  ["would" 187]
   ;;  ...)
   ;; ```
-
-  )

@@ -6,7 +6,6 @@
    [manifold.deferred :as d]
    [jackdaw.client :as kafka]
    [jackdaw.data :as jd]
-   [jackdaw.test.commands :as cmd]
    [jackdaw.test.journal :as j]
    [jackdaw.test.transports :as t :refer [deftransport]]
    [jackdaw.test.serde :refer [apply-serializers apply-deserializers

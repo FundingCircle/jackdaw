@@ -2,7 +2,6 @@
   (:require
    [clojure.stacktrace :as stacktrace]
    [clojure.tools.logging :as log]
-   [jackdaw.client :as kafka]
    [jackdaw.test.journal :as j]
    [jackdaw.test.transports :as t :refer [deftransport]]
    [jackdaw.test.serde :refer [byte-array-serializer byte-array-deserializer
@@ -31,7 +30,7 @@
 (defn with-input-record
   "Creates a kafka ConsumerRecord to be fed directly into a topology source
    node by the TopologyTestDriver"
-  [topic-config]
+  [_topic-config]
   (fn [m]
     (let [record (ConsumerRecord. (get-in m [:topic :topic-name])
                                   (int -1)
@@ -47,10 +46,10 @@
                                     0)
                                   (:key m)
                                   (:value m))]
-    (assoc m :input-record record))))
+     (assoc m :input-record record))))
 
 (defn with-output-record
-  [topic-config]
+  [_topic-config]
   (fn [r]
     {:topic (.topic r)
      :key (.key r)

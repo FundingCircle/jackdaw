@@ -1,6 +1,5 @@
 (ns jackdaw.test.transports.rest-proxy-test
   (:require
-   [aleph.http :as http]
    [clojure.tools.logging :as log]
    [clojure.test :refer :all]
    [jackdaw.streams :as k]
@@ -9,7 +8,6 @@
    [jackdaw.test.serde :as serde]
    [jackdaw.test.journal :refer [with-journal watch-for]]
    [jackdaw.test.transports :as trns]
-   [jackdaw.test.transports.rest-proxy :as rest-proxy]
    [manifold.stream :as s])
   (:import
    (java.util Properties)))

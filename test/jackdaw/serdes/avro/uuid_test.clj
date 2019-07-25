@@ -2,8 +2,7 @@
   (:require [clojure.test :refer [deftest is testing]]
             [jackdaw.serdes.avro :as avro]
             [clojure.data.json :as json]
-            [clj-uuid :as uuid]
-            [clojure.java.io :as io])
+            [clj-uuid :as uuid])
   (:import (org.apache.avro Schema$Parser)
            (org.apache.avro.generic GenericData$Record)
            (org.apache.avro.util Utf8)))

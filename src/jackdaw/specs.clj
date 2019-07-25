@@ -2,8 +2,6 @@
   "Specs for `jackdaw`"
   (:require [clojure.spec.alpha :as s]))
 
-
-
 ;; The basic topic
 
 (s/def ::topic-name

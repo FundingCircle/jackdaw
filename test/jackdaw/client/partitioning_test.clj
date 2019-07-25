@@ -49,7 +49,6 @@
         (is (= "yolo" (.value record)))
         (is (= "42" (.key record)))
         (is (= 1 (.partition record)))
-        (is (= 0 (.timestamp record)))))
+        (is (= 0 (.timestamp record)))))))
 
     ;; TODO how are you actually supposed to inject headers?
-    ))

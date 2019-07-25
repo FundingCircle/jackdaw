@@ -8,7 +8,7 @@
   @+transports+)
 
 (defmethod transport :default
-  [cfg]
+  [_cfg]
   (throw (ex-info "unable to find transport to satisfy config" {})))
 
 (defmacro deftransport [transport-type args & body]

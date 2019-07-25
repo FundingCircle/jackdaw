@@ -52,8 +52,6 @@
    :partition (.partition pr)
    :timestamp (.timestamp pr)})
 
-(comment
-  )
 
 ;;; Record metadata
 

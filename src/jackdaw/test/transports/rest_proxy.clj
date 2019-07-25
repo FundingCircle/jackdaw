@@ -33,7 +33,7 @@
       (.decode decoder decodable))))
 
 (defn undatafy-record
-  [topic-metadata m]
+  [_topic-metadata m]
   (-> m
       (update :key base64-decode)
       (update :value base64-decode)))

@@ -1,7 +1,6 @@
 (ns jackdaw.streams-test
   "Tests of the kafka streams wrapper."
   (:require [clojure.spec.test.alpha :as stest]
-            [clojure.string :as string]
             [clojure.test :refer :all]
             [jackdaw.streams :as k]
             [jackdaw.streams.configurable :as cfg]
@@ -181,21 +180,21 @@
   ;; there is no good way to rest this until fix version 2.1.0
   ;; https://issues.apache.org/jira/browse/KAFKA-7326
   #_(testing "print!"
-    (let [std-out System/out
-          mock-out (java.io.ByteArrayOutputStream.)]
+     (let [std-out System/out
+           mock-out (java.io.ByteArrayOutputStream.)]
 
-      (try
-        (System/setOut (java.io.PrintStream. mock-out))
-        (let [topic-a (mock/topic "topic-a")
-              driver (mock/build-driver (fn [builder]
-                                          (-> builder
-                                              (k/kstream topic-a)
-                                              (k/print!))))
-              publish (partial mock/publish driver topic-a)]
-          (publish 1 1)
-          (is (= "[KSTREAM-SOURCE-0000000000]: 1, 2\n" (.toString mock-out))))
-        (finally
-          (System/setOut std-out)))))
+       (try
+         (System/setOut (java.io.PrintStream. mock-out))
+         (let [topic-a (mock/topic "topic-a")
+               driver (mock/build-driver (fn [builder]
+                                           (-> builder
+                                               (k/kstream topic-a)
+                                               (k/print!))))
+               publish (partial mock/publish driver topic-a)]
+           (publish 1 1)
+           (is (= "[KSTREAM-SOURCE-0000000000]: 1, 2\n" (.toString mock-out))))
+         (finally
+           (System/setOut std-out)))))
 
   (testing "through"
     (testing "without partitions"
@@ -229,10 +228,10 @@
 
 
         (is (= [{:key 1
-               :value 1
-               :partition 10}] (map #(select-keys % [:key :value :partition])
-                                      (mock/get-records driver
-                                                        topic-b))))
+                 :value 1
+                 :partition 10}] (map #(select-keys % [:key :value :partition])
+                                       (mock/get-records driver
+                                                         topic-b))))
 
         (is (= [[1 1]] (mock/get-keyvals driver topic-c))))))
 
@@ -385,7 +384,7 @@
       (let [keyvals (mock/get-keyvals driver topic-c)]
         (is (= 3 (count keyvals)))
         (is (= [1 1] (first keyvals)))
-        (is (= [1 3] (second keyvals )))
+        (is (= [1 3] (second keyvals)))
         (is (= [1 4] (nth keyvals 2))))))
 
   (testing "process!"
@@ -439,7 +438,7 @@
 
       (let [keyvals (mock/get-keyvals driver topic-b)]
         (is (= [2 1] (first keyvals)))
-        (is (= [2 3] (second keyvals )))
+        (is (= [2 3] (second keyvals)))
         (is (= [2 7] (nth keyvals 2))))))
 
   (testing "transform-values"
@@ -466,7 +465,7 @@
       (let [keyvals (mock/get-keyvals driver topic-b)]
         (is (= 3 (count keyvals)))
         (is (= [1 1] (first keyvals)))
-        (is (= [1 3] (second keyvals )))
+        (is (= [1 3] (second keyvals)))
         (is (= [1 7] (nth keyvals 2))))))
 
   (testing "kstreams"

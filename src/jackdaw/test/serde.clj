@@ -1,7 +1,6 @@
 (ns jackdaw.test.serde
   (:require
    [clojure.tools.logging :as log]
-   [jackdaw.serdes.avro :as avro-serde]
    [jackdaw.serdes.edn :as edn-serde]
    [jackdaw.serdes.json :as json-serde])
   (:import

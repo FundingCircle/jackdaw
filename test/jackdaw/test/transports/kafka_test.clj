@@ -7,8 +7,6 @@
    [jackdaw.test.fixtures :as fix]
    [jackdaw.test.journal :refer [with-journal watch-for]]
    [jackdaw.test.serde :as serde]
-   [jackdaw.test.transports :as trns]
-   [jackdaw.test.transports.mock :as mock]
    [jackdaw.test.transports.kafka]
    [manifold.stream :as s])
   (:import

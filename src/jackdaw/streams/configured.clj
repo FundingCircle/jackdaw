@@ -79,10 +79,10 @@
      (left-join kstream ktable value-joiner-fn)))
 
   (left-join
-  [_ ktable value-joiner-fn topic-config other-topic-config]
-  (configured-kstream
-    config
-    (left-join kstream ktable value-joiner-fn topic-config other-topic-config)))
+   [_ ktable value-joiner-fn topic-config other-topic-config]
+   (configured-kstream
+     config
+     (left-join kstream ktable value-joiner-fn topic-config other-topic-config)))
 
   (filter
     [_ predicate-fn]
@@ -137,8 +137,8 @@
   IKStream
   (branch
     [_ predicate-fns]
-     (mapv (partial configured-kstream config)
-           (branch kstream predicate-fns)))
+    (mapv (partial configured-kstream config)
+          (branch kstream predicate-fns)))
 
   (flat-map
     [_ key-value-mapper-fn]
