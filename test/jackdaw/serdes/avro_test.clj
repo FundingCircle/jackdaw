@@ -512,6 +512,16 @@
                                                              "topic"
                                                              (uuid/to-string uuid/+null+))))))))
 
+(deftest record-metadata
+  (let [schema {:type "record"
+                :name "MyRecord"
+                :namespace "com.fundingcircle"
+                :fields [{:name "field1" :type "string"}]}
+        serde  (->serde (json/write-str schema))]
+
+    (is (= {:name "MyRecord" :fullname "com.fundingcircle.MyRecord"}
+           (meta (round-trip serde "whatever" {:field1 "foo"}))))))
+
 (deftest schemaless-test
   (let [serde (->serde nil)]
     (is (= (round-trip serde "bananas" "hello")

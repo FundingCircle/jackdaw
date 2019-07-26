@@ -399,21 +399,24 @@
 
   (avro->clj [_ avro-record]
     (when avro-record
-      (into {}
-            (comp (map first)
-                  (map (fn [^Schema$Field field]
-                         (let [field-name (.name field)
-                               field-key (keyword (unmangle field-name))
-                               [_ field-coercion :as entry] (get field->schema+coercion field-key)
-                               value (.get ^GenericData$Record avro-record field-name)]
-                           (when-not field-coercion
-                             (throw (ex-info "Unable to deserialize field"
-                                             {:field field
-                                              :field-name field-name
-                                              :field-key field-key
-                                              :entry entry})))
-                           [field-key (avro->clj field-coercion value)]))))
-            (vals field->schema+coercion))))
+      (with-meta
+        (into {}
+              (comp (map first)
+                    (map (fn [^Schema$Field field]
+                           (let [field-name (.name field)
+                                 field-key (keyword (unmangle field-name))
+                                 [_ field-coercion :as entry] (get field->schema+coercion field-key)
+                                 value (.get ^GenericData$Record avro-record field-name)]
+                             (when-not field-coercion
+                               (throw (ex-info "Unable to deserialize field"
+                                               {:field field
+                                                :field-name field-name
+                                                :field-key field-key
+                                                :entry entry})))
+                             [field-key (avro->clj field-coercion value)]))))
+              (vals field->schema+coercion))
+        {:name (.getName schema)
+         :fullname (.getFullName schema)})))
 
   (clj->avro [_ clj-map path]
     (when-not (map? clj-map)
