@@ -519,7 +519,7 @@
                 :fields [{:name "field1" :type "string"}]}
         serde  (->serde (json/write-str schema))]
 
-    (is (= {:name "MyRecord" :fullname "com.fundingcircle.MyRecord"}
+    (is (= {:name "MyRecord" :full-name "com.fundingcircle.MyRecord"}
            (meta (round-trip serde "whatever" {:field1 "foo"}))))))
 
 (deftest schemaless-test
