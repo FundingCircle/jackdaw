@@ -92,7 +92,4 @@
 
 
   ;; Read from the output stream.
-  (get-keyvals (topic-config "output"))
-
-
-  )
+  (get-keyvals (topic-config "output")))

@@ -2,8 +2,6 @@
   (:require
    [clojure.tools.logging :as log]
    [manifold.stream :as s]
-   [manifold.deferred :as d]
-   [jackdaw.test.journal :as j]
    [jackdaw.test.transports :as t :refer [deftransport]]))
 
 (defn identity-consumer

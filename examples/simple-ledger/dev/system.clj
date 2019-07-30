@@ -3,8 +3,7 @@
   development.
   The `system/start` and `system/stop` functions are required by the
   `user` namespace and should not be called directly."
-  (:require [clojure.string :as str]
-            [clojure.tools.logging :as log]
+  (:require [clojure.tools.logging :as log]
             [clojure.java.shell :refer [sh]]
             [jackdaw.admin :as ja]
             [simple-ledger]))
@@ -53,8 +52,7 @@
   (let [app-id (application-id (simple-ledger/app-config))
         re (re-pattern (str "(ledger-entries-requested"
                             "|ledger-transaction-added"
-                            "|" (application-id
-                                 (simple-ledger/app-config))
+                            "|" app-id
                             ".*)"))]
     (re-delete-topics re)
     (destroy-state-stores (simple-ledger/app-config))))

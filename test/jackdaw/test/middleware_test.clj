@@ -75,7 +75,7 @@
           (is (= {:topics {}}
                  (:journal-before (snapshots-for {:topic :foo :value {:payload :abc}}))))
 
-        (testing "with-journal-snapshots records journal-after"
-          (is (= {:topics {:foo {:topic :foo
-                                 :value {:payload :abc}}}}
-                 (:journal-after (snapshots-for {:topic :foo :value {:payload :abc}}))))))))))
+         (testing "with-journal-snapshots records journal-after"
+           (is (= {:topics {:foo {:topic :foo
+                                  :value {:payload :abc}}}}
+                  (:journal-after (snapshots-for {:topic :foo :value {:payload :abc}}))))))))))

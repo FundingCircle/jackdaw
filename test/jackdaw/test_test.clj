@@ -1,11 +1,8 @@
 (ns jackdaw.test-test
   (:require
    [clojure.test :refer :all]
-   [clojure.data.json :as json]
-   [jackdaw.serdes.avro.schema-registry :as reg]
    [jackdaw.streams :as k]
    [jackdaw.test :as jd.test]
-   [jackdaw.test.commands :as cmd]
    [jackdaw.test.fixtures :as fix]
    [jackdaw.test.serde :as serde]
    [jackdaw.test.transports :as trns]
@@ -91,13 +88,13 @@
 
       (testing "execution stops on an unknown command"
         (is (thrown? NullPointerException
-         (let [{:keys [results journal]}
-               (jd.test/run-test m [[:min [1 2 3]]
-                                    [:foo 2]
-                                    [:max [1 2 3]]])]
-           (is (= 2 (count results)))
-           (is (= :ok (:status (first results))))
-           (is (= :error (:status (second results)))))))))))
+             (let [{:keys [results journal]}
+                   (jd.test/run-test m [[:min [1 2 3]]
+                                        [:foo 2]
+                                        [:max [1 2 3]]])]
+               (is (= 2 (count results)))
+               (is (= :ok (:status (first results))))
+               (is (= :error (:status (second results)))))))))))
 
 
 (deftest test-empty-test

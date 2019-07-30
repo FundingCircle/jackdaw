@@ -98,11 +98,11 @@
 
 (defn get-keyvals
   [test-driver topic-config]
-    (map #((juxt :key :value) %) (repeatedly-consume test-driver topic-config)))
+  (map #((juxt :key :value) %) (repeatedly-consume test-driver topic-config)))
 
 (defn get-records
   [test-driver topic-config]
-    (repeatedly-consume test-driver topic-config))
+  (repeatedly-consume test-driver topic-config))
 
 (defn build-driver [f]
   (let [builder (streams-builder)]

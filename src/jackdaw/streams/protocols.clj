@@ -185,7 +185,7 @@
   (outer-join
     [ktable other-ktable value-joiner-fn]
     "Combines the values of two KTables that share the same key using an outer
-    join." )
+    join.")
 
   (to-kstream
     [ktable]

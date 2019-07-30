@@ -1,7 +1,6 @@
 (ns jackdaw.test.commands.watch-test
   (:require
    [jackdaw.test.commands.watch :as watch]
-   [manifold.stream :as s]
    [manifold.deferred :as d]
    [clojure.test :refer :all]
    [clojure.tools.logging :as log]))

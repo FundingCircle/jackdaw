@@ -123,8 +123,8 @@
    {:pre [(client? client)]}
    (describe-topics client (list-topics client)))
   ([^AdminClient client topics]
-  {:pre [(client? client)
-         (sequential? topics)]}
+   {:pre [(client? client)
+          (sequential? topics)]}
    (->> @(describe-topics* client (map :topic-name topics))
         (map (fn [[k v]] [k (jd/datafy v)]))
         (into {}))))

@@ -7,8 +7,6 @@
   value is Avro and the key is a string."
   (:gen-class)
   (:require [clojure.algo.generic.functor :refer [fmap]]
-            [clojure.string :as str]
-            [clojure.java.io :as io]
             [clojure.tools.logging :refer [info]]
             [jackdaw.streams :as j]
             [jackdaw.serdes]
@@ -112,10 +110,7 @@
 
 
   ;; Read from the output stream.
-  (get-keyvals (get (topic-metadata) "output"))
-
-
-  )
+  (get-keyvals (get (topic-metadata) "output")))
 
 
 (comment
@@ -170,10 +165,7 @@
 
 
   ;; Consume from `output`.
-  (get-keyvals (get (topic-metadata) "output"))
-
-
-  )
+  (get-keyvals (get (topic-metadata) "output")))
 
 
 (comment
@@ -223,7 +215,7 @@
 
 
   ;; Consume from `output`.
-  (get-keyvals (get (topic-metadata) "output"))
+  (get-keyvals (get (topic-metadata) "output")))
 
 
-  )
+

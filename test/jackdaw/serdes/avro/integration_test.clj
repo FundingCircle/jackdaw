@@ -1,7 +1,6 @@
 (ns jackdaw.serdes.avro.integration-test
   (:require [clj-uuid :as uuid]
             [clojure.core.cache :as cache]
-            [clojure.data.json :as json]
             [clojure.java.io :as io]
             [clojure.test :refer [deftest is testing]]
             [jackdaw.client :as jc]

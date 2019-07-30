@@ -6,14 +6,12 @@
 /checkouts
 /classes
 /codox
-/jackdaw-[a-z]*/.lein-*
-/jackdaw-[a-z]*/.nrepl-port
 /jackdaw-[a-z]*/checkouts
 /jackdaw-[a-z]*/target
 /target
 /logs
 pom.xml
 pom.xml.asc
-.lein-env
+.lein-*
 .cpcache
 .nrepl-port
