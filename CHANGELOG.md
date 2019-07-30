@@ -1,10 +1,24 @@
 # Changelog
 
-## [0.6.7] - [2019-07-24]
+## [0.6.7] - [2019-07-30]
+
+### Added
+
+ * Allow specification of :deserialization-properties (#157)
+ * Back-fill a few tests of jackdaw.client.partitioning (#165)
+
+### Changed
+
+ * Upgrade Clojure version to 1.10.1 (#159)
+ * Partitioner in test-machine write command updated to match streams (#139)
+ * Reformatted all the code using cljfmt (#173)
 
 ### Fixed
 
- * Supply `key-serde` as well as `value-serde` in `aggregate` methods
+ * Delete duplicated tests (#165)
+ * Documentation/Examples fixes (#166, #168)
+ * Do not assume result of executing command is a map (#164)
+ * Supply `key-serde` as well as `value-serde` in `aggregate` methods (#172)
 
 ## [0.6.6] - [2019-06-20]
 
