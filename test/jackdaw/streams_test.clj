@@ -3,6 +3,7 @@
   (:require [clojure.spec.test.alpha :as stest]
             [clojure.string :as string]
             [clojure.test :refer :all]
+            [jackdaw.serdes.edn :as jse]
             [jackdaw.streams :as k]
             [jackdaw.streams.configurable :as cfg]
             [jackdaw.streams.lambdas :as lambdas :refer [key-value]]
@@ -734,6 +735,33 @@
         (is (= [0 -7] (second keyvals)))
         (is (= [1 -8] (nth keyvals 2))))))
 
+  (testing "aggregate: explicit kv store with custom serdes"
+    (let [serdes {:key-serde (jse/serde)
+                  :value-serde (jse/serde)}
+          topic-a (merge (mock/topic "topic-a") serdes)
+          topic-b (merge (mock/topic "topic-b") serdes)
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/group-by (fn [[_k v]] (:uuid v)) topic-a)
+                                          (k/aggregate (constantly 0)
+                                                       (fn [acc [_k v]] (+ acc (:i v)))
+                                                       topic-a)
+                                          (k/to-kstream)
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)
+          uuid-a #uuid "a8e310d7-f0d6-4f81-a474-aab5d6234149"
+          uuid-b #uuid "0fb9ad92-dad8-45e7-9a87-7dcd9783076e"]
+
+      (publish uuid-a {:uuid uuid-a :i 1})
+      (publish uuid-b {:uuid uuid-a :i 3})
+      (publish uuid-b {:uuid uuid-b :i 5})
+
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= [uuid-a 1] (nth keyvals 0)))
+        (is (= [uuid-a 4] (nth keyvals 1)))
+        (is (= [uuid-b 5] (nth keyvals 2))))))
+
   (testing "aggregate: implicit kv store"
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
@@ -897,6 +925,34 @@
             (is (= [0 3] (second keyvals)))
             (is (= [0 1] (nth keyvals 2)))
             (is (= [1 3] (nth keyvals 3))))))))
+
+  (testing "aggregate: explicit kv store with custom serdes"
+    (let [serdes {:key-serde (jse/serde)
+                  :value-serde (jse/serde)}
+          topic-a (merge (mock/topic "topic-a") serdes)
+          topic-b (merge (mock/topic "topic-b") serdes)
+          driver (mock/build-driver (fn [builder]
+                                      (-> (k/ktable builder topic-a)
+                                          (k/group-by (fn [[_k v]] [(:uuid v) v]) topic-a)
+                                          (k/aggregate (constantly 0)
+                                                       (fn [acc [_k v]] (+ acc (:i v)))
+                                                       (fn [acc [_k v]] (- acc (:i v)))
+                                                       topic-b)
+                                          (k/to-kstream)
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)
+          uuid-a #uuid "a8e310d7-f0d6-4f81-a474-aab5d6234149"
+          uuid-b #uuid "0fb9ad92-dad8-45e7-9a87-7dcd9783076e"]
+
+      (publish uuid-a {:uuid uuid-a :i 1})
+      (publish uuid-b {:uuid uuid-a :i 3})
+      (publish uuid-b {:uuid uuid-b :i 5})
+
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= [uuid-a 1] (nth keyvals 0)))
+        (is (= [uuid-a 4] (nth keyvals 1)))
+        (is (= [uuid-a 1] (nth keyvals 2)))
+        (is (= [uuid-b 5] (nth keyvals 3))))))
 
   (testing "aggregate: implicit kv store"
     (let [topic-a (mock/topic "topic-a")

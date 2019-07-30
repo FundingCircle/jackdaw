@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.6.7] - [2019-07-24]
+
+### Fixed
+
+ * Supply `key-serde` as well as `value-serde` in `aggregate` methods
+
 ## [0.6.6] - [2019-06-20]
 
 ### Added
