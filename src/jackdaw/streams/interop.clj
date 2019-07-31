@@ -137,6 +137,23 @@
 
 (deftype CljKStream [^KStream kstream]
   IKStreamBase
+  (join
+    [_ ktable value-joiner-fn]
+    (clj-kstream
+     (.join ^KStream kstream
+            ^KTable (ktable* ktable)
+            ^ValueJoiner (value-joiner value-joiner-fn))))
+
+  (join
+    [_ ktable value-joiner-fn
+     {key-serde :key-serde this-value-serde :value-serde}
+     {other-value-serde :value-serde}]
+    (clj-kstream
+     (.join kstream
+            ^KTable (ktable* ktable)
+            ^ValueJoiner (value-joiner value-joiner-fn)
+            (Joined/with key-serde this-value-serde other-value-serde))))
+
   (left-join
     [_ ktable value-joiner-fn]
     (clj-kstream
@@ -362,6 +379,21 @@
 
 (deftype CljKTable [^KTable ktable]
   IKStreamBase
+  (join
+    [_ other-ktable value-joiner-fn]
+    (clj-ktable
+     (.join ^KTable ktable
+            ^KTable (ktable* other-ktable)
+            ^ValueJoiner (value-joiner value-joiner-fn))))
+
+  (join
+    [_ other-ktable value-joiner-fn topic-config]
+    (clj-ktable
+     (.join ^KTable ktable
+            ^KTable (ktable* other-ktable)
+            ^ValueJoiner (value-joiner value-joiner-fn)
+            ^Materialized (topic->materialized topic-config))))
+
   (left-join
     [_ other-ktable value-joiner-fn]
     (clj-ktable
@@ -398,13 +430,6 @@
      (.groupBy ktable
                ^KeyValueMapper (key-value-mapper key-value-mapper-fn)
                ^Serialized (topic->serialized topic-config))))
-
-  (join
-    [_ other-ktable value-joiner-fn]
-    (clj-ktable
-     (.join ^KTable ktable
-            ^KTable (ktable* other-ktable)
-            ^ValueJoiner (value-joiner value-joiner-fn))))
 
   (outer-join
     [_ other-ktable value-joiner-fn]

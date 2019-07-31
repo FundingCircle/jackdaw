@@ -51,6 +51,16 @@
 
 ;; IKStreamBase
 
+(defn join
+  "Combines the values of a KStream or KTable with a KTable that shares the
+  same key using an inner join."
+  ([kstream-or-ktable ktable value-joiner-fn]
+   (p/join kstream-or-ktable ktable value-joiner-fn))
+  ([kstream ktable value-joiner-fn this-topic-config other-topic-config]
+   (p/join kstream ktable value-joiner-fn this-topic-config other-topic-config))
+  ([ktable other-ktable value-joiner-fn topic-config]
+   (p/join ktable other-ktable value-joiner-fn topic-config)))
+
 (defn left-join
   "Creates a KStream from the result of calling `value-joiner-fn` with
   each element in the KStream and the value in the KTable with the same
@@ -218,12 +228,6 @@
   (p/kstream* kstream))
 
 ;; IKTable
-
-(defn join
-  "Combines the values of the two KTables that share the same key using an
-  inner join."
-  [ktable other-ktable value-joiner-fn]
-  (p/join ktable other-ktable value-joiner-fn))
 
 (defn outer-join
   "Combines the values of two KTables that share the same key using an outer

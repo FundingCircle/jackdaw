@@ -99,6 +99,24 @@
             (is (= [1 2] (first keyvals)))
             (is (= [1 3] (second keyvals))))))))
 
+  (testing "join"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          topic-c (mock/topic "topic-c")]
+
+      (with-open [driver (mock/build-driver (fn [builder]
+                                              (let [left (k/kstream builder topic-a)
+                                                    right (k/ktable builder topic-b)]
+                                                (k/to (k/join left right + topic-a topic-b) topic-c))))]
+        (let [publish-left (partial mock/publish driver topic-a)
+              publish-right (partial mock/publish driver topic-b)]
+
+          (publish-left 1 2)
+          (publish-right 1 1)
+          (publish-left 1 2)
+
+          (is (= [[1 3]] (mock/get-keyvals driver topic-c)))))))
+
   (testing "for-each!"
     (let [topic-a (mock/topic "topic-a")
           sentinel (atom [])
