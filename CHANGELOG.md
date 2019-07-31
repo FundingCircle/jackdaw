@@ -1,5 +1,11 @@
 # Changelog
 
+## unreleased
+
+### Added
+
+ * Ability to inner join a kstream to ktable (#175)
+
 ## [0.7.3] - [2020-04-08]
 
 ### Added
