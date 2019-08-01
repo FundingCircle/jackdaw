@@ -513,14 +513,21 @@
                                                              (uuid/to-string uuid/+null+))))))))
 
 (deftest record-metadata
-  (let [schema {:type "record"
-                :name "MyRecord"
-                :namespace "com.fundingcircle"
-                :fields [{:name "field1" :type "string"}]}
-        serde  (->serde (json/write-str schema))]
+  (testing "includes schema object in metadata"
+    (let [schema {:type "record"
+                  :name "MyRecord"
+                  :namespace "com.fundingcircle"
+                  :fields [{:name "field1" :type "string"}]}
+          schema-json (json/write-str schema)
+          serde (->serde schema-json)]
 
-    (is (= {:name "MyRecord" :full-name "com.fundingcircle.MyRecord"}
-           (meta (round-trip serde "whatever" {:field1 "foo"}))))))
+      (let [metadata (meta (round-trip serde "whatever" {:field1 "foo"}))]
+        (is (= [:schema] (keys metadata)))
+        (let [meta-schema (:schema metadata)]
+          (is (= org.apache.avro.Schema$RecordSchema (type meta-schema)))
+          (is (= "MyRecord" (.getName meta-schema)))
+          (is (= "com.fundingcircle.MyRecord" (.getFullName meta-schema)))
+          (is (= schema-json (str meta-schema))))))))
 
 (deftest schemaless-test
   (let [serde (->serde nil)]

@@ -415,8 +415,7 @@
                                                 :entry entry})))
                              [field-key (avro->clj field-coercion value)]))))
               (vals field->schema+coercion))
-        {:name (.getName schema)
-         :full-name (.getFullName schema)})))
+        {:schema schema})))
 
   (clj->avro [_ clj-map path]
     (when-not (map? clj-map)
