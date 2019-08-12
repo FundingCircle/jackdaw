@@ -196,7 +196,7 @@
 
 ;;; reset-application-fixture ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn reset-application-fixture [app-config]
+(defn reset-application-fixture [app-config reset-fn reset-args]
   (fn [t]
     (let [rt (StreamsResetter.)
           app-id (get app-config "application.id")
@@ -207,12 +207,11 @@
                              err-str (java.io.StringWriter.)]
                    (binding [*out* out-str
                              *err* err-str]
-                     (let [status (.run rt args)]
+                     (let [status (reset-fn rt args)]
                        (flush)
                        {:status status
                         :out (str out-str)
                         :err (str err-str)})))]
-
       (if (zero? (:status result))
         (t)
         (throw (ex-info "failed to reset application. check logs for details"
@@ -222,13 +221,15 @@
   [build-fn {:keys [broker-config
                     topic-metadata
                     app-config
+                    reset-fn
+                    reset-args
                     enable?]}]
   (t/join-fixtures
    (if enable?
      (do
        (log/info "enabled intregration fixtures")
        [(topic-fixture broker-config topic-metadata)
-        (reset-application-fixture app-config)
+        (reset-application-fixture app-config reset-fn reset-args)
         (kstream-fixture {:topology (build-fn topic-metadata)
                           :config app-config})])
      (do
