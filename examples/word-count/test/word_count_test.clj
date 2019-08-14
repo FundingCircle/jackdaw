@@ -55,6 +55,14 @@
    :app-config (assoc wc/app-config "cache.max.bytes.buffering" "0")
    :enable? (get-env "BOOTSTRAP_SERVERS")})
 
+(def reset-args
+  "Arguments to pass to the reset action"
+  "--reset-offsets --to-earliest --execute")
+
+(def reset-fn
+  "Function to reset the application"
+  (reset))
+
 (defn props-for [x]
   (doto (Properties.)
     (.putAll (reduce-kv (fn [m k v]
@@ -89,7 +97,7 @@
     (jd.test/mock-transport (mock-transport-config) wc/topic-metadata)))
 
 (deftest test-word-count-example
-  (fix/with-fixtures [(fix/integration-fixture wc/topology-builder test-config)]
+  (fix/with-fixtures [(fix/integration-fixture wc/topology-builder test-config reset-fn reset-args)]
     (jd.test/with-test-machine (test-transport wc/topic-metadata)
       (fn [machine]
         (let [lines ["As Gregor Samsa awoke one morning from uneasy dreams"

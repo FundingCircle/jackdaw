@@ -197,6 +197,8 @@
 ;;; reset-application-fixture ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn reset-application-fixture [app-config reset-fn reset-args]
+  "Reset application with default app-config as well as reset-args,
+   but the fixture can implement custom options"
   (fn [t]
     (let [rt (StreamsResetter.)
           app-id (get app-config "application.id")
