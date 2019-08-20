@@ -7,7 +7,7 @@
   (fn [machine cmd]
     (let [result (f machine cmd)]
       (assoc result
-             :status (if (contains? result :error)
+             :status (if (contains? (:result result) :error)
                        :error
                        :ok)))))
 
