@@ -527,8 +527,8 @@
                  :deserialize (fn [_ topic raw-data]
                                 (try
                                   (let [avro-data (if (get deserializer-properties "specific.avro.reader")
-                                                    (.deserialize base-deserializer topic raw-data avro-schema)
-                                                    (.deserialize base-deserializer topic raw-data))]
+                                                    (.deserialize base-deserializer ^String topic #^bytes raw-data ^Schema avro-schema)
+                                                    (.deserialize base-deserializer ^String topic #^bytes raw-data))]
                                     ;; Note that `.deserialize` will return EITHER a Java Object, or
                                     ;; a ^GenericContainer. ^GenericContainer is only produced when
                                     ;; there was a schema associated with the deserialized data, and
