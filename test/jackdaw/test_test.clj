@@ -59,11 +59,11 @@
   (testing "the run test machinery"
     (let [m {:executor (-> (fn [m c]
                              (let [[cmd & params] c]
-                               (apply ({:min (fn [v] {:result (apply min v)})
-                                        :max (fn [v] {:result (apply max v)})
+                               (apply ({:min (fn [v] {:result {:result (apply min v)}})
+                                        :max (fn [v] {:result {:result (apply max v)}})
                                         :is-1 (fn [v] (if (= v 1)
-                                                        {:result true}
-                                                        {:error :not-1}))}
+                                                       {:result (:result true)}
+                                                       {:result {:error :not-1}}))}
                                        cmd)
                                       params)))
                            with-status)
