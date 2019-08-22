@@ -33,6 +33,7 @@ if [ ${#line} -gt 0 ]; then  # If there was a matching fingerprint
         exit 3
     else
         # Add it to known hosts
+        mkdir -p $HOME/.ssh
         echo "$key" >> $knownhosts
         # And tell the user what kind of key they just added
         keytype=$(echo "$key" | awk '{print $2}')
