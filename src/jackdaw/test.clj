@@ -131,7 +131,7 @@
                      cmd-list commands]
                 (cond
                   (first cmd-list) (let [r (exe (first cmd-list))]
-                                     (if (or (contains? r :error) (empty? (rest cmd-list)))
+                                     (if (or (contains? (:result r) :error) (empty? (rest cmd-list)))
                                        (conj results r)
                                        (recur (conj results r) (rest cmd-list))))
                   :else results))

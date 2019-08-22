@@ -39,7 +39,7 @@
 
           (testing "status = error if a command returns an :error key"
             (is (= :error
-                   (status-for {:error "Oh noes!"})))))))))
+                   (status-for {:result {:error "Oh noes!"}})))))))))
 
 (deftest test-with-timing
   (with-identity-transport {:test-id "test-with-timing"

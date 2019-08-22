@@ -201,7 +201,7 @@
     (let [rt (StreamsResetter.)
           app-id (get app-config "application.id")
           args (->> ["--application-id" (get app-config "application.id")
-                     "--bootstrap-servers" "localhost:9092"]
+                     "--bootstrap-servers" (get app-config "bootstrap.servers")]
                     (into-array String))
           result (with-open [out-str (java.io.StringWriter.)
                              err-str (java.io.StringWriter.)]
