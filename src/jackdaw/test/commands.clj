@@ -18,6 +18,7 @@
   [machine cmd]
   (let [[cmd & params] cmd
         handler (get command-map cmd)]
+
     (if handler
       ;; Happy
       (let [result (handler machine cmd params)]
@@ -26,9 +27,11 @@
                :cmd cmd
                :params params))
       ;; else Sad
-      {:error :unknown-command
-       :cmd cmd
-       :params params})))
+      (throw (ex-info (format "Unknown command: %s" cmd)
+                      {:cmd cmd
+                       :error :unknown-command
+                       :params params
+                       :available-commands (keys command-map)})))))
 
 (defn with-handler
   [machine handler]

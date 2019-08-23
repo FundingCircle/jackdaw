@@ -10,5 +10,9 @@
         (is (contains? (-> (cmd/command-handler {} test-cmd)
                            keys
                            set)
-                       k))))))
+                       k)))))
 
+  (testing "Passing an unknown command throws an exception"
+    (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                          #"Unknown command: :not-found"
+                          (cmd/command-handler {} [:not-found])))))
