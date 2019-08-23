@@ -143,8 +143,8 @@
     (fn [client]
       (let [{:keys [foo bar]} test-topics]
         (admin/create-topics! client [foo bar])
-        (= {"some-key" "some-value"}
-           (admin/get-broker-config client 0))))))
+        (is (= {"some-key" "some-value"}
+               (admin/get-broker-config client 0)))))))
 
 (deftest test-describe-topics-config
   (with-mock-admin-client test-cluster
