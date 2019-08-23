@@ -16,7 +16,7 @@
   ([watch-query opts] [watch-query (:info opts) (watch-timeout (:timeout opts))]))
 
 (defn handle-watch-cmd
-  [machine cmd params]
+  [machine params]
   (let [[query info timeout] (apply watch-params params)
         condition? query]
     (j/watch-for machine condition? timeout info)))

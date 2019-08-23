@@ -5,20 +5,20 @@
 (def command-map
   {:stop (constantly true)
 
-   :sleep (fn [machine cmd [sleep-ms]]
+   :sleep (fn [machine [sleep-ms]]
             (Thread/sleep sleep-ms))
 
-   :println (fn [machine cmd params]
+   :println (fn [machine params]
               (println (apply str params)))
 
-   :pprint (fn [machine cmd params]
+   :pprint (fn [machine params]
               (pprint/pprint params))
 
-   :do (fn [machine cmd [do-fn]]
+   :do (fn [machine [do-fn]]
          (do-fn @(:journal machine)))
 
-   :do! (fn [machine cmd [do-fn]]
+   :do! (fn [machine [do-fn]]
           (do-fn (:journal machine)))
 
-   :inspect (fn [machine cmd [inspect-fn]]
+   :inspect (fn [machine [inspect-fn]]
               (inspect-fn machine))})
