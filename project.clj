@@ -27,7 +27,7 @@
                  [org.clojure/tools.logging "0.4.1"]
                  [org.clojure/core.cache "0.7.2"]]
 
-  :aliases {"kaocha" ["run" "-m" "kaocha.runner"]}
+  :aliases {"kaocha" ["with-profile" "+test" "run" "-m" "kaocha.runner"]}
   :aot [jackdaw.serdes.fn-impl jackdaw.serdes.edn]
   :plugins [[me.arrdem/lein-git-version "2.0.8"]]
 
