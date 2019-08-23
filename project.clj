@@ -27,7 +27,7 @@
                  [org.clojure/tools.logging "0.4.1"]
                  [org.clojure/core.cache "0.7.2"]]
 
-  :aliases {"kaocha" ["with-profile" "+test" "run" "-m" "kaocha.runner"]}
+  :aliases {"kaocha" ["run" "-m" "kaocha.runner"]}
   :aot [jackdaw.serdes.fn-impl jackdaw.serdes.edn]
   :plugins [[me.arrdem/lein-git-version "2.0.8"]]
 
@@ -67,6 +67,7 @@
              {:source-paths
               ["dev"]
 
+              :resource-paths ["test/resources"]
               :injections [(require 'io.aviso.logging.setup)]
               :dependencies [[io.aviso/logging "0.3.2"]
                              [org.apache.kafka/kafka-streams-test-utils "2.2.0"]
@@ -76,10 +77,6 @@
                              [lambdaisland/kaocha-cloverage "0.0-32"]
                              [lambdaisland/kaocha-junit-xml "0.0-70"]]}
 
-             :test
-             {:resource-paths ["test/resources"]
-              :plugins [[lein-cloverage "1.0.13"]]}
-
              ;; This is not in fact what lein defines repl to be
              :repl
-             [:default :dev :test]})
+             [:default :dev]})
