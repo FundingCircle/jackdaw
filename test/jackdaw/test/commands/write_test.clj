@@ -138,8 +138,8 @@
                                             "bar" bar-topic}})
     (fn [t]
       (testing "valid write"
-        (let [[cmd & params] [:write! "foo" {:id 1 :payload "yolo"}]
-              result (write/handle-write-cmd t cmd params)]
+        (let [[_ & params] [:write! "foo" {:id 1 :payload "yolo"}]
+              result (write/handle-write-cmd t params)]
 
           (testing "returns the kafka record metadata"
             (is (= "foo" (:topic-name result)))
@@ -149,8 +149,8 @@
             (is (contains? result :serialized-value-size)))))
 
       (testing "valid write with explicit key"
-        (let [[cmd & params] [:write! "foo" {:id 1 :payload "yolo"} {:key 101}]
-              result (write/handle-write-cmd t cmd params)]
+        (let [[_ & params] [:write! "foo" {:id 1 :payload "yolo"} {:key 101}]
+              result (write/handle-write-cmd t params)]
 
           (testing "returns the kafka record metadata"
             (is (= "foo" (:topic-name result)))
@@ -161,7 +161,7 @@
 
       (testing "invalid write"
         (testing "serialization failure"
-          (let [[cmd & params] [:write! "bar" {:id 1 :payload "a map is not a number"}]
-                result (write/handle-write-cmd t cmd params)]
+          (let [[_ & params] [:write! "bar" {:id 1 :payload "a map is not a number"}]
+                result (write/handle-write-cmd t params)]
             (is (= :serialization-error (:error result)))
             (is (= "Cannot cast clojure.lang.PersistentArrayMap to java.lang.Long" (:message result)))))))))
