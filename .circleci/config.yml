@@ -118,7 +118,7 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
-          lein kaocha --plugin cloverage --codecov --plugin kaocha.plugin/junit-xml --junit-xml-file test-results/kaocha/results.xml
+          lein kaocha --plugin kaocha.plugin/junit-xml --junit-xml-file test-results/kaocha/results.xml
       - store_artifacts:
           path: ./logs
       - store_artifacts:
