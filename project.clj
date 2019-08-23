@@ -27,6 +27,7 @@
                  [org.clojure/tools.logging "0.4.1"]
                  [org.clojure/core.cache "0.7.2"]]
 
+  :aliases {"kaocha" ["run" "-m" "kaocha.runner"]}
   :aot [jackdaw.serdes.fn-impl jackdaw.serdes.edn]
   :plugins [[me.arrdem/lein-git-version "2.0.8"]]
 
@@ -70,7 +71,10 @@
               :dependencies [[io.aviso/logging "0.3.2"]
                              [org.apache.kafka/kafka-streams-test-utils "2.2.0"]
                              [org.apache.kafka/kafka-clients "2.2.0" :classifier "test"]
-                             [org.clojure/test.check "0.9.0"]]}
+                             [org.clojure/test.check "0.9.0"]
+                             [lambdaisland/kaocha "0.0-529"]
+                             [lambdaisland/kaocha-cloverage "0.0-32"]
+                             [lambdaisland/kaocha-junit-xml "0.0-70"]]}
 
              :test
              {:resource-paths ["test/resources"]

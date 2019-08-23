@@ -118,13 +118,13 @@ jobs:
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
-          lein with-profile +test cloverage --codecov
+          lein kaocha --plugin cloverage --codecov --plugin kaocha.plugin/junit-xml --junit-xml-file test-results/kaocha/results.xml
       - store_artifacts:
           path: ./logs
       - store_artifacts:
           path: target/coverage
       - store_test_results:
-          path: target/test-results
+          path: test-results
       - run:
           name: Report Test Coverage
           command: bash <(curl -s https://codecov.io/bash)
@@ -146,7 +146,7 @@ jobs:
             export REAL_GPG=$(which gpg)
 
             lein do jar, pom, deploy clojars
-    
+
   deploy_snapshot:
     <<: *deploy_config
     steps:
