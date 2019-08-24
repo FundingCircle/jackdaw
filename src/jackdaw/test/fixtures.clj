@@ -234,15 +234,13 @@
   [build-fn {:keys [broker-config
                     topic-metadata
                     app-config
-                    reset-fn
-                    reset-args
                     enable?]}]
   (t/join-fixtures
    (if enable?
      (do
        (log/info "enabled intregration fixtures")
        [(topic-fixture broker-config topic-metadata)
-        (reset-application-fixture app-config reset-fn reset-args)
+        (reset-application-fixture app-config)
         (kstream-fixture {:topology (build-fn topic-metadata)
                           :config app-config})])
      (do
