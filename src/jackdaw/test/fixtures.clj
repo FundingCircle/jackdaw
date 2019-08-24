@@ -201,8 +201,8 @@
   (.run rt (into-array String args)))
 
 (defn reset-application-fixture
-  "Reset application with default app-config as well as reset-args,
-   but the fixture can implement custom options"
+  "Returns a fixture that runs the kafka.tools.StreamsResetter with the supplied
+   `reset-args` as parameters"
   ([app-config]
    (reset-application-fixture app-config [] default-reset-fn))
 
