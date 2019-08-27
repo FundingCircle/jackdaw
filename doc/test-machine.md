@@ -18,7 +18,7 @@ not write them, and will eventually abandon them)
 The test machine also aims to be agnostic to the system it is testing, other
 than that it should get input/output primarily from Kafka.
 
-### Construction 
+### Construction
 
 The examples below, demonstrate how to create a test machine for executing a
 sequence of "commands". The "local-machine" will execute the commands against a
@@ -51,7 +51,7 @@ to these services in a shared environment like uat/staging.
                            :config local-kafka-config
                            :topics topic-config})]
     (j.t/test-machine {:transport t})))
-    
+
 (def remote-machine []
   (let [t (trns/transport {:type :confluent-rest-proxy
                            :config remote-kafka-config
@@ -81,10 +81,14 @@ conjunction with `with-open` to ensure that associated resources are shut down
 cleanly when you are finished with a machine.
 
 ```clojure
+(defn all-ok?
+  [results]
+  (every? #(= :ok (:status %)) results))
+
 (deftest test-my-app
   (with-open [machine (local-machine))]
     (let [result (j.t/run-test machine test-commands)]
-      (is (all-ok? result))))
+      (is (all-ok? (:results result))))
 ```
 
 ### Test Commands
@@ -150,4 +154,3 @@ requirements.
     (with-open [machine (test-machine {:transport transport})]
       (f machine))))
 ```
-
