@@ -122,10 +122,10 @@
 
    `compose-fixtures` or `join-fixtures` may be used to build fixtures combine
    topologies"
-  [{:keys [topology config]}]
+  [{:keys [topology config builder]}]
   (fn [t]
-    (let [builder (k/streams-builder)
-          stream (k/kafka-streams (topology builder) config)
+    (let [builder* (or builder (k/streams-builder))
+          stream (k/kafka-streams (topology builder*) config)
           error (atom nil)
           started? (promise)]
 
