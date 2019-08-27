@@ -196,27 +196,39 @@
 
 ;;; reset-application-fixture ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defn reset-application-fixture [app-config]
-  (fn [t]
-    (let [rt (StreamsResetter.)
-          app-id (get app-config "application.id")
-          args (->> ["--application-id" (get app-config "application.id")
-                     "--bootstrap-servers" (get app-config "bootstrap.servers")]
-                    (into-array String))
-          result (with-open [out-str (java.io.StringWriter.)
-                             err-str (java.io.StringWriter.)]
-                   (binding [*out* out-str
-                             *err* err-str]
-                     (let [status (.run rt args)]
-                       (flush)
-                       {:status status
-                        :out (str out-str)
-                        :err (str err-str)})))]
+(defn default-reset-fn
+  [rt args]
+  (.run rt (into-array String args)))
 
-      (if (zero? (:status result))
-        (t)
-        (throw (ex-info "failed to reset application. check logs for details"
-                        result))))))
+(defn reset-application-fixture
+  "Returns a fixture that runs the kafka.tools.StreamsResetter with the supplied
+   `reset-args` as parameters"
+  ([app-config]
+   (reset-application-fixture app-config [] default-reset-fn))
+
+  ([app-config reset-args]
+   (reset-application-fixture app-config reset-args default-reset-fn))
+
+  ([app-config reset-args reset-fn]
+   (fn [t]
+     (let [rt (StreamsResetter.)
+           app-id (get app-config "application.id")
+           args (concat ["--application-id" (get app-config "application.id")
+                         "--bootstrap-servers" (get app-config "bootstrap.servers")]
+                        reset-args)
+           result (with-open [out-str (java.io.StringWriter.)
+                              err-str (java.io.StringWriter.)]
+                    (binding [*out* out-str
+                              *err* err-str]
+                      (let [status (reset-fn rt args)]
+                        (flush)
+                        {:status status
+                         :out (str out-str)
+                         :err (str err-str)})))]
+       (if (zero? (:status result))
+         (t)
+         (throw (ex-info "failed to reset application. check logs for details"
+                         result)))))))
 
 (defn integration-fixture
   [build-fn {:keys [broker-config
