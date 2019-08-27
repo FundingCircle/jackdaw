@@ -130,10 +130,17 @@
     {:results (loop [results []
                      cmd-list commands]
                 (cond
-                  (first cmd-list) (let [r (exe (first cmd-list))]
-                                     (if (or (contains? (:result r) :error) (empty? (rest cmd-list)))
-                                       (conj results r)
-                                       (recur (conj results r) (rest cmd-list))))
+                  (first cmd-list) (let [cmd (first cmd-list)
+                                         r (exe (first cmd-list))
+                                         res (conj results r)]
+
+                                     (if (contains? (:result r) :error)
+                                       (throw (ex-info (format "Command %s failed" cmd)
+                                                       {:result res}))
+
+                                       (if (empty? (rest cmd-list))
+                                         res
+                                         (recur res (rest cmd-list)))))
                   :else results))
      :journal @(:journal machine)}))
 
