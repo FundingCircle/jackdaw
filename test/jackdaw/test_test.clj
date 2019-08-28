@@ -147,7 +147,6 @@
 
         (testing "run another test sequence and inspect results"
           (let [{:keys [results journal]} (jd.test/run-test t prog2)]
-            (println "results is = " results)
             (is (every? #(= :ok (:status %)) results))
 
             (testing "old results remain in the journal"

@@ -128,21 +128,18 @@
               ((:executor machine) machine cmd))]
     ;; run commands, stopping if one fails.
     {:results (loop [results []
-                     cmd-list commands]
-                (cond
-                  (first cmd-list) (let [cmd (first cmd-list)
-                                         r (exe (first cmd-list))
-                                         results' (conj results r)]
+                     [cmd & rest-cmds] commands]
+                (if (nil? cmd)
+                  results
+                  (let [r (exe cmd)
+                        results' (conj results r)]
 
-                                     (if (= :error (:status r))
-                                       (throw (ex-info (format "Command %s failed" cmd)
-                                                       {:result results'
-                                                        :command cmd}))
+                    (if (= :error (:status r))
+                      (throw (ex-info (format "Command %s failed" cmd)
+                                      {:result results'
+                                       :command cmd}))
 
-                                       (if (empty? (rest cmd-list))
-                                         results'
-                                         (recur results' (rest cmd-list)))))
-                  :else results))
+                      (recur results' rest-cmds)))))
      :journal @(:journal machine)}))
 
 (defn identity-transport
