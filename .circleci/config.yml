@@ -99,6 +99,16 @@ jobs:
           key: v1-jackdaw-{{ .Branch }}-{{ .Revision }}
           paths:
             - .
+
+  lint_prose:
+    docker:
+      - image: jdkato/vale
+    steps:
+      - checkout
+      - run:
+          name: Run Vale
+          command: PATH="/:$PATH" vale --no-wrap docs README.md */*/*.md
+
   deps:
     <<: *build_config
     steps:
@@ -179,6 +189,7 @@ workflows:
 
   checkout_and_deploy:
     jobs:
+      - lint_prose
       - checkout_tags:
           filters:
             tags:
