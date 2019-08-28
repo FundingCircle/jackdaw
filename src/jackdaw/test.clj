@@ -132,15 +132,16 @@
                 (cond
                   (first cmd-list) (let [cmd (first cmd-list)
                                          r (exe (first cmd-list))
-                                         res (conj results r)]
+                                         results' (conj results r)]
 
-                                     (if (contains? (:result r) :error)
+                                     (if (= :error (:status r))
                                        (throw (ex-info (format "Command %s failed" cmd)
-                                                       {:result res}))
+                                                       {:result results'
+                                                        :command cmd}))
 
                                        (if (empty? (rest cmd-list))
-                                         res
-                                         (recur res (rest cmd-list)))))
+                                         results'
+                                         (recur results' (rest cmd-list)))))
                   :else results))
      :journal @(:journal machine)}))
 
