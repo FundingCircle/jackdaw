@@ -238,6 +238,11 @@
   ([ktable key-value-mapper-fn]
    (p/to-kstream ktable key-value-mapper-fn)))
 
+(defn suppress
+  "Suppress some updates from this changelog stream"
+  [ktable suppressed]
+  (p/suppress ktable suppressed))
+
 (defn ktable*
   "Returns the underlying KTable object."
   [ktable]

@@ -11,7 +11,8 @@
             [jackdaw.streams.protocols
              :refer [IKStream IKTable IStreamsBuilder]]
             [jackdaw.streams.specs])
-  (:import [org.apache.kafka.streams.kstream
+  (:import [java.time Duration]
+           [org.apache.kafka.streams.kstream
             JoinWindows SessionWindows TimeWindows Transformer
             ValueTransformer]
            org.apache.kafka.streams.StreamsBuilder
@@ -643,7 +644,173 @@
             (is (= 3 (count keyvals)))
             (is (= [1 1] (first keyvals)))
             (is (= [1 3] (second keyvals)))
-            (is (= [1 6] (nth keyvals 2)))))))))
+            (is (= [1 6] (nth keyvals 2))))))))
+
+  (testing "suppress records per time window"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          topic-c (mock/topic "topic-c")
+
+          ;; if we don't set the `grace` period of the `TimeWindows`, the
+          ;; default is used: 24h - window
+          window       (Duration/ofMillis 100)
+          grace        (Duration/ofMillis 1)
+          time-windows (-> window
+                           TimeWindows/of
+                           (.grace grace))]
+
+      (with-open [driver (mock/build-driver (fn [builder]
+                                              (-> builder
+                                                  (k/ktable topic-a)
+                                                  (k/to-kstream)
+                                                  (k/group-by-key)
+                                                  (k/window-by-time time-windows)
+                                                  (k/reduce + topic-b)
+                                                  (k/suppress {})
+                                                  (k/to-kstream)
+                                                  (k/map (fn [[k v]] [(.key k) v]))
+                                                  (k/to topic-c))))]
+
+        (let [publish (partial mock/publish driver topic-a)]
+
+          (publish 1 1 3)
+          (publish 2 1 4)
+          (publish 201 1 1)
+          (publish 202 1 2)
+          (publish 303 1 1)
+
+          (let [keyvals (mock/get-keyvals driver topic-c)]
+            (is (= 2 (count keyvals)))
+            (is (= [1 7] (first keyvals)))
+            (is (= [1 3] (second keyvals))))))))
+
+  (testing "suppress records with a bounded buffer"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          topic-c (mock/topic "topic-c")
+
+          window       (Duration/ofMillis 100)
+          grace        (Duration/ofMillis 1)
+          time-windows (-> window
+                           TimeWindows/of
+                           (.grace grace))
+          max-records  2]
+
+      (with-open [driver (mock/build-driver (fn [builder]
+                                              (-> builder
+                                                  (k/ktable topic-a)
+                                                  (k/to-kstream)
+                                                  (k/group-by-key)
+                                                  (k/window-by-time time-windows)
+                                                  (k/reduce + topic-b)
+                                                  (k/suppress {:max-records max-records})
+                                                  (k/to-kstream)
+                                                  (k/map (fn [[k v]] [(.key k) v]))
+                                                  (k/to topic-c))))]
+
+        (let [publish (partial mock/publish driver topic-a)]
+
+          (publish 1 1 3)
+          (publish 2 1 4)
+          (publish 201 1 1)
+          (publish 202 1 2)
+          (publish 210 1 3)
+          (publish 303 1 1)
+
+          (let [keyvals (mock/get-keyvals driver topic-c)]
+            (is (= 2 (count keyvals)))
+            (is (= [1 7] (first keyvals)))
+            (is (= [1 6] (second keyvals))))))))
+
+  (testing "suppress records with a bounded buffer that will shutdown the app"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          topic-c (mock/topic "topic-c")
+
+          window       (Duration/ofMillis 100)
+          grace        (Duration/ofMillis 1)
+          time-windows (-> window
+                           TimeWindows/of
+                           (.grace grace))
+          max-records  2]
+
+      (with-open [driver (mock/build-driver (fn [builder]
+                                              (-> builder
+                                                  (k/ktable topic-a)
+                                                  (k/to-kstream)
+                                                  (k/group-by-key)
+                                                  (k/window-by-time time-windows)
+                                                  (k/reduce + topic-b)
+                                                  (k/suppress {:max-records max-records})
+                                                  (k/to-kstream)
+                                                  (k/map (fn [[k v]] [(.key k) v]))
+                                                  (k/to topic-c))))]
+
+        (let [publish (partial mock/publish driver topic-a)]
+
+          (publish 1 1 3)
+          (publish 2 2 4)
+          (try
+            (publish 2 3 4)
+            (catch org.apache.kafka.streams.errors.StreamsException e
+              (is "task [0_0] Failed to flush state store topic-b" (.getMessage e))))
+
+          (let [keyvals (mock/get-keyvals driver topic-c)]
+            (is (= 0 (count keyvals))))))))
+
+  (testing "suppress records until time limit is reached"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")]
+
+      (with-open [driver (mock/build-driver (fn [builder]
+                                              (-> builder
+                                                  (k/kstream topic-a)
+                                                  (k/group-by-key)
+                                                  (k/count topic-a)
+                                                  (k/suppress {:until-time-limit-ms 10})
+                                                  (k/to-kstream)
+                                                  (k/to topic-b))))]
+
+        (let [publish (partial mock/publish driver topic-a)]
+
+          (publish 1 1 3)
+          (publish 2 1 4)
+          (publish 12 1 4)
+          (publish 201 1 1)
+          (publish 202 1 2)
+          (publish 222 1 3)
+
+          (let [keyvals (mock/get-keyvals driver topic-b)]
+            (is (= 2 (count keyvals)))
+            (is (= [1 3] (first keyvals)))
+            (is (= [1 6] (second keyvals))))))))
+
+  (testing "joining tables and suppressing records in between"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          topic-c (mock/topic "topic-c")]
+
+      (with-open [driver (mock/build-driver (fn [builder]
+                                              (let [left (k/ktable builder topic-a)
+                                                    right (k/ktable builder topic-b)]
+                                                (-> (k/left-join left right safe-add)
+                                                    (k/suppress {:until-time-limit-ms 10})
+                                                    (k/to-kstream)
+                                                    (k/to topic-c)))))]
+
+        (let [publish-left  (partial mock/publish driver topic-a)
+              publish-right (partial mock/publish driver topic-b)]
+
+          (publish-left 10 1 1)
+          (publish-right 11 1 2)
+          (publish-right 20 1 3) ; new time-window, will be emitted 1+3
+          (publish-right 25 1 4)
+          (publish-right 35 1 5) ; new time-window, will be emitted 1+5
+
+          (let [keyvals (mock/get-keyvals driver topic-c)]
+            (is (= 2 (count keyvals)))
+            (is (= [1 4] (first keyvals)))
+            (is (= [1 6] (second keyvals)))))))))
 
 (deftest grouped-stream
   (testing "count"

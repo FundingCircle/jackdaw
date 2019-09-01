@@ -192,6 +192,14 @@
     [ktable key-value-mapper-fn]
     "Converts a KTable to a KStream.")
 
+  (suppress
+    [ktable {:keys [max-records max-bytes until-time-limit-ms]}]
+    "Suppress some updates from this changelog stream.
+    You can either specify `max-records` or `max-bytes`. If an empty map is
+    passed, the suppress will be unbounded. If `until-time-limit-ms` is set,
+    this will override the `TimeWindow` interval. Note that when relying on the
+    configured `TimeWindow` the default `grace` period is `24h - window-size`.")
+
   (ktable*
     [ktable]
     "Returns the underlying KTable object."))

@@ -10,6 +10,8 @@
             Pattern]
            [org.apache.kafka.common.serialization
             Serde]
+           [java.time
+            Duration]
            [org.apache.kafka.streams
             KafkaStreams]
            [org.apache.kafka.streams
@@ -19,8 +21,8 @@
             JoinWindows KGroupedStream KGroupedTable KStream KTable
             KeyValueMapper Materialized Merger Predicate Printed Produced
             Reducer Serialized SessionWindowedKStream SessionWindows
-            TimeWindowedKStream ValueJoiner ValueMapper
-            ValueMapperWithKey ValueTransformerSupplier Windows]
+            Suppressed Suppressed$BufferConfig TimeWindowedKStream ValueJoiner
+            ValueMapper ValueMapperWithKey ValueTransformerSupplier Windows]
            [org.apache.kafka.streams.processor
             StreamPartitioner]))
 
@@ -41,6 +43,21 @@
   (cond-> (Materialized/as ^String topic-name)
     key-serde (.withKeySerde key-serde)
     value-serde (.withValueSerde value-serde)))
+
+(defn suppress-config->suppressed
+  [{:keys [max-records max-bytes until-time-limit-ms]}]
+  (let [config (cond
+                 (not (nil? max-records))
+                 (Suppressed$BufferConfig/maxRecords max-records)
+
+                 (not (nil? max-bytes))
+                 (Suppressed$BufferConfig/maxBytes max-bytes)
+
+                 :else (Suppressed$BufferConfig/unbounded))]
+    (if-some [time-limit until-time-limit-ms]
+      (Suppressed/untilTimeLimit (Duration/ofMillis time-limit) config)
+      (-> (.shutDownWhenFull config)
+          Suppressed/untilWindowCloses))))
 
 (declare clj-kstream clj-ktable clj-kgroupedtable clj-kgroupedstream
          clj-global-ktable clj-session-windowed-kstream
@@ -395,6 +412,11 @@
      (.outerJoin ^KTable ktable
                  ^KTable (ktable* other-ktable)
                  ^ValueJoiner (value-joiner value-joiner-fn))))
+
+  (suppress
+    [_ suppress-config]
+    (clj-ktable
+       (.suppress ^KTable ktable (suppress-config->suppressed suppress-config))))
 
   (to-kstream
     [_]
