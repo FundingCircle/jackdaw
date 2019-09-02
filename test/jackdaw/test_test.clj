@@ -102,6 +102,14 @@
       (is (= {:topics {}} journal))
       (is (= [] results)))))
 
+(deftest test-unknown-command
+  (testing "Passing an unknown command to the machine throws an exception"
+    (with-open [t (jd.test/test-machine (kafka-transport))]
+      (try
+        (jd.test/run-test t [[:not-found]])
+        (catch Exception e
+          (is (= :unknown-command (-> e ex-data :error))))))))
+
 (deftest test-write-then-watch
   (testing "write then watch"
     (fix/with-fixtures [(fix/topic-fixture kafka-config {"foo" foo-topic})]
