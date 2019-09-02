@@ -109,6 +109,23 @@
      (log/info "created test machine")
      m)))
 
+(defn- run-commands
+  "Run commands in the given order, throwing an exception if one fails"
+  [machine commands]
+  (loop [results []
+         [cmd & rest-cmds] commands]
+    (if (nil? cmd)
+      results
+      (let [r ((:executor machine) machine cmd)
+            results' (conj results r)]
+
+        (if (= :error (:status r))
+          (throw (ex-info (format "Command %s failed" cmd)
+                          {:result results'
+                           :command cmd}))
+
+          (recur results' rest-cmds))))))
+
 (defn run-test
   "Runs a sequence of test commands against a test-machine and returns a
    response map.
@@ -124,18 +141,8 @@
    commands to execute. Remember to use `with-open` on the test-machine
    to ensure that all resources are correcly torn down."
   [machine commands]
-  (let [exe (fn [cmd]
-              ((:executor machine) machine cmd))]
-    ;; run commands, stopping if one fails.
-    {:results (loop [results []
-                     cmd-list commands]
-                (cond
-                  (first cmd-list) (let [r (exe (first cmd-list))]
-                                     (if (or (contains? (:result r) :error) (empty? (rest cmd-list)))
-                                       (conj results r)
-                                       (recur (conj results r) (rest cmd-list))))
-                  :else results))
-     :journal @(:journal machine)}))
+  {:results (run-commands machine commands)
+   :journal @(:journal machine)})
 
 (defn identity-transport
   "The identity transport simply injects input events directly into

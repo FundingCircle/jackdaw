@@ -77,14 +77,13 @@
           (is (= 3 (count results)))
           (is (every? #(= :ok %) (map :status results)))))
 
-      (testing "execution stops on an error"
-        (let [{:keys [results journal]}
-              (jd.test/run-test m [[:min [1 2 3]]
-                                   [:is-1 2]
-                                   [:max [1 2 3]]])]
-          (is (= 2 (count results)))
-          (is (= :ok (:status (first results))))
-          (is (= :error (:status (second results))))))
+      (testing "execution throws an exception on error"
+        (try
+          (jd.test/run-test m [[:min [1 2 3]]
+                               [:is-1 2]
+                               [:max [1 2 3]]])
+          (catch Exception e
+            (is (= [:is-1 2] (-> e ex-data :command))))))
 
       (testing "execution stops on an unknown command"
         (is (thrown? NullPointerException
