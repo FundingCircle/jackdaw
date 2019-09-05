@@ -1,15 +1,18 @@
 (ns jackdaw.serdes.edn
-  "Implements an EDN SerDes (Serializer/Deserializer)."
+  "DEPRECATION NOTICE:
+
+  This namespace is deprecated. Please use jackdaw.serdes/edn-serde.
+
+  The behavior of the new EDN serde is different. It does not print
+  the newline.
+
+  Implements an EDN SerDes (Serializer/Deserializer)."
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [clojure.edn]
             [jackdaw.serdes.fn :as jsfn])
   (:import java.nio.charset.StandardCharsets
            org.apache.kafka.common.serialization.Serde
-           org.apache.kafka.common.serialization.Serdes)
-  (:gen-class
-   :implements [org.apache.kafka.common.serialization.Serde]
-   :prefix "EdnSerde-"
-   :name jackdaw.serdes.EdnSerde))
+           org.apache.kafka.common.serialization.Serdes))
 
 (set! *warn-on-reflection* true)
 
@@ -47,14 +50,3 @@
   "Returns an EDN serde."
   [& [opts]]
   (Serdes/serdeFrom (serializer) (deserializer opts)))
-
-(def EdnSerde-configure
-  (constantly nil))
-
-(defn EdnSerde-serializer
-  [& _]
-  (serializer))
-
-(defn EdnSerde-deserializer
-  [& _]
-  (deserializer))
