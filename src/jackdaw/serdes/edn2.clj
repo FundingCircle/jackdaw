@@ -27,10 +27,7 @@
   []
   (jsfn/new-serializer {:serialize (fn [_ _ data]
                                      (when data
-                                       (to-bytes
-                                        (binding [*print-length* false
-                                                  *print-level* false]
-                                          (pr-str data)))))}))
+                                       (to-bytes (pr-str data))))}))
 
 (defn edn-deserializer
   "Returns an EDN deserializer."
