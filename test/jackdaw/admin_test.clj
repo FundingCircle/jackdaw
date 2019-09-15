@@ -108,6 +108,12 @@
       (is (set= [:cluster-id :controller :nodes]
                 (keys (admin/describe-cluster client)))))))
 
+(deftest test-topics-ready?
+  (with-mock-admin-client test-cluster
+    (fn [client]
+      (admin/create-topics! client (vals test-topics))
+      (is (admin/topics-ready? client (vals test-topics))))))
+
 (deftest test-partition-ids-of-topics
   (with-mock-admin-client test-cluster
     (fn [client]

@@ -154,7 +154,7 @@
   [^AdminClient client topics]
   {:pre [(client? client)
          (sequential? topics)]}
-  (->> (describe-topics* client (map :topic-name topics))
+  (->> @(describe-topics* client (map :topic-name topics))
        (every? (fn [[topic-name {:keys [partition-info]}]]
                  (every? (fn [part-info]
                            (and (boolean (:leader part-info))
