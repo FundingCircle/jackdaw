@@ -155,7 +155,7 @@ jobs:
       - run:
           name: Deploy to Clojars
           command: |
-            lein do jar, pom, deploy clojars
+            [ -z "$CLOJARS_USERNAME" ] || lein do jar, pom, deploy clojars
 
 workflows:
   version: 2
