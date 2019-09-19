@@ -1,7 +1,13 @@
 (ns jackdaw.repl
-  (:require [jackdaw.client :as jc]
+  (:require [clojure.java.shell :refer [sh]]
+            [jackdaw.admin :as ja]
+            [jackdaw.client :as jc]
             [jackdaw.client.log :as jcl]
-            [jackdaw.admin :as ja]))
+            [jackdaw.serdes :as js]
+            [jackdaw.streams :as j]
+            [jackdaw.streams.describe :as jsd])
+  (:import [clojure.lang ILookup Associative]))
+
 
 ;;; ------------------------------------------------------------
 ;;;
@@ -82,3 +88,60 @@
 
   ([topic-config polling-interval-ms]
    (map (juxt :key :value) (get-records topic-config polling-interval-ms))))
+
+
+;;; ------------------------------------------------------------
+;;;
+;;; Helpers for REPL-driven development
+;;;
+
+(deftype FakeTopicMetadata []
+  ILookup
+  (valAt [this key]
+    {:topic-name (name key)
+     :partition-count 1
+     :replication-factor 1
+     :key-serde (js/edn-serde)
+     :value-serde (js/edn-serde)})
+
+  Associative
+  (assoc [this key val]
+    this))
+
+(def topic-metadata
+  "Treat this fake just like a map.
+
+  When used with a 'getter', returns the topic metadata for the topic
+  given with EDN serdes and a partition count of one."
+  (FakeTopicMetadata.))
+
+(defn topology->topic-metadata
+  "Takes a topology and streams config and walks the topology to find
+  all the user-defined topics."
+  [topology streams-config]
+  (->> (jsd/describe-topology (.build (j/streams-builder* topology))
+                              streams-config)
+       (map :nodes)
+       (reduce concat)
+       (filter #(= :topic (:type %)))
+       (remove (fn [x] (re-matches #".*STATE-STORE.*" (:name x))))
+       (map :name)
+       (reduce (fn [acc x]
+                 (assoc acc (keyword x) (get topic-metadata x)))
+               {})))
+
+(defn re-delete-topics
+  "Takes an instance of java.util.regex.Pattern and deletes all Kafka
+  topics that match."
+  [client-config re]
+  (with-open [client (ja/->AdminClient client-config)]
+    (let [topics-to-delete (->> (ja/list-topics client)
+                                (filter #(re-find re (:topic-name %))))]
+      (ja/delete-topics! client topics-to-delete))))
+
+(defn destroy-state-stores
+  "Takes an streams config and deletes local files associated with
+  internal state."
+  [streams-config]
+  (sh "rm" "-rf" (str "/tmp/kafka-streams/"
+                      (get streams-config "application.id"))))

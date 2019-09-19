@@ -179,5 +179,5 @@
 
   All identifiers are v5 UUIDs, and are globally unique where objects
   are distinct and globally equal where objects are the same."
-  [topology {:keys [application-id] :as streams-config}]
-  (parse-description application-id (.describe topology)))
+  [topology streams-config]
+  (parse-description (get streams-config "application.id") (.describe topology)))

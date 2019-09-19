@@ -17,8 +17,8 @@
 (defn split-lines
   "Takes an input string and returns a list of words with the
   whitespace removed."
-  [input-string]
-  (str/split (str/lower-case input-string) #"\W+"))
+  [s]
+  (str/split (str/lower-case s) #"\W+"))
 
 (defn topology-builder
   "Takes topic metadata and returns a function that builds the topology."
@@ -38,58 +38,65 @@
       builder)))
 
 
-(def config
-  {:streams-config {:application-id "word-count"
-                    :bootstrap-servers "localhost:9092"
-                    :default-key-serde "jackdaw.serdes.EdnSerde"
-                    :default-value-serde "jackdaw.serdes.EdnSerde"
-                    :cache-max-bytes-buffering "0"}
+(def streams-config
+  {"application.id" "word-count"
+   "bootstrap.servers" (or (System/getenv "BOOTSTRAP_SERVERS") "localhost:9092")
+   "default.key.serde" "jackdaw.serdes.EdnSerde"
+   "default.value.serde" "jackdaw.serdes.EdnSerde"
+   "cache.max.bytes.buffering" "0"})
 
-   :topics {:topic-metadata {:input
+(def config
+  "The production config.
+  When the 'dev' alias is active, this config will not be used."
+  {:topics {:client-config (select-keys streams-config ["bootstrap.servers"])
+            :topic-metadata {:input
                              {:topic-name "input"
                               :partition-count 1
                               :replication-factor 1
                               :key-serde (js/edn-serde)
                               :value-serde (js/edn-serde)}
+
                              :output
                              {:topic-name "output"
                               :partition-count 1
                               :replication-factor 1
                               :key-serde (js/edn-serde)
-                              :value-serde (js/edn-serde)}}
-            :streams-config (ig/ref :streams-config)}
+                              :value-serde (js/edn-serde)}}}
 
-   :app {:topology-builder topology-builder
-         :streams-config (ig/ref :streams-config)
+   :topology {:topology-builder topology-builder
+              :topics (ig/ref :topics)}
+
+   :app {:streams-config streams-config
+         :topology (ig/ref :topology)
          :topics (ig/ref :topics)}})
 
 
-(defn propertize-key
-  [keyword]
-  (str/replace (name keyword) #"-" "."))
+(if-not (get-method ig/init-key :topics)
+  ;; Install this only if not already installed
 
-(defn propertize
-  [map]
-  (reduce-kv (fn [m k v] (assoc m (propertize-key k) v)) {} map))
-
-
-(defmethod ig/init-key :streams-config [_ streams-config]
-  (let [bootstrap-servers (or (System/getenv "BOOTSTRAP_SERVERS")
-                              (:bootstrap-servers streams-config))]
-    (assoc streams-config :bootstrap-servers bootstrap-servers)))
-
-(defmethod ig/init-key :topics [_ {:keys [topic-metadata streams-config] :as opts}]
-  (let [config (propertize (select-keys streams-config [:bootstrap-servers]))]
-    (with-open [client (ja/->AdminClient config)]
+  (defmethod ig/init-key :topics [_ {:keys [client-config topic-metadata]
+                                     :as opts}]
+    (with-open [client (ja/->AdminClient client-config)]
       (ja/create-topics! client (vals topic-metadata)))
     (assoc opts :topic-metadata topic-metadata)))
 
-(defmethod ig/init-key :app [_ {:keys [topology-builder streams-config topics] :as opts}]
-  (let [builder (j/streams-builder)
-        topology ((topology-builder (:topic-metadata topics)) builder)
-        streams-app (j/kafka-streams topology (propertize streams-config))]
-    (j/start streams-app)
-    (assoc opts :streams-app streams-app)))
+
+(if-not (get-method ig/init-key :topology)
+  ;; Install this only if not already installed
+
+  (defmethod ig/init-key :topology [_ {:keys [topology-builder topics]}]
+    (let [streams-builder (j/streams-builder)]
+      ((topology-builder (:topic-metadata topics)) streams-builder))))
+
+
+(if-not (get-method ig/init-key :app)
+  ;; Install this only if not already installed
+
+  (defmethod ig/init-key :app [_ {:keys [streams-config topology]
+                                  :as opts}]
+    (let [streams-app (j/kafka-streams topology streams-config)]
+      (j/start streams-app)
+      (assoc opts :streams-app streams-app))))
 
 
 (defn -main
@@ -118,7 +125,9 @@
   ;; an operating system service manager, e.g. launchd or
   ;; systemd. However, if you want to get up and running quickly,
   ;; download Kafka from `https://www.confluent.io/download/` and add the
-  ;; install location to your PATH. Then install the CLI:
+  ;; install location to your PATH.
+
+  ;; Then install the CLI:
   ;; ```
   ;; curl -L https://cnfl.io/cli | sh -s -- -b /<path-to-directory>/bin
   ;; ```
@@ -156,29 +165,22 @@
 
   ;; You should see output like the following indicating the topics
   ;; were created and the app is running.
-  ;;
   ;; ```
-  ;; 23:01:25.939 [main] INFO  system - internal state is deleted
-  ;; 23:01:26.093 [main] INFO  word-count - word-count is up
-  ;; {:app #object[org.apache.kafka.streams.KafkaStreams 0xb8b2184 "org.apache.kafka.streams.KafkaStreams@b8b2184"]}
+  ;; :reloading (word-count user)
+  ;; :resumed
   ;; ```
 
   ;; Emacs users:
   ;;
-  ;; Install Cider (https://github.com/clojure-emacs/cider). After
-  ;; installing, open a project file, e.g. this one, and use
-  ;; `M-x cider-jack-in` to start a REPL. You can evaluate forms using
-  ;; `C-x C-e` and `C-c C-v C-f e`. The latter sends output to
-  ;; *cider-results*.
 
-  ;; The following `require` is needed because the functons to reset
-  ;; app state and produce and consume records are defined in the
-  ;; `user` namespace but we want to evaluate them from this one.
+  ;; Install Cider (https://github.com/clojure-emacs/cider).
+  ;; Afterwards, open a project file, e.g. this one, and use
+  ;; `M-x cider-jack-in` to start a REPL.
 
-  ;; Evaluate the form using `C-x C-e`:
-  (require '[user :refer :all])
+  ;; To send forms to the REPL, place the cursor after the closing
+  ;; paren and use `C-c M-p`. To evaluate the form, press enter.
 
-  ;; Evaluate the form using `C-c C-v C-f e`:
+  ;; Evaluate the form using `C-c M-p` and press enter:
   (reset)
 
   ;; For the rest of the comment block, it is assumed you can evaluate
@@ -241,10 +243,10 @@
   ;; Evaluate the form:
   (reset)
 
-  ;; Evaluate the forms:
+  ;; Evaluate the form:
   (require '[clojure.java.io :as io])
 
-  ;; Evaluate the forms:
+  ;; Evaluate the form:
   (let [text-input (slurp (io/resource "metamorphosis.txt"))
         values (str/split text-input #"\n")]
     (doseq [v values]
