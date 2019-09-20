@@ -151,7 +151,7 @@
   ;; ```
   ;; brew install clojure
   ;; cd <path-to-jackdaw>/examples/word-count
-  ;; clj
+  ;; clj -A:dev
   ;; ```
   ;;
   ;; You should see output like the following:
