@@ -364,5 +364,5 @@
               (client/assign-all $ (map :topic-name [topic-config]))
               (client/seek-to-timestamp $ ts-next [topic-config])
               (client/position-all $)
-              (is (= [0]
+              (is (= [11]
                      (vals $))))))))))
