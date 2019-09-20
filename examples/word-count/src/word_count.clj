@@ -3,78 +3,28 @@
   processing application using the Jackdaw Streams API.
 
   The application reads from a Kafka topic called `input` and splits
-  the input value into words. It puts the count on a Kafka topic
-  called `output` for each word seen."
+  the value into words. It then writes to a Kafka topic called
+  `output` for each word seen."
   (:require
    [clojure.string :as str]
-   [clojure.java.io :as io]
    [clojure.tools.logging :refer [info]]
-   [jackdaw.serdes.edn :as jse]
-   [jackdaw.serdes.resolver :as resolver]
-   [jackdaw.streams :as j])
-  (:gen-class))
+   [jackdaw.admin :as ja]
+   [jackdaw.serdes :as js]
+   [jackdaw.streams :as j]
+   [integrant.core :as ig]))
 
-(defn get-env [k default]
-  (get (System/getenv) k default))
-
-(def bootstrap-servers (get-env "BOOTSTRAP_SERVERS" "localhost:9092"))
-
-(def ^{:const true
-       :doc "A topic metadata map.
-
-  Provides all the information needed to create the topics used by the
-  application. It also describes the serdes used to read and write to
-  the topics."}
-
-  +topic-metadata+
-
-  {:input
-   {:topic-name "input"
-    :partition-count 1
-    :replication-factor 1
-    :key-serde {:serde-keyword :jackdaw.serdes.edn/serde}
-    :value-serde {:serde-keyword :jackdaw.serdes.edn/serde}}
-
-   :output
-   {:topic-name "output"
-    :partition-count 1
-    :replication-factor 1
-    :key-serde {:serde-keyword :jackdaw.serdes.edn/serde}
-    :value-serde {:serde-keyword :jackdaw.serdes.edn/serde}}})
-
-(def resolve-serde
-  (resolver/serde-resolver))
-
-(def topic-metadata
-  (reduce-kv (fn [m k v]
-               (assoc m k
-                      (assoc v
-                             :key-serde (resolve-serde (:key-serde v))
-                             :value-serde (resolve-serde (:value-serde v)))))
-             {}
-             +topic-metadata+))
-
-(def app-config
-  "Returns the application config."
-  {"application.id"            "word-count"
-   "bootstrap.servers"         bootstrap-servers
-   "default.key.serde"         "jackdaw.serdes.EdnSerde"
-   "default.value.serde"       "jackdaw.serdes.EdnSerde"
-   "cache.max.bytes.buffering" "0"})
 
 (defn split-lines
   "Takes an input string and returns a list of words with the
   whitespace removed."
-  [input-string]
-  (str/split (str/lower-case input-string) #"\W+"))
+  [s]
+  (str/split (str/lower-case s) #"\W+"))
 
 (defn topology-builder
-  "Takes a topic metadata function and returns a function that builds
-  the topology."
+  "Takes topic metadata and returns a function that builds the topology."
   [topic-metadata]
   (fn [builder]
-    (let [text-input (-> (j/kstream builder (:input topic-metadata))
-                         (j/peek (fn [[k v]] (info (str {:key k :value v})))))
+    (let [text-input (j/kstream builder (:input topic-metadata))
 
           counts (-> text-input
                      (j/flat-map-values split-lines)
@@ -87,25 +37,71 @@
 
       builder)))
 
-(defn start-app
-  "Starts the stream processing application."
-  [topic-metadata app-config]
-  (let [builder (j/streams-builder)
-        topology ((topology-builder topic-metadata) builder)
-        app (j/kafka-streams topology app-config)]
-    (j/start app)
-    (info "word-count is up")
-    app))
 
-(defn stop-app
-  "Stops the stream processing application."
-  [app]
-  (j/close app)
-  (info "word-count is down"))
+(def streams-config
+  {"application.id" "word-count"
+   "bootstrap.servers" (or (System/getenv "BOOTSTRAP_SERVERS") "localhost:9092")
+   "default.key.serde" "jackdaw.serdes.EdnSerde"
+   "default.value.serde" "jackdaw.serdes.EdnSerde"
+   "cache.max.bytes.buffering" "0"})
+
+(def config
+  "The production config.
+  When the 'dev' alias is active, this config will not be used."
+  {:topics {:client-config (select-keys streams-config ["bootstrap.servers"])
+            :topic-metadata {:input
+                             {:topic-name "input"
+                              :partition-count 1
+                              :replication-factor 1
+                              :key-serde (js/edn-serde)
+                              :value-serde (js/edn-serde)}
+
+                             :output
+                             {:topic-name "output"
+                              :partition-count 1
+                              :replication-factor 1
+                              :key-serde (js/edn-serde)
+                              :value-serde (js/edn-serde)}}}
+
+   :topology {:topology-builder topology-builder
+              :topics (ig/ref :topics)}
+
+   :app {:streams-config streams-config
+         :topology (ig/ref :topology)
+         :topics (ig/ref :topics)}})
+
+
+(if-not (get-method ig/init-key :topics)
+  ;; Install this only if not already installed
+
+  (defmethod ig/init-key :topics [_ {:keys [client-config topic-metadata]
+                                     :as opts}]
+    (with-open [client (ja/->AdminClient client-config)]
+      (ja/create-topics! client (vals topic-metadata)))
+    (assoc opts :topic-metadata topic-metadata)))
+
+
+(if-not (get-method ig/init-key :topology)
+  ;; Install this only if not already installed
+
+  (defmethod ig/init-key :topology [_ {:keys [topology-builder topics]}]
+    (let [streams-builder (j/streams-builder)]
+      ((topology-builder (:topic-metadata topics)) streams-builder))))
+
+
+(if-not (get-method ig/init-key :app)
+  ;; Install this only if not already installed
+
+  (defmethod ig/init-key :app [_ {:keys [streams-config topology]
+                                  :as opts}]
+    (let [streams-app (j/kafka-streams topology streams-config)]
+      (j/start streams-app)
+      (assoc opts :streams-app streams-app))))
+
 
 (defn -main
   [& _]
-  (start-app topic-metadata app-config))
+  (ig/init config))
 
 
 (comment
@@ -126,18 +122,23 @@
   ;; STEP 1: Download and Start Confluent Platform
 
   ;; For serious development, Confluent Platform can be supervised by
-  ;; an operating system service manager, e.g., launchd or
+  ;; an operating system service manager, e.g. launchd or
   ;; systemd. However, if you want to get up and running quickly,
-  ;; download the Confluent CLI from
-  ;; `https://www.confluent.io/download/` and add the install location
-  ;; to your PATH. Then start Confluent Platform using the Confluent
-  ;; CLI `start` command.
+  ;; download Kafka from `https://www.confluent.io/download/` and add the
+  ;; install location to your PATH.
+
+  ;; Then install the CLI:
   ;; ```
-  ;; <path-to-confluent>/bin/confluent start
+  ;; curl -L https://cnfl.io/cli | sh -s -- -b /<path-to-directory>/bin
   ;; ```
   ;;
-  ;; The Confluent CLI requires Java 8. If ZooKeeper and Kafka are
-  ;; already running, skip this step.
+  ;; Start Confluent Platform using the `start` command.
+  ;; ```
+  ;; <path-to-directory>/bin/confluent local start
+  ;; ```
+  ;;
+  ;; The Confluent CLI requires JDK version 1.8 or 1.11 is recommended.
+  ;; If ZooKeeper and Kafka are already running, skip this step.
 
 
   ;; STEP 2: Launch a Clojure REPL and Call `reset`
@@ -150,12 +151,12 @@
   ;; ```
   ;; brew install clojure
   ;; cd <path-to-jackdaw>/examples/word-count
-  ;; clj
+  ;; clj -A:dev
   ;; ```
   ;;
   ;; You should see output like the following:
   ;; ```
-  ;; Clojure 1.10.0
+  ;; Clojure 1.10.1
   ;; user=>
   ;; ```
 
@@ -164,29 +165,22 @@
 
   ;; You should see output like the following indicating the topics
   ;; were created and the app is running.
-  ;;
   ;; ```
-  ;; 23:01:25.939 [main] INFO  system - internal state is deleted
-  ;; 23:01:26.093 [main] INFO  word-count - word-count is up
-  ;; {:app #object[org.apache.kafka.streams.KafkaStreams 0xb8b2184 "org.apache.kafka.streams.KafkaStreams@b8b2184"]}
+  ;; :reloading (word-count user)
+  ;; :resumed
   ;; ```
 
   ;; Emacs users:
   ;;
-  ;; Install Cider (https://github.com/clojure-emacs/cider). After
-  ;; installing, open a project file, e.g. this one, and use
-  ;; `M-x cider-jack-in` to start a REPL. You can evaluate forms using
-  ;; `C-x C-e` and `C-c C-v C-f e`. The latter sends output to
-  ;; *cider-results*.
 
-  ;; The following `require` is needed because the functons to reset
-  ;; app state and produce and consume records are defined in the
-  ;; `user` namespace but we want to evaluate them from this one.
+  ;; Install Cider (https://github.com/clojure-emacs/cider).
+  ;; Afterwards, open a project file, e.g. this one, and use
+  ;; `M-x cider-jack-in` to start a REPL.
 
-  ;; Evaluate the form using `C-x C-e`:
-  (require '[user :refer :all])
+  ;; To send forms to the REPL, place the cursor after the closing
+  ;; paren and use `C-c M-p`. To evaluate the form, press enter.
 
-  ;; Evaluate the form using `C-c C-v C-f e`:
+  ;; Evaluate the form using `C-c M-p` and press enter:
   (reset)
 
   ;; For the rest of the comment block, it is assumed you can evaluate
@@ -250,18 +244,21 @@
   (reset)
 
   ;; Evaluate the form:
+  (require '[clojure.java.io :as io])
+
+  ;; Evaluate the form:
   (let [text-input (slurp (io/resource "metamorphosis.txt"))
         values (str/split text-input #"\n")]
     (doseq [v values]
       (publish (:input topic-metadata) nil v)
-      (info v))
-    (info "The End"))
+      (println v))
+    (println "The End"))
 
   ;; Wait until the log contains "The End". Then evaluate the form:
   (->> (get-keyvals (:output topic-metadata))
        (into {})
        (sort-by second)
-       reverse))
+       reverse)
 
   ;; You should see output like the following:
   ;; ```
@@ -287,3 +284,4 @@
   ;;  ["would" 187]
   ;;  ...)
   ;; ```
+  )

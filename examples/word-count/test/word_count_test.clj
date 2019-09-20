@@ -49,10 +49,13 @@
 (defn get-env [k]
   (get (System/getenv) k))
 
+(def topic-metadata
+  (get-in wc/config [:topics :topic-metadata]))
+
 (def test-config
   {:broker-config broker-config
-   :topic-metadata wc/topic-metadata
-   :app-config (assoc wc/app-config "cache.max.bytes.buffering" "0")
+   :topic-metadata topic-metadata
+   :app-config (assoc wc/streams-config "cache.max.bytes.buffering" "0")
    :enable? (get-env "BOOTSTRAP_SERVERS")})
 
 (defn props-for [x]
@@ -65,7 +68,7 @@
 (defn mock-transport-config
   []
   {:driver (let [builder (k/streams-builder)
-                 app (wc/topology-builder wc/topic-metadata)
+                 app (wc/topology-builder topic-metadata)
                  topology (.build (proto/streams-builder* (app builder)))]
              (TopologyTestDriver.
               topology
@@ -86,11 +89,11 @@
                                topics))
 
     :else
-    (jd.test/mock-transport (mock-transport-config) wc/topic-metadata)))
+    (jd.test/mock-transport (mock-transport-config) topic-metadata)))
 
 (deftest test-word-count-example
   (fix/with-fixtures [(fix/integration-fixture wc/topology-builder test-config)]
-    (jd.test/with-test-machine (test-transport wc/topic-metadata)
+    (jd.test/with-test-machine (test-transport topic-metadata)
       (fn [machine]
         (let [lines ["As Gregor Samsa awoke one morning from uneasy dreams"
                      "he found himself transformed in his bed into an enormous insect"
