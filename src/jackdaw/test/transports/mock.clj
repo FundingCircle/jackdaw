@@ -32,21 +32,37 @@
    node by the TopologyTestDriver"
   [_topic-config]
   (fn [m]
-    (let [record (ConsumerRecord. (get-in m [:topic :topic-name])
-                                  (int -1)
-                                  (long -1)
-                                  (:timestamp m)
-                                  TimestampType/CREATE_TIME,
-                                  (long ConsumerRecord/NULL_CHECKSUM)
-                                  (if-let [k (:key m)]
-                                    (count k)
-                                    0)
-                                  (if-let [v (:value m)]
-                                    (count v)
-                                    0)
-                                  (:key m)
-                                  (:value m))]
-     (assoc m :input-record record))))
+    (let [record (if (:headers m)
+                   (ConsumerRecord. (get-in m [:topic :topic-name])
+                                    (int -1)
+                                    (long -1)
+                                    (:timestamp m)
+                                    TimestampType/CREATE_TIME,
+                                    (long ConsumerRecord/NULL_CHECKSUM)
+                                    (if-let [k (:key m)]
+                                      (count k)
+                                      0)
+                                    (if-let [v (:value m)]
+                                      (count v)
+                                      0)
+                                    (:key m)
+                                    (:value m)
+                                    (:headers m))
+                   (ConsumerRecord. (get-in m [:topic :topic-name])
+                                    (int -1)
+                                    (long -1)
+                                    (:timestamp m)
+                                    TimestampType/CREATE_TIME,
+                                    (long ConsumerRecord/NULL_CHECKSUM)
+                                    (if-let [k (:key m)]
+                                      (count k)
+                                      0)
+                                    (if-let [v (:value m)]
+                                      (count v)
+                                      0)
+                                    (:key m)
+                                    (:value m)))]
+      (assoc m :input-record record))))
 
 (defn with-output-record
   [_topic-config]
@@ -54,7 +70,8 @@
     {:topic (.topic r)
      :key (.key r)
      :value (.value r)
-     :partition (or (.partition r) -1)}))
+     :partition (or (.partition r) -1)
+     :headers (or (.headers r) {})}))
 
 (defn- poller
   "Returns a function for polling the results of a TopologyTestDriver
