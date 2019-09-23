@@ -256,6 +256,15 @@
        (map (fn [[k v]] [k v]))
        (into {})))
 
+(defn end-offsets
+  [^Consumer consumer partitions]
+  (->> partitions
+       (map (fn [topic-partition]
+              (jd/as-TopicPartition topic-partition)))
+       (.endOffsets consumer)
+       (map (fn [[k v]] [k v]))
+       (into {})))
+
 (defn seek-to-timestamp
   "Given an timestamp in epoch MS, a subscribed consumer and a seq of
   Jackdaw topics, seek all partitions of the selected topics to the
@@ -265,19 +274,26 @@
   the EARLIEST message whose timestamp is greater than or equal to the
   timestamp sought.
 
+  If no such message exists, the first message read from each partition
+  will be the next new message written to that partition.
+
   Returns the consumer for convenience with `->`, `doto` etc."
   [^Consumer consumer timestamp topics]
   (let [topic-partitions (->> (mapcat #(partitions-for consumer %) topics)
                               (map #(select-keys % [:topic-name :partition])))
-        start-offsets (offsets-for-times consumer
+        ts-offsets       (offsets-for-times consumer
                                          (zipmap topic-partitions
-                                                 (repeat timestamp)))]
+                                                 (repeat (count topic-partitions) timestamp)))
+        end-offsets      (end-offsets consumer topic-partitions)
+        offsets          (reduce-kv (fn [m k v]
+                                      (assoc m k {:ts-offset v
+                                                  :end-offset (get end-offsets k)}))
+                                    {} ts-offsets)]
     (doseq [[^TopicPartition topic-partition
-             ^OffsetAndTimestamp timestamp-offset] start-offsets]
-      ;; timestamp-offset is nil if the topic has no messages
-      (let [offset (if timestamp-offset
-                     (.offset timestamp-offset)
-                     0)]
+             {:keys [ts-offset end-offset]}] offsets]
+      (let [offset (or (when ts-offset
+                         (.offset ts-offset))
+                       (inc end-offset))]
         (log/infof "Setting starting offset (topic=%s, partition=%s): %s"
                    (.topic topic-partition)
                    (.partition topic-partition)
