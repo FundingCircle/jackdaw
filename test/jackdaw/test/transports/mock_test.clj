@@ -10,7 +10,8 @@
    [manifold.stream :as s])
   (:import
    (java.util Properties)
-   (org.apache.kafka.streams TopologyTestDriver)))
+   (org.apache.kafka.streams TopologyTestDriver)
+   (org.apache.kafka.common.header.internals RecordHeaders)))
 
 (defmethod print-method TopologyTestDriver [x writer]
   (print-simple x writer))
@@ -100,9 +101,11 @@
                  :ack ack})
 
         (let [result (deref ack 1000 {:error :timeout})]
+          (clojure.pprint/pprint result)
           (is (= "test-in" (:topic result)))
           (is (integer? (:partition result)))
-          (is (integer? (:offset result))))))))
+          (is (integer? (:offset result)))
+          )))))
 
 (deftest test-mock-transport-with-journal
   (with-mock-transport {:test-id "test-mock"}
@@ -111,6 +114,10 @@
             topic test-in
             messages (get-in t [:producer :messages])
             serdes (get-in t [:serdes])
+            headers (reduce (fn [headers [h-key h-value]]
+                              (.add headers h-key (.getBytes h-value)))
+                            (RecordHeaders.)
+                            {"test-header" "header-value"})
             ack (promise)
             msg-key (:id msg)]
 
@@ -119,6 +126,7 @@
                  :key msg-key
                  :value msg
                  :timestamp (System/currentTimeMillis)
+                 :headers headers
                  :ack ack})
 
         (testing "the write is acknowledged"
@@ -139,5 +147,5 @@
 
             (is (= "test-out" (:topic result)))
             (is (= 1 (:key result)))
-            (is (= {:id 1 :payload "foo"} (:value result)))))))))
-
+            (is (= {:id 1 :payload "foo"} (:value result)))
+            (is (instance? RecordHeaders (:headers result)))))))))
