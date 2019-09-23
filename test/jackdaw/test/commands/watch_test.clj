@@ -2,8 +2,7 @@
   (:require
    [jackdaw.test.commands.watch :as watch]
    [manifold.deferred :as d]
-   [clojure.test :refer :all]
-   [clojure.tools.logging :as log]))
+   [clojure.test :refer [deftest testing is]]))
 
 ;; An example of the problem the watcher is trying to solve
 ;; might help.
@@ -21,7 +20,7 @@
 (defn run-watch-cmd [watcher cmd-list]
   (let [journal (agent [])
         machine {:journal journal}
-        result-d (d/future (watch/handle-watch-cmd machine :watch [watcher]))]
+        result-d (d/future (watch/handle-watch-cmd machine [watcher]))]
 
     (doseq [cmd (butlast cmd-list)]
       (send journal conj cmd)
