@@ -14,7 +14,8 @@
   (:import
    org.apache.kafka.streams.KafkaStreams$StateListener
    org.apache.kafka.clients.consumer.ConsumerRecord
-   org.apache.kafka.clients.producer.ProducerRecord))
+   org.apache.kafka.clients.producer.ProducerRecord
+   org.apache.kafka.common.header.Headers))
 
 (defn subscribe
   "Subscribes to specified topics
@@ -84,8 +85,12 @@
    (ProducerRecord. ^String topic-name key value))
   ([{:keys [topic-name]} partition key value]
    (ProducerRecord. ^String topic-name ^Integer (int partition) key value))
+  ([{:keys [topic-name]} partition key value ^Headers headers]
+   (ProducerRecord. ^String topic-name ^Integer (int partition) key value headers))
   ([{:keys [topic-name]} partition timestamp key value]
-   (ProducerRecord. ^String topic-name ^Integer (int partition) ^Long timestamp key value)))
+   (ProducerRecord. ^String topic-name ^Integer (int partition) ^Long timestamp key value))
+  ([{:keys [topic-name]} partition timestamp key value ^Headers headers]
+   (ProducerRecord. ^String topic-name ^Integer (int partition) ^Long timestamp key value headers)))
 
 (defn consumer
   "Creates an asynchronous Kafka Consumer of all topics defined in the
@@ -138,7 +143,8 @@
                                 (:partition m (int 0))
                                 (:timestamp m)
                                 (:key m)
-                                (:value m))]
+                                (:value m)
+                                (:headers m))]
     (assoc m :producer-record rec)))
 
 (defn deliver-ack
