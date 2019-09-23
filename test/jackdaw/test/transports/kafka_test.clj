@@ -10,7 +10,8 @@
    [jackdaw.test.transports.kafka]
    [manifold.stream :as s])
   (:import
-   (java.util Properties)))
+   (java.util Properties)
+   (org.apache.kafka.common.header.internals RecordHeaders)))
 
 (def kafka-config {"bootstrap.servers" "localhost:9092"
                    "group.id" "kafka-write-test"})
@@ -108,6 +109,10 @@
             topic test-in
             messages (get-in t [:producer :messages])
             serdes (get-in t [:serdes])
+            headers (reduce (fn [headers [h-key h-value]]
+                              (.add headers h-key (.getBytes h-value)))
+                            (RecordHeaders.)
+                            {"test-header" "header-value"})
             ack (promise)
             msg-key (:id msg)]
 
@@ -117,6 +122,7 @@
                  :key msg-key
                  :value msg
                  :timestamp (System/currentTimeMillis)
+                 :headers headers
                  :ack ack})
 
         (testing "the write is acknowledged"
@@ -137,4 +143,5 @@
 
             (is (= "test-out" (:topic result)))
             (is (= 2 (:key result)))
-            (is (= {:id 2 :payload "foo"} (:value result)))))))))
+            (is (= {:id 2 :payload "foo"} (:value result)))
+            (is (instance? RecordHeaders (:headers result)))))))))
