@@ -1,38 +1,36 @@
 {:aliases
  {:test
-  {:extra-paths ["test"],
-   :extra-deps {org.clojure/test.check {:mvn/version "RELEASE"}}},
+  {:extra-paths ["test"]
+   :extra-deps {org.apache.kafka/kafka-streams-test-utils {:mvn/version "2.3.0"}
+                lambdaisland/kaocha {:mvn/version "0.0-529"}
+                lambdaisland/kaocha-cloverage {:mvn/version "0.0-32"}
+                lambdaisland/kaocha-junit-xml {:mvn/version "0.0-70"}
+                org.apache.kafka/kafka-clients {:mvn/version "2.3.0"}
+                org.clojure/test.check {:mvn/version "0.9.0"}}}
   :runner
   {:extra-deps
    {com.cognitect/test-runner
-    {:git/url "https://github.com/cognitect-labs/test-runner",
-     :sha "76568540e7f40268ad2b646110f237a60295fa3c"}},
-   :main-opts ["-m" "cognitect.test-runner" "-d" "test"]},
+    {:git/url "https://github.com/cognitect-labs/test-runner"
+     :sha "76568540e7f40268ad2b646110f237a60295fa3c"}}
+   :main-opts ["-m" "cognitect.test-runner" "-d" "test"]}
   :dev
   {:extra-deps
-   {io.aviso/logging {:mvn/version "0.3.2"},
-    org.apache.kafka/kafka-streams-test-utils {:mvn/version "2.3.0"},
-    org.apache.kafka/kafka-clients
-    {:mvn/version "2.3.0", :classifier "test"},
-    org.clojure/test.check {:mvn/version "0.9.0"},
-    lambdaisland/kaocha {:mvn/version "0.0-529"},
-    lambdaisland/kaocha-cloverage {:mvn/version "0.0-32"},
-    lambdaisland/kaocha-junit-xml {:mvn/version "0.0-70"}}}},
+   {io.aviso/logging {:mvn/version "0.3.2"}}}}
  :deps
- {org.clojure/data.json {:mvn/version "0.2.6"},
-  org.clojure/clojure {:mvn/version "1.10.1"},
-  org.apache.kafka/kafka_2.11 {:mvn/version "2.3.0"},
-  org.clojure/tools.logging {:mvn/version "0.4.1"},
+ {org.clojure/data.json {:mvn/version "0.2.6"}
+  org.clojure/clojure {:mvn/version "1.10.1"}
+  org.apache.kafka/kafka_2.11 {:mvn/version "2.3.0"}
+  org.clojure/tools.logging {:mvn/version "0.4.1"}
   danlentz/clj-uuid
-  {:mvn/version "0.1.7", :exclusions [primitive-math]},
-  clj-time {:mvn/version "0.15.1"},
-  org.apache.kafka/kafka-streams-test-utils {:mvn/version "2.3.0"},
+  {:mvn/version "0.1.7" :exclusions [primitive-math]}
+  clj-time {:mvn/version "0.15.1"}
+  org.apache.kafka/kafka-streams-test-utils {:mvn/version "2.3.0"}
   io.confluent/kafka-schema-registry-client
-  {:mvn/version "5.3.0",
-   :exclusions [com.fasterxml.jackson.core/jackson-databind]},
-  org.apache.kafka/kafka-streams {:mvn/version "2.3.0"},
-  org.apache.kafka/kafka-clients {:mvn/version "2.3.0"},
-  org.clojure/core.cache {:mvn/version "0.7.2"},
-  io.confluent/kafka-avro-serializer {:mvn/version "5.3.0"},
-  aleph {:mvn/version "0.4.6"}},
+  {:mvn/version "5.3.0"
+   :exclusions [com.fasterxml.jackson.core/jackson-databind]}
+  org.apache.kafka/kafka-streams {:mvn/version "2.3.0"}
+  org.apache.kafka/kafka-clients {:mvn/version "2.3.0"}
+  org.clojure/core.cache {:mvn/version "0.7.2"}
+  io.confluent/kafka-avro-serializer {:mvn/version "5.3.0"}
+  aleph {:mvn/version "0.4.6"}}
  :mvn/repos {"confluent" {:url "https://packages.confluent.io/maven/"}}}

@@ -129,6 +129,20 @@ jobs:
           name: Report Test Coverage
           command: bash <(curl -s https://codecov.io/bash)
 
+  test_deps_edn:
+    <<: *test_config
+    steps:
+      - *restore_repo
+      - *restore_mvn
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - run:
+          clojure -A:test -m kaocha.runner
+      - store_artifacts:
+          path: ./logs
+      - store_test_results:
+          path: test-results
+
   deploy:
     <<: *deploy_config
     steps:
@@ -165,6 +179,9 @@ workflows:
       - deps:
           requires:
             - checkout_code
+      - test_deps_edn:
+          requires:
+            - deps
       - test:
           requires:
             - deps
