@@ -42,6 +42,12 @@
 (def streams-builder?
   (partial satisfies? IStreamsBuilder))
 
+(s/def ::max-records int?)
+(s/def ::max-bytes int?)
+(s/def ::until-time-limit-ms int?)
+(s/def ::suppress-config (s/keys :opt-un [::max-records
+                                          ::max-bytes
+                                          ::until-time-limit-ms]))
 (s/def ::topic-name string?)
 (s/def ::key-serde any?)
 (s/def ::value-serde any?)
@@ -256,6 +262,11 @@
                      :other-ktable ktable?
                      :value-joiner-fn ifn?)
         :ret ktable?)
+
+(s/fdef k/suppress
+  :args (s/cat :ktable ktable?
+               :suppress ::suppress-config)
+  :ret ktable?)
 
 (s/fdef k/to-kstream
         :args (s/cat :ktable ktable?

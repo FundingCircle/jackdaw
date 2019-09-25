@@ -348,6 +348,12 @@
      config
      (outer-join ktable other-ktable value-joiner-fn)))
 
+  (suppress
+    [_ suppressed]
+    (configured-ktable
+     config
+     (suppress ktable suppressed)))
+
   (to-kstream
     [_]
     (configured-kstream
