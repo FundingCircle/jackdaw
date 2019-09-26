@@ -18,9 +18,6 @@
             [xf-word-count :as xfwc]))
 
 
-(integrant.repl/set-prep! (constantly repl-config))
-
-
 (def repl-config
   "The development config.
   When the 'dev' alias is active, this config will be used."
@@ -36,6 +33,9 @@
    :app {:streams-config xfwc/streams-config
          :topology (ig/ref :topology)
          :topics (ig/ref :topics)}})
+
+
+(integrant.repl/set-prep! (constantly repl-config))
 
 
 (defmethod ig/init-key :topology [_ {:keys [topology-builder xform swap-fn]}]

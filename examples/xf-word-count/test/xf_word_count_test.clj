@@ -28,9 +28,34 @@
   :app-config xfwc/streams-config
   :enable? (System/getenv "BOOTSTRAP_SERVERS")})
 
-(defn topology-builder
+#_(defn topology-builder
   [topic-metadata]
   (xfwc/topology-builder topic-metadata #(xfwc/xf % xfwc/kv-store-swap-fn)))
+
+;; TEMP: This was added to rule out a testing bug so we can test with classic Word Count
+(defn split-lines
+  "Takes an input string and returns a list of words with the
+  whitespace removed."
+  [s]
+  (clojure.string/split (clojure.string/lower-case s) #"\W+"))
+
+;; TEMP: This was added to rule out a testing bug so we can test with classic Word Count
+(defn topology-builder
+  "Takes topic metadata and returns a function that builds the topology."
+  [topic-metadata]
+  (fn [builder]
+    (let [text-input (j/kstream builder (:input topic-metadata))
+
+          counts (-> text-input
+                     (j/flat-map-values split-lines)
+                     (j/group-by (fn [[_ v]] v))
+                     (j/count))]
+
+      (-> counts
+          (j/to-kstream)
+          (j/to (:output topic-metadata)))
+
+      builder)))
 
 (defn props-for
   [x]
