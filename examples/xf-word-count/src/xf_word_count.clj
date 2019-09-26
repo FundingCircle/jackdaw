@@ -82,11 +82,6 @@
 (def streams-config
   {"application.id" "xf-word-count"
    "bootstrap.servers" (or (System/getenv "BOOTSTRAP_SERVERS") "localhost:9092")
-
-   ;; TEMP: These were added to rule out a testing bug so we can test with classic Word Count
-   "default.key.serde" "jackdaw.serdes.EdnSerde"
-   "default.value.serde" "jackdaw.serdes.EdnSerde"
-
    "cache.max.bytes.buffering" "0"})
 
 (defn topology-builder
