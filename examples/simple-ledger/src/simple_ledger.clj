@@ -39,10 +39,10 @@
                     (swap-fn state next-balances %)
                     (select-keys % [account-name])
                     ((juxt (comp first keys) (comp first vals)) %)
-                    (zipmap [:account-name :current-balance] %)
-                    (assoc % :starting-balance (if (= :dr debit-credit-indicator)
-                                                 (+ amount (:current-balance %))
-                                                 (- amount (:current-balance %))))
+                    (zipmap [:account-name :after-balance] %)
+                    (assoc % :before-balance (if (= :dr debit-credit-indicator)
+                                                 (+ amount (:after-balance %))
+                                                 (- amount (:after-balance %))))
                     (vector k %)
                     (vector %))]
          (rf result next))))))
@@ -63,10 +63,10 @@
 
   ;; Evaluate the form:
   (def coll
-    [[nil {:debit-account "tech"
+    [["1" {:debit-account "tech"
            :credit-account "cash"
            :amount 1000}]
-     [nil {:debit-account "cash"
+     ["2" {:debit-account "cash"
            :credit-account "sales"
            :amount 2000}]])
 
@@ -79,20 +79,20 @@
 
   ;; (["tech"
   ;;   {:account-name "tech"
-  ;;    :starting-balance 0
-  ;;    :current-balance -1000}]
+  ;;    :before-balance 0
+  ;;    :after-balance -1000}]
   ;;  ["cash"
   ;;   {:account-name "cash"
-  ;;    :starting-balance 0
-  ;;    :current-balance 1000}]
+  ;;    :before-balance 0
+  ;;    :after-balance 1000}]
   ;;  ["cash"
   ;;   {:account-name "cash"
-  ;;    :starting-balance 1000
-  ;;    :current-balance -1000}]
+  ;;    :before-balance 1000
+  ;;    :after-balance -1000}]
   ;;  ["sales"
   ;;   {:account-name "sales"
-  ;;    :starting-balance 0
-  ;;    :current-balance 2000}])
+  ;;    :before-balance 0
+  ;;    :after-balance 2000}])
 
 
   ;; This time, let's count the words using
@@ -168,20 +168,20 @@
 
   ;; (["sales"
   ;;   {:account-name "sales"
-  ;;    :starting-balance 0
-  ;;    :current-balance 2000}]
+  ;;    :before-balance 0
+  ;;    :after-balance 2000}]
   ;;  ["tech"
   ;;   {:account-name "tech"
-  ;;    :starting-balance 0
-  ;;    :current-balance -1000}]
+  ;;    :before-balance 0
+  ;;    :after-balance -1000}]
   ;;  ["cash"
   ;;   {:account-name "cash"
-  ;;    :starting-balance 0
-  ;;    :current-balance 1000}]
+  ;;    :before-balance 0
+  ;;    :after-balance 1000}]
   ;;  ["cash"
   ;;   {:account-name "cash"
-  ;;    :starting-balance 1000
-  ;;    :current-balance -1000}])
+  ;;    :before-balance 1000
+  ;;    :after-balance -1000}])
 
 
   ;; The `transaction-added` topic has 15 partitions. Let's see how
@@ -199,27 +199,27 @@
   ;;   :partition 0
   ;;   :value
   ;;   {:account-name "sales"
-  ;;    :starting-balance 0
-  ;;    :current-balance 2000}}
+  ;;    :before-balance 0
+  ;;    :after-balance 2000}}
   ;;  {:key "tech"
   ;;   :offset 0
   ;;   :partition 11
   ;;   :value
   ;;   {:account-name "tech"
-  ;;    :starting-balance 0
-  ;;    :current-balance -1000}}
+  ;;    :before-balance 0
+  ;;    :after-balance -1000}}
   ;;  {:key "cash"
   ;;   :offset 0
   ;;   :partition 14
   ;;   :value
   ;;   {:account-name "cash"
-  ;;    :starting-balance 0
-  ;;    :current-balance 1000}}
+  ;;    :before-balance 0
+  ;;    :after-balance 1000}}
   ;;  {:key "cash"
   ;;   :offset 1
   ;;   :partition 14
   ;;   :value
   ;;   {:account-name "cash"
-  ;;    :starting-balance 1000
-  ;;    :current-balance -1000}})
+  ;;    :before-balance 1000
+  ;;    :after-balance -1000}})
   )

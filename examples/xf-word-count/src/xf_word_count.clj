@@ -45,9 +45,9 @@
 
   ;; Evaluate the form:
   (def coll
-    [[nil "inside every large program"]
-     [nil "is a small program"]
-     [nil "struggling to get out"]])
+    [["1" "inside every large program"]
+     ["2" "is a small program"]
+     ["3" "struggling to get out"]])
 
   ;; Let's counts the words. Evaluate the form:
   (transduce (xf (atom {}) swap!) concat coll)
