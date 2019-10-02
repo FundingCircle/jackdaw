@@ -60,7 +60,7 @@
       :known-topics (keys (:topic-config machine))})))
 
 
-(defn handle-write-cmd [machine cmd params]
+(defn handle-write-cmd [machine params]
   (apply do-write machine params))
 
 (def command-map
