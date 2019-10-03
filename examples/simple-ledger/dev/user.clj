@@ -23,7 +23,7 @@
   When the 'dev' alias is active, this config will be used."
   {:topics {:client-config (select-keys sl/streams-config ["bootstrap.servers"])
             :topic-metadata {:entry-added
-                             {:topic-name "entry-requested"
+                             {:topic-name "entry-pending"
                               :partition-count 15
                               :replication-factor 1
                               :key-serde (js/edn-serde)
@@ -44,7 +44,7 @@
                               :value-serde (js/edn-serde)}}}
 
    :topology {:topology-builder sl/topology-builder
-              :xforms [#'sl/xf-split-entries #'sl/xf-running-balances]
+              :xforms [#'sl/split-entries #'sl/running-balances]
               :swap-fn jxf/kv-store-swap-fn}
 
    :app {:streams-config sl/streams-config

@@ -22,7 +22,7 @@
   "The development config.
   When the 'dev' alias is active, this config will be used."
   {:topology {:topology-builder xfwc/topology-builder
-              :xform xfwc/xf
+              :xform xfwc/count-words
               :swap-fn jxf/kv-store-swap-fn}
 
    :topics {:streams-config xfwc/streams-config

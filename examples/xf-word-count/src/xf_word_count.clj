@@ -5,10 +5,11 @@
             [clojure.tools.logging :refer [info]]
             [jackdaw.serdes :as js]
             [jackdaw.streams :as j]
-            [jackdaw.streams.xform :as jxf]))
+            [jackdaw.streams.xform :as jxf]
+            [jackdaw.streams.xform.fakes :as fakes]))
 
 
-(defn xf-running-total
+(defn running-total
   [state swap-fn]
   (fn [rf]
     (fn
@@ -22,12 +23,12 @@
                     (map vec %))]
          (rf result next))))))
 
-(defn xf
+(defn count-words
   [state swap-fn]
   (comp
    (map (fn [[k v]] [k (str/split v #" ")]))
    (map (fn [[k v]] [k (frequencies v)]))
-   (xf-running-total state swap-fn)))
+   (running-total state swap-fn)))
 
 
 (comment
@@ -50,7 +51,7 @@
      ["3" "struggling to get out"]])
 
   ;; Let's counts the words. Evaluate the form:
-  (transduce (xf (atom {}) swap!) concat coll)
+  (transduce (count-words (atom {}) swap!) concat coll)
 
   ;; You should see output like the following:
 
@@ -69,11 +70,11 @@
 
 
   ;; This time, let's count the words using
-  ;; `jackdaw.streams.xform/fake-kv-store` which implements the
+  ;; `jackdaw.streams.xform.fakes/fake-kv-store` which implements the
   ;; KeyValueStore interface with overrides for get and put."
 
   ;; Evaluate the form:
-  (transduce (xf (jxf/fake-kv-store {}) jxf/kv-store-swap-fn) concat coll)
+  (transduce (count-words (fakes/fake-kv-store {}) jxf/kv-store-swap-fn) concat coll)
 
   ;; You should see the same output.
   )

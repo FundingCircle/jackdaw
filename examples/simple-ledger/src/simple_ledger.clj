@@ -5,10 +5,11 @@
             [clojure.tools.logging :refer [info]]
             [jackdaw.serdes :as js]
             [jackdaw.streams :as j]
-            [jackdaw.streams.xform :as jxf]))
+            [jackdaw.streams.xform :as jxf]
+            [jackdaw.streams.xform.fakes :as fakes]))
 
 
-(defn xf-split-entries
+(defn split-entries
   [_ _]
   (map (fn [[k {:keys [debit-account credit-account amount] :as entry}]]
          [[debit-account
@@ -26,7 +27,7 @@
   (let [op (if (= :dr debit-credit-indicator) - +)]
     (update starting-balances account-name (fnil op 0) amount)))
 
-(defn xf-running-balances
+(defn running-balances
   [state swap-fn]
   (fn [rf]
     (fn
@@ -72,8 +73,8 @@
 
   ;; Let's record the entries. Evaluate the form:
   (->> coll
-       (transduce (xf-split-entries nil nil) concat)
-       (transduce (xf-running-balances (atom {}) swap!) concat))
+       (transduce (split-entries nil nil) concat)
+       (transduce (running-balances (atom {}) swap!) concat))
 
   ;; You should see output like the following:
 
@@ -96,14 +97,14 @@
 
 
   ;; This time, let's count the words using
-  ;; `jackdaw.streams.xform/fake-kv-store` which implements the
+  ;; `jackdaw.streams.xform.fakes/fake-kv-store` which implements the
   ;; KeyValueStore interface with overrides for get and put."
 
   ;; Evaluate the form:
   (->> coll
-       (transduce (xf-split-entries nil nil) concat)
-       (transduce (xf-running-balances (jxf/fake-kv-store {})
-                                       jxf/kv-store-swap-fn) concat))
+       (transduce (split-entries nil nil) concat)
+       (transduce (running-balances (fakes/fake-kv-store {})
+                                    jxf/kv-store-swap-fn) concat))
 
   ;; You should see the same output.
   )
@@ -115,13 +116,15 @@
    "cache.max.bytes.buffering" "0"})
 
 (defn topology-builder
-  [{:keys [entry-requested transaction-pending transaction-added] :as topics} xforms]
+  [{:keys [entry-pending
+           transaction-pending
+           transaction-added] :as topics} xforms]
   (fn [builder]
     (jxf/add-state-store! builder)
-    (-> (j/kstream builder entry-requested)
-        (jxf/transduce-kstream (::xf-split-entries xforms))
+    (-> (j/kstream builder entry-pending)
+        (jxf/transduce-kstream (::split-entries xforms))
         (j/through transaction-pending)
-        (jxf/transduce-kstream (::xf-running-balances xforms))
+        (jxf/transduce-kstream (::running-balances xforms))
         (j/to transaction-added))
     builder))
 
