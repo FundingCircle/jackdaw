@@ -190,8 +190,8 @@
   (such as `long`)."
   [x coercion-fn]
   (try
-    (coercion-fn (bigint x))
-    true
+    (and (number? x)
+         (coercion-fn (bigint x)))
     (catch RuntimeException e
       false)))
 
