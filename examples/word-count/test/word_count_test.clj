@@ -30,7 +30,7 @@
   [word]
   [:watch (fn [journal]
             (some #(= word (:key %))
-                  (get-in journal [:topics :output]))) 2000])
+                  (get-in journal [:topics :output]))) {:timeout 2000}])
 
 (defn word-count
   "A simple helper to extract the latest value from the word-count ktable
@@ -89,7 +89,7 @@
                                topics))
 
     :else
-    (jd.test/mock-transport (mock-transport-config) topic-metadata)))
+    (jd.test/mock-transport (mock-transport-config) topics)))
 
 (deftest test-word-count-example
   (fix/with-fixtures [(fix/integration-fixture wc/topology-builder test-config)]
