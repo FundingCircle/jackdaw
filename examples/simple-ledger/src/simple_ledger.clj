@@ -161,7 +161,7 @@
                :credit-account "sales"
                :amount 2000}]]
     (doseq [x coll]
-      (publish (:entry-requested topic-metadata) nil x)))
+      (publish (:entry-pending topic-metadata) nil x)))
 
   ;; Evaluate the form:
   (get-keyvals (:transaction-added topic-metadata))
