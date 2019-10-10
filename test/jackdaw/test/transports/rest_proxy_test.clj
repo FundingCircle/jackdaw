@@ -72,10 +72,11 @@
                       (fix/service-ready? {:http-url +real-rest-proxy-url+
                                            :http-timeout 5000})]
     (with-open [machine (jd.test/test-machine (transport))]
-      (log/info "begin" app-id)
+      (Thread/sleep 50)
       (let [result (f machine)]
         (log/info "end" app-id)
         result))))
+
 
 (deftest test-rest-proxy-transport
   (with-rest-proxy-transport {:app-id "echo-for-exit-hooks"
