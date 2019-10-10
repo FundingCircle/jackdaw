@@ -66,7 +66,7 @@
 (defn with-rest-proxy-transport
   [{:keys [transport app app-id]} f]
   (fix/with-fixtures [(fix/topic-fixture kafka-config topic-config)
-                      (fix/skip-to-end {:topic test-in
+                      #_(fix/skip-to-end {:topic test-in
                                         :config kafka-config})
                       (fix/kstream-fixture (kstream-config app app-id))
                       (fix/service-ready? {:http-url +real-rest-proxy-url+
