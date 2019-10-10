@@ -66,13 +66,11 @@
 (defn with-rest-proxy-transport
   [{:keys [transport app app-id]} f]
   (fix/with-fixtures [(fix/topic-fixture kafka-config topic-config)
-                      #_(fix/skip-to-end {:topic test-in
-                                        :config kafka-config})
                       (fix/kstream-fixture (kstream-config app app-id))
                       (fix/service-ready? {:http-url +real-rest-proxy-url+
                                            :http-timeout 5000})]
     (with-open [machine (jd.test/test-machine (transport))]
-      (Thread/sleep 200)
+      (log/info "begin" app-id)
       (let [result (f machine)]
         (log/info "end" app-id)
         result))))

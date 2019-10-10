@@ -137,7 +137,7 @@
                  "Content-Type" (content-types :json)}
         body {:name id
               :auto.offset.reset "latest"
-              :auto.commit.enable true}
+              :auto.commit.enable false}
         preserve-https (fn [consumer]
                          ;; Annoyingly, the proxy will return an HTTP address for a
                          ;; subscriber even when its running over HTTPS
@@ -296,6 +296,15 @@
         test-consumer (rest-proxy-consumer config topics (get serdes :deserializers))
         test-producer (when @(:started? test-consumer)
                         (rest-proxy-producer config topics (get serdes :serializers)))]
+
+    ;; In environments like circleci, it seems a very small delay here (even just 200 ms) can
+    ;; make the difference between a test failing intermittently and not. Can't reproduce the
+    ;; issue locally and I can't find exactly what we should be waiting for but this one small
+    ;; delay (only in the rest-proxy transport) seems tolerable and putting it in here means
+    ;; that folks should not need to pollute their own tests with delays.
+
+    (Thread/sleep 200)
+
     {:consumer test-consumer
      :producer test-producer
      :serdes serdes

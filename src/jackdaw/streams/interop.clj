@@ -56,7 +56,7 @@
                  :else (Suppressed$BufferConfig/unbounded))]
     (if-some [time-limit until-time-limit-ms]
       (Suppressed/untilTimeLimit (Duration/ofMillis time-limit) config)
-      (-> (.shutDownWhenFull config)
+      (-> (.shutDownWhenFull ^Suppressed$BufferConfig config)
           Suppressed/untilWindowCloses))))
 
 (declare clj-kstream clj-ktable clj-kgroupedtable clj-kgroupedstream
