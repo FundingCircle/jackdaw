@@ -1,14 +1,18 @@
 (ns jackdaw.test.transports.rest-proxy-test
   (:require
+   [byte-streams :as bs]
    [clojure.tools.logging :as log]
    [clojure.test :refer :all]
+   [clojure.data.json :as json]
    [jackdaw.streams :as k]
    [jackdaw.test :as jd.test]
    [jackdaw.test.fixtures :as fix]
    [jackdaw.test.serde :as serde]
    [jackdaw.test.journal :refer [with-journal watch-for]]
    [jackdaw.test.transports :as trns]
-   [manifold.stream :as s])
+   [jackdaw.test.transports.rest-proxy :as proxy]
+   [manifold.stream :as s]
+   [manifold.deferred :as d])
   (:import
    (java.util Properties)))
 
@@ -154,3 +158,32 @@
             (is (= :test-out (:topic result)))
             (is (= 2 (:key result)))
             (is (= {:id 2 :payload "foo"} (:value result)))))))))
+
+(defn mock-http-client
+  [req-atom]
+  (fn [url req-options]
+    (swap! req-atom conj [url req-options])
+    (d/future {:status 200
+               :body (bs/to-input-stream (json/write-str {:instance-id "yolo"}))})))
+
+(deftest test-rest-proxy-group-config
+  (let [http-reqs (atom [])]
+    (binding [proxy/*http-client* {:post (mock-http-client http-reqs)}]
+      (let [client (-> (proxy/rest-proxy-client (-> (rest-proxy-config "test-group-config")
+                                                    (assoc :group-config {:auto.offset.reset "earliest"
+                                                                          :fetch.min.bytes 100
+                                                                          :consumer.fetch.timeout.ms 200})))
+                       (proxy/with-consumer))]
+        (let [[url options] (first @http-reqs)]
+          (is (= "http://localhost:8082/consumers/test-group-config" url))
+          (is (= {"Accept" "application/vnd.kafka.v2+json"
+                  "Content-Type" "application/vnd.kafka.v2+json"}
+                 (:headers options)))
+          (is (= {"auto.offset.reset" "earliest"
+                  "fetch.min.bytes" 100
+                  "consumer.fetch.timeout.ms" 200}
+                 (-> (:body options)
+                     (json/read-str)
+                     (select-keys ["auto.offset.reset"
+                                   "fetch.min.bytes"
+                                   "consumer.fetch.timeout.ms"])))))))))

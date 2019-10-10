@@ -13,6 +13,11 @@
   (:import
    (java.util UUID Base64)))
 
+(def ^:dynamic *http-client*
+  {:post    http/post
+   :get     http/get
+   :delete  http/delete})
+
 (def ok? #{200 204})
 
 (defn uuid
@@ -88,7 +93,7 @@
   (let [url base-uri
         headers {"Accept" (content-types :json)}
         body nil]
-    (d/chain (handle-proxy-request http/delete url headers body)
+    (d/chain (handle-proxy-request (:delete *http-client*) url headers body)
       (fn [response]
         (when (:error response)
           (throw (ex-info "Failed to destroy consumer after use" {})))))))
@@ -102,7 +107,7 @@
                  "Content-Type" (content-types :byte-array)}
         body {:records [(select-keys msg [:key :value :partition])]}]
 
-    (d/chain (handle-proxy-request http/post url headers body)
+    (d/chain (handle-proxy-request (:post *http-client*) url headers body)
       (fn [response]
         (let [record (when-not (:error response)
                        (-> (get-in response [:json-body :offsets])
@@ -115,7 +120,8 @@
                             base-uri
                             group-id
                             instance-id
-                            subscription])
+                            subscription
+                            group-config])
 
 (defn proxy-client-info [client]
   (let [object-id (-> (.hashCode client)
@@ -128,23 +134,24 @@
   (map->RestProxyClient config))
 
 (defn with-consumer
-  [{:keys [bootstrap-uri group-id] :as client}]
+  [{:keys [bootstrap-uri group-id group-config] :as client}]
   (let [id (uuid)
         url (format "%s/consumers/%s"
                     bootstrap-uri
                     group-id)
         headers {"Accept" (content-types :json)
                  "Content-Type" (content-types :json)}
-        body {:name id
-              :auto.offset.reset "latest"
-              :auto.commit.enable false}
+        body (merge {:name id
+                     :auto.offset.reset "latest"
+                     :auto.commit.enable false}
+                    group-config)
         preserve-https (fn [consumer]
                          ;; Annoyingly, the proxy will return an HTTP address for a
                          ;; subscriber even when its running over HTTPS
                          (if (clojure.string/starts-with? url "https")
                            (update consumer :base-uri clojure.string/replace #"^http:" "https:")
                            consumer))]
-    (d/chain (handle-proxy-request http/post url headers body)
+    (d/chain (handle-proxy-request (:post *http-client*) url headers body)
       (fn [response]
         (if (:error response)
           (do (log/infof "rest-proxy create consumer error: %s" (:error response))
@@ -161,7 +168,7 @@
                  "Content-Type" (content-types :json)}
         body {:topics topics}]
 
-    (d/chain (handle-proxy-request http/post url headers {:topics topics})
+    (d/chain (handle-proxy-request (:post *http-client*) url headers {:topics topics})
       (fn [response]
         (if (:error response)
           (do (log/infof "rest-proxy subscription error: %s" (:error response))
@@ -176,7 +183,7 @@
         url (format "%s/records" base-uri)
         headers {"Accept" (content-types :byte-array)}
         body nil]
-    (d/chain (handle-proxy-request http/get url headers body)
+    (d/chain (handle-proxy-request (:get *http-client*) url headers body)
       (fn [response]
         (when (:error response)
           (log/errorf "rest-proxy fetch error: %s" (:error response)))
