@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+ * Fail fast throwing an exception as soon as a command fails (#186)
+ * Throw an exception on unknown commands, useful to detect typos early (#182)
+
 ## [0.6.8] - [2019-08-22]
 
 ### Fixed
@@ -7,7 +12,7 @@
  * Fix test machine status middleware (#157)
  * Fix application reset fixture to use bootstrap servers form app-config (#157)
  * Fix type-hint call to `KafkaAvroDeserializer.deseialize` to remove warning (#157)
- 
+
 ## [0.6.7] - [2019-07-30]
 
 ### Added
