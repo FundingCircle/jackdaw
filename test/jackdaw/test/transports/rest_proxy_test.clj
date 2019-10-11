@@ -66,8 +66,6 @@
 (defn with-rest-proxy-transport
   [{:keys [transport app app-id]} f]
   (fix/with-fixtures [(fix/topic-fixture kafka-config topic-config)
-                      (fix/skip-to-end {:topic test-in
-                                        :config kafka-config})
                       (fix/kstream-fixture (kstream-config app app-id))
                       (fix/service-ready? {:http-url +real-rest-proxy-url+
                                            :http-timeout 5000})]
@@ -76,6 +74,7 @@
       (let [result (f machine)]
         (log/info "end" app-id)
         result))))
+
 
 (deftest test-rest-proxy-transport
   (with-rest-proxy-transport {:app-id "echo-for-exit-hooks"

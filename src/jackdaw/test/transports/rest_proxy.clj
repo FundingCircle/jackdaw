@@ -13,7 +13,6 @@
   (:import
    (java.util UUID Base64)))
 
-
 (def ok? #{200 204})
 
 (defn uuid
@@ -89,9 +88,10 @@
   (let [url base-uri
         headers {"Accept" (content-types :json)}
         body nil]
-    (let [response @(handle-proxy-request http/delete url headers body)]
-      (when (:error response)
-        (throw (ex-info "Failed to destroy consumer after use" {}))))))
+    (d/chain (handle-proxy-request http/delete url headers body)
+      (fn [response]
+        (when (:error response)
+          (throw (ex-info "Failed to destroy consumer after use" {})))))))
 
 (defn topic-post
   [{:keys [bootstrap-uri]} msg callback]
@@ -100,16 +100,16 @@
                     (:topic msg))
         headers {"Accept" (content-types :json)
                  "Content-Type" (content-types :byte-array)}
-        body {:records [(select-keys msg [:key :value :partition])]}
+        body {:records [(select-keys msg [:key :value :partition])]}]
 
-        response @(handle-proxy-request http/post url headers body)]
-
-    (let [record (when-not (:error response)
-                   (-> (get-in response [:json-body :offsets])
-                       first
-                       (assoc :topic (:topic msg))))]
-      (callback record (when (:error response)
-                         response)))))
+    (d/chain (handle-proxy-request http/post url headers body)
+      (fn [response]
+        (let [record (when-not (:error response)
+                       (-> (get-in response [:json-body :offsets])
+                           first
+                           (assoc :topic (:topic msg))))]
+          (callback record (when (:error response)
+                             response)))))))
 
 (defrecord RestProxyClient [bootstrap-uri
                             base-uri
@@ -144,14 +144,14 @@
                          (if (clojure.string/starts-with? url "https")
                            (update consumer :base-uri clojure.string/replace #"^http:" "https:")
                            consumer))]
-
-    (let [response @(handle-proxy-request http/post url headers body)]
-      (if (:error response)
-        (do (log/infof "rest-proxy create consumer error: %s" (:error response))
-            (assoc client :error response))
-        (let [{:keys [base-uri instance-id]} (:json-body response)]
-          (preserve-https
-            (assoc client :base-uri base-uri, :instance-id instance-id)))))))
+    (d/chain (handle-proxy-request http/post url headers body)
+      (fn [response]
+        (if (:error response)
+          (do (log/infof "rest-proxy create consumer error: %s" (:error response))
+              (assoc client :error response))
+          (let [{:keys [base-uri instance-id]} (:json-body response)]
+            (preserve-https
+             (assoc client :base-uri base-uri, :instance-id instance-id))))))))
 
 (defn with-subscription
   [{:keys [base-uri group-id instance-id] :as client} topic-metadata]
@@ -160,32 +160,34 @@
         headers {"Accept" (content-types :json)
                  "Content-Type" (content-types :json)}
         body {:topics topics}]
-    (let [response @(handle-proxy-request http/post url headers {:topics topics})]
-      (if (:error response)
-        (do (log/infof "rest-proxy subscription error: %s" (:error response))
-            (assoc client :error response))
-        (assoc client :subscription topics)))))
 
-(defn rest-proxy-poller
+    (d/chain (handle-proxy-request http/post url headers {:topics topics})
+      (fn [response]
+        (if (:error response)
+          (do (log/infof "rest-proxy subscription error: %s" (:error response))
+              (assoc client :error response))
+          (assoc client :subscription topics))))))
+
+(defn rest-proxy-poll
   "Returns a function that takes a consumer and puts any messages retrieved
    by polling it onto the supplied `messages` channel"
-  [messages]
-  (fn [consumer]
-    (let [{:keys [base-uri group-id instance-id]} consumer
-          url (format "%s/records" base-uri)
-          headers {"Accept" (content-types :byte-array)}
-          body nil]
-      (let [response @(handle-proxy-request http/get url headers body)]
+  [consumer]
+  (let [{:keys [base-uri group-id instance-id]} consumer
+        url (format "%s/records" base-uri)
+        headers {"Accept" (content-types :byte-array)}
+        body nil]
+    (d/chain (handle-proxy-request http/get url headers body)
+      (fn [response]
         (when (:error response)
           (log/errorf "rest-proxy fetch error: %s" (:error response)))
         (when-not (:error response)
-          (s/put-all! messages (:json-body response)))))))
+          (:json-body response))))))
 
 (defn rest-proxy-subscription
   [config topic-metadata]
-  (-> (rest-proxy-client config)
-      (with-consumer)
-      (with-subscription topic-metadata)))
+  (d/chain (rest-proxy-client config)
+    #(with-consumer %)
+    #(with-subscription % topic-metadata)))
 
 (defn rest-proxy-consumer
   "Creates an asynchronous Kafka Consumer of all topics defined in the
@@ -203,26 +205,32 @@
                      #(apply-deserializers deserializers %)
                      #(undatafy-record topic-metadata %))
         messages    (s/stream 1 (map xform))
-        started?    (promise)
-        poll        (rest-proxy-poller messages)]
+        started?    (promise)]
 
-    {:process (d/loop [consumer (rest-proxy-subscription config topic-metadata)]
-                (d/chain (d/future consumer)
-                         (fn [consumer]
-                           (poll consumer)
-
-                           (when-not (realized? started?)
-                             (deliver started? true)
-                             (log/infof "started rest-proxy consumer: %s" (proxy-client-info consumer)))
-
-                           (if @continue?
-                             (do (poll consumer)
-                                 (Thread/sleep 500)
-                                 (d/recur consumer))
+    {:process (let [client (rest-proxy-subscription config topic-metadata)]
+                (d/loop []
+                  (d/chain (if @continue?
+                             (d/chain client (fn [client]
+                                               (let [poll-result @(rest-proxy-poll client)]
+                                                 (when-not (realized? started?)
+                                                   (deliver started? true)
+                                                   (log/info "started rest-proxy consumer"))
+                                                 (log/info "poll-result: " poll-result)
+                                                 poll-result)))
                              (do
-                               (s/close! messages)
-                               (destroy-consumer consumer)
-                               (log/infof "stopped rest-proxy consumer: %s" (proxy-client-info consumer)))))))
+                               (log/info "drained consumer. stopping client")
+                               ::drained))
+                    (fn [msgs]
+                      (if (identical? msgs ::drained)
+                        (d/chain client (fn [client]
+                                          (s/close! messages)
+                                          (destroy-consumer client)
+                                          (log/infof "stopped rest-proxy consumer: %s" (proxy-client-info client))))
+                        (d/chain client (fn [client]
+                                          (s/put-all! messages msgs)
+                                          (log/infof "collected %s messages from kafka" (count msgs))
+                                          (Thread/sleep 500)
+                                          (d/recur))))))))
      :started? started?
      :messages messages
      :continue? continue?}))
@@ -264,17 +272,17 @@
                                                  (log/error e trace))
                                                (assoc x :serialization-error e))))))
          _ (log/infof "started rest-proxy producer: %s" producer)
-         process (d/loop [message (s/take! messages)]
-                   (d/chain message
+         process (d/loop []
+                   (d/chain (s/take! messages ::drained)
                      (fn [{:keys [data-record ack serialization-error] :as message}]
                        (cond
                          serialization-error   (do (deliver ack {:error :serialization-error
                                                                  :message (.getMessage serialization-error)})
-                                                   (d/recur (s/take! messages)))
+                                                   (d/recur))
 
                          data-record       (do (log/debug "sending data: " data-record)
-                                               (topic-post producer data-record (deliver-ack ack))
-                                               (d/recur (s/take! messages)))
+                                               @(topic-post producer data-record (deliver-ack ack))
+                                               (d/recur))
 
                          :else (log/infof "stopped rest-proxy producer: %s" producer)))))]
 
@@ -288,6 +296,15 @@
         test-consumer (rest-proxy-consumer config topics (get serdes :deserializers))
         test-producer (when @(:started? test-consumer)
                         (rest-proxy-producer config topics (get serdes :serializers)))]
+
+    ;; In environments like circleci, it seems a very small delay here (even just 200 ms) can
+    ;; make the difference between a test failing intermittently and not. Can't reproduce the
+    ;; issue locally and I can't find exactly what we should be waiting for but this one small
+    ;; delay (only in the rest-proxy transport) seems tolerable and putting it in here means
+    ;; that folks should not need to pollute their own tests with delays.
+
+    (Thread/sleep 200)
+
     {:consumer test-consumer
      :producer test-producer
      :serdes serdes
