@@ -2,8 +2,27 @@
 
 ## Unreleased
 
+## [0.6.9] - [2019-10-16]
+
+### Added
+
+ * Upgrade the test-runner (#184)
+ * Added support for user-provided parameters to reset-application-fixture (#177)
+ * Continuing refinement of examples (#191)
+ * Support for `.suppress` (#23)
+ * Support for group-options when creating rest-proxy client for the test-machine (#206)
+ * PR Template (#187)
+ * A new edn serde without the un-necessary newline (#190)
+ 
+### Fixed 
+
  * Fail fast throwing an exception as soon as a command fails (#186)
  * Throw an exception on unknown commands, useful to detect typos early (#182)
+ * Fixed add-key (part of publishing pipeline) (#181)
+ * Skip deploy_snapshots job for external contributors (#194)
+ * Only numbers should be coercable (#203)
+ * Small refactor to implementation of rest-proxy transport (#205)
+ * topics-ready? does not dereference the returned deferred (#193)
 
 ## [0.6.8] - [2019-08-22]
 
