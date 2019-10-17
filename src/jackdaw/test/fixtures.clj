@@ -12,7 +12,7 @@
    [clojure.test :as t])
   (:import
    (org.apache.kafka.clients.admin AdminClient NewTopic)
-   (org.apache.kafka.streams KafkaStreams$StateListener)
+   (org.apache.kafka.streams KafkaStreams$StateListener KafkaStreams$State)
    (kafka.tools StreamsResetter)))
 
 ;;; topic-fixture ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -105,7 +105,7 @@
                  (.name old-state)
                  (.name new-state))
       (when-not (realized? started?)
-        (when (.isRunning new-state)
+        (when (= KafkaStreams$State/RUNNING new-state)
           (deliver started? true))))))
 
 (defn- set-error
