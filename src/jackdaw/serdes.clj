@@ -3,7 +3,8 @@
 
   This is the public API for jackdaw.serdes."
   (:gen-class)
-  (:require [jackdaw.serdes.edn2 :as jse])
+  (:require [jackdaw.serdes.edn2 :as jse]
+            [jackdaw.serdes.fressian :as jsf])
   (:import org.apache.kafka.common.serialization.Serdes))
 
 (defn string-serde
@@ -17,3 +18,8 @@
   jackdaw.serdes.edn. It does not print a newline."
   [& [opts]]
   (Serdes/serdeFrom (jse/edn-serializer) (jse/edn-deserializer opts)))
+
+(defn fressian-serde
+  "Implements a Fressian SerDes (Serializer/Deserializer)."
+  []
+  (Serdes/serdeFrom (jsf/fressian-serializer) (jsf/fressian-deserializer)))
