@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Added
+
+ * Fressian Serde via clojure.data.fressian
+
 ## [0.6.9] - [2019-10-16]
 
 ### Added

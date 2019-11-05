@@ -24,11 +24,12 @@
                  [org.apache.kafka/kafka-streams-test-utils "2.3.0"]
                  [org.clojure/clojure "1.10.1" :scope "provided"]
                  [org.clojure/data.json "0.2.6"]
+                 [org.clojure/data.fressian "0.2.1"]
                  [org.clojure/tools.logging "0.4.1"]
                  [org.clojure/core.cache "0.7.2"]]
 
   :aliases {"kaocha" ["run" "-m" "kaocha.runner"]}
-  :aot [jackdaw.serdes.edn2 jackdaw.serdes.fn-impl]
+  :aot [jackdaw.serdes.edn2 jackdaw.serdes.fressian jackdaw.serdes.fn-impl]
   :plugins [[me.arrdem/lein-git-version "2.0.8"]]
 
   :git-version
