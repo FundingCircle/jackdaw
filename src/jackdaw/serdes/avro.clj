@@ -378,7 +378,7 @@
   [schema->coercion ^Schema schema]
   (MapType. schema (schema->coercion (.getValueType schema))))
 
-(defrecord RecordType [^Schema schema field->schema+coercion]
+(defrecord RecordType [^Schema schema field->schema+coercion closed]
   SchemaCoercion
   (match-clj? [_ clj-map]
     (let [fields (.getFields schema)]
@@ -425,14 +425,15 @@
         (doseq [[k v] clj-map]
           (let [new-k (mangle (name k))
                 field (.getField schema new-k)]
-            (when-not field
-              (throw (ex-info (format "Field %s not known in %s"
-                                      new-k
-                                      (.getName schema))
-                              {:path path, :clj-data clj-map})))
-            (let [[_ field-coercion] (get field->schema+coercion k)
-                  new-v (clj->avro field-coercion v (conj path k))]
-              (.set record-builder new-k new-v))))
+            (if-not field
+              (if closed
+                (throw (ex-info (format "Field %s not known in %s"
+                                        new-k
+                                        (.getName schema))
+                                {:path path, :clj-data clj-map})))
+              (let [[_ field-coercion] (get field->schema+coercion k)
+                    new-v (clj->avro field-coercion v (conj path k))]
+                (.set record-builder new-k new-v)))))
 
         (.build record-builder)
 
@@ -444,13 +445,15 @@
   "Wrapper by which to construct a `RecordType` which handles the
   structural recursion of building the handler stack so that the
   `RecordType` type can be pretty simple."
-  [schema->coercion ^Schema schema]
-  (let [fields (into {}
-                     (map (fn [^Schema$Field field]
-                            [(keyword (unmangle (.name field)))
-                             [field (schema->coercion (.schema field))]]))
-                     (.getFields schema))]
-    (RecordType. schema fields)))
+  ([schema->coercion ^Schema schema closed]
+   (let [fields (into {}
+                      (map (fn [^Schema$Field field]
+                             [(keyword (unmangle (.name field)))
+                              [field (schema->coercion (.schema field))]]))
+                      (.getFields schema))]
+     (RecordType. schema fields closed)))
+  ([schema->coercion ^Schema schema]
+   (->RecordType schema->coercion schema true)))
 
 (defn- match-union-type [coercion-types pred]
   (some #(when (pred %) %) coercion-types))
@@ -595,6 +598,11 @@
 
    {:type "string" :logical-type "uuid"}
    (fn [_ _] (StringUUIDType.))})
+
+(def ^{:const true
+       :doc "Provides an 'open' Avro record, which ignores fields not present in the schema"}
+  +open-record-type-registry+
+  {{:type "record"} (fn [schema->coercion schema] (->RecordType schema->coercion schema false))})
 
 (defn serde
   "Given a type and logical type registry, a schema registry config with

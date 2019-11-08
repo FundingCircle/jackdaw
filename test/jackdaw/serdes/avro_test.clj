@@ -340,6 +340,18 @@
       (is (thrown-with-msg? clojure.lang.ExceptionInfo
                             #"Field garbage not known in Foo"
                             (avro/clj->avro schema-type {:garbage "yolo"} [])))))
+
+  (testing "marshalling open record with unknown field does not trigger error"
+    (let [avro-schema (parse-schema {:type "record"
+                                     :name "Foo"
+                                     :fields [{:name "foo" :type "string"}]})
+          schema-type ((avro/make-coercion-stack
+                        (merge +registry+ avro/+open-record-type-registry+))
+                       avro-schema)
+          avro-data (->generic-record avro-schema {"foo" "bar"})
+          clj-data {:foo "bar" :garbage "yolo"}]
+      (is (= avro-data (avro/clj->avro schema-type clj-data [])))))
+
   (testing "uuid"
     (let [avro-schema (parse-schema {:type "string",
                                      :logicalType "uuid"})
