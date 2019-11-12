@@ -290,7 +290,7 @@
                                                   :end-offset (get end-offsets k)}))
                                     {} ts-offsets)]
     (doseq [[^TopicPartition topic-partition
-             {:keys [ts-offset end-offset]}] offsets]
+             {:keys [^OffsetAndTimestamp ts-offset end-offset]}] offsets]
       (let [offset (or (when ts-offset
                          (.offset ts-offset))
                        (inc end-offset))]
