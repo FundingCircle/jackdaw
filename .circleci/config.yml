@@ -32,17 +32,17 @@ references:
 
   build_config: &build_config
     docker:
-      - image: circleci/clojure:lein-2.8.1
+      - image: circleci/clojure:lein-2.9.1
     working_directory: /home/circleci/jackdaw
 
   deploy_config: &deploy_config
     docker:
-      - image: circleci/clojure:lein-2.8.1
+      - image: circleci/clojure:lein-2.9.1
     working_directory: /home/circleci/jackdaw
 
   test_config: &test_config
     docker:
-      - image: circleci/clojure:lein-2.8.1
+      - image: circleci/clojure:lein-2.9.1
       - image: confluentinc/cp-zookeeper:5.1.0
         environment:
           ZOOKEEPER_CLIENT_PORT: 2181
