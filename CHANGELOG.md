@@ -10,7 +10,7 @@
  * Upgraded in #217:
    * Kafka client version to 2.3.1: https://kafka.apache.org/23/documentation.html#upgrade_230_notable
    * Confluent Platform components version to 5.3.1: https://docs.confluent.io/5.3.1/release-notes/index.html#cp-5-3-1-release-notes
- * Added functions to simply querying the test machine journal (#215)
+ * Added functions to simplify querying the test machine journal (#215)
 
 ## [0.6.9] - [2019-10-16]
 
