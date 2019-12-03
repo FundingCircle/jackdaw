@@ -83,7 +83,8 @@
                                [:is-1 2]
                                [:max [1 2 3]]])
           (catch Exception e
-            (is (= [:is-1 2] (-> e ex-data :command))))))
+            (is (= [:is-1 2] (-> e ex-data :command)))
+            (is (= :not-1 (-> e ex-data :error))))))
 
       (testing "execution stops on an unknown command"
         (is (thrown? NullPointerException
