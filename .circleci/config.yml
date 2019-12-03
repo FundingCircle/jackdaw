@@ -169,6 +169,7 @@ workflows:
           requires:
             - deps
       - deploy_snapshot:
+          context: clojars-deploy
           requires:
             - test
           filters:
@@ -186,6 +187,7 @@ workflows:
             branches:
               ignore: /.*/
       - deploy:
+          context: clojars-deploy
           requires:
             - checkout_tags
           filters:
