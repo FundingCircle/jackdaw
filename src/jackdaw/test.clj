@@ -120,9 +120,11 @@
             results' (conj results r)]
 
         (if (= :error (:status r))
-          (throw (ex-info (format "Command %s failed" cmd)
-                          {:result results'
-                           :command cmd}))
+          (let [error (-> r :result :error)]
+            (throw (ex-info (format "Command %s failed with error %s" cmd error)
+                            {:result results'
+                             :error error
+                             :command cmd})))
 
           (recur results' rest-cmds))))))
 

@@ -5,6 +5,7 @@
 ### Added
 
  * Fressian Serde via clojure.data.fressian
+ * More clear error from the command runner #214
 
 ## [0.6.9] - [2019-10-16]
 
