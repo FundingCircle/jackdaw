@@ -1,10 +1,10 @@
 (ns jackdaw.test.journal
   ""
   (:require
-   [clojure.tools.logging :as log]
-   [manifold.stream :as s]
-   [manifold.deferred :as d]))
-
+    [clojure.set :refer [subset?]]
+    [clojure.tools.logging :as log]
+    [manifold.stream :as s]
+    [manifold.deferred :as d]))
 
 ;; Journal
 ;;
@@ -100,3 +100,54 @@
                             (reset! stop? true)
                             (log/debug "wait for journaller to finish")
                             @jloop)]))))
+
+(defn raw-messages
+  [journal topic-name]
+  (sort-by :offset (get-in journal [:topics topic-name])))
+
+(defn messages
+  [journal topic-name]
+  (->> (raw-messages journal topic-name)
+       (map :value)))
+
+(defn messages-by-kv-fn
+  [journal topic-name ks pred]
+  (->> (messages journal topic-name)
+       (filter (fn [m]
+                 (pred (get-in m ks))))))
+
+(defn messages-by-kv
+  [journal topic-name ks value]
+  (messages-by-kv-fn journal topic-name ks #(= value %)))
+
+(defn by-key [topic-name ks value]
+  "Returns the first message in the topic where attribute 'ks' is equal to 'value'. Can be
+  combined with the :watch command to assert that a message has been published:
+
+  [:watch (j/by-key :result-topic [:object :color] \"red\")]"
+  (fn [journal]
+    (first (messages-by-kv journal topic-name ks value))))
+
+(defn by-keys [topic-name ks values]
+  "Returns all of the messages in the topic where attribute 'ks' is equal to one of the values.
+   Can be combined with the :watch command to assert that messages have been published:
+
+  [:watch (j/by-key :result-topic [:object :color] #{\"red\" \"green\" \"blue\"})]"
+  (fn [journal]
+    (messages-by-kv-fn journal topic-name ks (set values))))
+
+(defn by-id [topic-name value]
+  "Returns all of the messages in the topic with an id of `value`. Can be combined with the
+  :watch command to assert that a message with the supplied id has been published:
+
+  [:watch (j/by-id :result-topic 123)]"
+  (by-key topic-name [:id] value))
+
+(defn all-keys-present
+  "Returns true if all the passed ids can be found in the topic by key ks"
+  [topic-name ks ids]
+  (fn [journal]
+    (subset? (set ids)
+             (->> (messages journal topic-name)
+                  (map #(get-in % ks))
+                  set))))
