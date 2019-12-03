@@ -6,6 +6,7 @@
 
  * Fressian Serde via clojure.data.fressian
  * More clear error from the command runner #214
+ * Documentation about Jackdaw Admin API
 
 ## [0.6.9] - [2019-10-16]
 
@@ -18,8 +19,8 @@
  * Support for group-options when creating rest-proxy client for the test-machine (#206)
  * PR Template (#187)
  * A new edn serde without the un-necessary newline (#190)
- 
-### Fixed 
+
+### Fixed
 
  * Fail fast throwing an exception as soon as a command fails (#186)
  * Throw an exception on unknown commands, useful to detect typos early (#182)
