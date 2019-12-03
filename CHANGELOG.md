@@ -5,7 +5,7 @@
 ### Added
 
  * Fressian Serde via clojure.data.fressian
- * More clear error from the command runner #214
+ * Clearer error from the command runner #214
  * Documentation about Jackdaw Admin API
  * Upgraded in #217:
    * Kafka client version to 2.3.1: https://kafka.apache.org/23/documentation.html#upgrade_230_notable
