@@ -90,7 +90,7 @@
   (fn [builder]
     (jxf/add-state-store! builder)
     (-> (j/kstream builder input)
-        (jxf/transduce-kstream xf)
+        (jxf/transduce xf)
         (j/to output))
     builder))
 
@@ -120,11 +120,11 @@
   (reset)
 
   ;; Evaluate the form:
-  (let [coll ["inside every large program"
-              "is a small program"
-              "struggling to get out"]]
-    (doseq [x coll]
-      (publish (:input topic-metadata) nil x)))
+  (let [coll [["1" "inside every large program"]
+              ["2" "is a small program"]
+              ["3" "struggling to get out"]]]
+    (doseq [[k v] coll]
+      (publish (:input topic-metadata) k v)))
 
   ;; Evaluate the form:
   (get-keyvals (:output topic-metadata))

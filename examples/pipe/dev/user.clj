@@ -15,39 +15,32 @@
             [jackdaw.repl :refer :all]
             [jackdaw.streams :as j]
             [jackdaw.streams.xform :as jxf]
-            [simple-ledger :as sl]))
+            [pipe]))
 
 
 (def repl-config
   "The development config.
   When the 'dev' alias is active, this config will be used."
-  {:topics {:client-config (select-keys sl/streams-config ["bootstrap.servers"])
-            :topic-metadata {:entry-pending
-                             {:topic-name "entry-pending"
+  {:topics {:client-config (select-keys pipe/streams-config ["bootstrap.servers"])
+            :topic-metadata {:input
+                             {:topic-name "input"
                               :partition-count 15
                               :replication-factor 1
                               :key-serde (js/edn-serde)
                               :value-serde (js/edn-serde)}
 
-                             :transaction-pending
-                             {:topic-name "transaction-pending"
-                              :partition-count 15
-                              :replication-factor 1
-                              :key-serde (js/edn-serde)
-                              :value-serde (js/edn-serde)}
-
-                             :transaction-added
-                             {:topic-name "transaction-added"
+                             :output
+                             {:topic-name "output"
                               :partition-count 15
                               :replication-factor 1
                               :key-serde (js/edn-serde)
                               :value-serde (js/edn-serde)}}}
 
-   :topology {:topology-builder sl/topology-builder
-              :xforms [#'sl/split-entries #'sl/running-balances]
+   :topology {:topology-builder pipe/topology-builder
+              :xforms [#'pipe/xf]
               :swap-fn jxf/kv-store-swap-fn}
 
-   :app {:streams-config sl/streams-config
+   :app {:streams-config pipe/streams-config
          :topology (ig/ref :topology)
          :topics (ig/ref :topics)}})
 

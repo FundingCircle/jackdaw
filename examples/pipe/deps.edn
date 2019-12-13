@@ -1,18 +1,28 @@
-{:deps
- {fundingcircle/jackdaw {:mvn/version "0.6.4"}
-  org.apache.kafka/kafka-streams {:mvn/version "2.1.0"}
-  org.apache.kafka/kafka-streams-test-utils {:mvn/version "2.1.0"}
-  org.clojure/clojure {:mvn/version "1.10.0"}
-  org.clojure/tools.logging {:mvn/version "0.4.1"}}
+{:paths
+ ["src" "resources"]
 
- :mvn/repos
- {"confluent" {:url "https://packages.confluent.io/maven/"}}
-
- :paths
- ["src" "test" "dev" "../dev"]
+ :deps
+ {fundingcircle/jackdaw {:mvn/version "0.6.9-transducers-SNAPSHOT"
+                         :exclusions [org.apache.zookeeper/zookeeper]}
+  org.clojure/clojure {:mvn/version "1.10.1"}
+  org.clojure/tools.logging {:mvn/version "0.4.1"}
+  org.apache.kafka/kafka-streams {:mvn/version "2.3.0"}
+  org.apache.kafka/kafka-streams-test-utils {:mvn/version "2.3.0"}
+  ch.qos.logback/logback-classic {:mvn/version "1.2.3"}
+  integrant {:mvn/version "0.7.0"}}
 
  :aliases
- {:test {:extra-deps {com.cognitect/test-runner
-                      {:git/url "https://github.com/cognitect-labs/test-runner.git"
-                       :sha "028a6d41ac9ac5d5c405dfc38e4da6b4cc1255d5"}}
-         :main-opts ["-m" "cognitect.test-runner"]}}}
+ {:dev
+  {:extra-paths ["dev" "../../dev"]
+   :extra-deps {integrant/repl {:mvn/version "0.3.1"}
+                danlentz/clj-uuid {:mvn/version "0.1.7"
+                                   :exclusions [primitive-math]}}}
+
+  :test
+  {:extra-paths ["test"]
+   :extra-deps {com.cognitect/test-runner {:git/url "https://github.com/cognitect-labs/test-runner.git"
+                                           :sha "028a6d41ac9ac5d5c405dfc38e4da6b4cc1255d5"}}
+   :main-opts ["-m" "cognitect.test-runner"]}}
+
+ :mvn/repos
+ {"confluent" {:url "https://packages.confluent.io/maven/"}}}

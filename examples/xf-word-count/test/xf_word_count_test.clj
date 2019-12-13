@@ -34,7 +34,7 @@
 
 (defn topology-builder
   [topic-metadata]
-  (xfwc/topology-builder topic-metadata #(xfwc/xf % jxf/kv-store-swap-fn)))
+  (xfwc/topology-builder topic-metadata #(xfwc/count-words % jxf/kv-store-swap-fn)))
 
 (defn props-for
   [x]
@@ -60,9 +60,9 @@
   (= 12 (count (get-in journal [:topics :output]))))
 
 (def commands
-  [[:write! :input "inside every large program" {:key-fn (constantly "")}]
-   [:write! :input "is a small program" {:key-fn (constantly "")}]
-   [:write! :input "struggling to get out" {:key-fn (constantly "")}]
+  [[:write! :input "inside every large program" {:key-fn (constantly "1")}]
+   [:write! :input "is a small program" {:key-fn (constantly "2")}]
+   [:write! :input "struggling to get out" {:key-fn (constantly "3")}]
    [:watch done? {:timeout 2000}]])
 
 (defn word-count
@@ -72,7 +72,7 @@
        last
        :value))
 
-(deftest test-xf-word-count
+(deftest xf-word-count-end-to-end-test
   (jt.fix/with-fixtures [(jt.fix/integration-fixture topology-builder test-config)]
     (jackdaw.test/with-test-machine (test-transport test-config)
       (fn [machine]

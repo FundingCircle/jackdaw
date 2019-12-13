@@ -42,14 +42,12 @@
       (init [_ context]
         (reset! ctx context))
       (transform [_ k v]
-        (let [^KeyValueStore store (.getStateStore @ctx "transducer")
-              v (first (into [] (xf store) [[k v]]))]
-          (KeyValue/pair k v)))
+        (let [^KeyValueStore store (.getStateStore @ctx "transducer")]
+          (doseq [[result-k result-v] (first (sequence (xf store) [[k v]]))]
+            (.forward @ctx result-k result-v))))
       (close [_]))))
 
-(defn transduce-kstream
+(defn transduce
   [kstream xf]
-  "Takes a kstream and xf and transduces the stream."
-  (-> kstream
-      (j/transform (fn [] (transformer xf)) ["transducer"])
-      (j/flat-map (fn [[_ v]] v))))
+  "Applies the transducer xf to each element of the kstream."
+  (j/transform kstream (fn [] (transformer xf)) ["transducer"]))

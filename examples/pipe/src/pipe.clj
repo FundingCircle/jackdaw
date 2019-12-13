@@ -1,95 +1,98 @@
 (ns pipe
-  "This tutorial contains a simple stream processing application using
-  Jackdaw and Kafka Streams.
-
-  Pipe reads from a Kafka topic called `input`, logs the key and
-  value, and writes these to a Kafka topic called `output`."
+  "This example creates a simple stream processing application using transducers."
   (:gen-class)
   (:require [clojure.string :as str]
             [clojure.tools.logging :refer [info]]
+            [jackdaw.serdes :as js]
             [jackdaw.streams :as j]
-            [jackdaw.serdes.edn :as jse])
-  (:import [org.apache.kafka.common.serialization Serdes]))
+            [jackdaw.streams.xform :as jxf]
+            [jackdaw.streams.xform.fakes :as fakes]))
 
 
-(defn topic-config
-  "Takes a topic name and returns a topic configuration map, which may
-  be used to create a topic or produce/consume records."
-  [topic-name]
-  {:topic-name topic-name
-   :partition-count 1
-   :replication-factor 1
-   :key-serde (jse/serde)
-   :value-serde (jse/serde)})
-
-
-(defn app-config
-  "Returns the application config."
-  []
-  {"application.id" "word-count"
-   "bootstrap.servers" "localhost:9092"
-   "cache.max.bytes.buffering" "0"})
-
-(defn build-topology
-  "Reads from a Kafka topic called `input`, logs the key and value,
-  and writes these to a Kafka topic called `output`. Returns a
-  topology builder."
-  [builder]
-  (-> (j/kstream builder (topic-config "input"))
-      (j/peek (fn [[k v]]
-                (info (str {:key k :value v}))))
-      (j/to (topic-config "output")))
-  builder)
-
-(defn start-app
-  "Starts the stream processing application."
-  [app-config]
-  (let [builder (j/streams-builder)
-        topology (build-topology builder)
-        app (j/kafka-streams topology app-config)]
-    (j/start app)
-    (info "pipe is up")
-    app))
-
-(defn stop-app
-  "Stops the stream processing application."
-  [app]
-  (j/close app)
-  (info "pipe is down"))
-
-
-(defn -main
-  [& _]
-  (start-app (app-config)))
+(defn xf
+  [state swap-fn]
+  (fn [rf]
+    (fn
+      ([] (rf))
+      ([result] (rf result))
+      ([result input]
+       (let [[k v] input
+             next [[k v]]]
+         (rf result next))))))
 
 
 (comment
-  ;;; Evaluate the forms.
-  ;;;
+  ;; Use this comment block to explore Pipe using Clojure transducers.
 
-  ;; Needed to invoke the forms from this namespace. When typing
-  ;; directly in the REPL, skip this step.
-  (require '[user :refer :all :exclude [topic-config]])
+  ;; Launch a Clojure REPL:
+  ;; ```
+  ;; cd <path-to-jackdaw>/examples/pipe
+  ;; clj -A:dev
+  ;; ```
 
+  ;; Emacs users: Open a project file, e.g. this one, and enter
+  ;; `M-x cider-jack-in`.
 
-  ;; Start ZooKeeper and Kafka.
-  ;; This requires the Confluent Platform CLI which may be obtained
-  ;; from `https://www.confluent.io/download/`. If ZooKeeper and Kafka
-  ;; are already running, skip this step.
-  (confluent/start)
+  ;; Evaluate the form:
+  (def input [["1" "foo"] ["2" "bar"]])
 
+  ;; Let's record the entries. Evaluate the form:
+  (transduce (xf (atom {}) swap!) concat input)
 
-  ;; Create the `input` and `output` topics, and start the app.
-  (start)
+  ;; You should see output like the following:
 
-
-  ;; Get a list of current topics.
-  (list-topics)
-
-
-  ;; Write to the input stream.
-  (publish (topic-config "input") nil "this is a pipe")
+  ;; (["1" "foo"] ["2" "bar"])
+  )
 
 
-  ;; Read from the output stream.
-  (get-keyvals (topic-config "output")))
+(def streams-config
+  {"application.id" "pipe"
+   "bootstrap.servers" (or (System/getenv "BOOTSTRAP_SERVERS") "localhost:9092")
+   "cache.max.bytes.buffering" "0"})
+
+(defn topology-builder
+  [{:keys [input output] :as topics} xforms]
+  (fn [builder]
+    (jxf/add-state-store! builder)
+    (-> (j/kstream builder input)
+        (jxf/transduce (::xf xforms))
+        (j/to output))
+    builder))
+
+
+(comment
+  ;; Use this comment block to explore Pipe as a stream processing
+  ;; application.
+
+  ;; For more details on dynamic development, see the comment block in
+  ;; <path-to-jackdaw>/examples/word-count/src/word_count.clj
+
+  ;; Start ZooKeeper and Kafka:
+  ;; ```
+  ;; <path-to-directory>/bin/confluent local start kafka
+  ;; ```
+
+  ;; Launch a Clojure REPL:
+  ;; ```
+  ;; cd <path-to-jackdaw>/examples/pipe
+  ;; clj -A:dev
+  ;; ```
+
+  ;; Emacs users: Open a project file, e.g. this one, and enter
+  ;; `M-x cider-jack-in`.
+
+  ;; Evaluate the form:
+  (reset)
+
+  ;; Evaluate the form:
+  (let [input [["1" "foo"] ["2" "bar"]]]
+    (doseq [[k v] input]
+      (publish (:input topic-metadata) k v)))
+
+  ;; Evaluate the form:
+  (get-keyvals (:output topic-metadata))
+
+  ;; You should see output like the following.
+
+  ;; (["1" "foo"] ["2" "bar"])
+  )

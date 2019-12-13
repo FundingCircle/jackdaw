@@ -63,7 +63,7 @@
   ;; `M-x cider-jack-in`.
 
   ;; Evaluate the form:
-  (def coll
+  (def entries
     [["1" {:debit-account "tech"
            :credit-account "cash"
            :amount 1000}]
@@ -72,7 +72,7 @@
            :amount 2000}]])
 
   ;; Let's record the entries. Evaluate the form:
-  (->> coll
+  (->> entries
        (transduce (split-entries nil nil) concat)
        (transduce (running-balances (atom {}) swap!) concat))
 
@@ -101,7 +101,7 @@
   ;; KeyValueStore interface with overrides for get and put."
 
   ;; Evaluate the form:
-  (->> coll
+  (->> entries
        (transduce (split-entries nil nil) concat)
        (transduce (running-balances (fakes/fake-kv-store {})
                                     jxf/kv-store-swap-fn) concat))
@@ -122,9 +122,9 @@
   (fn [builder]
     (jxf/add-state-store! builder)
     (-> (j/kstream builder entry-pending)
-        (jxf/transduce-kstream (::split-entries xforms))
+        (jxf/transduce (::split-entries xforms))
         (j/through transaction-pending)
-        (jxf/transduce-kstream (::running-balances xforms))
+        (jxf/transduce (::running-balances xforms))
         (j/to transaction-added))
     builder))
 
@@ -154,14 +154,14 @@
   (reset)
 
   ;; Evaluate the form:
-  (let [coll [{:debit-account "tech"
-               :credit-account "cash"
-               :amount 1000}
-              {:debit-account "cash"
-               :credit-account "sales"
-               :amount 2000}]]
-    (doseq [x coll]
-      (publish (:entry-pending topic-metadata) nil x)))
+  (let [entries [["1" {:debit-account "tech"
+                       :credit-account "cash"
+                       :amount 1000}]
+                 ["2" {:debit-account "cash"
+                       :credit-account "sales"
+                       :amount 2000}]]]
+    (doseq [[k v] entries]
+      (publish (:entry-pending topic-metadata) k v)))
 
   ;; Evaluate the form:
   (get-keyvals (:transaction-added topic-metadata))
