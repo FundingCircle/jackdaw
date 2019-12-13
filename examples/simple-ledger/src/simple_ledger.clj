@@ -35,8 +35,8 @@
       ([result] (rf result))
       ([result input]
        (let [[k v] input
-             {:keys [account-name debit-credit-indicator amount] :as entry} v
-             next (as-> entry %
+             {:keys [account-name debit-credit-indicator amount] :as txn} v
+             next (as-> txn %
                     (swap-fn state next-balances %)
                     (select-keys % [account-name])
                     ((juxt (comp first keys) (comp first vals)) %)
