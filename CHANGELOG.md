@@ -1,12 +1,12 @@
 # Changelog
 
-## Unreleased
+## [0.7.0] - [2019-12-19]
 
 ### Added
 
- * Fressian Serde via clojure.data.fressian
+ * Fressian Serde via clojure.data.fressian #209
  * Clearer error from the command runner #214
- * Documentation about Jackdaw Admin API
+ * Documentation about Jackdaw Admin API #211
  * Upgraded in #217:
    * Kafka client version to 2.3.1: https://kafka.apache.org/23/documentation.html#upgrade_230_notable
    * Confluent Platform components version to 5.3.1: https://docs.confluent.io/5.3.1/release-notes/index.html#cp-5-3-1-release-notes
