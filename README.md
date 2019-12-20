@@ -32,6 +32,8 @@ Anyone with the appropriate credentials can "cut a release" of jackdaw using the
  5. In the "describe this release" field, enter the contents of the Changelog and add a credit to the contributors of the release
  6. When happy, use the "Publish Release" button to publish the release in github which creates a corresponding git tag
  7. Once the tag is seen by circleci, a deployment build is triggered which builds the project and deploys a release to clojars
+ 
+Steps 2 to 6 is essentially `git tag $version -m "$title\n\n$description" && git push --tags`
 
 
 ## License
