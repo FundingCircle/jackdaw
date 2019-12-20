@@ -21,6 +21,20 @@ You can find all the documentation on [cljdoc](https://cljdoc.org/d/fundingcircl
 
 We welcome any thoughts or patches. You can reach us in [`#jackdaw`](https://clojurians.slack.com/messages/CEA3C7UG0/) (or [open an issue](https://github.com/fundingcircle/jackdaw/issues)).
 
+## Releasing
+
+Anyone with the appropriate credentials can "cut a release" of jackdaw using the following steps.
+
+ 1. Review the diff of master vs the latest released tag (e.g. while preparing 0.7.0, I looked at https://github.com/FundingCircle/jackdaw/compare/0.6.9...master to see what was actually merged vs what was in the Changelog). Make a PR to put a date on the version being released and if necessary ensure completeness and consistency of the Changelog
+ 2. Use the [Draft a new release](https://github.com/FundingCircle/jackdaw/releases/new) feature in github to prepare a release
+ 3. In the "tag version" field, enter the proposed version
+ 4. In the "release title" field, enter "v[version]"
+ 5. In the "describe this release" field, enter the contents of the Changelog and add a credit to the contributors of the release
+ 6. When happy, use the "Publish Release" button to publish the release in github which creates a corresponding git tag
+ 7. Once the tag is seen by circleci, a deployment build is triggered which builds the project and deploys a release to clojars
+ 
+Steps 2 to 6 is essentially `git tag $version -m "$title\n\n$description" && git push --tags`
+
 
 ## License
 
