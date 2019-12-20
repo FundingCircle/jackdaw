@@ -25,7 +25,7 @@ We welcome any thoughts or patches. You can reach us in [`#jackdaw`](https://clo
 
 Anyone with the appropriate credentials can "cut a release" of jackdaw using the following steps.
 
- 1. Review the diff of master vs the latest released tag. (e.g. while preparing 0.7.0, I looked at https://github.com/FundingCircle/jackdaw/compare/0.6.9...master to see what was actually merged vs what was in the Changelog. Make a PR to put a date on the version being released and if necessary ensure completeness and consistency of the Changelog
+ 1. Review the diff of master vs the latest released tag (e.g. while preparing 0.7.0, I looked at https://github.com/FundingCircle/jackdaw/compare/0.6.9...master to see what was actually merged vs what was in the Changelog). Make a PR to put a date on the version being released and if necessary ensure completeness and consistency of the Changelog
  2. Use the [Draft a new release](https://github.com/FundingCircle/jackdaw/releases/new) feature in github to prepare a release
  3. In the "tag version" field, enter the proposed version
  4. In the "release title" field, enter "v[version]"
