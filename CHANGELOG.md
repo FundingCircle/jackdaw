@@ -1,5 +1,8 @@
 # Changelog
 
+ * Fixed bug in `map->ProducerRecord`
+ * Allow nullable `partition` and `timestamp` in `->ProducerRecord` (previously threw NPE)
+
 ## [0.7.0] - [2019-12-19]
 
 ### Added
