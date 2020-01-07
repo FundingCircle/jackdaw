@@ -36,13 +36,14 @@
   "Given a `::producer-record` build an equivalent `ProducerRecord`.
 
   Inverts `(datafy ^ProducerRecord r)`."
-  [{:keys [:topic-name
-           :key
-           :value
-           :headers
-           :partition
-           :timestamp] :as m}]
-  (->ProducerRecord partition timestamp key value headers))
+  [{:keys [topic-name
+           key
+           value
+           headers
+           partition
+           timestamp]
+    :as m}]
+  (->ProducerRecord {:topic-name topic-name} partition timestamp key value headers))
 
 (defn->data ProducerRecord->data [^ProducerRecord pr]
   {:topic-name (.topic pr)
