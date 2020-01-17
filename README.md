@@ -21,6 +21,12 @@ You can find all the documentation on [cljdoc](https://cljdoc.org/d/fundingcircl
 
 We welcome any thoughts or patches. You can reach us in [`#jackdaw`](https://clojurians.slack.com/messages/CEA3C7UG0/) (or [open an issue](https://github.com/fundingcircle/jackdaw/issues)).
 
+## Related projects
+
+If you want to get more insight about your topologies, you can use the
+[Topology Grapher](https://github.com/FundingCircle/topology-grapher) library to generate graphs.
+See [an example using jackdaw](https://github.com/FundingCircle/topology-grapher/blob/master/sample_project/src/jackdaw_topology.clj) to check how to integrate it with your topology.
+
 ## Releasing
 
 Anyone with the appropriate credentials can "cut a release" of jackdaw using the following steps.
