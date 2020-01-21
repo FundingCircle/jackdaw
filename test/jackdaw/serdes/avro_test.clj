@@ -515,6 +515,87 @@
                                                              "topic"
                                                              (uuid/to-string uuid/+null+))))))))
 
+(def mangling-test-schema
+  {:name "testRecord"
+   :type "record"
+   :fields [{:name "enum_field"
+             :type {:type "enum"
+                    :name "weird_values"
+                    :symbols ["a_1" "B3"]}}
+            {:name "map_field"
+             :type ["null" {:type "map"
+                            :values bananas-schema}]}
+            {:name "array_field"
+             :type ["null" {:name "subrecords"
+                            :type "array"
+                            :items "banana"}]}]})
+
+(deftest accept-unmangled-input
+  "Ensure that it is possible to serialize non-idiomatic but perfectly
+  valid clojure maps. For eg. string values for enums,stringified keys
+  and keys with underscores with in the input."
+  (let [serde (-> mangling-test-schema
+                  json/write-str
+                  ->serde)]
+
+    (is (= (round-trip serde "bananas"
+                       {:enum-field "a_1"
+                        :map-field {"banana" {"color" "yellow"}
+                                    "ripe b4nana$" {"color" "yellow-green"}}
+                        :array-field [{"color" "yellow"}]})
+           {:map-field {"banana" {:color "yellow"}
+                        "ripe b4nana$" {:color "yellow-green"}}
+            :enum-field :a-1
+            :array-field [{:color "yellow"}]})
+        "Accept unmangled values for enums and maps")
+
+
+    (is (= (round-trip serde "bananas"
+                       {"enum_field" "a_1"
+                        "map-field" {"banana" {"color" "yellow"}
+                                     "ripe b4nana$" {"color" "yellow-green"}}
+                        :array_field [{"color" "yellow"}]})
+           {:map-field {"banana" {:color "yellow"}
+                        "ripe b4nana$" {:color "yellow-green"}}
+            :enum-field :a-1
+            :array-field [{:color "yellow"}]})
+        "Accept maps with string keys and keys with underscores")))
+
+
+(deftest no-mangling-test
+  "Ensure that the deserialiser does not 'idiomise' values of enums
+  and keys of maps to ' the `jackdaw.serdes.avro/*mangle-names*` is
+  set to false."
+  (binding [jackdaw.serdes.avro/*mangle-names* false]
+    (let [serde (-> mangling-test-schema
+                    json/write-str
+                    ->serde)]
+      (is (= (round-trip serde "bananas"
+                         {:enum_field :a_1
+                          :map_field {"banana" {:color "yellow"}
+                                      "ripe b4nana$" {:color "yellow-green"}}
+
+                          :array_field [{:color "yellow"}]})
+             {:enum_field :a_1
+              :map_field {"banana" {:color "yellow"}
+                          "ripe b4nana$" {:color "yellow-green"}}
+              :array_field [{:color "yellow"}]})
+          "Enum values are not idiomised when mangling is turned off")
+
+
+      (is (= (round-trip serde "bananas"
+                         {:enum_field :a_1
+                          :map_field {"banana" {:color "yellow"}
+                                      "ripe b4nana$" {:color "yellow-green"}}
+
+                          :array_field [{:color "yellow"}]})
+             {:enum_field :a_1
+              :map_field {"banana" {:color "yellow"}
+                          "ripe b4nana$" {:color "yellow-green"}}
+              :array_field [{:color "yellow"}]})
+          "keys of maps are not idiomised when mangling is turned off"))))
+
+
 (deftest schemaless-test
   (let [serde (->serde nil)]
     (is (= (round-trip serde "bananas" "hello")
