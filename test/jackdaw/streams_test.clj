@@ -951,6 +951,36 @@
         (is (= [0 -7] (second keyvals)))
         (is (= [1 -8] (nth keyvals 2))))))
 
+  (testing "aggregate: diff stream"
+    (let [topic-in (mock/topic "in")
+          topic-diffs (mock/topic "in-diffs")
+          driver (mock/build-driver (fn [builder]
+                                      (let [in (-> builder
+                                                   (k/kstream topic-in))]
+                                        (-> in
+                                            (k/group-by-key)
+                                            (k/aggregate (constantly [])
+                                                         (fn [acc [k v]]
+                                                           (concat [(last acc)]
+                                                                   [v]))
+                                                         (assoc topic-in
+                                                                :value-serde (jse/serde)))
+                                            (k/to-kstream)
+                                            (k/map (fn [[k v]]
+                                                     (let [[prev current] v]
+                                                       [k (when (and prev current)
+                                                            (- current prev))])))
+                                            (k/to topic-diffs)))))
+          publish (partial mock/publish driver topic-in)]
+
+      (publish 1 5)
+      (publish 1 8)
+
+      (let [keyvals (mock/get-keyvals driver topic-diffs)]
+        (is (= 2 (count keyvals)))
+        (is (= [1 nil] (first keyvals)))
+        (is (= [1 3] (second keyvals))))))
+
   (testing "windowed-by-time"
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
