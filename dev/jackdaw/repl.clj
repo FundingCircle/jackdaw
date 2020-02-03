@@ -4,8 +4,7 @@
             [jackdaw.client :as jc]
             [jackdaw.client.log :as jcl]
             [jackdaw.serdes :as js]
-            [jackdaw.streams :as j]
-            [jackdaw.streams.describe :as jsd])
+            [jackdaw.streams :as j])
   (:import [clojure.lang ILookup Associative]))
 
 
@@ -114,21 +113,6 @@
   When used with a 'getter', returns the topic metadata for the topic
   given with EDN serdes and a partition count of one."
   (FakeTopicMetadata.))
-
-(defn topology->topic-metadata
-  "Takes a topology and streams config and walks the topology to find
-  all the user-defined topics."
-  [topology streams-config]
-  (->> (jsd/describe-topology (.build (j/streams-builder* topology))
-                              streams-config)
-       (map :nodes)
-       (reduce concat)
-       (filter #(= :topic (:type %)))
-       (remove (fn [x] (re-matches #".*STATE-STORE.*" (:name x))))
-       (map :name)
-       (reduce (fn [acc x]
-                 (assoc acc (keyword x) (get topic-metadata x)))
-               {})))
 
 (defn re-delete-topics
   "Takes an instance of java.util.regex.Pattern and deletes all Kafka
