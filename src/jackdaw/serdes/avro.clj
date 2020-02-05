@@ -316,9 +316,11 @@
 (defrecord EnumType [^Schema schema]
   SchemaCoercion
   (match-clj? [_ x]
-    (or
-     (string? x)
-     (keyword? x)))
+    (and (or
+          (string? x)
+          (keyword? x))
+         (contains? (set (.getEnumSymbols schema))
+                    (mangle (name x)))))
 
   (match-avro? [_ x]
     (instance? GenericData$EnumSymbol x))
@@ -472,7 +474,7 @@
       (avro->clj schema-type avro-data)))
 
   (clj->avro [_ clj-data path]
-    (if-let [schema-type (match-union-type coercion-types  #(match-clj? % clj-data))]
+    (if-let [schema-type (match-union-type coercion-types #(match-clj? % clj-data))]
       (clj->avro schema-type clj-data path)
       (throw (ex-info (serialization-error-msg clj-data
                                                (->> schemas

@@ -260,7 +260,27 @@
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
       (is (= avro-data-str-keys (avro/clj->avro schema-type clj-data [])))))
   (testing "union"
-    (let [avro-schema (parse-schema ["long" "string"])
+    (let [record-1-schema {:name "recordOne"
+                           :type "record"
+                           :namespace "com.fundingcircle"
+                           :fields [{:name "a"
+                                     :type {:name "enumOne"
+                                            :type "enum"
+                                            :symbols ["x"]}
+                                     :symbols ["x"]}]}
+          record-2-schema {:name "recordTwo"
+                           :type "record"
+                           :namespace "com.fundingcircle"
+                           :fields [{:name "a"
+                                     :type {:name "enumTwo"
+                                            :type "enum"
+                                            :symbols ["y"]}}
+                                    {:name "b"
+                                     :type ["string" "null"]}]}
+          avro-schema (parse-schema ["long"
+                                     "string"
+                                     record-1-schema
+                                     record-2-schema])
           schema-type (schema-type avro-schema)
           clj-data-long 123
           avro-data-long 123
@@ -273,7 +293,11 @@
       (is (= clj-data-string (avro/avro->clj schema-type avro-data-string)))
       (is (= (str avro-data-string) (avro/clj->avro schema-type clj-data-string [])))
       (is (= clj-data-num-as-string (avro/avro->clj schema-type avro-data-num-as-string)))
-      (is (= (str avro-data-num-as-string) (avro/clj->avro schema-type clj-data-num-as-string [])))))
+      (is (= (str avro-data-num-as-string) (avro/clj->avro schema-type clj-data-num-as-string [])))
+      (is (= (->generic-record (parse-schema record-1-schema) {"a" "x"})
+             (avro/clj->avro schema-type {:a :x} [])))
+      (is (= (->generic-record (parse-schema record-2-schema) {"a" "y" "b" "test"})
+             (avro/clj->avro schema-type {:a :y :b "test"} [])))))
   (testing "marshalling unrecognized union type throws exception"
     (let [avro-schema (parse-schema ["null" "long"])
           schema-type (schema-type avro-schema)]
@@ -295,7 +319,8 @@
           avro-data (->generic-record avro-schema {"industry_code_version" avro-enum})]
       (is (= clj-data (avro/avro->clj schema-type avro-data)))
       (is (= avro-data (avro/clj->avro schema-type clj-data [])))
-      (is (= avro-data (avro/clj->avro schema-type {:industry-code-version "SIC-2003"} [])))))
+      (is (= avro-data (avro/clj->avro schema-type {:industry-code-version "SIC-2003"} [])))
+      (is (thrown? Exception (avro/clj->avro schema-type {:industry-code-version "invalid"} [])))))
   (testing "record"
     (let [nested-schema-json {:name "nestedRecord"
                               :type "record"
