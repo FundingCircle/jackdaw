@@ -306,10 +306,16 @@
       (is (= (str avro-data-num-as-string) (avro/clj->avro schema-type clj-data-num-as-string [])))
       (is (= (->generic-record (parse-schema record-1-schema) {"a" "x"})
              (avro/clj->avro schema-type {:a :x} [])))
+      (is (= {:a :x}
+             (avro/avro->clj schema-type (->generic-record (parse-schema record-1-schema) {"a" "x"}))))
       (is (= (->generic-record (parse-schema record-2-schema) {"a" "y" "b" "test"})
              (avro/clj->avro schema-type {:a :y :b "test"} [])))
+      (is (= {:a :y :b "test"}
+             (avro/avro->clj schema-type (->generic-record (parse-schema record-2-schema) {"a" "y" "b" "test"}))))
       (is (= (->generic-record (parse-schema record-3-schema) {"a" "y" "c" "test"})
-             (avro/clj->avro schema-type {:a :y :c "test"} [])))))
+             (avro/clj->avro schema-type {:a :y :c "test"} [])))
+      (is (= {:a :y :c "test"}
+             (avro/avro->clj schema-type (->generic-record (parse-schema record-3-schema) {"a" "y" "c" "test"}))))))
   (testing "marshalling unrecognized union type throws exception"
     (let [avro-schema (parse-schema ["null" "long"])
           schema-type (schema-type avro-schema)]
