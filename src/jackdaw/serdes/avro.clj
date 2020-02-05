@@ -60,6 +60,7 @@
   "
   (:require [clojure.tools.logging :as log]
             [clojure.core.cache :as cache]
+            [clojure.data]
             [clojure.string :as str]
             [jackdaw.serdes.avro.schema-registry :as registry]
             [jackdaw.serdes.fn :as fn])
