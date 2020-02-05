@@ -277,10 +277,20 @@
                                             :symbols ["y"]}}
                                     {:name "b"
                                      :type ["string" "null"]}]}
+          record-3-schema {:name "recordThree"
+                           :type "record"
+                           :namespace "com.fundingcircle"
+                           :fields [{:name "a"
+                                     :type {:name "enumThree"
+                                            :type "enum"
+                                            :symbols ["y"]}}
+                                    {:name "c"
+                                     :type ["string" "null"]}]}
           avro-schema (parse-schema ["long"
                                      "string"
                                      record-1-schema
-                                     record-2-schema])
+                                     record-2-schema
+                                     record-3-schema])
           schema-type (schema-type avro-schema)
           clj-data-long 123
           avro-data-long 123
@@ -297,7 +307,9 @@
       (is (= (->generic-record (parse-schema record-1-schema) {"a" "x"})
              (avro/clj->avro schema-type {:a :x} [])))
       (is (= (->generic-record (parse-schema record-2-schema) {"a" "y" "b" "test"})
-             (avro/clj->avro schema-type {:a :y :b "test"} [])))))
+             (avro/clj->avro schema-type {:a :y :b "test"} [])))
+      (is (= (->generic-record (parse-schema record-3-schema) {"a" "y" "c" "test"})
+             (avro/clj->avro schema-type {:a :y :c "test"} [])))))
   (testing "marshalling unrecognized union type throws exception"
     (let [avro-schema (parse-schema ["null" "long"])
           schema-type (schema-type avro-schema)]
