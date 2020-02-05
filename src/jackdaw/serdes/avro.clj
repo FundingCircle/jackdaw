@@ -67,10 +67,14 @@
             KafkaAvroSerializer KafkaAvroDeserializer]
            java.lang.CharSequence
            java.nio.ByteBuffer
+           [java.io ByteArrayOutputStream ByteArrayInputStream]
            [java.util Collection Map UUID]
            [org.apache.avro
             Schema$Parser Schema$ArraySchema Schema Schema$Field]
+           [org.apache.avro.io
+            EncoderFactory DecoderFactory JsonEncoder]
            [org.apache.avro.generic
+            GenericDatumWriter GenericDatumReader
             GenericContainer GenericData$Array GenericData$EnumSymbol
             GenericData$Record GenericRecordBuilder]
            [org.apache.kafka.common.serialization
@@ -82,7 +86,7 @@
 
 (def parse-schema-str
   (memoize
-   (fn [schema-str]
+   (fn ^Schema [schema-str]
      (when schema-str
        (.parse (Schema$Parser.) ^String schema-str)))))
 
@@ -596,6 +600,60 @@
    {:type "string" :logical-type "uuid"}
    (fn [_ _] (StringUUIDType.))})
 
+(defn- schema->coercion
+  [{:keys [type-registry
+           coercion-cache]}]
+  (let [coercion-cache (or coercion-cache (atom (cache/lru-cache-factory {})))
+        schema->coercion* (make-coercion-stack (or type-registry
+                                                   +base-schema-type-registry+))]
+    (fn [avro-schema]
+      ;; Note that while schema->coercion* is directly recursive, schema->coercion simply
+      ;; delegates. Consequently there will be no cache entries other than encountered top level
+      ;; Avro schemas.
+      (locking coercion-cache
+        ;; This hits or fills the cache as a side-effect hence the locking
+        (swap! coercion-cache cache/through-cache avro-schema schema->coercion*)
+        ;; Read and return the value. In locking so we have RAW.
+        (get @coercion-cache avro-schema)))))
+
+(defn- coercion-type
+  [avro-schema {:keys [type-registry
+                       coercion-cache] :as coercion-stack}]
+  ((schema->coercion coercion-stack) avro-schema))
+
+(defn as-json
+  "Returns the json representation of the supplied `edn+avro`
+
+   `edn+avro` is an avro object represented as an edn object (compatible with the jackdaw avro serde)"
+  [{:keys [type-registry
+           avro-schema
+           coercion-cache] :as coercion-stack} edn+avro]
+  (let [schema (parse-schema-str avro-schema)
+        record (clj->avro (coercion-type schema coercion-stack) edn+avro [])
+        out-stream (ByteArrayOutputStream.)
+        encoder (.jsonEncoder ^EncoderFactory (EncoderFactory.)
+                              ^Schema schema
+                              ^ByteArrayOutputStream out-stream)
+        writer (GenericDatumWriter. schema)]
+    (.write writer record encoder)
+    (.flush encoder)
+    (String. (.toByteArray out-stream))))
+
+(defn as-edn
+  "Returns the edn representation of the supplied `json+avro`
+
+   `json+avro` is an avro object represented as a json string"
+  [{:keys [type-registry
+           coercion-cache
+           avro-schema] :as coercion-stack} json+avro]
+  (let [schema (parse-schema-str avro-schema)
+        decoder (.jsonDecoder ^DecoderFactory (DecoderFactory.)
+                              ^Schema schema
+                              ^String json+avro)
+        reader (GenericDatumReader. schema)
+        record (.read reader nil decoder)]
+    (avro->clj (coercion-type schema coercion-stack) record)))
+
 (defn serde
   "Given a type and logical type registry, a schema registry config with
   either a client or a URL and an Avro topic descriptor, build and
@@ -629,23 +687,10 @@
                 ;; new behavior of getting the right schema when possible.
                 :avro-schema     (parse-schema-str schema)}
 
-        ;; Coercion stack caching
-        ;;
-        ;; Every record carries its schema instance attached. Schemas implement reasonable hashing
-        ;; and object equality. This means that, rather than building up the entire clj <-> avro
-        ;; projection machinery by walking the schema for every record in or out, we can cache
-        coercion-cache (or coercion-cache (atom (cache/lru-cache-factory {})))
-        schema->coercion* (make-coercion-stack type-registry)
-        ;; Note that while schema->coercion* is directly recursive, schema->coercion simply
-        ;; delegates. Consequently there will be no cache entries other than encountered top level
-        ;; Avro schemas.
-        schema->coercion  #(locking coercion-cache
-                             ;; This hits or fills the cache as a side-effect hence the locking
-                             (swap! coercion-cache cache/through-cache % schema->coercion*)
-                             ;; Read and return the value. In locking so we have RAW.
-                             (get @coercion-cache %))
+        coercion-stack {:type-registry type-registry
+                        :coercion-cache coercion-cache}
 
         ;; The final serdes based on the (cached) coercion stack.
-        avro-serializer (serializer schema->coercion config)
-        avro-deserializer (deserializer schema->coercion (assoc config :deserializer-properties deserializer-properties))]
+        avro-serializer (serializer (schema->coercion coercion-stack) config)
+        avro-deserializer (deserializer (schema->coercion coercion-stack) (assoc config :deserializer-properties deserializer-properties))]
     (Serdes/serdeFrom avro-serializer avro-deserializer)))

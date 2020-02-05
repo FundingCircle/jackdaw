@@ -515,6 +515,64 @@
                                                              "topic"
                                                              (uuid/to-string uuid/+null+))))))))
 
+(deftest test-edn-coercion
+  (testing "coercion to edn"
+    (let [valid-json {"uuid_field" "00000000-0000-0000-0000-000000000000",
+                      "enum_field" "a_1",
+                      "optional_field" nil,
+                      "bytes_field" "hello",
+                      "string_field" "hello",
+                      "array_field" {"array" [{"color" "yellow"}]},
+                      "map_field" {"map" {"banana" {"color" "yellow"}, "ripe b4nana$" {"color" "yellow-green"}}},
+                      "default_field" 1,
+                      "long_field" 3,
+                      "nil_field" nil}
+          edn (avro/as-edn {:avro-schema complex-schema-str
+                            :type-registry (merge avro/+base-schema-type-registry+
+                                                  avro/+UUID-type-registry+)}
+                           (json/write-str valid-json))]
+      (is (= :a-1 (:enum-field edn)))
+      (is (= nil (:nil-field edn)))
+      (is (= {"banana" {:color "yellow"}
+              "ripe b4nana$" {:color "yellow-green"}} (:map-field edn)))
+      (is (= 1 (:default-field edn)))
+      (is (= #uuid "00000000-0000-0000-0000-000000000000" (:uuid-field edn)))
+      (is (= [{:color "yellow"}] (:array-field edn)))
+      (is (= "hello" (:string-field edn)))
+      (is (= nil (:optional-field edn)))
+      (is (= 3 (:long-field edn)))))
+
+  (testing "coercion to json"
+    (let [valid-edn {:enum-field :a-1,
+                     :bytes-field (ByteBuffer/wrap (.getBytes "hello"))
+                     :nil-field nil,
+                     :map-field {"banana" {:color "yellow"}, "ripe b4nana$" {:color "yellow-green"}},
+                     :default-field 1,
+                     :uuid-field #uuid "00000000-0000-0000-0000-000000000000",
+                     :array-field [{:color "yellow"}],
+                     :string-field "hello",
+                     :optional-field nil,
+                     :long-field 3}
+          json (-> (avro/as-json {:avro-schema complex-schema-str
+                                  :type-registry (merge avro/+base-schema-type-registry+
+                                                        avro/+UUID-type-registry+)}
+                                 valid-edn)
+                   (json/read-str :key-fn keyword))]
+      (is (= "a_1" (:enum_field json)))
+      (is (= nil (:nil_field json)))
+      (is (= {:map {:banana {:color "yellow"},
+                    (keyword "ripe b4nana$") {:color "yellow-green"}}}
+             (:map_field json)))
+      (is (= 1 (:default_field json)))
+      (is (= "00000000-0000-0000-0000-000000000000" (:uuid_field json)))
+      (is (= {:array [{:color "yellow"}]}
+             (:array_field json)))
+      (is (= "hello" (:string_field json)))
+      (is (= nil (:optional_field json)))
+      (is (= 3 (:long_field json))))))
+
+
+
 (deftest schemaless-test
   (let [serde (->serde nil)]
     (is (= (round-trip serde "bananas" "hello")

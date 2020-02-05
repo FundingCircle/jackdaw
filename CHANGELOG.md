@@ -1,5 +1,11 @@
 # Changelog
 
+### Added
+
+ * as-edn/as-json functions to convert between representations of avro
+
+### Fixed
+
  * Fixed bug in `map->ProducerRecord`
  * Allow nullable `partition` and `timestamp` in `->ProducerRecord` (previously threw NPE)
 
