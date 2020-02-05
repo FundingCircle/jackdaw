@@ -557,18 +557,21 @@
                                   :type-registry (merge avro/+base-schema-type-registry+
                                                         avro/+UUID-type-registry+)}
                                  valid-edn)
-                   (json/read-str))]
-      (is (= "a_1" (get json "enum_field")))
-      (is (= nil (get json "nil_field")))
-      (is (= {"map" {"banana" {"color" "yellow"}, "ripe b4nana$" {"color" "yellow-green"}}}
-             (get json "map_field")))
-      (is (= 1 (get json "default_field")))
-      (is (= "00000000-0000-0000-0000-000000000000" (get json "uuid_field")))
-      (is (= {"array" [{"color" "yellow"}]}
-             (get json "array_field")))
-      (is (= "hello" (get json "string_field")))
-      (is (= nil (get json "optional_field")))
-      (is (= 3 (get json "long_field"))))))
+                   (json/read-str :key-fn keyword))]
+      (is (= "a_1" (:enum_field json)))
+      (is (= nil (:nil_field json)))
+      (is (= {:map {:banana {:color "yellow"},
+                    (keyword "ripe b4nana$") {:color "yellow-green"}}}
+             (:map_field json)))
+      (is (= 1 (:default_field json)))
+      (is (= "00000000-0000-0000-0000-000000000000" (:uuid_field json)))
+      (is (= {:array [{:color "yellow"}]}
+             (:array_field json)))
+      (is (= "hello" (:string_field json)))
+      (is (= nil (:optional_field json)))
+      (is (= 3 (:long_field json))))))
+
+
 
 (deftest schemaless-test
   (let [serde (->serde nil)]
