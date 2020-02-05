@@ -324,7 +324,8 @@
                     (mangle (name x)))))
 
   (match-avro? [_ x]
-    (instance? GenericData$EnumSymbol x))
+    (and (instance? GenericData$EnumSymbol x)
+         (.hasEnumSymbol schema x)))
 
   (avro->clj [_ avro-enum]
     (-> (str avro-enum)
