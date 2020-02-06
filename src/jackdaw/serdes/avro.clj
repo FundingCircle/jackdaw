@@ -60,6 +60,7 @@
   "
   (:require [clojure.tools.logging :as log]
             [clojure.core.cache :as cache]
+            [clojure.data]
             [clojure.string :as str]
             [jackdaw.serdes.avro.schema-registry :as registry]
             [jackdaw.serdes.fn :as fn])
@@ -316,12 +317,15 @@
 (defrecord EnumType [^Schema schema]
   SchemaCoercion
   (match-clj? [_ x]
-    (or
-     (string? x)
-     (keyword? x)))
+    (and (or
+          (string? x)
+          (keyword? x))
+         (contains? (set (.getEnumSymbols schema))
+                    (mangle (name x)))))
 
   (match-avro? [_ x]
-    (instance? GenericData$EnumSymbol x))
+    (and (instance? GenericData$EnumSymbol x)
+         (.hasEnumSymbol schema x)))
 
   (avro->clj [_ avro-enum]
     (-> (str avro-enum)
@@ -385,13 +389,15 @@
 (defrecord RecordType [^Schema schema field->schema+coercion]
   SchemaCoercion
   (match-clj? [_ clj-map]
-    (let [fields (.getFields schema)]
-      (every? (fn [[field-key [^Schema$Field field field-coercion]]]
-                (let [field-value (get clj-map field-key ::missing)]
-                  (if (= field-value ::missing)
-                    (.defaultValue field)
-                    (match-clj? field-coercion field-value))))
-              field->schema+coercion)))
+    (let [[_ unknown-fields _] (clojure.data/diff (set (keys field->schema+coercion))
+                                                  (set (keys clj-map)))]
+      (and (every? (fn [[field-key [^Schema$Field field field-coercion]]]
+                     (let [field-value (get clj-map field-key ::missing)]
+                       (if (= field-value ::missing)
+                         (.defaultValue field)
+                         (match-clj? field-coercion field-value))))
+                   field->schema+coercion)
+           (empty? unknown-fields))))
 
   (match-avro? [_ avro-record]
     (cond
@@ -472,7 +478,7 @@
       (avro->clj schema-type avro-data)))
 
   (clj->avro [_ clj-data path]
-    (if-let [schema-type (match-union-type coercion-types  #(match-clj? % clj-data))]
+    (if-let [schema-type (match-union-type coercion-types #(match-clj? % clj-data))]
       (clj->avro schema-type clj-data path)
       (throw (ex-info (serialization-error-msg clj-data
                                                (->> schemas
