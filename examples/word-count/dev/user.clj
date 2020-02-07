@@ -2,11 +2,27 @@
   (:require [clojure.string :as str]
             [jackdaw.admin :as ja]
             [jackdaw.streams :as j]
-            [jackdaw.repl :refer :all]
+            [jackdaw.repl :as repl]
             [integrant.core :as ig]
+            [topology-grapher.generator :refer [describe-topology]]
             [integrant.repl :refer [clear go halt prep init reset reset-all]]
             [word-count]))
 
+
+(defn topology->topic-metadata
+  "Takes a topology and streams config and walks the topology to find
+  all the user-defined topics."
+  [topology streams-config]
+  (->> (describe-topology (.build (j/streams-builder* topology))
+                          streams-config)
+       (map :nodes)
+       (reduce concat)
+       (filter #(= :topic (:type %)))
+       (remove (fn [x] (re-matches #".*STATE-STORE.*" (:name x))))
+       (map :name)
+       (reduce (fn [acc x]
+                 (assoc acc (keyword x) (get repl/topic-metadata x)))
+               {})))
 
 (def repl-config
   "The development config.
@@ -25,7 +41,7 @@
 
 (defmethod ig/init-key :topology [_ {:keys [topology-builder]}]
   (let [streams-builder (j/streams-builder)]
-    ((topology-builder topic-metadata) streams-builder)))
+    ((topology-builder repl/topic-metadata) streams-builder)))
 
 (defmethod ig/init-key :topics [_ {:keys [streams-config client-config topology]
                                    :as opts}]
@@ -45,14 +61,14 @@
                                      (map name)
                                      (str/join "|"))
                             ")"))]
-    (re-delete-topics client-config re)))
+    (repl/re-delete-topics client-config re)))
 
 (defmethod ig/halt-key! :app [_ {:keys [streams-config topics streams-app]}]
   (j/close streams-app)
   ;; BUG: Does not delete state on reset!
-  (destroy-state-stores streams-config)
+  (repl/destroy-state-stores streams-config)
   (let [re (re-pattern (str "(" (get streams-config "application.id") ")"))]
-    (re-delete-topics (:client-config topics) re)))
+    (repl/re-delete-topics (:client-config topics) re)))
 
 
 (integrant.repl/set-prep! (constantly repl-config))

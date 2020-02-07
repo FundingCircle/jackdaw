@@ -4,6 +4,7 @@
  :deps
  {fundingcircle/jackdaw {:mvn/version "0.6.9-word_count_modernization-SNAPSHOT"
                          :exclusions [org.apache.zookeeper/zookeeper]}
+  fundingcircle/topology-grapher {:mvn/version "0.1.1"}
   org.clojure/clojure {:mvn/version "1.10.1"}
   org.clojure/tools.logging {:mvn/version "0.4.1"}
   org.apache.kafka/kafka-streams {:mvn/version "2.3.0"}
