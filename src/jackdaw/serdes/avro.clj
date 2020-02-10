@@ -325,7 +325,7 @@
 
   (match-avro? [_ x]
     (and (instance? GenericData$EnumSymbol x)
-         (.hasEnumSymbol schema x)))
+         (.hasEnumSymbol schema (.toString x))))
 
   (avro->clj [_ avro-enum]
     (-> (str avro-enum)

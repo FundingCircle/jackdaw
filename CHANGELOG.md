@@ -9,6 +9,7 @@
  * Fixed bug in `map->ProducerRecord`
  * Allow nullable `partition` and `timestamp` in `->ProducerRecord` (previously threw NPE)
  * Fixed union type serialisation when members have similar fields
+ * Fixed deserialisation of enums
 
 ## [0.7.0] - [2019-12-19]
 
