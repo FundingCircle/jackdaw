@@ -1,5 +1,11 @@
 # Changelog
 
+## Fixed
+
+* Fixed bug in Avro deserialisation, when handling a union of enum types
+
+## [0.7.1] - [2020-02-06]
+
 ### Added
 
  * as-edn/as-json functions to convert between representations of avro
