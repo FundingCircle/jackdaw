@@ -62,7 +62,7 @@ provide more detailed information about how the producer works behind the scenes
    "client.id" "foo"})
 
 (with-open [my-producer (jc/producer producer-config)]
-  @(jc/produce! my-producer "foo" "1" "hi mom!"))
+  @(jc/produce! my-producer {:topic-name "foo"} "1" "hi mom!"))
 ```
 
 ## Consuming
