@@ -286,8 +286,12 @@
                                             :symbols ["y"]}}
                                     {:name "c"
                                      :type ["string" "null"]}]}
+          enum-schema {:name "enum"
+                       :type "enum"
+                       :symbols ["a" "b" "c"]}
           avro-schema (parse-schema ["long"
                                      "string"
+                                     enum-schema
                                      record-1-schema
                                      record-2-schema
                                      record-3-schema])
@@ -297,13 +301,17 @@
           clj-data-string "hello"
           avro-data-string (Utf8. "hello")
           clj-data-num-as-string "123"
-          avro-data-num-as-string (Utf8. "123")]
+          avro-data-num-as-string (Utf8. "123")
+          clj-data-enum :a
+          avro-data-enum (GenericData$EnumSymbol. (parse-schema enum-schema) "a")]
       (is (= clj-data-long (avro/avro->clj schema-type avro-data-long)))
       (is (= avro-data-long (avro/clj->avro schema-type clj-data-long [])))
       (is (= clj-data-string (avro/avro->clj schema-type avro-data-string)))
       (is (= (str avro-data-string) (avro/clj->avro schema-type clj-data-string [])))
       (is (= clj-data-num-as-string (avro/avro->clj schema-type avro-data-num-as-string)))
       (is (= (str avro-data-num-as-string) (avro/clj->avro schema-type clj-data-num-as-string [])))
+      (is (= avro-data-enum (avro/clj->avro schema-type clj-data-enum [])))
+      (is (= clj-data-enum (avro/avro->clj schema-type avro-data-enum)))
       (is (= (->generic-record (parse-schema record-1-schema) {"a" "x"})
              (avro/clj->avro schema-type {:a :x} [])))
       (is (= {:a :x}
