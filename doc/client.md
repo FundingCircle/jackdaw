@@ -20,7 +20,7 @@ further reading.
 ## Producing
 
 The producer example below demonstrates how to use the Kafka Producer API. The configuration<sup>[3](#producerconfig)</sup>
-is represented as a simple map (Jackdaw will convert this to a `Properties` object) and in
+is represented as a simple map (Jackdaw will convert this to a `Properties` object) and in 
 this example, the producer is minimally configured just to illustrate a few
 important options.
 
@@ -58,6 +58,8 @@ provide more detailed information about how the producer works behind the scenes
 
 (def producer-config
   {"bootstrap.servers" "localhost:9092"
+   "key.serializer" "org.apache.kafka.common.serialization.StringSerializer"
+   "value.serializer" "org.apache.kafka.common.serialization.StringSerializer"
    "acks" "all"
    "client.id" "foo"})
 
