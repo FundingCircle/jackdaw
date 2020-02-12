@@ -71,7 +71,7 @@
 
 (s/fdef write!
   :args (s/cat :topic-id ::topic-id
-               :message ::test-msg
+               :message ::test-message
                :options (s/? ::write-options))
   :ret vector?)
 

@@ -1,6 +1,14 @@
 # Changelog
 
-## Fixed
+## Unreleased
+
+### Added
+
+* Start formalizing test-machine commands with fspec'd functions
+
+## [0.7.2] - [2020-02-07]
+
+### Fixed
 
 * Fixed bug in Avro deserialisation, when handling a union of enum types
 
