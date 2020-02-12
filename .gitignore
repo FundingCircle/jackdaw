@@ -9,6 +9,7 @@
 /jackdaw-[a-z]*/checkouts
 /jackdaw-[a-z]*/target
 /target
+/test-results
 /logs
 pom.xml
 pom.xml.asc
