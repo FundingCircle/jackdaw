@@ -11,7 +11,6 @@
   (:require [clojure.edn]
             [jackdaw.serdes.fn :as jsfn])
   (:import java.nio.charset.StandardCharsets
-           org.apache.kafka.common.serialization.Serde
            org.apache.kafka.common.serialization.Serdes))
 
 (set! *warn-on-reflection* true)

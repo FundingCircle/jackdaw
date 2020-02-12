@@ -35,7 +35,8 @@
   {:license
    "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [jackdaw.client :as jc]
-            [jackdaw.data :as jd])
+            [jackdaw.data :as jd]
+            [clojure.string :as string])
   (:import org.apache.kafka.clients.producer.Producer
            org.apache.kafka.common.serialization.Serde
            org.apache.kafka.common.utils.Utils))
@@ -47,9 +48,9 @@
   [{:keys [record-key] :as t}]
   (let [record-key (as-> record-key %
                      (-> %
-                         (clojure.string/replace  "$." "")
-                         (clojure.string/replace  "_" "-")
-                         (clojure.string/split  #"\."))
+                         (string/replace  "$." "")
+                         (string/replace  "_" "-")
+                         (string/split  #"\."))
                      (mapv keyword %))]
     (assoc t ::key-fn #(get-in % record-key))))
 

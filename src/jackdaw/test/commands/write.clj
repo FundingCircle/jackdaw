@@ -1,7 +1,6 @@
 (ns jackdaw.test.commands.write
   (:require
    [manifold.stream :as s]
-   [clojure.tools.logging :as log]
    [jackdaw.client.partitioning :as partitioning]))
 
 (defn default-partition-fn [topic-map topic-name k v partition-count]

@@ -2,7 +2,7 @@
   "FIXME"
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:import [org.apache.kafka.common.serialization
-            Deserializer Serdes Serializer]))
+            Deserializer Serializer]))
 
 ;; Kafka requires serdes to load from their own classloader, which
 ;; requires AOT. We don't want to transitively AOT other libs such as

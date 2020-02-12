@@ -7,13 +7,11 @@
             [jackdaw.streams.configured :as configured]
             [jackdaw.streams.interop :as interop]
             [jackdaw.data :as data])
-  (:import java.nio.file.Files
-           java.nio.file.attribute.FileAttribute
-           org.apache.kafka.streams.TopologyTestDriver
+  (:import org.apache.kafka.streams.TopologyTestDriver
            java.util.Properties
            org.apache.kafka.streams.test.ConsumerRecordFactory
            org.apache.kafka.common.header.internals.RecordHeaders
-           [org.apache.kafka.common.serialization Serde Serdes Serializer]))
+           [org.apache.kafka.common.serialization Serde Serdes]))
 
 (defn streams-builder
   "Creates a mock streams-builder."

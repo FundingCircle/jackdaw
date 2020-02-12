@@ -4,7 +4,7 @@
    [clojure.tools.logging :as log]
    [jackdaw.test.journal :as j]
    [jackdaw.test.transports :as t :refer [deftransport]]
-   [jackdaw.test.serde :refer [byte-array-serializer byte-array-deserializer
+   [jackdaw.test.serde :refer [byte-array-deserializer
                                apply-serializers apply-deserializers serde-map]]
    [manifold.stream :as s]
    [manifold.deferred :as d])
@@ -142,8 +142,7 @@
                                                                :offset (.offset input-record)})
                                                  (d/recur (s/take! messages)))
 
-                        :else (do
-                                (log/infof "stopped mock producer: %s" {:driver driver}))))))]
+                        :else (log/infof "stopped mock producer: %s" {:driver driver})))))]
 
     {:messages messages
      :process process}))

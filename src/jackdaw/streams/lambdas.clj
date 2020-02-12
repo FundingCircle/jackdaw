@@ -148,8 +148,9 @@
   (process [_ key message]
     (processor-fn @context key message)))
 
-(defn processor [processor-fn]
+(defn processor
   "Packages up a Clojure fn as a kstream processor."
+  [processor-fn]
   (FnProcessor. (atom nil) processor-fn))
 
 (deftype FnProcessorSupplier [processor-supplier-fn]

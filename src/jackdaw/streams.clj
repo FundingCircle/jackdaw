@@ -6,7 +6,6 @@
             [jackdaw.streams.interop :as interop]
             [jackdaw.streams.protocols :as p])
   (:import org.apache.kafka.streams.KafkaStreams
-           org.apache.kafka.streams.StreamsBuilder
            org.apache.kafka.streams.KafkaStreams$State
            org.apache.kafka.streams.Topology))
 

@@ -3,7 +3,7 @@
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:refer-clojure :exclude [count map reduce group-by merge filter peek])
   (:require [jackdaw.streams.protocols :refer :all]
-            [jackdaw.streams.configurable :refer [config IConfigurable]]))
+            [jackdaw.streams.configurable :refer [IConfigurable]]))
 
 (declare configured-kstream configured-ktable configured-global-ktable
          configured-kgroupedtable configured-kgroupedstream

@@ -68,18 +68,17 @@
             KafkaAvroSerializer KafkaAvroDeserializer]
            java.lang.CharSequence
            java.nio.ByteBuffer
-           [java.io ByteArrayOutputStream ByteArrayInputStream]
+           [java.io ByteArrayOutputStream]
            [java.util Collection Map UUID]
            [org.apache.avro
             Schema$Parser Schema$ArraySchema Schema Schema$Field]
            [org.apache.avro.io
-            EncoderFactory DecoderFactory JsonEncoder]
+            EncoderFactory DecoderFactory]
            [org.apache.avro.generic
             GenericDatumWriter GenericDatumReader
             GenericContainer GenericData$Array GenericData$EnumSymbol
             GenericData$Record GenericRecordBuilder]
-           [org.apache.kafka.common.serialization
-            Serializer Deserializer Serdes]))
+           [org.apache.kafka.common.serialization Serdes]))
 
 (set! *warn-on-reflection* true)
 

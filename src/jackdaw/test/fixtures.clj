@@ -5,7 +5,6 @@
    [clojure.java.io :as io]
    [clojure.tools.logging :as log]
    [jackdaw.streams :as k]
-   [jackdaw.streams.interop :refer [streams-builder]]
    [jackdaw.test.transports.kafka :as kt]
    [jackdaw.test.serde :refer [byte-array-serializer byte-array-deserializer]]
    [manifold.deferred :as d]
@@ -212,7 +211,6 @@
   ([app-config reset-args reset-fn]
    (fn [t]
      (let [rt (StreamsResetter.)
-           app-id (get app-config "application.id")
            args (concat ["--application-id" (get app-config "application.id")
                          "--bootstrap-servers" (get app-config "bootstrap.servers")]
                         reset-args)

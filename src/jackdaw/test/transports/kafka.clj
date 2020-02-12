@@ -12,7 +12,6 @@
                                serde-map
                                byte-array-serde]])
   (:import
-   org.apache.kafka.streams.KafkaStreams$StateListener
    org.apache.kafka.clients.consumer.ConsumerRecord
    org.apache.kafka.clients.producer.ProducerRecord))
 

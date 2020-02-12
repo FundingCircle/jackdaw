@@ -18,17 +18,17 @@
    (ProducerRecord. ^String topic-name key value))
   ([{:keys [topic-name]} partition key value]
    (ProducerRecord. ^String topic-name
-                    ^Integer (if partition (int partition))
+                    ^Integer (when partition (int partition))
                     key value))
   ([{:keys [topic-name]} partition timestamp key value]
    (ProducerRecord. ^String topic-name
-                    ^Integer (if partition (int partition))
-                    ^Long (if timestamp (long timestamp))
+                    ^Integer (when partition (int partition))
+                    ^Long (when timestamp (long timestamp))
                     key value))
   ([{:keys [topic-name]} partition timestamp key value headers]
    (ProducerRecord. ^String topic-name
-                    ^Integer (if partition (int partition))
-                    ^Long (if timestamp (long timestamp))
+                    ^Integer (when partition (int partition))
+                    ^Long (when timestamp (long timestamp))
                     key value
                     ^Headers headers)))
 
@@ -75,8 +75,8 @@
                     offset 0 ;; Force absolute offset
                     timestamp
                     nil ;; No checksum, it's deprecated
-                    ^Integer (if key-size (int key-size))
-                    ^Integer (if value-size (int value-size))))
+                    ^Integer (when key-size (int key-size))
+                    ^Integer (when value-size (int value-size))))
   ([{:keys [:topic-name] :as t} partition base-offset relative-offset timestamp
     key-size value-size]
    (RecordMetadata. (->TopicPartition t partition)
@@ -84,8 +84,8 @@
                     relative-offset ;; Full offset control
                     timestamp
                     nil ;; No checksum, it's depreciated
-                    ^Integer (if key-size (int key-size))
-                    ^Integer (if value-size (int value-size))))
+                    ^Integer (when key-size (int key-size))
+                    ^Integer (when value-size (int value-size))))
   ([{:keys [:topic-name] :as t} partition base-offset relative-offset timestamp checksum
     key-size value-size]
    (RecordMetadata. (->TopicPartition t partition)
