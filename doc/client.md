@@ -58,6 +58,8 @@ provide more detailed information about how the producer works behind the scenes
 
 (def producer-config
   {"bootstrap.servers" "localhost:9092"
+   "key.serializer" "org.apache.kafka.common.serialization.StringSerializer"
+   "value.serializer" "org.apache.kafka.common.serialization.StringSerializer"
    "acks" "all"
    "client.id" "foo"})
 
