@@ -42,7 +42,8 @@
 
 ;; Test Command API
 
-(s/def ::topic-id keyword?)
+(s/def ::topic-id (s/or ::keyword keyword?
+                        ::string string?))
 (s/def ::test-msg any?)
 (s/def ::write-options map?)
 (s/def ::watch-options map?)
@@ -69,7 +70,9 @@
    `[:write! ~topic-id ~message ~options]))
 
 (s/fdef write!
-  :args (s/cat ::topic-id ::write-options)
+  :args (s/cat :topic-id ::topic-id
+               :msg ::test-msg
+               :opts (s/? ::write-options))
   :ret vector?)
 
 (defn watch
@@ -79,6 +82,6 @@
    `[:watch ~watch-query ~opts]))
 
 (s/fdef watch
-  :args (s/cat ::watch-query ifn?
-               ::opts ::watch-options)
+  :args (s/cat :watch ifn?
+               :opts (s/? ::watch-options))
   :ret vector?)
