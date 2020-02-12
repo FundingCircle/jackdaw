@@ -44,7 +44,7 @@
 
 (s/def ::topic-id (s/or ::keyword keyword?
                         ::string string?))
-(s/def ::test-msg any?)
+(s/def ::test-message any?)
 (s/def ::write-options map?)
 (s/def ::watch-options map?)
 
@@ -71,17 +71,17 @@
 
 (s/fdef write!
   :args (s/cat :topic-id ::topic-id
-               :msg ::test-msg
-               :opts (s/? ::write-options))
+               :message ::test-msg
+               :options (s/? ::write-options))
   :ret vector?)
 
 (defn watch
   ([watch-query]
    `[:watch ~watch-query])
-  ([watch-query opts]
-   `[:watch ~watch-query ~opts]))
+  ([watch-query options]
+   `[:watch ~watch-query ~options]))
 
 (s/fdef watch
-  :args (s/cat :watch ifn?
-               :opts (s/? ::watch-options))
+  :args (s/cat :watch-query ifn?
+               :options (s/? ::watch-options))
   :ret vector?)
