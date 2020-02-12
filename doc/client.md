@@ -20,7 +20,7 @@ further reading.
 ## Producing
 
 The producer example below demonstrates how to use the Kafka Producer API. The configuration<sup>[3](#producerconfig)</sup>
-is represented as a simple map (Jackdaw will convert this to a `Properties` object) and in
+is represented as a simple map (Jackdaw will convert this to a `Properties` object) and in 
 this example, the producer is minimally configured just to illustrate a few
 important options.
 
