@@ -1,6 +1,7 @@
 (ns jackdaw.test.commands
   ""
   (:require
+   [clojure.spec.alpha :as s]
    [jackdaw.test.commands.base :as base]
    [jackdaw.test.commands.write :as write]
    [jackdaw.test.commands.watch :as watch])
@@ -39,11 +40,26 @@
   (assoc machine
          :command-handler handler))
 
+;; Test Command API
+
+(s/def ::topic-id keyword?)
+(s/def ::test-msg any?)
+(s/def ::write-options map?)
+(s/def ::watch-options map?)
+
 (defn do [do-fn]
   `[:do ~do-fn])
 
+(s/fdef do
+  :args ifn?
+  :ret vector?)
+
 (defn do! [do-fn]
   `[:do! ~do-fn])
+
+(s/fdef do!
+  :args ifn?
+  :ret vector?)
 
 (defn write!
   ([topic-id message]
@@ -52,8 +68,17 @@
   ([topic-id message options]
    `[:write! ~topic-id ~message ~options]))
 
+(s/fdef write!
+  :args (s/cat ::topic-id ::write-options)
+  :ret vector?)
+
 (defn watch
   ([watch-query]
    `[:watch ~watch-query])
   ([watch-query opts]
    `[:watch ~watch-query ~opts]))
+
+(s/fdef watch
+  :args (s/cat ::watch-query ifn?
+               ::opts ::watch-options)
+  :ret vector?)
