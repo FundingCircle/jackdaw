@@ -3,6 +3,7 @@
    [clojure.test :refer :all]
    [jackdaw.streams :as k]
    [jackdaw.test :as jd.test]
+   [jackdaw.test.commands :as cmd]
    [jackdaw.test.fixtures :as fix]
    [jackdaw.test.serde :as serde]
    [jackdaw.test.transports :as trns]
@@ -115,10 +116,9 @@
   (testing "write then watch"
     (fix/with-fixtures [(fix/topic-fixture kafka-config {"foo" foo-topic})]
       (with-open [t (jd.test/test-machine (kafka-transport))]
-        (let [write [:write! "foo" {:id "msg1" :payload "yolo"}]
-              watch [:watch (by-id "foo" "msg1")
-                     {:info "failed to find foo with id=msg1"}]
-
+        (let [write (cmd/write! "foo" {:id "msg1" :payload "yolo"})
+              watch (cmd/watch (by-id "foo" "msg1")
+                               {:info "failed to find foo with id=msg1"})
               {:keys [results journal]} (jd.test/run-test t [write watch])
               [write-result watch-result] results]
 
@@ -139,13 +139,13 @@
 (deftest test-reuse-machine
   (fix/with-fixtures [(fix/topic-fixture kafka-config {"foo" foo-topic})]
     (with-open [t (jd.test/test-machine (kafka-transport))]
-      (let [prog1 [[:write! "foo" {:id "msg2" :payload "yolo"}]
-                   [:watch (by-id "foo" "msg2")
-                    {:info "failed to find foo with id=msg2"}]]
+      (let [prog1 [(cmd/write! "foo" {:id "msg2" :payload "yolo"})
+                   (cmd/watch (by-id "foo" "msg2")
+                              {:info "failed to find foo with id=msg2"})]
 
-            prog2 [[:write! "foo" {:id "msg3" :payload "you only live twice"}]
-                   [:watch (by-id "foo" "msg3")
-                    {:info "failed to find foo with id=msg3"}]]]
+            prog2 [(cmd/write! "foo" {:id "msg3" :payload "you only live twice"})
+                   (cmd/watch (by-id "foo" "msg3")
+                              {:info "failed to find foo with id=msg3"})]]
 
         (testing "run test sequence and inspect results"
           (let [{:keys [results journal]} (jd.test/run-test t prog1)]
@@ -207,14 +207,15 @@
                                                            :out test-out}})
         (fn [machine]
           (jd.test/run-test machine
-                            [[:write! :in {:id "1" :payload "foo"} {:key-fn :id}]
-                             [:write! :in {:id "2" :payload "bar"} {:key-fn :id}]
-                             [:watch (fn [journal]
-                                       (when (->> (get-in journal [:topics :out])
-                                                  (filter (fn [r]
-                                                            (= (get-in r [:value :id]) "2")))
-                                                  (not-empty))
-                                         true)) {:timeout 2000}]])))
+                            [(cmd/write! :in {:id "1" :payload "foo"} {:key-fn :id})
+                             (cmd/write! :in {:id "2" :payload "bar"} {:key-fn :id})
+                             (cmd/watch (fn [journal]
+                                          (when (->> (get-in journal [:topics :out])
+                                                     (filter (fn [r]
+                                                               (= (get-in r [:value :id]) "2")))
+                                                     (not-empty))
+                                            true))
+                                        {:timeout 2000})])))
       (catch Exception e
         (reset! error-raised e)))
     (is (not @error-raised))))
@@ -230,13 +231,13 @@
                                                            :out test-out}})
         (fn [machine]
           (jd.test/run-test machine
-                            [[:write! :in {:id "1" :payload "foo"} {:key-fn :id}]
-                             [:write! :in {:id "2" :payload "bar"} {:key-fn :id}]
-                             [:watch (fn [journal]
-                                       (->> (get-in journal [:topics :out])
-                                            (filter (fn [r]
-                                                      (= (:id r) "2")))
-                                            (not-empty)))]])))
+                            [(cmd/write! :in {:id "1" :payload "foo"} {:key-fn :id})
+                             (cmd/write! :in {:id "2" :payload "bar"} {:key-fn :id})
+                             (cmd/watch (fn [journal]
+                                          (->> (get-in journal [:topics :out])
+                                               (filter (fn [r]
+                                                         (= (:id r) "2")))
+                                               (not-empty))))])))
       (catch Exception e
         (reset! error-raised e)))
     (is @error-raised)))
@@ -252,13 +253,13 @@
                                                            :out test-out}})
         (fn [machine]
           (jd.test/run-test machine
-                            [[:write! :in {:id "1" :payload "foo"} {:key-fn bad-key-fn}]
-                             [:write! :in {:id "2" :payload "bar"} {:key-fn :id}]
-                             [:watch (fn [journal]
-                                       (->> (get-in journal [:topics :out])
-                                            (filter (fn [r]
-                                                      (= (:id r) "2")))
-                                            (not-empty)))]])))
+                            [(cmd/write! :in {:id "1" :payload "foo"} {:key-fn bad-key-fn})
+                             (cmd/write! :in {:id "2" :payload "bar"} {:key-fn :id})
+                             (cmd/watch (fn [journal]
+                                          (->> (get-in journal [:topics :out])
+                                               (filter (fn [r]
+                                                         (= (:id r) "2")))
+                                               (not-empty))))])))
       (catch Exception e
         (reset! error-raised e)))
     (is @error-raised)))
@@ -274,10 +275,10 @@
                                                            :out test-out}})
         (fn [machine]
           (jd.test/run-test machine
-                            [[:write! :in {:id "1" :payload "foo"} {:key-fn :id}]
-                             [:write! :in {:id "2" :payload "bar"} {:key-fn :id}]
-                             [:watch (fn [journal]
-                                       (bad-watch-fn journal))]])))
+                            [(cmd/write! :in {:id "1" :payload "foo"} {:key-fn :id})
+                             (cmd/write! :in {:id "2" :payload "bar"} {:key-fn :id})
+                             (cmd/watch (fn [journal]
+                                          (bad-watch-fn journal)))])))
       (catch Exception e
         (reset! error-raised e)))
     (is @error-raised)))

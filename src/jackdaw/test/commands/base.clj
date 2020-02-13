@@ -1,6 +1,6 @@
 (ns jackdaw.test.commands.base
   (:require
-    [clojure.pprint :as pprint]))
+   [clojure.pprint :as pprint]))
 
 (def command-map
   {:stop (constantly true)
