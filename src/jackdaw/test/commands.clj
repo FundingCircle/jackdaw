@@ -46,9 +46,15 @@
 
 (s/def ::topic-id (s/or :keyword keyword?
                         :string string?))
+(s/def ::timeout int?)
+(s/def ::key any?)
+(s/def ::key-fn ifn?)
+(s/def ::partition int?)
+(s/def ::partition-fn ifn?)
+(s/def ::info string?)
 (s/def ::test-message any?)
-(s/def ::write-options map?)
-(s/def ::watch-options map?)
+(s/def ::write-options (s/keys :req-un [::key ::key-fn ::partition ::partition-fn]))
+(s/def ::watch-options (s/keys :req-un [::timeout ::info]))
 (s/def ::test-event (s/multi-spec test-event first))
 
 (defn do
