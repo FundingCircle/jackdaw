@@ -5,7 +5,7 @@
    [jackdaw.test.commands.base :as base]
    [jackdaw.test.commands.write :as write]
    [jackdaw.test.commands.watch :as watch])
-  (:refer-clojure :exclude [do]))
+  (:refer-clojure :exclude [do println pprint inspect]))
 
 (def base-commands base/command-map)
 (def write-command write/command-map)
@@ -42,11 +42,14 @@
 
 ;; Test Command API
 
+(defmulti test-event first)
+
 (s/def ::topic-id (s/or :keyword keyword?
                         :string string?))
 (s/def ::test-message any?)
 (s/def ::write-options map?)
 (s/def ::watch-options map?)
+(s/def ::test-event (s/multi-spec test-event first))
 
 (defn do
   "Invoke the provided function, passing a snapshot of the test journal
@@ -57,7 +60,10 @@
 
 (s/fdef do
   :args ifn?
-  :ret vector?)
+  :ret ::test-event)
+
+(defmethod test-event :do [_] (s/cat :op #{:do}
+                                     :do-fn ifn?))
 
 (defn do!
   "Invoke the provided function, passing the journal `ref`
@@ -68,9 +74,27 @@
   [do-fn]
   `[:do! ~do-fn])
 
+(defmethod test-event :do! [_] (s/cat :op #{:do!}
+                                      :do-fn ifn?))
+
+(s/fdef inspect
+  :args ifn?
+  :ret ::test-event)
+
+(defn inspect
+  "Invoke the provided function, passing the entire test-machine
+
+   Can be useful while learning about how the test-machine works to inspect the state
+   of the test-machine."
+  [inspect-fn]
+  `[:do! ~inspect-fn])
+
+(defmethod test-event :inspect [_] (s/cat :op #{:do!}
+                                          :inspect-fn ifn?))
+
 (s/fdef do!
   :args ifn?
-  :ret vector?)
+  :ret ::test-event)
 
 (defn write!
   "Write a message to the topic identified in the topic-metadata by `topic-id`
@@ -94,7 +118,12 @@
   :args (s/cat :topic-id ::topic-id
                :message ::test-message
                :options (s/? ::write-options))
-  :ret vector?)
+  :ret ::test-event)
+
+(defmethod test-event :write! [_] (s/cat :op #{:write!}
+                                         :topic-id ::topic-id
+                                         :message ::test-message
+                                         :options (s/? ::write-options)))
 
 (defn watch
   "Watch the test-journal until the `watch-fn` predicate returns true
@@ -115,4 +144,25 @@
 (s/fdef watch
   :args (s/cat :watch-fn ifn?
                :options (s/? ::watch-options))
-  :ret vector?)
+  :ret ::test-event)
+
+(defmethod test-event :watch [_] (s/cat :op #{:watch}
+                                        :watch-fn ifn?
+                                        :option (s/? ::watch-options)))
+
+;; Deprecated test events
+;;
+;; Keeping these around to ensure existing test-sequences continue to be valid
+;; but `:stop` is a relic of when the implementation required an explicit stop
+;; command and the others are all expressible as a simple `:do`.
+
+(defmethod test-event :stop [_] (s/cat :op #{:println}))
+
+(defmethod test-event :println [_] (s/cat :op #{:println}
+                                          :print-args (s/? any?)))
+
+(defmethod test-event :pprint [_] (s/cat :op #{:println}
+                                         :print-args (s/? any?)))
+
+(defmethod test-event :sleep [_] (s/cat :op #{:println}
+                                        :sleep-args int?))

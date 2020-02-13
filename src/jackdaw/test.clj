@@ -20,6 +20,7 @@
    kafka cluster shared with other users."
   (:require
    [clojure.tools.logging :as log]
+   [clojure.spec.alpha :as s]
    [jackdaw.streams :as k]
    [jackdaw.test.commands :refer [with-handler command-handler]]
    [jackdaw.test.commands.base]
@@ -143,6 +144,8 @@
    commands to execute. Remember to use `with-open` on the test-machine
    to ensure that all resources are correcly torn down."
   [machine commands]
+  (s/assert (s/coll-of :jackdaw.test.commands/test-event)
+            commands)
   {:results (run-commands machine commands)
    :journal @(:journal machine)})
 
