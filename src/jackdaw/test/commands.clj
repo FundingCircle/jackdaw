@@ -53,9 +53,44 @@
 (s/def ::partition-fn ifn?)
 (s/def ::info string?)
 (s/def ::test-message any?)
-(s/def ::write-options (s/keys :req-un [::key ::key-fn ::partition ::partition-fn]))
-(s/def ::watch-options (s/keys :req-un [::timeout ::info]))
+(s/def ::write-options (s/keys :opt-un [::key ::key-fn ::partition ::partition-fn]))
+(s/def ::watch-options (s/keys :opt-un [::timeout ::info]))
 (s/def ::test-event (s/multi-spec test-event first))
+
+(defmethod test-event :do [_] (s/cat :op #{:do}
+                                     :do-fn ifn?))
+
+(defmethod test-event :do! [_] (s/cat :op #{:do!}
+                                      :do-fn ifn?))
+
+(defmethod test-event :inspect [_] (s/cat :op #{:do!}
+                                          :inspect-fn ifn?))
+
+(defmethod test-event :write! [_] (s/cat :op #{:write!}
+                                         :topic-id ::topic-id
+                                         :message ::test-message
+                                         :options (s/? ::write-options)))
+
+(defmethod test-event :watch [_] (s/cat :op #{:watch}
+                                        :watch-fn ifn?
+                                        :option (s/? ::watch-options)))
+
+;; Deprecated test events
+;;
+;; Keeping these around to ensure existing test-sequences continue to be valid
+;; but `:stop` is a relic of when the implementation required an explicit stop
+;; command and the others are all expressible as a simple `:do`.
+
+(defmethod test-event :stop [_] (s/cat :op #{:stop}))
+
+(defmethod test-event :println [_] (s/cat :op #{:println}
+                                          :print-args (s/? any?)))
+
+(defmethod test-event :pprint [_] (s/cat :op #{:pprint}
+                                         :print-args (s/? any?)))
+
+(defmethod test-event :sleep [_] (s/cat :op #{:sleep}
+                                        :sleep-args int?))
 
 (defn do
   "Invoke the provided function, passing a snapshot of the test journal
@@ -65,11 +100,8 @@
   `[:do ~do-fn])
 
 (s/fdef do
-  :args ifn?
+  :args (s/cat :do-fn ifn?)
   :ret ::test-event)
-
-(defmethod test-event :do [_] (s/cat :op #{:do}
-                                     :do-fn ifn?))
 
 (defn do!
   "Invoke the provided function, passing the journal `ref`
@@ -80,11 +112,8 @@
   [do-fn]
   `[:do! ~do-fn])
 
-(defmethod test-event :do! [_] (s/cat :op #{:do!}
-                                      :do-fn ifn?))
-
-(s/fdef inspect
-  :args ifn?
+(s/fdef do!
+  :args (s/cat :do-fn ifn?)
   :ret ::test-event)
 
 (defn inspect
@@ -95,11 +124,8 @@
   [inspect-fn]
   `[:do! ~inspect-fn])
 
-(defmethod test-event :inspect [_] (s/cat :op #{:do!}
-                                          :inspect-fn ifn?))
-
-(s/fdef do!
-  :args ifn?
+(s/fdef inspect
+  :args (s/cat :inspect-fn ifn?)
   :ret ::test-event)
 
 (defn write!
@@ -126,11 +152,6 @@
                :options (s/? ::write-options))
   :ret ::test-event)
 
-(defmethod test-event :write! [_] (s/cat :op #{:write!}
-                                         :topic-id ::topic-id
-                                         :message ::test-message
-                                         :options (s/? ::write-options)))
-
 (defn watch
   "Watch the test-journal until the `watch-fn` predicate returns true
 
@@ -152,23 +173,3 @@
                :options (s/? ::watch-options))
   :ret ::test-event)
 
-(defmethod test-event :watch [_] (s/cat :op #{:watch}
-                                        :watch-fn ifn?
-                                        :option (s/? ::watch-options)))
-
-;; Deprecated test events
-;;
-;; Keeping these around to ensure existing test-sequences continue to be valid
-;; but `:stop` is a relic of when the implementation required an explicit stop
-;; command and the others are all expressible as a simple `:do`.
-
-(defmethod test-event :stop [_] (s/cat :op #{:println}))
-
-(defmethod test-event :println [_] (s/cat :op #{:println}
-                                          :print-args (s/? any?)))
-
-(defmethod test-event :pprint [_] (s/cat :op #{:println}
-                                         :print-args (s/? any?)))
-
-(defmethod test-event :sleep [_] (s/cat :op #{:println}
-                                        :sleep-args int?))

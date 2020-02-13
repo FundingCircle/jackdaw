@@ -129,6 +129,8 @@
 
           (recur results' rest-cmds))))))
 
+(s/def ::test-commands (s/coll-of :jackdaw.test.commands/test-event))
+
 (defn run-test
   "Runs a sequence of test commands against a test-machine and returns a
    response map.
@@ -144,10 +146,12 @@
    commands to execute. Remember to use `with-open` on the test-machine
    to ensure that all resources are correcly torn down."
   [machine commands]
-  (s/assert (s/coll-of :jackdaw.test.commands/test-event)
-            commands)
+  (s/assert ::test-commands commands)
+
   {:results (run-commands machine commands)
    :journal @(:journal machine)})
+
+(s/check-asserts true)
 
 (defn identity-transport
   "The identity transport simply injects input events directly into
