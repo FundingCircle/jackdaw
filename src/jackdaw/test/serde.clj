@@ -5,7 +5,8 @@
    [jackdaw.serdes.json :as json-serde])
   (:import
    (org.apache.kafka.clients.consumer ConsumerRecord)
-   (org.apache.kafka.common.serialization Deserializer Serdes Serializer
+   (org.apache.kafka.common.serialization Serde
+                                          Deserializer Serdes Serializer
                                           ByteArraySerializer
                                           ByteArrayDeserializer)
    (org.apache.kafka.common.errors SerializationException)))
@@ -42,15 +43,15 @@
   [k {topic-name :topic-name
       key-serde :key-serde :as t}]
   (when k
-    (-> (.serializer key-serde)
-        (.serialize topic-name k))))
+    (-> (.serializer ^Serde key-serde)
+        (.serialize ^String topic-name k))))
 
 (defn serialize-value
   [v {topic-name :topic-name
       value-serde :value-serde :as t}]
   (when v
-    (-> (.serializer value-serde)
-        (.serialize topic-name v))))
+    (-> (.serializer ^Serde value-serde)
+        (.serialize ^String topic-name v))))
 
 (defn serializer
   "Serializes a message."
@@ -65,16 +66,16 @@
   [k {topic-name :topic-name
       key-serde :key-serde}]
   (when k
-    (-> (.deserializer key-serde)
-        (.deserialize topic-name k))))
+    (-> (.deserializer ^Serde key-serde)
+        (.deserialize ^String topic-name k))))
 
 (defn deserialize-value
   "Deserializes a value."
   [v {topic-name :topic-name
       value-serde :value-serde}]
   (when v
-    (-> (.deserializer value-serde)
-        (.deserialize topic-name v))))
+    (-> (.deserializer ^Serde value-serde)
+        (.deserialize ^String topic-name v))))
 
 (defn deserializer
   "Deserializes a message."

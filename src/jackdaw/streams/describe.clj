@@ -1,21 +1,30 @@
 (ns jackdaw.streams.describe
   (:require [clj-uuid :as uuid]
-            [clojure.string :as str]))
+            [clojure.string :as str])
+  (:import
+   (org.apache.kafka.streams Topology
+                             TopologyDescription
+                             TopologyDescription$Node
+                             TopologyDescription$Source
+                             TopologyDescription$Sink
+                             TopologyDescription$Processor
+                             TopologyDescription$GlobalStore
+                             TopologyDescription$Subtopology)))
 
 (defn ->edge
   [from to]
   {:from from :to to})
 
 (defn base-node
-  [t n]
+  [t ^TopologyDescription$Node n]
   {:nodes [{:type t
             :name (.name n)}]
    :edges (concat
-           (map #(->edge (.name %) (.name n)) (.predecessors n))
-           (map #(->edge (.name n) (.name %)) (.successors n)))})
+           (map #(->edge (.name ^TopologyDescription$Node %) (.name n)) (.predecessors n))
+           (map #(->edge (.name n) (.name ^TopologyDescription$Node %)) (.successors n)))})
 
 (defn describe-node-dispatch
-  [n]
+  [^TopologyDescription$Node n]
   (keyword (str/lower-case (.getSimpleName (.getClass n)))))
 
 (defmulti describe-node describe-node-dispatch)
@@ -23,7 +32,7 @@
 (defmethod describe-node :node [n]
   (base-node :node n))
 
-(defmethod describe-node :source [n]
+(defmethod describe-node :source [^TopologyDescription$Source n]
   (let [topics (map str/trim (-> (.topics n)
                                  (str/replace "[" "")
                                  (str/replace "]" "")
@@ -34,13 +43,13 @@
                                       :name t}) topics))
         (update :edges concat (map #(->edge % (.name n)) topics)))))
 
-(defmethod describe-node :sink [n]
+(defmethod describe-node :sink [^TopologyDescription$Sink n]
   (-> (base-node :sink n)
       (update :nodes conj {:type :topic
                            :name (.topic n)})
       (update :edges conj (->edge (.name n) (.topic n)))))
 
-(defmethod describe-node :processor [n]
+(defmethod describe-node :processor [^TopologyDescription$Processor n]
   (let [stores (.stores n)]
     (-> (base-node :processor n)
         (update :nodes concat (map (fn [t]
@@ -48,7 +57,7 @@
                                       :name (str "localstore-" t)}) stores))
         (update :edges concat (map #(->edge (.name n) (str "localstore-" %)) stores)))))
 
-(defmethod describe-node :globalstore [n]
+(defmethod describe-node :globalstore [^TopologyDescription$GlobalStore n]
   (let [source (describe-node (.source n))
         processor (describe-node (.processor n))]
     {:type :globalstore
@@ -56,7 +65,7 @@
      :nodes (set (mapcat :nodes [source processor]))
      :edges (set (mapcat :edges [source processor]))}))
 
-(defmethod describe-node :subtopology [n]
+(defmethod describe-node :subtopology [^TopologyDescription$Subtopology n]
   (let [nodes (map describe-node (.nodes n))]
     {:type :stream
      :name (str "stream-" (.id n))
@@ -143,7 +152,7 @@
                                  nodes))))))
 
 (defn parse-description
-  [applicaton-id d]
+  [applicaton-id ^TopologyDescription d]
   (let [parser (comp collapse-merge-chains
                      (partial assign-ids applicaton-id)
                      describe-node)]
@@ -179,5 +188,5 @@
 
   All identifiers are v5 UUIDs, and are globally unique where objects
   are distinct and globally equal where objects are the same."
-  [topology streams-config]
+  [^Topology topology streams-config]
   (parse-description (get streams-config "application.id") (.describe topology)))

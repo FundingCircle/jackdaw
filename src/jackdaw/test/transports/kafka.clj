@@ -12,9 +12,9 @@
                                serde-map
                                byte-array-serde]])
   (:import
-   org.apache.kafka.streams.KafkaStreams$StateListener
-   org.apache.kafka.clients.consumer.ConsumerRecord
-   org.apache.kafka.clients.producer.ProducerRecord))
+   (org.apache.kafka.streams KafkaStreams$StateListener)
+   (org.apache.kafka.clients.consumer ConsumerRecord Consumer)
+   (org.apache.kafka.clients.producer ProducerRecord Producer)))
 
 (defn subscribe
   "Subscribes to specified topics
@@ -119,7 +119,7 @@
                                  (d/recur consumer))
                              (do
                                (s/close! messages)
-                               (.close consumer)
+                               (.close ^Consumer consumer)
                                (log/infof "stopped kafka consumer: %s"
                                           (select-keys kafka-config ["bootstrap.servers" "group.id"])))))))
      :started? started?
@@ -185,7 +185,7 @@
                                                    (d/recur (s/take! messages)))
 
                          :else (do
-                                 (.close producer)
+                                 (.close ^Producer producer)
                                  (log/infof "stopped kafka producer: "
                                             (select-keys kafka-config ["bootstrap.servers" "group.id"])))))))]
 

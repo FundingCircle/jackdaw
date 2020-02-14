@@ -10,9 +10,9 @@
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [clojure.edn]
             [jackdaw.serdes.fn :as jsfn])
-  (:import java.nio.charset.StandardCharsets
-           org.apache.kafka.common.serialization.Serde
-           org.apache.kafka.common.serialization.Serdes))
+  (:import
+   (java.nio.charset StandardCharsets)
+   (org.apache.kafka.common.serialization Serde Serdes Serializer Deserializer)))
 
 (set! *warn-on-reflection* true)
 
@@ -49,4 +49,5 @@
 (defn serde
   "Returns an EDN serde."
   [& [opts]]
-  (Serdes/serdeFrom (serializer) (deserializer opts)))
+  (Serdes/serdeFrom ^Serializer (serializer)
+                    ^Deserializer (deserializer opts)))

@@ -68,6 +68,7 @@
             KafkaAvroSerializer KafkaAvroDeserializer]
            java.lang.CharSequence
            java.nio.ByteBuffer
+           [jackdaw.serdes.fn_impl FnSerializer FnDeserializer]
            [java.io ByteArrayOutputStream ByteArrayInputStream]
            [java.util Collection Map UUID]
            [org.apache.avro
@@ -442,7 +443,9 @@
                               {:path path, :clj-data clj-map})))
             (let [[_ field-coercion] (get field->schema+coercion k)
                   new-v (clj->avro field-coercion v (conj path k))]
-              (.set record-builder new-k new-v))))
+              (.set record-builder
+                    ^String new-k
+                    ^Object new-v))))
 
         (.build record-builder)
 
@@ -522,7 +525,9 @@
                                                  (assoc :topic topic :clj-data data))]
                                     (throw (ex-info (.getMessage e) data))))))}
         clj-serializer (fn/new-serializer methods)]
-    (.configure clj-serializer (base-config registry-url) key?)
+    (.configure ^Serializer clj-serializer
+                ^Map (base-config registry-url)
+                ^boolean key?)
     clj-serializer))
 
 (defn- deserializer [schema->coercion serde-config]
@@ -557,7 +562,9 @@
                                       (log/error e (str msg " for " topic))
                                       (throw (ex-info msg {:topic topic} e))))))}
         clj-deserializer (fn/new-deserializer methods)]
-    (.configure clj-deserializer (base-config registry-url) key?)
+    (.configure ^Deserializer clj-deserializer
+                ^Map (base-config registry-url)
+                ^boolean key?)
     clj-deserializer))
 
 ;; Public API

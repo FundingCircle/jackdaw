@@ -11,7 +11,7 @@
    [manifold.stream :as s]
    [manifold.deferred :as d])
   (:import
-   (java.util UUID Base64)))
+   (java.util UUID Base64 Base64$Encoder Base64$Decoder)))
 
 (def ^:dynamic *http-client*
   {:post    http/post
@@ -25,16 +25,16 @@
   (str (UUID/randomUUID)))
 
 (defn- base64-encode
-  [encodable]
+  [^String encodable]
   (let [encoder (Base64/getEncoder)]
-    (-> (.encode encoder encodable)
-        (String.))))
+    (.encodeToString ^Base64$Encoder encoder encodable)))
 
 (defn- base64-decode
-  [decodable]
+  [^String decodable]
   (when decodable
     (let [decoder (Base64/getDecoder)]
-      (.decode decoder decodable))))
+      (.decode ^Base64$Decoder decoder
+               decodable))))
 
 (defn undatafy-record
   [_topic-metadata m]
@@ -124,7 +124,7 @@
                             group-config])
 
 (defn proxy-client-info [client]
-  (let [object-id (-> (.hashCode client)
+  (let [object-id (-> (.hashCode ^Object client)
                       (Integer/toHexString))]
     (-> (select-keys client [:bootstrap-uri])
         (assoc :id object-id))))
@@ -284,7 +284,7 @@
                      (fn [{:keys [data-record ack serialization-error] :as message}]
                        (cond
                          serialization-error   (do (deliver ack {:error :serialization-error
-                                                                 :message (.getMessage serialization-error)})
+                                                                 :message (.getMessage ^Exception serialization-error)})
                                                    (d/recur))
 
                          data-record       (do (log/debug "sending data: " data-record)

@@ -313,9 +313,10 @@
 (defn kafka-streams
   "Makes a Kafka Streams object."
   ([builder opts]
-   (let [props (java.util.Properties.)]
+   (let [props (java.util.Properties.)
+         builder* ^StreamsBuilder (streams-builder* builder)]
      (.putAll props opts)
-     (KafkaStreams. ^Topology (.build (streams-builder* builder))
+     (KafkaStreams. ^Topology (.build builder*)
                     ^java.util.Properties props))))
 
 (defn start

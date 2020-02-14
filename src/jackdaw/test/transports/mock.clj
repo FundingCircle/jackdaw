@@ -9,7 +9,11 @@
    [manifold.stream :as s]
    [manifold.deferred :as d])
   (:import
+   (java.io Closeable)
+   (org.apache.kafka.common.serialization Deserializer Serializer)
+   (org.apache.kafka.streams TopologyTestDriver)
    (org.apache.kafka.common.record TimestampType)
+   (org.apache.kafka.clients.producer ProducerRecord)
    (org.apache.kafka.clients.consumer ConsumerRecord)))
 
 ;; Unfortunately the terminology used in the test-machine clashes a bit with
@@ -49,8 +53,9 @@
      (assoc m :input-record record))))
 
 (defn with-output-record
+  "Creates a clojure map from a kafka ProducerRecord"
   [_topic-config]
-  (fn [r]
+  (fn [^ProducerRecord r]
     {:topic (.topic r)
      :key (.key r)
      :value (.value r)
@@ -68,9 +73,10 @@
     (let [fetch (fn [[k t]]
                   {:topic k
                    :output (loop [collected []]
-                             (if-let [o (.readOutput driver (:topic-name t)
-                                                     byte-array-deserializer
-                                                     byte-array-deserializer)]
+                             (if-let [o (.readOutput ^TopologyTestDriver driver
+                                                     ^String (:topic-name t)
+                                                     ^Deserializer byte-array-deserializer
+                                                     ^Deserializer byte-array-deserializer)]
                                (recur (conj collected o))
                                collected))})
           topic-batches (->> topic-config
@@ -130,10 +136,11 @@
 
         process (d/loop [message (s/take! messages)]
                   (d/chain message
-                    (fn [{:keys [input-record ack serialization-error] :as message}]
+                    (fn [{:keys [^ConsumerRecord input-record
+                                 ack serialization-error] :as message}]
                       (cond
                         serialization-error  (do (deliver ack {:error :serialization-error
-                                                               :message (.getMessage serialization-error)})
+                                                               :message (.getMessage ^Exception serialization-error)})
                                                  (d/recur (s/take! messages)))
 
                         input-record         (do (on-input input-record)
@@ -149,12 +156,13 @@
      :process process}))
 
 (deftransport :mock
-  [{:keys [driver topics]}]
+  [{:keys [^TopologyTestDriver driver topics]}]
   (let [serdes        (serde-map topics)
         test-consumer (mock-consumer driver topics (get serdes :deserializers))
-        record-fn     (fn [input-record]
+        record-fn     (fn [^ConsumerRecord input-record]
                         (try
-                          (.pipeInput driver input-record)
+                          (.pipeInput driver
+                                      input-record)
                           (catch Exception e
                             (let [trace (with-out-str
                                           (stacktrace/print-cause-trace e))]
@@ -168,7 +176,7 @@
      :serdes serdes
      :topics topics
      :exit-hooks [(fn []
-                    (.close driver)
+                    (.close ^Closeable driver)
                     (s/close! (:messages test-producer))
                     (reset! (:continue? test-consumer) false)
                     @(:process test-producer)

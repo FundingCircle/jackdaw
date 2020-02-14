@@ -164,4 +164,4 @@
           (let [[_ & params] [:write! "bar" {:id 1 :payload "a map is not a number"}]
                 result (write/handle-write-cmd t params)]
             (is (= :serialization-error (:error result)))
-            (is (= "Cannot cast clojure.lang.PersistentArrayMap to java.lang.Long" (:message result)))))))))
+            (is (= "clojure.lang.PersistentArrayMap cannot be cast to java.lang.Long" (:message result)))))))))
