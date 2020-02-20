@@ -1,24 +1,36 @@
 (ns user
+  "Use this namespace for interactive development.
+
+  This namespace requires libs needed to reset the app and helpers
+  from `jackdaw.repl`. WARNING: Do no use `clj-refactor` (or
+  equivalent) to clean this namespace since these tools cannot tell
+  which libs are actually required."
+  (:gen-class)
   (:require [clojure.string :as str]
-            [jackdaw.admin :as ja]
-            [jackdaw.streams :as j]
-            [jackdaw.repl :refer :all]
+            [clojure.tools.logging :refer [info]]
             [integrant.core :as ig]
             [integrant.repl :refer [clear go halt prep init reset reset-all]]
-            [word-count]))
+            [jackdaw.admin :as ja]
+            [jackdaw.serdes :as js]
+            [jackdaw.repl :refer :all]
+            [jackdaw.streams :as j]
+            [jackdaw.streams.xform :as jxf]
+            [xf-word-count :as xfwc]))
 
 
 (def repl-config
   "The development config.
   When the 'dev' alias is active, this config will be used."
-  {:topology {:topology-builder word-count/topology-builder}
+  {:topology {:topology-builder xfwc/topology-builder
+              :xform xfwc/count-words
+              :swap-fn jxf/kv-store-swap-fn}
 
-   :topics {:streams-config word-count/streams-config
-            :client-config (select-keys word-count/streams-config
+   :topics {:streams-config xfwc/streams-config
+            :client-config (select-keys xfwc/streams-config
                                         ["bootstrap.servers"])
             :topology (ig/ref :topology)}
 
-   :app {:streams-config word-count/streams-config
+   :app {:streams-config xfwc/streams-config
          :topology (ig/ref :topology)
          :topics (ig/ref :topics)}})
 
@@ -26,9 +38,9 @@
 (integrant.repl/set-prep! (constantly repl-config))
 
 
-(defmethod ig/init-key :topology [_ {:keys [topology-builder]}]
+(defmethod ig/init-key :topology [_ {:keys [topology-builder xform swap-fn]}]
   (let [streams-builder (j/streams-builder)]
-    ((topology-builder topic-metadata) streams-builder)))
+    ((topology-builder topic-metadata #(xform % swap-fn)) streams-builder)))
 
 (defmethod ig/init-key :topics [_ {:keys [streams-config client-config topology]
                                    :as opts}]

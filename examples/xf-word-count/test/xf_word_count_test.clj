@@ -1,4 +1,4 @@
-(ns pipe-test
+(ns xf-word-count-test
   (:gen-class)
   (:require [clojure.test :refer [deftest is]]
             [jackdaw.serdes :as js]
@@ -7,27 +7,21 @@
             [jackdaw.streams.xform :as jxf]
             [jackdaw.test :as jt]
             [jackdaw.test.fixtures :as jt.fix]
-            [pipe])
+            [xf-word-count :as xfwc])
   (:import java.util.Properties
            org.apache.kafka.streams.TopologyTestDriver))
-
-(deftest pipe-unit-test
-  (let [input [["1" "foo"] ["2" "bar"]]
-        output (transduce (pipe/xf nil nil) concat input)]
-    (is (= "foo" (get (into {} output) "1")))
-    (is (= "bar" (get (into {} output) "2")))))
 
 (def topic-metadata
   {:input
    {:topic-name "input"
-    :partition-count 15
+    :partition-count 1
     :replication-factor 1
     :key-serde (js/edn-serde)
     :value-serde (js/edn-serde)}
 
    :output
    {:topic-name "output"
-    :partition-count 15
+    :partition-count 1
     :replication-factor 1
     :key-serde (js/edn-serde)
     :value-serde (js/edn-serde)}})
@@ -35,12 +29,12 @@
 (def test-config
   {:broker-config {"bootstrap.servers" "localhost:9092"}
    :topic-metadata topic-metadata
-   :app-config pipe/streams-config
+   :app-config xfwc/streams-config
    :enable? (System/getenv "BOOTSTRAP_SERVERS")})
 
 (defn topology-builder
   [topic-metadata]
-  (pipe/topology-builder topic-metadata {:pipe/xf #(pipe/xf % jxf/kv-store-swap-fn)}))
+  (xfwc/topology-builder topic-metadata #(xfwc/count-words % jxf/kv-store-swap-fn)))
 
 (defn props-for
   [x]
@@ -63,24 +57,26 @@
 
 (defn done?
   [journal]
-  (= 2 (count (get-in journal [:topics :output]))))
+  (= 12 (count (get-in journal [:topics :output]))))
 
 (def commands
-  [[:write! :input "foo" {:key-fn (constantly "1")}]
-   [:write! :input "bar" {:key-fn (constantly "2")}]
+  [[:write! :input "inside every large program" {:key-fn (constantly "1")}]
+   [:write! :input "is a small program" {:key-fn (constantly "2")}]
+   [:write! :input "struggling to get out" {:key-fn (constantly "3")}]
    [:watch done? {:timeout 2000}]])
 
-(defn pipe
-  [journal k]
+(defn word-count
+  [journal word]
   (->> (get-in journal [:topics :output])
-       (filter (fn [x] (= k (:key x))))
+       (filter (fn [x] (= word (:key x))))
        last
        :value))
 
-(deftest simple-ledger-end-to-end-test
+(deftest xf-word-count-end-to-end-test
   (jt.fix/with-fixtures [(jt.fix/integration-fixture topology-builder test-config)]
     (jackdaw.test/with-test-machine (test-transport test-config)
       (fn [machine]
         (let [{:keys [results journal]} (jackdaw.test/run-test machine commands)]
-          (is (= "foo" (pipe journal "1")))
-          (is (= "bar" (pipe journal "2"))))))))
+
+          (is (= 1 (word-count journal "large")))
+          (is (= 2 (word-count journal "program"))))))))

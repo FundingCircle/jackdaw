@@ -1,64 +1,111 @@
 (ns simple-ledger-test
-  (:require [simple-ledger :as sut]
-            [jackdaw.streams.mock :as jsm]
-            [clojure.test :refer :all]))
+  (:gen-class)
+  (:require [clojure.test :refer [deftest is]]
+            [jackdaw.serdes :as js]
+            [jackdaw.streams :as j]
+            [jackdaw.streams.protocols :as jsp]
+            [jackdaw.streams.xform :as jxf]
+            [jackdaw.test :as jt]
+            [jackdaw.test.fixtures :as jt.fix]
+            [simple-ledger :as sl])
+  (:import java.util.Properties
+           org.apache.kafka.streams.TopologyTestDriver))
 
+(deftest simple-ledger-unit-test
+  (let [entries
+        [["1" {:debit-account "tech"
+               :credit-account "cash"
+               :amount 1000}]
+         ["2" {:debit-account "cash"
+               :credit-account "sales"
+               :amount 2000}]]
+        transactions (->> entries
+                          (transduce (sl/split-entries nil nil) concat)
+                          (transduce (sl/running-balances (atom {}) swap!) concat))]
+    (is (= -1000 (:after-balance (get (into {} transactions) "tech"))))
+    (is (= -1000 (:after-balance (get (into {} transactions) "cash"))))
+    (is (=  2000 (:after-balance (get (into {} transactions) "sales"))))))
 
-(deftest build-topology-unit-test
-  (testing "simple ledger unit test"
-    (let [driver (jsm/build-driver sut/build-topology)
-          publish (partial jsm/publish driver)
-          get-keyvals (partial jsm/get-keyvals driver)]
+(def topic-metadata
+  {:entry-pending
+   {:topic-name "entry-pending"
+    :partition-count 15
+    :replication-factor 1
+    :key-serde (js/edn-serde)
+    :value-serde (js/edn-serde)}
 
-      (publish (sut/topic-config "ledger-entries-requested")
-               nil
-               {:id (java.util.UUID/randomUUID)
-                :entries [{:debit-account-name "foo"
-                           :credit-account-name "bar"
-                           :amount 2}
-                          {:debit-account-name "foo"
-                           :credit-account-name "qux"
-                           :amount 3}]})
+   :transaction-pending
+   {:topic-name "transaction-pending"
+    :partition-count 15
+    :replication-factor 1
+    :key-serde (js/edn-serde)
+    :value-serde (js/edn-serde)}
 
-      (publish (sut/topic-config "ledger-entries-requested")
-               nil
-               {:id (java.util.UUID/randomUUID)
-                :entries [{:debit-account-name "foo"
-                           :credit-account-name "bar"
-                           :amount 5}
-                          {:debit-account-name "foo"
-                           :credit-account-name "qux"
-                           :amount 7}]})
+   :transaction-added
+   {:topic-name "transaction-added"
+    :partition-count 15
+    :replication-factor 1
+    :key-serde (js/edn-serde)
+    :value-serde (js/edn-serde)}})
 
-      (let [keyvals (get-keyvals
-                     (sut/topic-config "ledger-transaction-added"))]
+(def test-config
+  {:broker-config {"bootstrap.servers" "localhost:9092"}
+   :topic-metadata topic-metadata
+   :app-config sl/streams-config
+   :enable? (System/getenv "BOOTSTRAP_SERVERS")})
 
-        (is (= [-2 -3 -5 -7]
-               (->> (filter (fn [[k _]] (= "foo" k)) keyvals)
-                    (map second)
-                    (map :amount))))
+(defn topology-builder
+  [topic-metadata]
+  (sl/topology-builder topic-metadata
+                       {::sl/split-entries #(sl/split-entries % nil)
+                        ::sl/running-balances #(sl/running-balances % jxf/kv-store-swap-fn)}))
 
-        (is (= [0 -2 -5 -10]
-               (->> (filter (fn [[k _]] (= "foo" k)) keyvals)
-                    (map second)
-                    (map :starting-balance))))
+(defn props-for
+  [x]
+  (doto (Properties.)
+    (.putAll (reduce-kv (fn [m k v]
+                          (assoc m (str k) (str v)))
+                        {}
+                        x))))
 
-        (is (= [-2 -5 -10 -17]
-               (->> (filter (fn [[k _]] (= "foo" k)) keyvals)
-                    (map second)
-                    (map :current-balance))))
+(defn mock-transport-config
+  []
+  {:driver (let [streams-builder (j/streams-builder)
+                 topology ((topology-builder (:topic-metadata test-config)) streams-builder)]
+             (TopologyTestDriver. (.build (jsp/streams-builder* topology))
+                                  (props-for (:app-config test-config))))})
 
-        (is (= [2 5]
-               (->> (filter (fn [[k _]] (= "bar" k)) keyvals)
-                    (map second)
-                    (map :amount))))
+(defn test-transport
+  [{:keys [topic-metadata] :as test-config}]
+  (jt/mock-transport (mock-transport-config) topic-metadata))
 
-        (is (= [0 2]
-               (->> (filter (fn [[k _]] (= "bar" k)) keyvals)
-                    (map second)
-                    (map :starting-balance))))
+(defn done?
+  [journal]
+  (= 4 (count (get-in journal [:topics :transaction-added]))))
 
-        (is (= [2 7]
-               (->> (filter (fn [[k _]] (= "bar" k)) keyvals)
-                    (map second)
-                    (map :current-balance))))))))
+(def commands
+  [[:write!
+    :entry-pending
+    {:debit-account "tech" :credit-account "cash" :amount 1000}
+    {:key-fn (constantly "1")}]
+   [:write!
+    :entry-pending
+    {:debit-account "cash" :credit-account "sales" :amount 2000}
+    {:key-fn (constantly "2")}]
+   [:watch done? {:timeout 2000}]])
+
+(defn simple-ledger
+  [journal account-name]
+  (->> (get-in journal [:topics :transaction-added])
+       (filter (fn [x] (= account-name (:account-name (:value x)))))
+       last
+       :value))
+
+(deftest simple-ledger-end-to-end-test
+  (jt.fix/with-fixtures [(jt.fix/integration-fixture topology-builder test-config)]
+    (jackdaw.test/with-test-machine (test-transport test-config)
+      (fn [machine]
+        (let [{:keys [results journal]} (jackdaw.test/run-test machine commands)]
+          (is (= -1000 (:after-balance (simple-ledger journal "tech"))))
+          (is (= -1000 (:after-balance (simple-ledger journal "cash"))))
+          (is (=  2000 (:after-balance (simple-ledger journal "sales")))))))))

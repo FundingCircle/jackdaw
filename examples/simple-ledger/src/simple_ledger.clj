@@ -1,414 +1,228 @@
 (ns simple-ledger
-  "This tutorial contains a simple stream processing application using
-  Jackdaw and Kafka Streams.
-
-  It begins with Pipe which is then extended using an interactive
-  workflow. The result is a simple ledger."
+  "This example creates a simple accounting ledger using transducers."
   (:gen-class)
-  (:require [clojure.spec.alpha :as s]
+  (:require [clojure.string :as str]
             [clojure.tools.logging :refer [info]]
-            [clj-uuid :as uuid]
+            [jackdaw.serdes :as js]
             [jackdaw.streams :as j]
-            [jackdaw.serdes.edn :as jse])
-  (:import [org.apache.kafka.common.serialization Serdes]))
+            [jackdaw.streams.xform :as jxf]
+            [jackdaw.streams.xform.fakes :as fakes]))
 
 
-;;; Topic Configuration
-;;;
+(defn split-entries
+  [_ _]
+  (map (fn [[k {:keys [debit-account credit-account amount] :as entry}]]
+         [[debit-account
+           {:account-name debit-account
+            :debit-credit-indicator :dr
+            :amount amount}]
+          [credit-account
+           {:account-name credit-account
+            :debit-credit-indicator :cr
+            :amount amount}]])))
 
-(defn topic-config
-  "Takes a topic name and (optionally) a key and value serde and
-  returns a topic configuration map, which may be used to create a
-  topic or produce/consume records."
-  ([topic-name]
-   (topic-config topic-name (jse/serde) (jse/serde)))
+(defn next-balances
+  [starting-balances {:keys [account-name debit-credit-indicator amount]
+                      :as transaction}]
+  (let [op (if (= :dr debit-credit-indicator) - +)]
+    (update starting-balances account-name (fnil op 0) amount)))
 
-  ([topic-name key-serde value-serde]
-   {:topic-name topic-name
-    :partition-count 1
-    :replication-factor 1
-    :topic-config {}
-    :key-serde key-serde
-    :value-serde value-serde}))
+(defn running-balances
+  [state swap-fn]
+  (fn [rf]
+    (fn
+      ([] (rf))
+      ([result] (rf result))
+      ([result input]
+       (let [[k v] input
+             {:keys [account-name debit-credit-indicator amount] :as txn} v
+             next (as-> txn %
+                    (swap-fn state next-balances %)
+                    (select-keys % [account-name])
+                    ((juxt (comp first keys) (comp first vals)) %)
+                    (zipmap [:account-name :after-balance] %)
+                    (assoc % :before-balance (if (= :dr debit-credit-indicator)
+                                                 (+ amount (:after-balance %))
+                                                 (- amount (:after-balance %))))
+                    (vector k %)
+                    (vector %))]
+         (rf result next))))))
 
 
-;;; App Template
-;;;
+(comment
+  ;; Use this comment block to explore the Simple Ledger using Clojure
+  ;; transducers.
 
-(defn app-config
-  "Returns the application config."
-  []
+  ;; Launch a Clojure REPL:
+  ;; ```
+  ;; cd <path-to-jackdaw>/examples/simple-ledger
+  ;; clj -A:dev
+  ;; ```
+
+  ;; Emacs users: Open a project file, e.g. this one, and enter
+  ;; `M-x cider-jack-in`.
+
+  ;; Evaluate the form:
+  (def entries
+    [["1" {:debit-account "tech"
+           :credit-account "cash"
+           :amount 1000}]
+     ["2" {:debit-account "cash"
+           :credit-account "sales"
+           :amount 2000}]])
+
+  ;; Let's record the entries. Evaluate the form:
+  (->> entries
+       (transduce (split-entries nil nil) concat)
+       (transduce (running-balances (atom {}) swap!) concat))
+
+  ;; You should see output like the following:
+
+  ;; (["tech"
+  ;;   {:account-name "tech"
+  ;;    :before-balance 0
+  ;;    :after-balance -1000}]
+  ;;  ["cash"
+  ;;   {:account-name "cash"
+  ;;    :before-balance 0
+  ;;    :after-balance 1000}]
+  ;;  ["cash"
+  ;;   {:account-name "cash"
+  ;;    :before-balance 1000
+  ;;    :after-balance -1000}]
+  ;;  ["sales"
+  ;;   {:account-name "sales"
+  ;;    :before-balance 0
+  ;;    :after-balance 2000}])
+
+
+  ;; This time, let's count the words using
+  ;; `jackdaw.streams.xform.fakes/fake-kv-store` which implements the
+  ;; KeyValueStore interface with overrides for get and put."
+
+  ;; Evaluate the form:
+  (->> entries
+       (transduce (split-entries nil nil) concat)
+       (transduce (running-balances (fakes/fake-kv-store {})
+                                    jxf/kv-store-swap-fn) concat))
+
+  ;; You should see the same output.
+  )
+
+
+(def streams-config
   {"application.id" "simple-ledger"
-   "bootstrap.servers" "localhost:9092"
+   "bootstrap.servers" (or (System/getenv "BOOTSTRAP_SERVERS") "localhost:9092")
    "cache.max.bytes.buffering" "0"})
 
-(defn build-topology
-  "Returns a topology builder.
-
-  WARNING: This is just a stub. Before publishing to the input topic,
-  evaluate one of the `build-topology` functions in the comment forms
-  below."
-  [builder]
-  (-> (j/kstream builder (topic-config "ledger-entries-requested"))
-      (j/peek (fn [[k v]]
-                (info (str {:key k :value v}))))
-      (j/to (topic-config "ledger-transaction-added")))
-  builder)
-
-(defn start-app
-  "Starts the stream processing application."
-  [app-config]
-  (let [builder (j/streams-builder)
-        topology (build-topology builder)
-        app (j/kafka-streams topology app-config)]
-    (j/start app)
-    (info "simple-ledger is up")
-    app))
-
-(defn stop-app
-  "Stops the stream processing application."
-  [app]
-  (j/close app)
-  (info "simple-ledger is down"))
-
-
-(defn -main
-  [& _]
-  (start-app (app-config)))
+(defn topology-builder
+  [{:keys [entry-pending
+           transaction-pending
+           transaction-added] :as topics} xforms]
+  (fn [builder]
+    (jxf/add-state-store! builder)
+    (-> (j/kstream builder entry-pending)
+        (jxf/transduce (::split-entries xforms))
+        (j/through transaction-pending)
+        (jxf/transduce (::running-balances xforms))
+        (j/to transaction-added))
+    builder))
 
 
 (comment
-  ;;; Start
-  ;;;
+  ;; Use this comment block to explore the Simple Ledger as a stream
+  ;; processing application.
 
-  ;; Needed to invoke the forms from this namespace. When typing
-  ;; directly in the REPL, skip this step.
-  (require '[user :refer :all :exclude [topic-config]])
+  ;; For more details on dynamic development, see the comment block in
+  ;; <path-to-jackdaw>/examples/word-count/src/word_count.clj
 
+  ;; Start ZooKeeper and Kafka:
+  ;; ```
+  ;; <path-to-directory>/bin/confluent local start kafka
+  ;; ```
 
-  ;; Start ZooKeeper and Kafka.
-  ;; This requires the Confluent Platform CLI which may be obtained
-  ;; from `https://www.confluent.io/download/`. If ZooKeeper and Kafka
-  ;; are already running, skip this step.
-  (confluent/start)
+  ;; Launch a Clojure REPL:
+  ;; ```
+  ;; cd <path-to-jackdaw>/examples/simple-ledger
+  ;; clj -A:dev
+  ;; ```
 
+  ;; Emacs users: Open a project file, e.g. this one, and enter
+  ;; `M-x cider-jack-in`.
 
-  ;; Create the topics, and start the app.
-  (start)
-
-
-  ;; Write to the input stream.
-  (publish (topic-config "ledger-entries-requested")
-           nil
-           "this is a pipe")
-
-
-  ;; Read from the output stream.
-  (get-keyvals (topic-config "ledger-transaction-added")))
-
-
-(comment
-  ;;; Add input validation
-  ;;;
-
-  (do
-
-    (s/def ::ledger-entries-requested-value
-      (s/keys :req-un [::id
-                       ::entries]))
-
-    (s/def ::id uuid?)
-    (s/def ::entries (s/+ ::entry))
-
-    (s/def ::entry
-      (s/and (s/keys :req-un [::debit-account-name
-                              ::credit-account-name
-                              ::amount])
-             #(not= (:debit-account-name %)
-                    (:credit-account-name %))))
-
-    (s/def ::debit-account-name string?)
-    (s/def ::credit-account-name string?)
-    (s/def ::amount pos-int?))
-
-
-  (do
-
-    (defn valid-input?
-      [[_ v]]
-      (s/valid? ::ledger-entries-requested-value v))
-
-
-    (defn log-bad-input
-      [[k v]]
-      (info (str "Bad input: "
-                 (s/explain-data ::ledger-entries-requested-value v))))
-
-
-
-    (defn build-topology
-      [builder]
-      (let [input (j/kstream builder
-                             (topic-config "ledger-entries-requested"))
-
-            [valid invalid] (j/branch input [valid-input?
-                                             (constantly true)])
-
-            _ (j/peek invalid log-bad-input)]
-
-        (-> valid
-            (j/to (topic-config "ledger-transaction-added")))
-
-        builder)))
-
-
-  ;; Reset the app.
+  ;; Evaluate the form:
   (reset)
 
-
-  ;; Write valid input.
-  (publish (topic-config "ledger-entries-requested")
-           nil
-           {:id (java.util.UUID/randomUUID)
-            :entries [{:debit-account-name "foo"
-                       :credit-account-name "bar"
-                       :amount 10}
-                      {:debit-account-name "foo"
-                       :credit-account-name "qux"
-                       :amount 20}]})
-
-
-  ;; Read from the output stream.
-  (get-keyvals (topic-config "ledger-transaction-added"))
-
-
-  ;; Reset the app.
-  (reset)
-
-
-  ;; Write invalid input.
-  (publish (topic-config "ledger-entries-requested")
-           nil
-           {:id (java.util.UUID/randomUUID)
-            :entries [{:debit-account-name "foo"
-                       :credit-account-name "foo"
-                       :amount 10}]})
-
-
-  ;; Read from the output stream.
-  (get-keyvals (topic-config "ledger-transaction-added")))
-
-
-(comment
-  ;;; Split `ledger-entries-requested` events into ledger
-  ;;; transactions (aka debits and credits).
-  ;;;
-
-  (do
-
-    (defn entry-sides
-      [{:keys [debit-account-name
-               credit-account-name
-               amount]}]
-      [[debit-account-name
-        {:account-name debit-account-name
-         :amount (- amount)}]
-       [credit-account-name
-        {:account-name credit-account-name
-         :amount amount}]])
-
-
-    (defn entries->transactions
-      [[_ v]]
-      (reduce #(concat %1 (entry-sides %2)) [] (:entries v)))
-
-
-    (defn build-topology
-      [builder]
-      (let [input (j/kstream builder
-                             (topic-config "ledger-entries-requested"))
-
-            [valid invalid] (j/branch input [valid-input?
-                                             (constantly true)])
-
-            _ (j/peek invalid log-bad-input)
-
-            transactions (j/flat-map valid entries->transactions)]
-
-        (-> transactions
-            (j/to (topic-config "ledger-transaction-added")))
-
-        builder)))
-
-
-  ;; Reset the app.
-  (reset)
-
-
-  ;; Write valid input.
-  (publish (topic-config "ledger-entries-requested")
-           nil
-           {:id (java.util.UUID/randomUUID)
-            :entries [{:debit-account-name "foo"
-                       :credit-account-name "bar"
-                       :amount 10}
-                      {:debit-account-name "foo"
-                       :credit-account-name "qux"
-                       :amount 20}]})
-
-
-  ;; Read from the output stream.
-  (get-keyvals (topic-config "ledger-transaction-added"))
-
-
-  ;; Write valid input (again).
-  (publish (topic-config "ledger-entries-requested")
-           nil
-           {:id (java.util.UUID/randomUUID)
-            :entries [{:debit-account-name "foo"
-                       :credit-account-name "bar"
-                       :amount 10}
-                      {:debit-account-name "foo"
-                       :credit-account-name "qux"
-                       :amount 20}]})
-
-
-  ;; Read from the output stream (again).
-  (get-keyvals (topic-config "ledger-transaction-added")))
-
-
-(comment
-  ;;; Add unique identifiers and reference IDs.
-  ;;;
-
-  (defn entries->transactions
-    [[_ v]]
-    (->> (:entries v)
-         (reduce #(concat %1 (entry-sides %2)) [])
-         (map-indexed #(assoc-in %2 [1 :id] (uuid/v5 (:id v) %1)))
-         (map #(assoc-in %1 [1 :causation-id] (:id v)))))
-
-
-  ;; Reset the app.
-  (reset)
-
-
-  ;; Write valid input.
-  (publish (topic-config "ledger-entries-requested")
-           nil
-           {:id (java.util.UUID/randomUUID)
-            :entries [{:debit-account-name "foo"
-                       :credit-account-name "bar"
-                       :amount 10}
-                      {:debit-account-name "foo"
-                       :credit-account-name "qux"
-                       :amount 20}]})
-
-
-  ;; Read from the output stream.
-  (get-keyvals (topic-config "ledger-transaction-added"))
-
-
-  ;; Write valid input (again).
-  (publish (topic-config "ledger-entries-requested")
-           nil
-           {:id (java.util.UUID/randomUUID)
-            :entries [{:debit-account-name "foo"
-                       :credit-account-name "bar"
-                       :amount 10}
-                      {:debit-account-name "foo"
-                       :credit-account-name "qux"
-                       :amount 20}]})
-
-
-  ;; Read from the output stream (again).
-  (get-keyvals (topic-config "ledger-transaction-added"))
-
-
-  ;; Read from the output stream ("foo" only).
-  (->> (get-keyvals (topic-config "ledger-transaction-added"))
-       (filter (fn [[k v]] (= "foo" k)))))
-
-
-(comment
-  ;;; Keep track of running balances.
-  ;;;
-
-  (do
-
-    (defn account-balance-reducer
-      [x y]
-      (let [starting-balance (:current-balance x)]
-        (merge y {:starting-balance starting-balance
-                  :current-balance (+ starting-balance (:amount y))})))
-
-
-    (defn build-topology
-      [builder]
-      (let [input (j/kstream builder
-                             (topic-config "ledger-entries-requested"))
-
-            [valid invalid] (j/branch input [valid-input?
-                                             (constantly true)])
-
-            _ (j/peek invalid log-bad-input)
-
-            transactions (j/flat-map valid entries->transactions)
-
-            balances
-            (-> transactions
-                (j/map-values (fn [v]
-                                (merge v
-                                       {:starting-balance 0
-                                        :current-balance (:amount v)})))
-                (j/group-by-key (topic-config nil (Serdes/String)
-                                              (jse/serde)))
-                (j/reduce account-balance-reducer
-                          (topic-config "balances")))]
-
-        (-> balances
-            (j/to-kstream)
-            (j/to (topic-config "ledger-transaction-added")))
-
-        builder)))
-
-
-  ;; Reset the app.
-  (reset)
-
-
-  ;; Write valid input.
-  (publish (topic-config "ledger-entries-requested")
-           nil
-           {:id (java.util.UUID/randomUUID)
-            :entries [{:debit-account-name "foo"
-                       :credit-account-name "bar"
-                       :amount 10}
-                      {:debit-account-name "foo"
-                       :credit-account-name "qux"
-                       :amount 20}]})
-
-
-  ;; Read from the output stream.
-  (get-keyvals (topic-config "ledger-transaction-added"))
-
-
-  ;; Write valid input (again).
-  (publish (topic-config "ledger-entries-requested")
-           nil
-           {:id (java.util.UUID/randomUUID)
-            :entries [{:debit-account-name "foo"
-                       :credit-account-name "bar"
-                       :amount 10}
-                      {:debit-account-name "foo"
-                       :credit-account-name "qux"
-                       :amount 20}]})
-
-
-  ;; Read from the output stream (again).
-  (get-keyvals (topic-config "ledger-transaction-added"))
-
-
-  ;; Read from the output stream ("foo" only).
-  (->> (get-keyvals (topic-config "ledger-transaction-added"))
-       (filter (fn [[k v]] (= "foo" k)))))
+  ;; Evaluate the form:
+  (let [entries [["1" {:debit-account "tech"
+                       :credit-account "cash"
+                       :amount 1000}]
+                 ["2" {:debit-account "cash"
+                       :credit-account "sales"
+                       :amount 2000}]]]
+    (doseq [[k v] entries]
+      (publish (:entry-pending topic-metadata) k v)))
+
+  ;; Evaluate the form:
+  (get-keyvals (:transaction-added topic-metadata))
+
+  ;; You should see output like the following. Notice transaction
+  ;; order is not preserved:
+
+  ;; (["sales"
+  ;;   {:account-name "sales"
+  ;;    :before-balance 0
+  ;;    :after-balance 2000}]
+  ;;  ["tech"
+  ;;   {:account-name "tech"
+  ;;    :before-balance 0
+  ;;    :after-balance -1000}]
+  ;;  ["cash"
+  ;;   {:account-name "cash"
+  ;;    :before-balance 0
+  ;;    :after-balance 1000}]
+  ;;  ["cash"
+  ;;   {:account-name "cash"
+  ;;    :before-balance 1000
+  ;;    :after-balance -1000}])
+
+
+  ;; The `transaction-added` topic has 15 partitions. Let's see how
+  ;; the records distributed. Evaluate the form:
+  (->> (get-records (:transaction-added topic-metadata))
+       (map (fn [x]
+              (select-keys x [:key :offset :partition :value]))))
+
+  ;; You should see output like the following. The balances are spread
+  ;; across partitions 0, 11, and 14. Transaction order is preserved
+  ;; only for each account. There is no global order.
+
+  ;; ({:key "sales"
+  ;;   :offset 0
+  ;;   :partition 0
+  ;;   :value
+  ;;   {:account-name "sales"
+  ;;    :before-balance 0
+  ;;    :after-balance 2000}}
+  ;;  {:key "tech"
+  ;;   :offset 0
+  ;;   :partition 11
+  ;;   :value
+  ;;   {:account-name "tech"
+  ;;    :before-balance 0
+  ;;    :after-balance -1000}}
+  ;;  {:key "cash"
+  ;;   :offset 0
+  ;;   :partition 14
+  ;;   :value
+  ;;   {:account-name "cash"
+  ;;    :before-balance 0
+  ;;    :after-balance 1000}}
+  ;;  {:key "cash"
+  ;;   :offset 1
+  ;;   :partition 14
+  ;;   :value
+  ;;   {:account-name "cash"
+  ;;    :before-balance 1000
+  ;;    :after-balance -1000}})
+  )
