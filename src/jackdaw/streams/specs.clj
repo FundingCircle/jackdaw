@@ -178,7 +178,8 @@
                      :value-joiner-fn ifn?
                      :windows join-windows?
                      :this-topic-config (s/? ::topic-config)
-                     :other-topic-config (s/? ::topic-config))
+                     :other-topic-config (s/? ::topic-config)
+                     :join-name (s/? string?))
         :ret kstream?)
 
 (s/fdef k/left-join-windowed
@@ -187,7 +188,8 @@
                      :value-joiner-fn ifn?
                      :windows join-windows?
                      :this-topic-config (s/? ::topic-config)
-                     :other-topic-config (s/? ::topic-config))
+                     :other-topic-config (s/? ::topic-config)
+                     :join-name (s/? string?))
         :ret kstream?)
 
 (s/fdef k/map
@@ -206,7 +208,8 @@
                      :value-joiner-fn ifn?
                      :windows join-windows?
                      :this-topic-config (s/? ::topic-config)
-                     :other-topic-config (s/? ::topic-config))
+                     :other-topic-config (s/? ::topic-config)
+                     :join-name (s/? string?))
         :ret kstream?)
 
 (s/fdef k/process!
