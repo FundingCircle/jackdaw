@@ -5,6 +5,7 @@
 ### Added
 
 * Start formalizing test-machine commands with fspec'd functions
+* Added 7-arity signatures for `join-windowed`, `left-join-windowed` and `outer-join-windowed` allowing explicit join naming
 
 ## [0.7.2] - [2020-02-07]
 
