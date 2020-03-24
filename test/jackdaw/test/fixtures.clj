@@ -4,6 +4,7 @@
    [aleph.http :as http]
    [clojure.java.io :as io]
    [clojure.tools.logging :as log]
+   [clojure.reflect :refer [resolve-class]]
    [jackdaw.streams :as k]
    [jackdaw.streams.interop :refer [streams-builder]]
    [jackdaw.test.transports.kafka :as kt]
@@ -12,8 +13,7 @@
    [clojure.test :as t])
   (:import
    (org.apache.kafka.clients.admin AdminClient NewTopic)
-   (org.apache.kafka.streams KafkaStreams$StateListener KafkaStreams$State)
-   (kafka.tools StreamsResetter)))
+   (org.apache.kafka.streams KafkaStreams$StateListener KafkaStreams$State)))
 
 ;;; topic-fixture ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -200,6 +200,10 @@
   [rt args]
   (.run rt (into-array String args)))
 
+
+(defn- class-exists? [c]
+  (resolve-class (.getContextClassLoader (Thread/currentThread)) c))
+
 (defn reset-application-fixture
   "Returns a fixture that runs the kafka.tools.StreamsResetter with the supplied
    `reset-args` as parameters"
@@ -211,7 +215,9 @@
 
   ([app-config reset-args reset-fn]
    (fn [t]
-     (let [rt (StreamsResetter.)
+   (if-not (class-exists? 'kafka.tools.StreamsResetter)
+     (throw (RuntimeException. "You must add a dependency on a kafka distrib which ships the kafka.tools.StreamsResetter tool"))
+     (let [rt (.newInstance (clojure.lang.RT/classForName "kafka.tools.StreamsResetter"))
            app-id (get app-config "application.id")
            args (concat ["--application-id" (get app-config "application.id")
                          "--bootstrap-servers" (get app-config "bootstrap.servers")]
@@ -228,7 +234,7 @@
        (if (zero? (:status result))
          (t)
          (throw (ex-info "failed to reset application. check logs for details"
-                         result)))))))
+                         result))))))))
 
 (defn integration-fixture
   [build-fn {:keys [broker-config
