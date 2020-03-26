@@ -25,15 +25,21 @@
                                      (when data
                                        (to-bytes (json/write-str data))))}))
 
-(defn deserializer
-  "Returns a JSON deserializer."
-  []
+(defn keyed-deserializer
+  [f]
   (jsfn/new-deserializer {:deserialize (fn [_ _ data]
                                          (when data
                                            (-> (from-bytes data)
-                                               (json/read-str :key-fn keyword))))}))
+                                               (json/read-str :key-fn f))))}))
+
+(defn deserializer
+  "Returns a JSON deserializer."
+  ([]
+   (deserializer keyword))
+  ([f]
+   (keyed-deserializer f)))
 
 (defn serde
   "Returns a JSON serde."
-  []
-  (Serdes/serdeFrom (serializer) (deserializer)))
+  ([] (serde keyword))
+  ([f] (Serdes/serdeFrom (serializer) (deserializer f))))
