@@ -505,7 +505,7 @@
   {"schema.registry.url" registry-url})
 
 (defn- serializer [schema->coercion serde-config]
-  (let [{:keys [registry-client registry-url avro-schema key?]} serde-config
+  (let [{:keys [registry-client registry-url avro-schema read-only? key?]} serde-config
         base-serializer (KafkaAvroSerializer. registry-client)
         ;; This is invariant across subject schema changes, shockingly.
         coercion-type (schema->coercion avro-schema)
@@ -514,6 +514,9 @@
                  :configure (fn [_ base-config key?]
                               (.configure base-serializer base-config key?))
                  :serialize (fn [_ topic data]
+                              (when read-only?
+                                (throw (ex-info "Cannot serialize from a read-only serde"
+                                                {:serde-config serde-config})))
                               (try
                                 (.serialize base-serializer topic (clj->avro coercion-type data []))
                                 (catch clojure.lang.ExceptionInfo e
@@ -671,7 +674,8 @@
    {:keys [avro/schema
            avro/coercion-cache
            key?
-           deserializer-properties]
+           deserializer-properties
+           read-only?]
     :as   topic-config}]
 
   (when-not url
@@ -691,6 +695,7 @@
                                      (registry/client url 128))
                 ;; Provide the old behavior by default, or fall through to the
                 ;; new behavior of getting the right schema when possible.
+                :read-only?      read-only?
                 :avro-schema     (parse-schema-str schema)}
 
         coercion-stack {:type-registry type-registry
