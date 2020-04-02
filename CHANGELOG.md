@@ -5,7 +5,7 @@
 ### Added
 
 * Start formalizing test-machine commands with fspec'd functions
-* Add `divert?` and `sort-by` stream operations
+* Add `divert?` stream operation
 
 ## [0.7.2] - [2020-02-07]
 

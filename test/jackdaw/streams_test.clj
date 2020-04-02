@@ -288,61 +288,60 @@
       (publish 1 4)
 
       (is (= [1 3] (map last (mock/get-keyvals driver topic-odd))))
-      (is (= [2 4] (map last (mock/get-keyvals driver topic-even))))))
+      (is (= [2 4] (map last (mock/get-keyvals driver topic-even)))))
+    (testing "multiple diverts"
+      (testing "un-ordered sorting"
+        (let [topic-a (mock/topic "topic-a")
+              topic-four (mock/topic "topic-mod-4")
+              topic-five (mock/topic "topic-mod-5")
+              topic-seven (mock/topic "topic-mod-7")
+              topic-rest (mock/topic "topic-rest")
 
-  (testing "sort-by"
-    (testing "un-ordered sorting"
-      (let [topic-a (mock/topic "topic-a")
-          topic-four (mock/topic "topic-mod-4")
-          topic-five (mock/topic "topic-mod-5")
-          topic-seven (mock/topic "topic-mod-7")
-          topic-rest (mock/topic "topic-rest")
+              mod-four? (comp zero? #(mod % 4) last)
+              mod-five? (comp zero? #(mod % 5) last)
+              mod-seven? (comp zero? #(mod % 7) last)
 
-          mod-four? (comp zero? #(mod % 4) last)
-          mod-five? (comp zero? #(mod % 5) last)
-          mod-seven? (comp zero? #(mod % 7) last)
+              driver (mock/build-driver (fn [builder]
+                                          (-> builder
+                                              (k/kstream topic-a)
+                                              (k/divert? {mod-four? topic-four
+                                                          mod-five? topic-five
+                                                          mod-seven? topic-seven})
+                                              (k/to topic-rest))))
+              publish (partial mock/publish driver topic-a)]
 
-          driver (mock/build-driver (fn [builder]
-                                      (-> builder
-                                          (k/kstream topic-a)
-                                          (k/sort-by {mod-four? topic-four
-                                                      mod-five? topic-five
-                                                      mod-seven? topic-seven})
-                                          (k/to topic-rest))))
-          publish (partial mock/publish driver topic-a)]
+          (doseq [i (range 10)]
+            (publish 1 (inc i)))
 
-      (doseq [i (range 10)]
-        (publish 1 (inc i)))
+          (is (= [4 8] (map last (mock/get-keyvals driver topic-four))))
+          (is (= [5 10] (map last (mock/get-keyvals driver topic-five))))
+          (is (= [7] (map last (mock/get-keyvals driver topic-seven))))
+          (is (= [1 2 3 6 9] (map last (mock/get-keyvals driver topic-rest))))))
 
-      (is (= [4 8] (map last (mock/get-keyvals driver topic-four))))
-      (is (= [5 10] (map last (mock/get-keyvals driver topic-five))))
-      (is (= [7] (map last (mock/get-keyvals driver topic-seven))))
-      (is (= [1 2 3 6 9] (map last (mock/get-keyvals driver topic-rest))))))
+      (testing "ordered sorting"
+        (let [topic-a (mock/topic "topic-a")
+              topic-three (mock/topic "topic-mod-3")
+              topic-five (mock/topic "topic-mod-5")
+              topic-rest (mock/topic "topic-rest")
 
-    (testing "ordered sorting"
-      (let [topic-a (mock/topic "topic-a")
-          topic-three (mock/topic "topic-mod-3")
-          topic-five (mock/topic "topic-mod-5")
-          topic-rest (mock/topic "topic-rest")
+              mod-three? (comp zero? #(mod % 3) last)
+              mod-five? (comp zero? #(mod % 5) last)
 
-          mod-three? (comp zero? #(mod % 3) last)
-          mod-five? (comp zero? #(mod % 5) last)
+              driver (mock/build-driver (fn [builder]
+                                          (-> builder
+                                              (k/kstream topic-a)
+                                              (k/divert? [[mod-five? topic-five]
+                                                          [mod-three? topic-three]])
+                                              (k/to topic-rest))))
+              publish (partial mock/publish driver topic-a)]
 
-          driver (mock/build-driver (fn [builder]
-                                      (-> builder
-                                          (k/kstream topic-a)
-                                          (k/sort-by [[mod-five? topic-five]
-                                                      [mod-three? topic-three]])
-                                          (k/to topic-rest))))
-          publish (partial mock/publish driver topic-a)]
+          (doseq [i (range 15)]
+            (publish 1 (inc i)))
 
-      (doseq [i (range 15)]
-        (publish 1 (inc i)))
-
-      (is (= [3 6 9 12] (map last (mock/get-keyvals driver topic-three))))
-      ;; mod-5 gets 15 b/c it was applied first
-      (is (= [5 10 15] (map last (mock/get-keyvals driver topic-five))))
-      (is (= [1 2 4 7 8 11 13 14] (map last (mock/get-keyvals driver topic-rest)))))))
+          (is (= [3 6 9 12] (map last (mock/get-keyvals driver topic-three))))
+          ;; mod-5 gets 15 b/c it was applied first
+          (is (= [5 10 15] (map last (mock/get-keyvals driver topic-five))))
+          (is (= [1 2 4 7 8 11 13 14] (map last (mock/get-keyvals driver topic-rest))))))))
 
   (testing "flat-map"
     (let [topic-a (mock/topic "topic-a")

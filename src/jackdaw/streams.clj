@@ -1,7 +1,7 @@
 (ns jackdaw.streams
   "Kafka streams protocols."
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
-  (:refer-clojure :exclude [count map merge reduce group-by filter peek sort-by])
+  (:refer-clojure :exclude [count map merge reduce group-by filter peek])
   (:require [clojure.string :as str]
             [jackdaw.streams.interop :as interop]
             [jackdaw.streams.protocols :as p])
@@ -114,22 +114,18 @@
   (p/branch kstream predicate-fns))
 
 (defn divert?
-  "Diverts records that match `pred` to the provided `topic-config`. Records that
-  do not match `pred` are pushed on through the app."
-  [stream pred topic-config]
-  (let [[divert-stream continue-stream] (branch stream [pred (constantly true)])]
-    (to divert-stream topic-config)
-    continue-stream))
+  "Diverts records that match any `pred` to the provided `topic-config`. Records that
+  do not match any `pred` are pushed on through the app.
 
-(defn sort-by
-  "Sorts the provided stream to each `topic-config` if it matches the associated `predicate`.
-  Any that don't match will be continued on in the stream.
-
-  Sorts can either be:
+  When providing multiple diverts, diverts can either be:
     - ordered (by providing a vector of `predicate` `topic-config` tuples); or
     - unordered (by providing a map `predicate` to `topic-config` key pairs)"
-  [stream sorts]
-  (clojure.core/reduce #(apply divert? %1 %2) stream (into [] sorts)))
+  ([stream diverts]
+   (clojure.core/reduce #(apply divert? %1 %2) stream (into [] diverts)))
+  ([stream pred topic-config]
+   (let [[divert-stream continue-stream] (branch stream [pred (constantly true)])]
+     (to divert-stream topic-config)
+     continue-stream)))
 
 (defn flat-map
   "Creates a KStream that will consist of the concatenation of messages
