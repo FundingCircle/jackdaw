@@ -10,26 +10,26 @@
   The intentional API of this NS has three main features -
   `SchemaCoercion`, the intentional type registry (of which
   `#'+base-schema-type-registry+` is an example) and
-  `#'avro-serde`.
+  `#'serde`.
 
-  `avro-serde` is the primary entry point to this namespace for
-  users. It's a function of a schema-registry configuration, a schema
+  `serde` is the primary entry point to this namespace for users.
+  It's a function of a schema-registry configuration, a schema
   type registry, and a serde configuration to be instantiated.
 
-  The intent is that an end user will `partial` the `avro-serde`
+  The intent is that an end user will `partial` the `serde`
   function with their schema registry details and desired type
   registry, and use the `partial`'d function as en entry in a registry
   as used by `jackdaw.serdes/serde`.
 
-  This allows `serdes` and `avro-serde` to be agnostic to application
-  or environment specific configuration details.
+  This allows `serdes` and `serde` to be agnostic to application or
+  environment specific configuration details.
 
   But what's this type registry?
 
   Apache Avro \"logical types\" - a tool for annotating fields in an
   avro record as having some complex interpretation beyond their
   serialized format. The `type-registry` for the purposes of the
-  `avro-serde` function a mapping of addresses to functions which will
+  `serde` function a mapping of addresses to functions which will
   when invoked build and return a `SchemaCoercion` instance.
 
   When a Serde is instantiated, a stack of `SchemaCoercion` coersion
@@ -50,7 +50,7 @@
   appropriate handler.
 
   A user who wanted to opt into these handlers could simply call
-  `avro-serde` with
+  `serde` with
   `(merge +base-schema-type-registry+ +UUID-type-registry+)`
 
   Users are HIGHLY encouraged to use the `+base-schema-type-registry+`
