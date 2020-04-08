@@ -20,6 +20,7 @@
 (s/def ::serde-keyword qualified-keyword?)
 (s/def ::schema string?)
 (s/def ::schema-filename string?)
+(s/def ::read-only? boolean?)
 (s/def ::key? boolean?)
 
 (s/def :jackdaw.serde/serde
@@ -31,11 +32,20 @@
 
 ;; Avro serde
 
-(s/def :jackdaw.serde/confluent-avro-serde
-  (s/keys :req-un [::serde-keyword
-                   ::key?
-                   (or ::schema ::schema-filename)]))
+(defn exactly-one-true?
+  [& args]
+  (= 1 (count (filter identity args))))
 
+(s/def :jackdaw.serde/confluent-avro-serde
+  (s/and
+   (s/keys :req-un [::serde-keyword
+                    ::key?
+                    (or ::schema
+                        ::schema-filename
+                        ::read-only?)])
+   #(exactly-one-true? (:schema %)
+                       (:schema-filename %)
+                       (:read-only? %))))
 
 
 ;; Topics as used by creation clients

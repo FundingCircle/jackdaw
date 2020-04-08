@@ -4,6 +4,8 @@
 
 ### Added
 
+* Allow avro deserializaton via the resolver without a local copy of the schema
+
 * Start formalizing test-machine commands with fspec'd functions
 
 ## [0.7.2] - [2020-02-07]
