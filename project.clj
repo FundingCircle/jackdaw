@@ -15,12 +15,12 @@
                  ;; off with the kafka version.
                  ;; See https://docs.confluent.io/current/release-notes.html
 
-                 [io.confluent/kafka-schema-registry-client "5.3.1"
+                 [io.confluent/kafka-schema-registry-client "5.4.1"
                   :exclusions [com.fasterxml.jackson.core/jackson-databind]]
-                 [io.confluent/kafka-avro-serializer "5.3.1"]
-                 [org.apache.kafka/kafka-clients "2.3.1"]
-                 [org.apache.kafka/kafka-streams "2.3.1"]
-                 [org.apache.kafka/kafka-streams-test-utils "2.3.1"]
+                 [io.confluent/kafka-avro-serializer "5.4.1"]
+                 [org.apache.kafka/kafka-clients "2.4.1"]
+                 [org.apache.kafka/kafka-streams "2.4.1"]
+                 [org.apache.kafka/kafka-streams-test-utils "2.4.1"]
                  [org.clojure/clojure "1.10.1" :scope "provided"]
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/data.fressian "0.2.1"]
