@@ -102,3 +102,29 @@
       (is (thrown-with-msg? ExceptionInfo
                             #"Invalid serde config.*"
                             ((resolver/serde-resolver) {}))))))
+
+(deftest serdes-resolver-read-only-test
+  (testing "avro reader serdes with optional schema"
+    (let [resolver-fn (resolver/serde-resolver :schema-registry-url ""
+                                               :schema-registry-client (reg/mock-client))
+          writer-avro-config {:serde-keyword :jackdaw.serdes.avro.confluent/serde
+                              :schema-filename "resources/example_schema.avsc"
+                              :key? false}
+          ;; by providing :serde/type of :read-only we can allow a serde without local schema
+          reader-avro-config {:serde-keyword :jackdaw.serdes.avro.confluent/serde
+                              :key? false
+                              :read-only? true}
+          resolved-writer (resolver-fn writer-avro-config)
+          resolved-reader (resolver-fn reader-avro-config)
+          example-data {:customer-id (str (uuid/v4))
+                        :address {:value "foo"
+                                  :key-path "foo.bar.baz"}}]
+      (is (instance? Serde resolved-writer))
+      (is (instance? Serde resolved-reader))
+      ;; round trip test
+      (is (= example-data
+             (->> example-data
+                  (.serialize (.serializer resolved-writer) "avro-topic")
+                  (.deserialize (.deserializer resolved-reader) "avro-topic"))))
+      (is (thrown-with-msg? ExceptionInfo #"Cannot serialize from a read-only serde"
+                            (.serialize (.serializer resolved-reader) "avro-topic" example-data))))))

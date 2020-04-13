@@ -1,11 +1,20 @@
 # Changelog
 
-## Unreleased
+## unreleased
+
+* Add `divert?` stream operation
+
+## [0.7.3] - [2020-04-08]
 
 ### Added
 
-* Start formalizing test-machine commands with fspec'd functions
-* Add `divert?` stream operation
+ * Allow avro deserializaton via the resolver without a local copy of the schema
+
+ * Start formalizing test-machine commands with fspec'd functions
+
+### Fixed
+
+ * Moved dependency on kafka_2.11 into the dev profile
 
 ## [0.7.2] - [2020-02-07]
 

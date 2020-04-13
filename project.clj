@@ -20,7 +20,6 @@
                  [io.confluent/kafka-avro-serializer "5.3.1"]
                  [org.apache.kafka/kafka-clients "2.3.1"]
                  [org.apache.kafka/kafka-streams "2.3.1"]
-                 [org.apache.kafka/kafka_2.11 "2.3.1"]
                  [org.apache.kafka/kafka-streams-test-utils "2.3.1"]
                  [org.clojure/clojure "1.10.1" :scope "provided"]
                  [org.clojure/data.json "0.2.6"]
@@ -74,6 +73,7 @@
                              [org.apache.kafka/kafka-streams-test-utils "2.3.1"]
                              [org.apache.kafka/kafka-clients "2.3.1" :classifier "test"]
                              [org.clojure/test.check "0.9.0"]
+                             [org.apache.kafka/kafka_2.11 "2.3.1"]
                              [lambdaisland/kaocha "0.0-529"]
                              [lambdaisland/kaocha-cloverage "0.0-32"]
                              [lambdaisland/kaocha-junit-xml "0.0-70"]]}

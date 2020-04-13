@@ -26,7 +26,7 @@
 (defn app-config
   "Returns the application config."
   []
-  {"application.id" "word-count"
+  {"application.id" "pipe"
    "bootstrap.servers" "localhost:9092"
    "cache.max.bytes.buffering" "0"})
 
