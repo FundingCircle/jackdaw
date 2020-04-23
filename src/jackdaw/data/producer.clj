@@ -17,20 +17,25 @@
   ([{:keys [topic-name]} key value]
    (ProducerRecord. ^String topic-name key value))
   ([{:keys [topic-name]} partition key value]
-   (ProducerRecord. ^String topic-name
-                    ^Integer (if partition (int partition))
-                    key value))
+   (let [partition-or-nil (if partition (int partition))]
+     (ProducerRecord. ^String topic-name
+                      ^Integer partition-or-nil
+                      key value)))
   ([{:keys [topic-name]} partition timestamp key value]
-   (ProducerRecord. ^String topic-name
-                    ^Integer (if partition (int partition))
-                    ^Long (if timestamp (long timestamp))
-                    key value))
+   (let [partition-or-nil (if partition (int partition))
+         timestamp-or-nil (if timestamp (long timestamp))]
+     (ProducerRecord. ^String topic-name
+                      ^Integer partition-or-nil
+                      ^Long timestamp-or-nil
+                      key value)))
   ([{:keys [topic-name]} partition timestamp key value headers]
-   (ProducerRecord. ^String topic-name
-                    ^Integer (if partition (int partition))
-                    ^Long (if timestamp (long timestamp))
-                    key value
-                    ^Headers headers)))
+   (let [partition-or-nil (if partition (int partition))
+         timestamp-or-nil (if timestamp (long timestamp))]
+     (ProducerRecord. ^String topic-name
+                      ^Integer partition-or-nil
+                      ^Long timestamp-or-nil
+                      key value
+                      ^Headers headers))))
 
 (defn map->ProducerRecord
   "Given a `::producer-record` build an equivalent `ProducerRecord`.
