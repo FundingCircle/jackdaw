@@ -3,6 +3,7 @@
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [clojure.tools.logging :as log]
             [jackdaw.streams :as js]
+            [jackdaw.streams.lambdas :as lambdas]
             [clojure.spec.alpha :as s])
   (:import org.apache.kafka.common.TopicPartition
            org.apache.kafka.streams.processor.StateRestoreListener
@@ -89,3 +90,51 @@
       (-> ~builder
           (map-validating! t# ~topic-spec ~(with-file (meta &form)))
           (js/through ~partition-fn t#)))))
+
+(defn seen!?
+  "Returns true if `dedupe-key` is already present in state-store.
+  Otherwise returns false, and adds the key to the state-store."
+  [state-store dedupe-key]
+  (if (.get state-store dedupe-key)
+    true
+    (do
+     (.put state-store dedupe-key (System/currentTimeMillis))
+     false)))
+
+(defn dedupe-by
+  "Filters out any messages in the stream already seen. Seen keys are
+  held in a state store. Key to use for de-duping is accessed via
+  `unique-key-fn`, which is passed a vector of `[k v]`
+  If `dedupe-notifier-fn` is set, it is called with `[k v]` when a
+  message is dropped from the stream. Typically this would be used to
+  pass in logging for dropped messages."
+  [kstream dedupe-store-name unique-key-fn dedupe-notifier-fn]
+  (js/transform kstream
+                (lambdas/transformer-with-ctx
+                 (lambdas/with-stores
+                   [dedupe-store-name]
+                   (fn [_ stores k v]
+                     (if (seen!? (get stores dedupe-store-name) (unique-key-fn [k v]))
+                       (do
+                        (when dedupe-notifier-fn
+                          (dedupe-notifier-fn [k v]))
+                        nil)
+                       (lambdas/key-value [k v])))))
+                [dedupe-store-name]))
+
+(defn dedupe-by-key
+  "Filters out any messages in the stream already seen. Seen keys are
+  held in a state store. Uses the stream's key for deduping."
+  ([kstream dedupe-store-name]
+   (dedupe-by-key kstream dedupe-store-name nil))
+  ([kstream dedupe-store-name dedupe-notifier-fn]
+   (dedupe-by kstream dedupe-store-name (fn [[k _]] k) dedupe-notifier-fn)))
+
+(defn dedupe-by-field
+  "Filters out any messages in the stream already seen. Seen keys are
+  held in a state store. Uses the result of applying `key-fn` to the
+  stream's value for deduping."
+  ([kstream dedupe-store-name key-fn]
+   (dedupe-by-field kstream dedupe-store-name key-fn nil))
+  ([kstream dedupe-store-name key-fn dedupe-notifier-fn]
+   (dedupe-by kstream dedupe-store-name (fn [[_ v]] (key-fn v)) dedupe-notifier-fn)))

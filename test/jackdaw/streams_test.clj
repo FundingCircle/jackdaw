@@ -5,6 +5,7 @@
             [jackdaw.serdes.edn :as jse]
             [jackdaw.streams :as k]
             [jackdaw.streams.configurable :as cfg]
+            [jackdaw.streams.extras :as jex]
             [jackdaw.streams.lambdas :as lambdas :refer [key-value]]
             [jackdaw.streams.lambdas.specs]
             [jackdaw.streams.mock :as mock]
@@ -475,6 +476,101 @@
         (is (= [2 3] (second keyvals)))
         (is (= [2 7] (nth keyvals 2))))))
 
+ (testing "flat-transform"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          transformer-supplier-fn #(let [total (atom 0)]
+                                    (reify Transformer
+                                      (init [_ _])
+                                      (close [_])
+                                      (transform [_ k v]
+                                        ;; each input creates two outputs
+                                        ;; each v' accumulating the v read in:
+                                        ;; [[k * 10, v'] [k * 20, v'']]
+                                        (map (fn [x]
+                                               (swap! total + v)
+                                               (key-value [(* k x) @total]))
+                                             [10 20]))))
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/flat-transform transformer-supplier-fn)
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
+
+      (publish 1 1)
+      (publish 1 2)
+      (publish 1 4)
+
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= 6 (count keyvals)))
+        (is (= [10 1] (first keyvals)))
+        (is (= [20 2] (second keyvals)))
+        (is (= [10 4] (nth keyvals 2)))
+        (is (= [20 6] (nth keyvals 3)))
+        (is (= [10 10] (nth keyvals 4)))
+        (is (= [20 14] (nth keyvals 5))))))
+
+  (testing "with-state-store and transform-with-ctx"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/with-state-store {:store-name "test-store"})
+                                          (k/kstream topic-a)
+                                          (k/transform
+                                           (lambdas/transformer-with-ctx
+                                            (fn [ctx k v]
+                                              (let [acc-store (.getStateStore ctx "test-store")
+                                                    acc (.get acc-store k)
+                                                    res (if acc
+                                                          (+ acc v)
+                                                          v)]
+                                                (.put acc-store k res)
+                                                (key-value [k res]))))
+                                           ["test-store"])
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
+
+      (publish 1 1)
+      (publish 1 2)
+      (publish 1 4)
+
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= 3 (count keyvals)))
+        (is (= [1 1] (first keyvals)))
+        (is (= [1 3] (second keyvals)))
+        (is (= [1 7] (nth keyvals 2))))))
+
+  (testing "jackdaw extras dedupe-by-key"
+    (let [deduped (atom [])
+          topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/with-state-store {:store-name "dedupe-store"})
+                                          (k/kstream topic-a)
+                                          (jex/dedupe-by-key "dedupe-store"
+                                                             (fn [m]
+                                                               (swap! deduped conj m)))
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
+
+      (publish 1 1)
+      (publish 1 2)
+      (publish 2 3)
+      (publish 2 4)
+      (publish 3 5)
+      (publish 3 6)
+
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= 3 (count keyvals)))
+        (is (= [1 1] (first keyvals)))
+        (is (= [2 3] (second keyvals)))
+        (is (= [3 5] (nth keyvals 2)))
+        (is (= 3 (count @deduped)))
+        (is (= [[1 2] [2 4] [3 6]] @deduped)))))
+
   (testing "transform-values"
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
@@ -501,6 +597,95 @@
         (is (= [1 1] (first keyvals)))
         (is (= [1 3] (second keyvals)))
         (is (= [1 7] (nth keyvals 2))))))
+
+  (testing "flat-transform-values"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          transformer-supplier-fn #(let [total (atom 0)]
+                                    (reify ValueTransformer
+                                      (init [_ _])
+                                      (close [_])
+                                      (transform [_ v]
+                                        ;; returns value + 100,
+                                        ;; then value + 200
+                                        (map (fn [x]
+                                               (swap! total + v)
+                                               (+ @total x))
+                                             [100 200]))))
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/flat-transform-values transformer-supplier-fn)
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
+
+      (publish 1 1)
+      (publish 1 2)
+      (publish 1 4)
+
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= 6 (count keyvals)))
+        (is (= [1 101] (first keyvals)))
+        (is (= [1 202] (second keyvals)))
+        (is (= [1 104] (nth keyvals 2)))
+        (is (= [1 206] (nth keyvals 3)))
+        (is (= [1 110] (nth keyvals 4)))
+        (is (= [1 214] (nth keyvals 5))))))
+
+  (testing "with-state-store and transform-values-with-ctx"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/with-state-store {:store-name "test-store"})
+                                          (k/kstream topic-a)
+                                          (k/transform-values
+                                           (lambdas/value-transformer-with-ctx
+                                            (fn [ctx v]
+                                              (let [acc-store (.getStateStore ctx "test-store")
+                                                    acc (.get acc-store :sum)
+                                                    res (if acc
+                                                          (+ acc v)
+                                                          v)]
+                                                (.put acc-store :sum res)
+                                                res)))
+                                           ["test-store"])
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
+
+      (publish 1 1)
+      (publish 1 2)
+      (publish 1 4)
+
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= 3 (count keyvals)))
+        (is (= [1 1] (first keyvals)))
+        (is (= [1 3] (second keyvals)))
+        (is (= [1 7] (nth keyvals 2))))))
+
+  (testing "jackdaw extras dedupe-by-field"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/with-state-store {:store-name "dedupe-store"})
+                                          (k/kstream topic-a)
+                                          (jex/dedupe-by-field "dedupe-store" identity)
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
+
+      (publish 1 1)
+      (publish 2 1)
+      (publish 3 2)
+      (publish 4 2)
+      (publish 5 3)
+      (publish 6 3)
+
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= 3 (count keyvals)))
+        (is (= [1 1] (first keyvals)))
+        (is (= [3 2] (second keyvals)))
+        (is (= [5 3] (nth keyvals 2))))))
 
   (testing "kstreams"
     (let [topic-a (mock/topic "topic-a")
