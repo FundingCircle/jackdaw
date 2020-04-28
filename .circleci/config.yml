@@ -122,8 +122,6 @@ jobs:
           lein kaocha --plugin kaocha.plugin/junit-xml --junit-xml-file test-results/kaocha/results.xml
       - store_artifacts:
           path: ./logs
-      - store_artifacts:
-          path: target/coverage
       - store_test_results:
           path: test-results
 
