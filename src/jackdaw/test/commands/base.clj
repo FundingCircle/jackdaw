@@ -2,6 +2,8 @@
   (:require
    [clojure.pprint :as pprint]))
 
+(set! *warn-on-reflection* true)
+
 (def command-map
   {:stop (constantly true)
 

@@ -12,6 +12,8 @@
   (:import org.apache.kafka.common.serialization.Serde
            org.apache.kafka.streams.kstream.JoinWindows))
 
+(set! *warn-on-reflection* true)
+
 (def global-ktable?
   (partial satisfies? IGlobalKTable))
 

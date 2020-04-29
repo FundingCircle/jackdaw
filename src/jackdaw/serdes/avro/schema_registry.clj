@@ -5,6 +5,8 @@
             MockSchemaRegistryClient
             CachedSchemaRegistryClient]))
 
+(set! *warn-on-reflection* true)
+
 (defn client
   "Build and return a Kafka Schema Registry client which uses an LRU
   strategy to cache the specified number of schemas."

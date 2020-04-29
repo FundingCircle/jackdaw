@@ -8,6 +8,8 @@
    (org.apache.kafka.common Node KafkaFuture)
    (org.apache.kafka.clients.admin MockAdminClient)))
 
+(set! *warn-on-reflection* false)
+
 (extend MockAdminClient
   admin/Client
   (-> admin/client-impl

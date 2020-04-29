@@ -2,6 +2,8 @@
 
 (import 'org.apache.kafka.common.record.TimestampType)
 
+(set! *warn-on-reflection* true)
+
 ;;; Timestamp types
 
 (def +no-type-timestamp+

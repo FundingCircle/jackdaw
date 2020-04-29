@@ -5,6 +5,8 @@
   (:import org.apache.kafka.streams.KafkaStreams
            org.apache.kafka.streams.StreamsBuilder))
 
+(set! *warn-on-reflection* true)
+
 (defprotocol IStreamsBuilder
   (kstream
     [topology-builder topic-config]

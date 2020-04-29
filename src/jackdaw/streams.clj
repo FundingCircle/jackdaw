@@ -10,6 +10,8 @@
            org.apache.kafka.streams.KafkaStreams$State
            org.apache.kafka.streams.Topology))
 
+(set! *warn-on-reflection* true)
+
 ;; StreamsBuilder
 
 (defn kstream
@@ -315,7 +317,7 @@
   ([builder opts]
    (let [props (java.util.Properties.)]
      (.putAll props opts)
-     (KafkaStreams. ^Topology (.build (streams-builder* builder))
+     (KafkaStreams. ^Topology (.build ^StreamsBuilder (streams-builder* builder))
                     ^java.util.Properties props))))
 
 (defn start

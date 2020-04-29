@@ -13,6 +13,8 @@
   (:import
    (java.util UUID Base64)))
 
+(set! *warn-on-reflection* false)
+
 (def ^:dynamic *http-client*
   {:post    http/post
    :get     http/get

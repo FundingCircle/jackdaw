@@ -4,6 +4,8 @@
    [manifold.stream :as s]
    [jackdaw.test.transports :as t :refer [deftransport]]))
 
+(set! *warn-on-reflection* true)
+
 (defn identity-consumer
   [stream]
   (let [started? (promise)]

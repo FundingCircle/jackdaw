@@ -15,6 +15,8 @@
            org.apache.kafka.common.header.internals.RecordHeaders
            [org.apache.kafka.common.serialization Serde Serdes Serializer]))
 
+(set! *warn-on-reflection* false)
+
 (defn streams-builder
   "Creates a mock streams-builder."
   ([]

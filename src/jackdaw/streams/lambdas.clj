@@ -9,6 +9,8 @@
            [org.apache.kafka.streams.processor
             Processor ProcessorSupplier StreamPartitioner]))
 
+(set! *warn-on-reflection* true)
+
 (defn key-value
   "A key-value pair defined for a single Kafka Streams record."
   [[key value]]

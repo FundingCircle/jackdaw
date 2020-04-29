@@ -12,6 +12,8 @@
    (java.util Properties)
    (org.apache.kafka.streams TopologyTestDriver)))
 
+(set! *warn-on-reflection* false)
+
 (def foo-topic
   (serde/resolver {:topic-name "foo"
                    :replication-factor 1

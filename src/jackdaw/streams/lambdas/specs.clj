@@ -6,6 +6,8 @@
   (:import [org.apache.kafka.streams.kstream
             Aggregator Initializer Merger]))
 
+(set! *warn-on-reflection* true)
+
 (def initializer? (partial instance? Initializer))
 (def aggregator? (partial instance? Aggregator))
 (def merger? (partial instance? Merger))

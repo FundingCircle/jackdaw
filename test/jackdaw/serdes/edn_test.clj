@@ -6,6 +6,8 @@
             [clojure.test.check.properties :as prop]
             [jackdaw.serdes.edn :as jse]))
 
+(set! *warn-on-reflection* false)
+
 (defspec edn-roundtrip-test 20
   (testing "EDN data is the same after serialization and deserialization."
     (prop/for-all [x (gen/fmap #(apply str %) (gen/vector gen/char-alpha 100))]

@@ -1,6 +1,8 @@
 (ns jackdaw.serdes.avro.confluent
   (:require [jackdaw.serdes.avro :as jsa]))
 
+(set! *warn-on-reflection* true)
+
 (defn serde
   "Creates a serde for Avro data. An avro serde needs to know if its generating
   a key or value in the data (a separate serde is required for each as a result).
