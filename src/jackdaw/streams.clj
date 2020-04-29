@@ -198,6 +198,24 @@
   [kstream select-key-value-mapper-fn]
   (p/select-key kstream select-key-value-mapper-fn))
 
+(defn join-global
+  [kstream global-ktable kv-mapper joiner]
+  (p/join-global kstream global-ktable kv-mapper joiner))
+
+(defn left-join-global
+  [kstream global-ktable kv-mapper joiner]
+  (p/left-join-global kstream global-ktable kv-mapper joiner))
+
+(defn merge
+  [kstream other]
+  (p/merge kstream other))
+
+(defn kstream*
+  "Returns the underlying KStream object."
+  [kstream]
+  (p/kstream* kstream))
+
+;; ITransformingKStream
 (defn transform
   "Creates a KStream that consists of the results of applying the transformer
   to each key/value in the input stream."
@@ -231,23 +249,6 @@
    (p/flat-transform-values kstream value-transformer-supplier-fn))
   ([kstream value-transformer-supplier-fn state-store-names]
    (p/flat-transform-values kstream value-transformer-supplier-fn state-store-names)))
-
-(defn join-global
-  [kstream global-ktable kv-mapper joiner]
-  (p/join-global kstream global-ktable kv-mapper joiner))
-
-(defn left-join-global
-  [kstream global-ktable kv-mapper joiner]
-  (p/left-join-global kstream global-ktable kv-mapper joiner))
-
-(defn merge
-  [kstream other]
-  (p/merge kstream other))
-
-(defn kstream*
-  "Returns the underlying KStream object."
-  [kstream]
-  (p/kstream* kstream))
 
 ;; IKTable
 

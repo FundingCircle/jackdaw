@@ -334,6 +334,26 @@
      (.selectKey ^KStream kstream
                  ^KeyValueMapper (select-key-value-mapper select-key-value-mapper-fn))))
 
+  (join-global
+    [_ global-ktable key-value-mapper-fn joiner-fn]
+    (clj-kstream
+     (.join kstream
+            ^GlobalKTable (global-ktable* global-ktable)
+            ^KeyValueMapper (select-key-value-mapper key-value-mapper-fn)
+            ^ValueJoiner (value-joiner joiner-fn))))
+
+  (left-join-global
+    [_ global-ktable key-value-mapper-fn joiner-fn]
+    (clj-kstream
+     (.leftJoin kstream
+                ^GlobalKTable (global-ktable* global-ktable)
+                ^KeyValueMapper (select-key-value-mapper key-value-mapper-fn)
+                ^ValueJoiner (value-joiner joiner-fn))))
+
+  (kstream* [_]
+    kstream)
+
+  ITransformingKStream
   (transform
     [this transformer-supplier-fn]
     (transform this transformer-supplier-fn []))
@@ -380,26 +400,7 @@
      (.flatTransformValues ^KStream kstream
                            ^ValueTransformerSupplier (value-transformer-supplier value-transformer-supplier-fn)
                            ^"[Ljava.lang.String;" (into-array String
-                                                              (clojure.core/map name state-store-names)))))
-
-  (join-global
-    [_ global-ktable key-value-mapper-fn joiner-fn]
-    (clj-kstream
-     (.join kstream
-            ^GlobalKTable (global-ktable* global-ktable)
-            ^KeyValueMapper (select-key-value-mapper key-value-mapper-fn)
-            ^ValueJoiner (value-joiner joiner-fn))))
-
-  (left-join-global
-    [_ global-ktable key-value-mapper-fn joiner-fn]
-    (clj-kstream
-     (.leftJoin kstream
-                ^GlobalKTable (global-ktable* global-ktable)
-                ^KeyValueMapper (select-key-value-mapper key-value-mapper-fn)
-                ^ValueJoiner (value-joiner joiner-fn))))
-
-  (kstream* [_]
-    kstream))
+                                                              (clojure.core/map name state-store-names))))))
 
 (defn clj-kstream
   "Makes a CljKStream object."

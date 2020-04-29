@@ -260,6 +260,22 @@
      config
      (select-key kstream key-value-mapper-fn)))
 
+  (left-join-global
+    [_ global-ktable kv-mapper joiner]
+    (configured-kstream
+      config
+      (left-join-global kstream global-ktable kv-mapper joiner)))
+
+  (join-global
+    [_ global-ktable kv-mapper joiner]
+    (configured-kstream
+      config
+      (join-global kstream global-ktable kv-mapper joiner)))
+
+  (kstream* [_]
+    (kstream* kstream))
+
+  ITransformingKStream
   (transform
     [this transformer-supplier-fn]
     (transform this transformer-supplier-fn []))
@@ -299,21 +315,6 @@
     (configured-kstream
      config
      (flat-transform-values kstream value-transformer-supplier-fn state-store-names)))
-
-  (left-join-global
-    [_ global-ktable kv-mapper joiner]
-    (configured-kstream
-      config
-      (left-join-global kstream global-ktable kv-mapper joiner)))
-
-  (join-global
-    [_ global-ktable kv-mapper joiner]
-    (configured-kstream
-      config
-      (join-global kstream global-ktable kv-mapper joiner)))
-
-  (kstream* [_]
-    (kstream* kstream))
 
   IConfigurable
   (config [_]

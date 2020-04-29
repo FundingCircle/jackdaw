@@ -167,6 +167,17 @@
 
     ```(fn [[k v]] (* 10 k))```")
 
+  (join-global
+    [kstream global-ktable kv-mapper joiner])
+
+  (left-join-global
+    [kstream global-ktable kv-mapper joiner])
+
+  (kstream*
+    [kstream]
+    "Returns the underlying KStream object."))
+
+(defprotocol ITransformingKStream
   (transform
     [kstream transformer-supplier-fn]
     [kstream transformer-supplier-fn state-store-names]
@@ -189,17 +200,7 @@
     [kstream value-transformer-supplier-fn]
     [kstream value-transformer-supplier-fn state-store-names]
     "Creates a KStream that consists of the results of applying the transformer
-    to each key/value in the input stream via flatTransformValues.")
-
-  (join-global
-    [kstream global-ktable kv-mapper joiner])
-
-  (left-join-global
-    [kstream global-ktable kv-mapper joiner])
-
-  (kstream*
-    [kstream]
-    "Returns the underlying KStream object."))
+    to each key/value in the input stream via flatTransformValues."))
 
 (defprotocol IKTable
   "A Ktable is an abstraction of a changlog stream."

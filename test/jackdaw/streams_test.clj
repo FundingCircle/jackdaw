@@ -10,7 +10,7 @@
             [jackdaw.streams.lambdas.specs]
             [jackdaw.streams.mock :as mock]
             [jackdaw.streams.protocols
-             :refer [IKStream IKTable IStreamsBuilder]]
+             :refer [IKStream IKTable IStreamsBuilder ITransformingKStream]]
             [jackdaw.streams.specs])
   (:import [java.time Duration]
            [org.apache.kafka.streams.kstream
@@ -35,7 +35,8 @@
           kstream-a (-> streams-builder
                         (k/kstream (mock/topic "topic-a")))]
 
-      (is (satisfies? IKStream kstream-a))))
+      (is (and (satisfies? IKStream kstream-a)
+               (satisfies? ITransformingKStream kstream-a)))))
 
   (testing "kstreams"
     (let [streams-builder (mock/streams-builder)
@@ -43,7 +44,8 @@
                       (k/kstreams [(mock/topic "topic-a")
                                    (mock/topic "topic-b")]))]
 
-      (is (satisfies? IKStream kstream))))
+      (is (and (satisfies? IKStream kstream)
+               (satisfies? ITransformingKStream kstream)))))
 
   (testing "ktable"
     (let [streams-builder (mock/streams-builder)
