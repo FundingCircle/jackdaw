@@ -9,7 +9,8 @@
    [jackdaw.test.transports :as t :refer [deftransport]]
    [jackdaw.test.serde :refer :all]
    [manifold.stream :as s]
-   [manifold.deferred :as d])
+   [manifold.deferred :as d]
+   [manifold.time :as time])
   (:import
    (java.util UUID Base64)))
 
@@ -169,11 +170,17 @@
         body {:topics topics}]
 
     (d/chain (handle-proxy-request (:post *http-client*) url headers {:topics topics})
-      (fn [response]
-        (if (:error response)
-          (do (log/infof "rest-proxy subscription error: %s" (:error response))
-              (assoc client :error response))
-          (assoc client :subscription topics))))))
+             (fn [response]
+               (if (:error response)
+                 (do (log/infof "rest-proxy subscription error: %s" (:error response))
+                     (assoc client :error response))
+                 (assoc client :subscription topics)))
+             (fn [{:keys [base-uri group-id instance-id] :as client}]
+               (d/loop []
+                       (let [subscribed-topics (-> @(handle-proxy-request (:get *http-client*) url headers nil)
+                                                   (get-in [:json-body :topics]))]
+                         (clojure.pprint/pprint subscribed-topics))
+                       client)))))
 
 (defn rest-proxy-poll
   "Returns a function that takes a consumer and puts any messages retrieved
