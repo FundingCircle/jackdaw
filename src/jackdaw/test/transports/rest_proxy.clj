@@ -197,6 +197,18 @@
         (when-not (:error response)
           (:json-body response))))))
 
+(defn rest-proxy-offsets
+  [{:keys [base-uri]}]
+  (let [url (format "%s/offsets" base-uri)
+        headers {"Accept" (content-types :byte-array)}
+        body nil]
+    (d/chain (handle-proxy-request (:get *http-client*) url headers body)
+             (fn [response]
+               (when (:error response)
+                 (log/errorf "rest-proxy fetch error: %s" (:error response)))
+               (when-not (:error response)
+                 (:json-body response))))))
+
 (defn rest-proxy-subscription
   [config topic-metadata]
   (d/chain (rest-proxy-client config)
@@ -225,6 +237,8 @@
                 (d/loop []
                   (d/chain (if @continue?
                              (d/chain client (fn [client]
+                                               (let [offsets @(rest-proxy-offsets client)]
+                                                 (log/info "offsets:" offsets))
                                                (let [poll-result @(rest-proxy-poll client)]
                                                  (when-not (realized? started?)
                                                    (deliver started? true)
