@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+* Fix `ktable` constructor to use supplied `store-name` 
+
 ## [0.7.3] - [2020-04-08]
 
 ### Added
