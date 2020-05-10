@@ -45,8 +45,11 @@
   (testing "ktable"
     (let [streams-builder (mock/streams-builder)
           ktable-a (-> streams-builder
-                       (k/ktable (mock/topic "topic-a")))]
-      (is (satisfies? IKTable ktable-a))))
+                       (k/ktable (mock/topic "topic-a")))
+          ktable-b (-> streams-builder
+                       (k/ktable (mock/topic "topic-b") "state-store-a"))]
+      (is (satisfies? IKTable ktable-a))
+      (is (satisfies? IKTable ktable-b))))
 
   (testing "streams-builder*"
     (is (instance? StreamsBuilder

@@ -2,10 +2,19 @@
 
 ## Unreleased
 
+* Fix `ktable` constructor to use supplied `store-name`
+* Added 7-arity signatures for `join-windowed`, `left-join-windowed` and `outer-join-windowed` allowing explicit join naming
+
+## [0.7.3] - [2020-04-08]
+
 ### Added
 
 * Start formalizing test-machine commands with fspec'd functions
-* Added 7-arity signatures for `join-windowed`, `left-join-windowed` and `outer-join-windowed` allowing explicit join naming
+* Allow avro deserializaton via the resolver without a local copy of the schema
+
+### Fixed
+
+* Moved dependency on kafka_2.11 into the dev profile
 
 ## [0.7.2] - [2020-02-07]
 

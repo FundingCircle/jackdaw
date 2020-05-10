@@ -39,6 +39,8 @@
   Options:
   schema-registry-url - The URL for the schema registry
   type-registry - A mapping per jackdaw.serdes.avro/+base-schema-type-registry+>
+  read-only - Specifies that you will not be using the resulting serializer,
+              and does not require a schema or schema-filename
 
   These are only needed for the Confluent Avro serde, and even then
   only the schema registry URL is required."
@@ -47,13 +49,14 @@
   (let [{:keys [type-registry schema-registry-url schema-registry-client]}
         (apply hash-map options)]
 
-    (fn [{:keys [serde-keyword schema schema-filename key?] :as serde-config}]
+    (fn [{:keys [serde-keyword schema schema-filename key? read-only?] :as serde-config}]
       (when-not (s/valid? :jackdaw.specs/serde-keyword serde-keyword)
         (throw (ex-info "Invalid serde config."
                         (s/explain-data :jackdaw.specs/serde-keyword serde-keyword))))
       (let [schema (cond
                      schema-filename (load-schema serde-config)
-                     schema          schema)
+                     schema          schema
+                     :else           nil)
             serde-fn (find-serde-var serde-config)]
         (case serde-keyword
           :jackdaw.serdes.avro.confluent/serde
@@ -61,5 +64,6 @@
             (throw (ex-info "Invalid serde config."
                             (s/explain-data :jackdaw.serde/confluent-avro-serde serde-config)))
             (serde-fn schema-registry-url schema key? {:type-registry type-registry
-                                                       :schema-registry-client schema-registry-client}))
+                                                       :schema-registry-client schema-registry-client
+                                                       :read-only? read-only?}))
           (serde-fn))))))

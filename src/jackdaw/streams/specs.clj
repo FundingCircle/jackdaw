@@ -78,9 +78,10 @@
         :ret kstream?)
 
 (s/fdef k/ktable
-        :args (s/cat :streams-builder streams-builder?
-                     :topic-config ::topic-config)
-        :ret ktable?)
+  :args (s/cat :streams-builder streams-builder?
+               :topic-config ::topic-config
+               :store-name (s/? string?))
+  :ret ktable?)
 
 (s/fdef k/global-ktable
         :args (s/cat :streams-builder streams-builder?
