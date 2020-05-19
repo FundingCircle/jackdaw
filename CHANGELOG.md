@@ -1,7 +1,8 @@
 # Changelog
 
-## unreleased
+## Unreleased
 
+* Fix `ktable` constructor to use supplied `store-name`
 * Add `divert?` stream operation
 
 ## [0.7.3] - [2020-04-08]

@@ -90,7 +90,8 @@
       (.table ^StreamsBuilder streams-builder
               ^String topic-name
               ^Consumed (topic->consumed topic-config)
-              ^Materialized (topic->materialized topic-config))))))
+              ^Materialized (topic->materialized (assoc topic-config
+                                                        :topic-name store-name)))))))
 
 (deftype CljStreamsBuilder [^StreamsBuilder streams-builder]
   IStreamsBuilder

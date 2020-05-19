@@ -30,7 +30,7 @@ streams app are described below
 
 ### Topic Definition
 
-```
+```clojure
 (def topic-metadata
 
   {:input
@@ -51,7 +51,7 @@ streams app are described below
 
 ### App Definition
 
-```
+```clojure
 (ns my.example.word-count
   (:require
     [clojure.string :as str]
@@ -81,7 +81,7 @@ streams app are described below
 
 ### Start the App
 
-```
+```clojure
 (defn -main
   [& args]
   (let [app-config (parse-args args)
