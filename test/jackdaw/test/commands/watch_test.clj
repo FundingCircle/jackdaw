@@ -4,6 +4,8 @@
    [manifold.deferred :as d]
    [clojure.test :refer [deftest testing is]]))
 
+(set! *warn-on-reflection* false)
+
 ;; An example of the problem the watcher is trying to solve
 ;; might help.
 ;;

@@ -1,5 +1,7 @@
 (ns jackdaw.test.transports)
 
+(set! *warn-on-reflection* true)
+
 (defonce +transports+ (atom #{}))
 
 (defmulti transport :type)

@@ -12,6 +12,8 @@
    (org.apache.kafka.common.record TimestampType)
    (org.apache.kafka.clients.consumer ConsumerRecord)))
 
+(set! *warn-on-reflection* false)
+
 ;; Unfortunately the terminology used in the test-machine clashes a bit with
 ;; the terminology used by the TopologyTestDriver so this looks a bit
 ;; confusing.

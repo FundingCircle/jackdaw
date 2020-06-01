@@ -4,6 +4,8 @@
   (:import [org.apache.kafka.common.serialization
             Deserializer Serdes Serializer]))
 
+(set! *warn-on-reflection* true)
+
 ;; Kafka requires serdes to load from their own classloader, which
 ;; requires AOT. We don't want to transitively AOT other libs such as
 ;; tools.reader.edn, or nippy, etc, so provide a dumb box that we can

@@ -12,6 +12,8 @@
            (org.apache.kafka.common.serialization Serde)))
 
 
+(set! *warn-on-reflection* false)
+
 (deftest load-schema-test
   (testing "a schema can be loaded"
     (is (not (nil? (resolver/load-schema {:schema-filename "resources/example_schema.avsc"})))))

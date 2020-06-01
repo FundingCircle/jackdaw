@@ -6,6 +6,8 @@
     [manifold.stream :as s]
     [manifold.deferred :as d]))
 
+(set! *warn-on-reflection* true)
+
 ;; Journal
 ;;
 ;; The journal represents the test output. It captures the output of all

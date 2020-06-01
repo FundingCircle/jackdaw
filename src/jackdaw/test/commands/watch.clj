@@ -3,6 +3,8 @@
    [jackdaw.test.journal :as j]
    [clojure.tools.logging :as log]))
 
+(set! *warn-on-reflection* true)
+
 ;; Circle CI times out after a minute, so make sure this is less than 60,000
 (def ^:dynamic *default-watch-timeout* 10000)
 

@@ -3,6 +3,8 @@
 (import '[org.apache.kafka.common.config
           ConfigResource ConfigResource$Type])
 
+(set! *warn-on-reflection* true)
+
 ;;; ConfigResource.Type
 
 (def +broker-config-resource-type+

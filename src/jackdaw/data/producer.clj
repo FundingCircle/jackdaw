@@ -8,6 +8,8 @@
           ProducerRecord RecordMetadata]
         'org.apache.kafka.common.header.Headers)
 
+(set! *warn-on-reflection* true)
+
 ;;; Producer record
 
 (defn ^ProducerRecord ->ProducerRecord

@@ -13,6 +13,8 @@
             GenericData$EnumSymbol GenericData$Record GenericData$Array]
            [org.apache.avro.util Utf8]))
 
+(set! *warn-on-reflection* false)
+
 (defn parse-schema [clj-schema]
   (.parse (Schema$Parser.) ^String (json/write-str clj-schema)))
 

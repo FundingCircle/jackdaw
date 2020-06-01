@@ -13,6 +13,8 @@
            [org.apache.avro.generic GenericData$Record]
            [org.apache.kafka.common.serialization Serde Serdes]))
 
+(set! *warn-on-reflection* false)
+
 (def +real-schema-registry-url+
   "http://localhost:8081")
 

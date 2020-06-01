@@ -8,6 +8,8 @@
           ConsumerRecord OffsetAndTimestamp]
         'org.apache.kafka.common.header.Headers)
 
+(set! *warn-on-reflection* true)
+
 (defn ^ConsumerRecord ->ConsumerRecord
   "Given unrolled ctor-style arguments create a Kafka `ConsumerRecord`.
 

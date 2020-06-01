@@ -33,8 +33,11 @@
    [jackdaw.test.journal :refer [with-journal]]
    [jackdaw.test.middleware :refer [with-timing with-status with-journal-snapshots]])
   (:import
+   (java.io Closeable)
    (java.util Properties)
-   (org.apache.kafka.streams TopologyTestDriver)))
+   (org.apache.kafka.streams TopologyTestDriver StreamsBuilder)))
+
+(set! *warn-on-reflection* true)
 
 ;; Information about the internal architecture. Extract this out to a wiki or
 ;; something.
@@ -227,20 +230,20 @@
                 (actual-topic-output journal))))))
    ```"
   [transport f]
-  (with-open [machine (test-machine transport)]
+  (with-open [machine ^TestMachine (test-machine transport)]
     (f machine)))
 
 (defn- set-properties
   [properties m]
   (doseq [[k v] m]
-    (.setProperty properties k v))
+    (.setProperty ^Properties properties k v))
   properties)
 
 (defn mock-test-driver
   [build-fn app-config]
   (let [builder (k/streams-builder)
         topology (let [builder (build-fn builder)]
-                   (-> (k/streams-builder* builder)
+                   (-> ^StreamsBuilder (k/streams-builder* builder)
                        .build))
         props (-> (Properties.)
                   (set-properties app-config))]

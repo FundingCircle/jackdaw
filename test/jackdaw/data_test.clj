@@ -8,6 +8,8 @@
            [org.apache.kafka.common.header
             Headers Header]))
 
+(set! *warn-on-reflection* false)
+
 (deftest producer-record-arity-2
   (are [topic-config value]
       (instance? ProducerRecord

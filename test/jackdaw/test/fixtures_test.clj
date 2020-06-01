@@ -6,6 +6,8 @@
   (:import
    (org.apache.kafka.clients.admin AdminClient NewTopic)))
 
+(set! *warn-on-reflection* false)
+
 (def topic-foo
   {:topic-name "foo"
    :partition-count 1

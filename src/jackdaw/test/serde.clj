@@ -11,6 +11,8 @@
    (org.apache.kafka.common.errors SerializationException)))
 
 
+(set! *warn-on-reflection* false)
+
 ;; Access to various serdes
 
 (defn resolver [topic-config]

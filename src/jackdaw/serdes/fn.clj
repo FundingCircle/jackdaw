@@ -5,6 +5,8 @@
             [jackdaw.serdes.fn-impl :as fn-impl])
   (:import [org.apache.kafka.common.serialization Deserializer Serializer]))
 
+(set! *warn-on-reflection* true)
+
 (s/def ::serialize fn?)
 (s/def ::close fn?)
 (s/def ::configure fn?)

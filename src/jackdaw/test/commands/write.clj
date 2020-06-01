@@ -4,6 +4,8 @@
    [clojure.tools.logging :as log]
    [jackdaw.client.partitioning :as partitioning]))
 
+(set! *warn-on-reflection* true)
+
 (defn default-partition-fn [topic-map topic-name k v partition-count]
   (int (partitioning/default-partition topic-map k nil partition-count)))
 

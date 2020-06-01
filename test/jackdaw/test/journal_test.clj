@@ -3,6 +3,8 @@
     [clojure.test :refer :all]
     [jackdaw.test.journal :as jrnl]))
 
+(set! *warn-on-reflection* false)
+
 (deftest journal-access-tests
   (let [j {:topics {"foo" [{:key 1
                             :value {:id 1 :v 99}}

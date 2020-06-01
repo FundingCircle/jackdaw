@@ -15,6 +15,8 @@
    (org.apache.kafka.clients.admin AdminClient NewTopic)
    (org.apache.kafka.streams KafkaStreams$StateListener KafkaStreams$State)))
 
+(set! *warn-on-reflection* false)
+
 ;;; topic-fixture ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn- new-topic

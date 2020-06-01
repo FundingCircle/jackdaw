@@ -29,9 +29,9 @@
 (defn ^KafkaProducer producer
   "Return a producer with the supplied properties and optional Serdes."
   ([config]
-   (KafkaProducer. (jd/map->Properties config)))
+   (KafkaProducer. ^java.util.Properties (jd/map->Properties config)))
   ([config {:keys [^Serde key-serde ^Serde value-serde]}]
-   (KafkaProducer. (jd/map->Properties config)
+   (KafkaProducer. ^java.util.Properties (jd/map->Properties config)
                    (.serializer key-serde)
                    (.serializer value-serde))))
 
@@ -92,7 +92,7 @@
 (defn ^KafkaConsumer consumer
   "Return a consumer with the supplied properties and optional Serdes."
   ([config]
-   (KafkaConsumer. (jd/map->Properties config)))
+   (KafkaConsumer. ^java.util.Properties (jd/map->Properties config)))
   ([config {:keys [^Serde key-serde ^Serde value-serde] :as t}]
 
    (when-not (or key-serde
@@ -106,7 +106,7 @@
                      {:topic t, :config config})))
 
    (KafkaConsumer.
-    (jd/map->Properties config)
+    ^java.util.Properties (jd/map->Properties config)
     (when key-serde
       (.deserializer key-serde))
     (when value-serde
@@ -208,8 +208,8 @@
 
   Returns the consumer for convenience with `->`, `doto` etc."
   [^Consumer consumer topic-partition ^long offset]
-  (doto consumer
-    (.seek (jd/as-TopicPartition topic-partition) offset)))
+  (doto ^Consumer consumer
+    (.seek ^TopicPartition (jd/as-TopicPartition topic-partition) offset)))
 
 (defn seek-to-end-eager
   "Seek to the last offset for all assigned partitions, and force positioning.
