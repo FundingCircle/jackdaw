@@ -2,7 +2,9 @@
 
 ## Unreleased
 
-* Fix `ktable` constructor to use supplied `store-name` 
+* Allow map with keyword keys in streams constructor.
+
+* Fix `ktable` constructor to use supplied `store-name`
 
 ## [0.7.3] - [2020-04-08]
 
