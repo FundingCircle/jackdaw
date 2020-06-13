@@ -4,6 +4,8 @@
 
 * Fix `ktable` constructor to use supplied `store-name` 
 
+* Bump `clj-uuid` version to `0.1.9`
+
 ## [0.7.3] - [2020-04-08]
 
 ### Added
