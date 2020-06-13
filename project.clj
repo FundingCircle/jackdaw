@@ -9,7 +9,7 @@
 
   :dependencies [[aleph "0.4.6"]
                  [clj-time "0.15.1"]
-                 [danlentz/clj-uuid "0.1.7"
+                 [danlentz/clj-uuid "0.1.9"
                   :exclusions [primitive-math]]
                  ;; Confluent does paired releases with Kafka, this should tie
                  ;; off with the kafka version.
