@@ -291,10 +291,10 @@
           enum-schema {:name "enum"
                        :type "enum"
                        :symbols ["a" "b" "c"]}
-          avro-schema (parse-schema ["long"
+          avro-schema (parse-schema [record-1-schema
+                                     "long"
                                      "string"
                                      enum-schema
-                                     record-1-schema
                                      record-2-schema
                                      record-3-schema])
           schema-type (schema-type avro-schema)
