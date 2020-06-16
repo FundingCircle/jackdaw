@@ -146,7 +146,9 @@
   ([kstream other-kstream value-joiner-fn windows]
    (p/join-windowed kstream other-kstream value-joiner-fn windows))
   ([kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config]
-   (p/join-windowed kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config)))
+   (p/join-windowed kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config))
+  ([kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config join-name]
+   (p/join-windowed kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config join-name)))
 
 (defn left-join-windowed
   "Combines the values of two streams that share the same key using a
@@ -154,7 +156,9 @@
   ([kstream other-kstream value-joiner-fn windows]
    (p/left-join-windowed kstream other-kstream value-joiner-fn windows))
   ([kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config]
-   (p/left-join-windowed kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config)))
+   (p/left-join-windowed kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config))
+  ([kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config join-name]
+   (p/left-join-windowed kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config join-name)))
 
 (defn map
   "Creates a KStream that consists of the result of applying
@@ -168,7 +172,9 @@
   ([kstream other-kstream value-joiner-fn windows]
    (p/outer-join-windowed kstream other-kstream value-joiner-fn windows))
   ([kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config]
-   (p/outer-join-windowed kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config)))
+   (p/outer-join-windowed kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config))
+  ([kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config join-name]
+   (p/outer-join-windowed kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config join-name)))
 
 (defn process!
   "Applies `processor-fn` to each item in the input stream."

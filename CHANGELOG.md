@@ -2,7 +2,8 @@
 
 ## Unreleased
 
-* Fix `ktable` constructor to use supplied `store-name` 
+* Fix `ktable` constructor to use supplied `store-name`
+* Added 7-arity signatures for `join-windowed`, `left-join-windowed` and `outer-join-windowed` allowing explicit join naming
 
 * Bump `clj-uuid` version to `0.1.9`
 
@@ -10,13 +11,12 @@
 
 ### Added
 
- * Allow avro deserializaton via the resolver without a local copy of the schema
-
- * Start formalizing test-machine commands with fspec'd functions
+* Start formalizing test-machine commands with fspec'd functions
+* Allow avro deserializaton via the resolver without a local copy of the schema
 
 ### Fixed
 
- * Moved dependency on kafka_2.11 into the dev profile
+* Moved dependency on kafka_2.11 into the dev profile
 
 ## [0.7.2] - [2020-02-07]
 

@@ -254,6 +254,18 @@
             ^JoinWindows windows
             (Joined/with key-serde this-value-serde other-value-serde))))
 
+  (join-windowed
+    [_ other-kstream value-joiner-fn windows
+     {key-serde :key-serde this-value-serde :value-serde}
+     {other-value-serde :value-serde}
+     join-name]
+    (clj-kstream
+     (.join kstream
+            ^KStream (kstream* other-kstream)
+            ^ValueJoiner (value-joiner value-joiner-fn)
+            ^JoinWindows windows
+            (Joined/with key-serde this-value-serde other-value-serde join-name))))
+
   (left-join-windowed
     [_ other-kstream value-joiner-fn windows]
     (clj-kstream
@@ -272,6 +284,18 @@
                 ^ValueJoiner (value-joiner value-joiner-fn)
                 ^JoinWindows windows
                 (Joined/with key-serde value-serde other-value-serde))))
+
+  (left-join-windowed
+    [_ other-kstream value-joiner-fn windows
+     {:keys [key-serde value-serde]}
+     {other-value-serde :value-serde}
+     join-name]
+    (clj-kstream
+     (.leftJoin kstream
+                ^KStream (kstream* other-kstream)
+                ^ValueJoiner (value-joiner value-joiner-fn)
+                ^JoinWindows windows
+                (Joined/with key-serde value-serde other-value-serde join-name))))
 
   (map
     [_ key-value-mapper-fn]
@@ -302,6 +326,18 @@
                  ^ValueJoiner (value-joiner value-joiner-fn)
                  ^JoinWindows windows
                  (Joined/with key-serde value-serde other-value-serde))))
+
+  (outer-join-windowed
+    [_ other-kstream value-joiner-fn windows
+     {key-serde :key-serde value-serde :value-serde}
+     {other-value-serde :value-serde}
+     join-name]
+    (clj-kstream
+     (.outerJoin ^KStream kstream
+                 ^KStream (kstream* other-kstream)
+                 ^ValueJoiner (value-joiner value-joiner-fn)
+                 ^JoinWindows windows
+                 (Joined/with key-serde value-serde other-value-serde join-name))))
 
   (process!
     [_ processor-supplier-fn state-store-names]

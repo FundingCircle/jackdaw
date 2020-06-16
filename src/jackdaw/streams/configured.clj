@@ -190,6 +190,18 @@
                     topic-config
                     other-topic-config)))
 
+  (join-windowed
+    [_ other-kstream value-joiner-fn windows topic-config other-topic-config join-name]
+    (configured-kstream
+     config
+     (join-windowed kstream
+                    other-kstream
+                    value-joiner-fn
+                    windows
+                    topic-config
+                    other-topic-config
+                    join-name)))
+
   (left-join-windowed
     [_ other-kstream value-joiner-fn windows]
     (configured-kstream
@@ -206,6 +218,18 @@
                          windows
                          topic-config
                          other-topic-config)))
+
+  (left-join-windowed
+    [_ other-kstream value-joiner-fn windows topic-config other-topic-config join-name]
+    (configured-kstream
+     config
+     (left-join-windowed kstream
+                         other-kstream
+                         value-joiner-fn
+                         windows
+                         topic-config
+                         other-topic-config
+                         join-name)))
 
   (map
     [_ key-value-mapper-fn]
@@ -239,6 +263,18 @@
                           windows
                           topic-config
                           other-topic-config)))
+
+  (outer-join-windowed
+    [_ other-kstream value-joiner-fn windows topic-config other-topic-config join-name]
+    (configured-kstream
+     config
+     (outer-join-windowed kstream
+                          other-kstream
+                          value-joiner-fn
+                          windows
+                          topic-config
+                          other-topic-config
+                          join-name)))
 
   (process!
     [_ processor-supplier-fn state-store-names]

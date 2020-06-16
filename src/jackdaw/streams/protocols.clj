@@ -117,12 +117,14 @@
   (join-windowed
     [kstream other-kstream value-joiner-fn windows]
     [kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config]
+    [kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config join-name]
     "Combines the values of two streams that share the same key using a
     windowed inner join.")
 
   (left-join-windowed
     [kstream other-kstream value-joiner-fn windows]
     [kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config]
+    [kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config join-name]
     "Combines the values of two streams that share the same key using a
     windowed left join.")
 
@@ -138,6 +140,7 @@
   (outer-join-windowed
     [kstream other-kstream value-joiner-fn windows]
     [kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config]
+    [kstream other-kstream value-joiner-fn windows this-topic-config other-topic-config join-name]
     "Combines the values of two streams that share the same key using a
     windowed outer join.")
 
