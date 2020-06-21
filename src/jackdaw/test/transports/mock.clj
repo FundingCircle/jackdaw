@@ -56,7 +56,12 @@
     {:topic (.topic r)
      :key (.key r)
      :value (.value r)
-     :partition (or (.partition r) -1)}))
+     :partition (or (.partition r) -1)
+     :matt-was-here true
+     :headers (reduce (fn [header-map header]
+                        (assoc header-map
+                               (.key header)
+                               (.value header))) {} (.headers r))}))
 
 (defn- poller
   "Returns a function for polling the results of a TopologyTestDriver
