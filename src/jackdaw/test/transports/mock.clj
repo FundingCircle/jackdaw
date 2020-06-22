@@ -29,9 +29,15 @@
 ;; For this reason, we try to make things a bit more meaningful by using
 ;; terms like "input-record" and "output-record".
 
+(defn set-headers [consumer-record headers]
+  (let [record-headers (.headers consumer-record)]
+    (doseq [[k v] headers]
+      (.add record-headers k v)))
+  consumer-record)
+
 (defn with-input-record
   "Creates a kafka ConsumerRecord to be fed directly into a topology source
-   node by the TopologyTestDriver"
+  node by the TopologyTestDriver"
   [_topic-config]
   (fn [m]
     (let [record (ConsumerRecord. (get-in m [:topic :topic-name])
@@ -48,7 +54,8 @@
                                     0)
                                   (:key m)
                                   (:value m))]
-     (assoc m :input-record record))))
+      (set-headers record (:headers m))
+      (assoc m :input-record record))))
 
 (defn with-output-record
   [_topic-config]
@@ -57,7 +64,6 @@
      :key (.key r)
      :value (.value r)
      :partition (or (.partition r) -1)
-     :matt-was-here true
      :headers (reduce (fn [header-map header]
                         (assoc header-map
                                (.key header)
