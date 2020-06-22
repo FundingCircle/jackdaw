@@ -140,6 +140,12 @@
   (reset! (:continue? consumer) false)
   (deref (:process consumer)))
 
+(defn set-headers [^ProducerRecord producer-record headers]
+  (let [record-headers (.headers producer-record)]
+    (doseq [[k v] headers]
+      (.add record-headers k v)))
+  producer-record)
+
 (defn build-record
   "Builds a Kafka Producer and assoc it onto the message map"
   [m]
@@ -148,6 +154,7 @@
                                 (:timestamp m)
                                 (:key m)
                                 (:value m))]
+    (set-headers rec (:headers m))
     (assoc m :producer-record rec)))
 
 (defn deliver-ack
