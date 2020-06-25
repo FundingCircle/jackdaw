@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Fix `ktable` constructor to use supplied `store-name` 
+* Fix type union coercion fails when record types come before others
 
 ## [0.7.3] - [2020-04-08]
 
