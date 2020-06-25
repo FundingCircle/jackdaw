@@ -389,15 +389,16 @@
 (defrecord RecordType [^Schema schema field->schema+coercion]
   SchemaCoercion
   (match-clj? [_ clj-map]
-    (let [[_ unknown-fields _] (clojure.data/diff (set (keys field->schema+coercion))
-                                                  (set (keys clj-map)))]
-      (and (every? (fn [[field-key [^Schema$Field field field-coercion]]]
-                     (let [field-value (get clj-map field-key ::missing)]
-                       (if (= field-value ::missing)
-                         (.defaultValue field)
-                         (match-clj? field-coercion field-value))))
-                   field->schema+coercion)
-           (empty? unknown-fields))))
+    (when (map? clj-map)
+      (let [[_ unknown-fields _] (clojure.data/diff (set (keys field->schema+coercion))
+                                                    (set (keys clj-map)))]
+        (and (every? (fn [[field-key [^Schema$Field field field-coercion]]]
+                       (let [field-value (get clj-map field-key ::missing)]
+                         (if (= field-value ::missing)
+                           (.defaultValue field)
+                           (match-clj? field-coercion field-value))))
+                     field->schema+coercion)
+             (empty? unknown-fields)))))
 
   (match-avro? [_ avro-record]
     (cond

@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Fix `ktable` constructor to use supplied `store-name` 
+* Fix type union coercion fails when record types come before others
 
 * Bump `clj-uuid` version to `0.1.9`
 
