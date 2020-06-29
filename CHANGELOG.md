@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Fix `ktable` constructor to use supplied `store-name` 
+* Fix inability to materialize without supplying a topic name
 
 ## [0.7.3] - [2020-04-08]
 
