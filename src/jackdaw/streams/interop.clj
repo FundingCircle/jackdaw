@@ -40,9 +40,12 @@
   (Serialized/with key-serde value-serde))
 
 (defn topic->materialized [{:keys [topic-name key-serde value-serde]}]
-  (cond-> (Materialized/as ^String topic-name)
-    key-serde (.withKeySerde key-serde)
-    value-serde (.withValueSerde value-serde)))
+  (if topic-name
+    (cond-> (Materialized/as ^String topic-name)
+            key-serde (.withKeySerde key-serde)
+            value-serde (.withValueSerde value-serde))
+    (Materialized/with key-serde
+                       value-serde)))
 
 (defn suppress-config->suppressed
   [{:keys [max-records max-bytes until-time-limit-ms]}]
