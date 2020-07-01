@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.7.5] - [2020-06-29]
+
+### Fixed
+
+ * Replaced deprecated methods in avro.clj  with supported methods.
+
 ## Unreleased
 
 * Fix `ktable` constructor to use supplied `store-name` 
