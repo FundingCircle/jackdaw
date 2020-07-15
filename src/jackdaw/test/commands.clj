@@ -85,7 +85,9 @@
       `:key`             An explicit key to associate with the test message
       `:key-fn`          A function to derive the key from the test message
       `:partition`       The partition to which the test message should be written
-      `:partition-fn`    A function to derive the partition to which the test message should be written"
+      `:partition-fn`    A function to derive the partition to which the test message should be written
+      `:headers`         A map of header name (as a string) to its value (as a java byte[]). Currently
+                         encoding / decoding headers is left to the caller"
   ([topic-id message]
    `[:write! ~topic-id ~message])
 
