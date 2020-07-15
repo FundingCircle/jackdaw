@@ -210,6 +210,7 @@
   [config topic-metadata deserializers]
   (let [continue?   (atom true)
         xform       (comp
+                     #(assoc % :headers {}) ; cannot read headers over the Rest API
                      #(assoc % :topic (j/reverse-lookup topic-metadata (:topic %)))
                      #(apply-deserializers deserializers %)
                      #(undatafy-record topic-metadata %))
