@@ -10,10 +10,12 @@
 (defn client
   "Build and return a Kafka Schema Registry client which uses an LRU
   strategy to cache the specified number of schemas."
-  [^String url max-capacity]
-  {:pre [(string? url)
-         (pos-int? max-capacity)]}
-  (CachedSchemaRegistryClient. url ^int max-capacity))
+  ([^String url max-capacity config]
+   {:pre [(string? url)
+          (pos-int? max-capacity)]}
+   (CachedSchemaRegistryClient. url ^int max-capacity config))
+  ([url max-capacity]
+   (client url max-capacity {})))
 
 (defn mock-client
   "Build and return a mock schema registry client.

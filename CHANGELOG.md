@@ -4,6 +4,8 @@
 
 ### Added
 
+* Allow schema-registry client constructor to receive additional config parameters
+
 ### Fixed
 
 ## [0.7.5] - [2020-07-02] 
