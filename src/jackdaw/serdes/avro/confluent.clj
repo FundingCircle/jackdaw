@@ -10,6 +10,7 @@
   serde operation."
   [schema-registry-url schema key? & [{:keys [type-registry
                                               schema-registry-client
+                                              schema-registry-config
                                               coercion-cache
                                               read-only?]}]]
   (let [reg (if (nil? type-registry)
@@ -17,7 +18,8 @@
               type-registry)]
     (jsa/serde reg
                {:avro.schema-registry/url schema-registry-url
-                :avro.schema-registry/client schema-registry-client}
+                :avro.schema-registry/client schema-registry-client
+                :avro.schema-registry/config schema-registry-config}
                {:avro/schema schema
                 :key? key?
                 :avro/coercion-cache coercion-cache

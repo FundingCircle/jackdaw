@@ -4,7 +4,11 @@
 
 ### Added
 
-* Allow schema-registry client constructor to receive additional config parameters
+ * Allow additional schema-registry client configuration to be passed to:
+   * jackdaw.serdes.avro.schema-registry/client
+   * jackdaw.serdes.resolver/serde-resolver
+   * jackdaw.serdes.avro.confluent/serde
+   * jackdaw.serdes.avro/serde
 
 ### Fixed
 
