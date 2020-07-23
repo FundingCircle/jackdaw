@@ -2,6 +2,8 @@
   "A test machine executor can be built by composing execution wrappers
    defined in here")
 
+(set! *warn-on-reflection* true)
+
 (defn with-status
   [f]
   (fn [machine cmd]

@@ -9,8 +9,11 @@
   (:require
    [jackdaw.data :as jd]
    [manifold.deferred :as d])
-  (:import [org.apache.kafka.clients.admin AdminClient
+  (:import [java.util Properties]
+           [org.apache.kafka.clients.admin AdminClient
             DescribeTopicsOptions DescribeClusterOptions DescribeConfigsOptions]))
+
+(set! *warn-on-reflection* true)
 
 (defprotocol Client
   (alter-topics* [this topics])
@@ -24,25 +27,25 @@
 (def client-impl
   {:alter-topics* (fn [this topics]
                     (d/future
-                      @(.all (.alterConfigs this topics))))
+                      @(.all (.alterConfigs ^AdminClient this topics))))
    :create-topics* (fn [this topics]
                     (d/future
-                      @(.all (.createTopics this topics))))
+                      @(.all (.createTopics ^AdminClient this topics))))
    :delete-topics*  (fn [this topics]
                       (d/future
-                        @(.all (.deleteTopics this topics))))
+                        @(.all (.deleteTopics ^AdminClient this topics))))
    :describe-topics* (fn [this topics]
                        (d/future
-                         @(.all (.describeTopics this topics (DescribeTopicsOptions.)))))
+                         @(.all (.describeTopics ^AdminClient this topics (DescribeTopicsOptions.)))))
    :describe-configs* (fn [this configs]
                         (d/future
-                          @(.all (.describeConfigs this configs (DescribeConfigsOptions.)))))
+                          @(.all (.describeConfigs ^AdminClient this configs (DescribeConfigsOptions.)))))
    :describe-cluster* (fn [this]
                         (d/future
-                          (jd/datafy (.describeCluster this (DescribeClusterOptions.)))))
+                          (jd/datafy (.describeCluster ^AdminClient this (DescribeClusterOptions.)))))
    :list-topics* (fn [this]
                    (d/future
-                     @(.names (.listTopics this))))})
+                     @(.names (.listTopics ^AdminClient this))))})
 
 (extend AdminClient
   Client
@@ -53,7 +56,7 @@
   an `AdminClient` bootstrapped off of the configured servers."
   ^AdminClient [kafka-config]
   {:pre [(get kafka-config "bootstrap.servers")]}
-  (AdminClient/create (jd/map->Properties kafka-config)))
+  (AdminClient/create ^Properties (jd/map->Properties kafka-config)))
 
 (defn client?
   "Predicate.

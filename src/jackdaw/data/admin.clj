@@ -4,6 +4,8 @@
           Config ConfigEntry DescribeClusterResult NewTopic
           TopicDescription])
 
+(set! *warn-on-reflection* true)
+
 ;;; ConfigEntry
 
 (defn ->ConfigEntry

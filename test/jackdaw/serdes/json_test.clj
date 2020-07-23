@@ -7,6 +7,8 @@
             [clojure.test.check.properties :as prop]
             [jackdaw.serdes.json :as jsj]))
 
+(set! *warn-on-reflection* false)
+
 (def string-bytes-roundtrip-property
   "A strings `s' should be the same after writing to a byte array and reading
   back as a string."

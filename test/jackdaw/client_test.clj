@@ -11,6 +11,8 @@
            [org.apache.kafka.clients.producer Producer]
            org.apache.kafka.common.TopicPartition))
 
+(set! *warn-on-reflection* false)
+
 (def foo-topic
   (serde/resolver {:topic-name "foo"
                    :replication-factor 1

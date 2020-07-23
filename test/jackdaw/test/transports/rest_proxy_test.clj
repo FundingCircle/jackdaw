@@ -16,6 +16,8 @@
   (:import
    (java.util Properties)))
 
+(set! *warn-on-reflection* false)
+
 (def kafka-config {"bootstrap.servers" "localhost:9092"
                    "group.id" "kafka-write-test"})
 

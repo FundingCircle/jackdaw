@@ -4,6 +4,8 @@
    [clojure.tools.logging :as log]
    [jackdaw.client.partitioning :as partitioning]))
 
+(set! *warn-on-reflection* true)
+
 (defn default-partition-fn [topic-map topic-name k v partition-count]
   (int (partitioning/default-partition topic-map k nil partition-count)))
 
@@ -33,7 +35,8 @@
         partn (if-let [explicit-partition (:partition opts)]
                 explicit-partition
                 (partition-fn (:topic-name topic-map) k message (:partition-count topic-map)))
-        timestamp (:timestamp opts (System/currentTimeMillis))]
+        timestamp (:timestamp opts (System/currentTimeMillis))
+        headers (:headers opts)]
     (if (or (< partn 0)
             (> partn (dec (:partition-count topic-map))))
       (throw (ex-info "Invalid partition number for topic"
@@ -43,7 +46,8 @@
        :key k
        :value message
        :partition partn
-       :timestamp timestamp})))
+       :timestamp timestamp
+       :headers headers})))
 
 (defn do-write
   ([machine topic-name message]

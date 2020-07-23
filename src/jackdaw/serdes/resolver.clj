@@ -8,6 +8,8 @@
             [jackdaw.serdes]
             [jackdaw.specs]))
 
+(set! *warn-on-reflection* true)
+
 (defn load-schema
   "Takes a serde config and loads the schema from the classpath."
   [{:keys [schema-filename] :as serde-config}]

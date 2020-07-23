@@ -9,6 +9,8 @@
   (:import java.net.URI
            [org.fressian.handlers WriteHandler ReadHandler]))
 
+(set! *warn-on-reflection* false)
+
 (defspec fressian-roundtrip-test 20
   (testing "Fressian data is the same after serialization and deserialization."
     (prop/for-all [x (gen/fmap #(apply str %) (gen/vector gen/char-alpha 100))]

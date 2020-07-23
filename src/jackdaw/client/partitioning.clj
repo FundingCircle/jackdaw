@@ -40,6 +40,8 @@
            org.apache.kafka.common.serialization.Serde
            org.apache.kafka.common.utils.Utils))
 
+(set! *warn-on-reflection* true)
+
 (defn record-key->key-fn
   "Given a topic config having `:record-key`, parse it,
   annotating the topic with a `:Lkey-fn` which will simply fetch the

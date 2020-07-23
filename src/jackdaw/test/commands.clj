@@ -7,6 +7,8 @@
    [jackdaw.test.commands.watch :as watch])
   (:refer-clojure :exclude [do]))
 
+(set! *warn-on-reflection* true)
+
 (def base-commands base/command-map)
 (def write-command write/command-map)
 (def watch-command watch/command-map)

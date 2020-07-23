@@ -4,6 +4,8 @@
    [jackdaw.client :as client]
    [jackdaw.client.partitioning :as part]))
 
+(set! *warn-on-reflection* false)
+
 (deftest test-record-key->key-fn
   (let [test-key-fn (fn [key-str]
                       (-> (part/record-key->key-fn {:record-key key-str})

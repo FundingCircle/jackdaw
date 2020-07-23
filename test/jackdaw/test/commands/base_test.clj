@@ -4,6 +4,8 @@
    [clojure.pprint :as pprint]
    [clojure.test :refer :all]))
 
+(set! *warn-on-reflection* false)
+
 (deftest test-base-commands
   (testing "stop"
     (is ((cmd/command-map :stop) {})))

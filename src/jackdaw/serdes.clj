@@ -7,6 +7,8 @@
             [jackdaw.serdes.fressian :as jsf])
   (:import org.apache.kafka.common.serialization.Serdes))
 
+(set! *warn-on-reflection* true)
+
 (defn string-serde
   []
   (Serdes/String))

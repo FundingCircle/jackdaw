@@ -7,6 +7,8 @@
            (org.apache.avro.generic GenericData$Record)
            (org.apache.avro.util Utf8)))
 
+(set! *warn-on-reflection* false)
+
 (def +registry+
   (merge avro/+base-schema-type-registry+
          avro/+UUID-type-registry+))

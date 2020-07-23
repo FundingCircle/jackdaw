@@ -18,6 +18,8 @@
            org.apache.kafka.streams.StreamsBuilder
            [org.apache.kafka.common.serialization Serdes]))
 
+(set! *warn-on-reflection* false)
+
 (stest/instrument)
 
 (defn close-test-driver [cfg-topology]

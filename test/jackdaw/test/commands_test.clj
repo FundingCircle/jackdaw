@@ -3,6 +3,8 @@
    [clojure.test :refer :all]
    [jackdaw.test.commands :as cmd]))
 
+(set! *warn-on-reflection* false)
+
 (deftest test-command-handler
   (testing "input cmd and params added into result"
     (let [test-cmd [:stop]]

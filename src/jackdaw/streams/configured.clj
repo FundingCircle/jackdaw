@@ -5,6 +5,8 @@
   (:require [jackdaw.streams.protocols :refer :all]
             [jackdaw.streams.configurable :refer [config IConfigurable]]))
 
+(set! *warn-on-reflection* true)
+
 (declare configured-kstream configured-ktable configured-global-ktable
          configured-kgroupedtable configured-kgroupedstream
          configured-time-windowed-kstream

@@ -1,6 +1,16 @@
 (ns jackdaw.streams.describe
   (:require [clj-uuid :as uuid]
-            [clojure.string :as str]))
+            [clojure.string :as str])
+  (:import
+   (org.apache.kafka.streams TopologyDescription
+                             TopologyDescription$Node
+                             TopologyDescription$Source
+                             TopologyDescription$Sink
+                             TopologyDescription$Processor
+                             TopologyDescription$GlobalStore
+                             TopologyDescription$Subtopology)))
+
+(set! *warn-on-reflection* true)
 
 (defn ->edge
   [from to]
@@ -9,14 +19,18 @@
 (defn base-node
   [t n]
   {:nodes [{:type t
-            :name (.name n)}]
+            :name (.name ^TopologyDescription$Node n)}]
    :edges (concat
-           (map #(->edge (.name %) (.name n)) (.predecessors n))
-           (map #(->edge (.name n) (.name %)) (.successors n)))})
+           (map #(->edge (.name ^TopologyDescription$Node %)
+                         (.name ^TopologyDescription$Node n))
+                (.predecessors ^TopologyDescription$Node n))
+           (map #(->edge (.name  ^TopologyDescription$Node n)
+                         (.name ^TopologyDescription$Node %))
+                (.successors ^TopologyDescription$Node n)))})
 
 (defn describe-node-dispatch
   [n]
-  (keyword (str/lower-case (.getSimpleName (.getClass n)))))
+  (keyword (str/lower-case (.getSimpleName ^Class (.getClass ^Object n)))))
 
 (defmulti describe-node describe-node-dispatch)
 
@@ -24,7 +38,7 @@
   (base-node :node n))
 
 (defmethod describe-node :source [n]
-  (let [topics (map str/trim (-> (.topics n)
+  (let [topics (map str/trim (-> (.topics ^TopologyDescription$Source n)
                                  (str/replace "[" "")
                                  (str/replace "]" "")
                                  (str/split #",")))]
@@ -32,34 +46,38 @@
         (update :nodes concat (map (fn [t]
                                      {:type :topic
                                       :name t}) topics))
-        (update :edges concat (map #(->edge % (.name n)) topics)))))
+        (update :edges concat (map #(->edge % (.name ^TopologyDescription$Source n))
+                                   topics)))))
 
 (defmethod describe-node :sink [n]
   (-> (base-node :sink n)
       (update :nodes conj {:type :topic
-                           :name (.topic n)})
-      (update :edges conj (->edge (.name n) (.topic n)))))
+                           :name (.topic ^TopologyDescription$Sink n)})
+      (update :edges conj (->edge (.name ^TopologyDescription$Sink n)
+                                  (.topic ^TopologyDescription$Sink n)))))
 
 (defmethod describe-node :processor [n]
-  (let [stores (.stores n)]
+  (let [stores (.stores ^TopologyDescription$Processor n)]
     (-> (base-node :processor n)
         (update :nodes concat (map (fn [t]
                                      {:type :store
                                       :name (str "localstore-" t)}) stores))
-        (update :edges concat (map #(->edge (.name n) (str "localstore-" %)) stores)))))
+        (update :edges concat (map #(->edge (.name ^TopologyDescription$Processor n)
+                                            (str "localstore-" %))
+                                   stores)))))
 
 (defmethod describe-node :globalstore [n]
-  (let [source (describe-node (.source n))
-        processor (describe-node (.processor n))]
+  (let [source (describe-node (.source ^TopologyDescription$GlobalStore n))
+        processor (describe-node (.processor ^TopologyDescription$GlobalStore n))]
     {:type :globalstore
-     :name (str "globalstore-" (.id n))
+     :name (str "globalstore-" (.id ^TopologyDescription$GlobalStore n))
      :nodes (set (mapcat :nodes [source processor]))
      :edges (set (mapcat :edges [source processor]))}))
 
 (defmethod describe-node :subtopology [n]
-  (let [nodes (map describe-node (.nodes n))]
+  (let [nodes (map describe-node (.nodes ^TopologyDescription$Subtopology n))]
     {:type :stream
-     :name (str "stream-" (.id n))
+     :name (str "stream-" (.id ^TopologyDescription$Subtopology n))
      :nodes (set (mapcat :nodes nodes))
      :edges (set (mapcat :edges nodes))}))
 
@@ -147,8 +165,12 @@
   (let [parser (comp collapse-merge-chains
                      (partial assign-ids applicaton-id)
                      describe-node)]
-    (concat (map parser (.subtopologies d))
-            (map parser (.globalStores d)))))
+    (concat (map parser (.subtopologies ^TopologyDescription d))
+            (map parser (.globalStores ^TopologyDescription d)))))
+
+;; Turn off reflection warning for this last function as it takes
+;; two hetrogeneous types as valid input
+(set! *warn-on-reflection* false)
 
 (defn describe-topology
   "Returns a list of the stream graphs in a topology.

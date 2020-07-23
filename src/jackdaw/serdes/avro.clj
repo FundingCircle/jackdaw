@@ -101,9 +101,9 @@
   [^Schema schema]
   (when schema
     (let [base-type (-> schema (.getType) (.getName))
-          logical-type (-> schema (.getProps) (.get "logicalType"))]
+          logical-type (-> schema (.getObjectProps) (.get "logicalType") )]
       (if logical-type
-        {:type base-type :logical-type logical-type}
+        {:type base-type :logical-type (str logical-type)}
         {:type base-type}))))
 
 (defn make-coercion-stack
@@ -394,7 +394,7 @@
       (and (every? (fn [[field-key [^Schema$Field field field-coercion]]]
                      (let [field-value (get clj-map field-key ::missing)]
                        (if (= field-value ::missing)
-                         (.defaultValue field)
+                         (.defaultVal field)
                          (match-clj? field-coercion field-value))))
                    field->schema+coercion)
            (empty? unknown-fields))))
@@ -442,7 +442,7 @@
                               {:path path, :clj-data clj-map})))
             (let [[_ field-coercion] (get field->schema+coercion k)
                   new-v (clj->avro field-coercion v (conj path k))]
-              (.set record-builder new-k new-v))))
+              (.set record-builder ^String new-k new-v))))
 
         (.build record-builder)
 
@@ -525,7 +525,7 @@
                                                  (assoc :topic topic :clj-data data))]
                                     (throw (ex-info (.getMessage e) data))))))}
         clj-serializer (fn/new-serializer methods)]
-    (.configure clj-serializer (base-config registry-url) key?)
+    (.configure ^Serializer clj-serializer (base-config registry-url) key?)
     clj-serializer))
 
 (defn- deserializer [schema->coercion serde-config]
@@ -560,7 +560,7 @@
                                       (log/error e (str msg " for " topic))
                                       (throw (ex-info msg {:topic topic} e))))))}
         clj-deserializer (fn/new-deserializer methods)]
-    (.configure clj-deserializer (base-config registry-url) key?)
+    (.configure ^Deserializer clj-deserializer (base-config registry-url) key?)
     clj-deserializer))
 
 ;; Public API

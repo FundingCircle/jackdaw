@@ -12,9 +12,14 @@
                                serde-map
                                byte-array-serde]])
   (:import
+   org.apache.kafka.common.header.Header
+   org.apache.kafka.clients.consumer.Consumer
    org.apache.kafka.streams.KafkaStreams$StateListener
    org.apache.kafka.clients.consumer.ConsumerRecord
+   org.apache.kafka.clients.producer.Producer
    org.apache.kafka.clients.producer.ProducerRecord))
+
+(set! *warn-on-reflection* true)
 
 (defn subscribe
   "Subscribes to specified topics
@@ -26,18 +31,18 @@
 
 (defn load-assignments
   [consumer]
-  (.poll consumer 0)
-  (.assignment consumer))
+  (.poll ^Consumer consumer 0)
+  (.assignment ^Consumer consumer))
 
 (defn seek-to-end
   "Seeks to the end of all the partitions assigned to the given consumer
    and returns the updated consumer"
   [consumer & topic-partitions]
   (let [assigned-partitions (or topic-partitions (load-assignments consumer))]
-    (.seekToEnd consumer assigned-partitions)
+    (.seekToEnd ^Consumer consumer assigned-partitions)
     (doseq [assigned-partition assigned-partitions]
       ;; This forces the seek to happen now
-      (.position consumer assigned-partition))
+      (.position ^Consumer consumer assigned-partition))
     consumer))
 
 (defn poller
@@ -46,7 +51,7 @@
   [messages]
   (fn [consumer]
     (try
-      (let [m (.poll consumer 1000)]
+      (let [m (.poll ^Consumer consumer 1000)]
         (when m
           (s/put-all! messages m)))
       (catch Throwable e
@@ -74,7 +79,11 @@
      :serializedValueSize (.serializedValueSize consumer-record)
      :timestamp (.timestamp consumer-record)
      :topic (.topic consumer-record)
-     :value (.value consumer-record)}))
+     :value (.value consumer-record)
+     :headers (reduce (fn [header-map header]
+                        (assoc header-map
+                               (.key ^Header header)
+                               (.value ^Header header))) {} (.headers consumer-record))}))
 
 (defn ^ProducerRecord mk-producer-record
   "Creates a kafka ProducerRecord for use with `send!`."
@@ -119,7 +128,7 @@
                                  (d/recur consumer))
                              (do
                                (s/close! messages)
-                               (.close consumer)
+                               (.close ^Consumer consumer)
                                (log/infof "stopped kafka consumer: %s"
                                           (select-keys kafka-config ["bootstrap.servers" "group.id"])))))))
      :started? started?
@@ -131,6 +140,12 @@
   (reset! (:continue? consumer) false)
   (deref (:process consumer)))
 
+(defn set-headers [^ProducerRecord producer-record headers]
+  (let [record-headers (.headers producer-record)]
+    (doseq [[k v] headers]
+      (.add record-headers k v)))
+  producer-record)
+
 (defn build-record
   "Builds a Kafka Producer and assoc it onto the message map"
   [m]
@@ -139,6 +154,7 @@
                                 (:timestamp m)
                                 (:key m)
                                 (:value m))]
+    (set-headers rec (:headers m))
     (assoc m :producer-record rec)))
 
 (defn deliver-ack
@@ -178,14 +194,14 @@
                      (fn [{:keys [producer-record ack serialization-error] :as m}]
                        (cond
                          serialization-error   (do (deliver ack {:error :serialization-error
-                                                                 :message (.getMessage serialization-error)})
+                                                                 :message (.getMessage ^Exception serialization-error)})
                                                    (d/recur (s/take! messages)))
 
                          producer-record       (do (kafka/send! producer producer-record (deliver-ack ack))
                                                    (d/recur (s/take! messages)))
 
                          :else (do
-                                 (.close producer)
+                                 (.close ^Producer producer)
                                  (log/infof "stopped kafka producer: "
                                             (select-keys kafka-config ["bootstrap.servers" "group.id"])))))))]
 

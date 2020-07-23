@@ -8,6 +8,8 @@
   (:import org.apache.kafka.common.TopicPartition
            org.apache.kafka.streams.processor.StateRestoreListener))
 
+(set! *warn-on-reflection* true)
+
 (defn map-validating!
   [builder topic topic-spec {:keys [line file]}]
   (js/map-values builder

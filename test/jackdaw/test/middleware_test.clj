@@ -7,6 +7,8 @@
    [jackdaw.test.transports.identity]
    [jackdaw.test :as jd.test]))
 
+(set! *warn-on-reflection* false)
+
 (defn identity-transport
   []
   (trns/transport {:type :identity}))

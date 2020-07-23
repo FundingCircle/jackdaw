@@ -12,6 +12,8 @@
    (java.util Properties)
    (org.apache.kafka.streams TopologyTestDriver)))
 
+(set! *warn-on-reflection* false)
+
 (defmethod print-method TopologyTestDriver [x writer]
   (print-simple x writer))
 

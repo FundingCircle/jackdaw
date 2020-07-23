@@ -7,6 +7,8 @@
             [jackdaw.client :as jc])
   (:import org.apache.kafka.clients.consumer.Consumer))
 
+(set! *warn-on-reflection* true)
+
 (defn log
   "Given a consumer, returns a lazy sequence of datafied consumer records.
 

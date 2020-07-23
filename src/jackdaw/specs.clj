@@ -2,6 +2,8 @@
   "Specs for `jackdaw`"
   (:require [clojure.spec.alpha :as s]))
 
+(set! *warn-on-reflection* true)
+
 ;; The basic topic
 
 (s/def ::topic-name
