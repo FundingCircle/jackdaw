@@ -86,7 +86,8 @@
      :key (deserialize-key (:key m) topic)
      :value (deserialize-value (:value m) topic)
      :partition (:partition m 0)
-     :offset (:offset m 0)}))
+     :offset (:offset m 0)
+     :headers (:headers m {})}))
 
 (defn deserializers
   "Returns a map of topics to the corresponding deserializer"

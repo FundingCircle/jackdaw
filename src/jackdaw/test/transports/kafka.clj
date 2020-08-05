@@ -12,6 +12,7 @@
                                serde-map
                                byte-array-serde]])
   (:import
+   org.apache.kafka.common.header.Header
    org.apache.kafka.clients.consumer.Consumer
    org.apache.kafka.streams.KafkaStreams$StateListener
    org.apache.kafka.clients.consumer.ConsumerRecord
@@ -78,7 +79,11 @@
      :serializedValueSize (.serializedValueSize consumer-record)
      :timestamp (.timestamp consumer-record)
      :topic (.topic consumer-record)
-     :value (.value consumer-record)}))
+     :value (.value consumer-record)
+     :headers (reduce (fn [header-map header]
+                        (assoc header-map
+                               (.key ^Header header)
+                               (.value ^Header header))) {} (.headers consumer-record))}))
 
 (defn ^ProducerRecord mk-producer-record
   "Creates a kafka ProducerRecord for use with `send!`."
@@ -135,6 +140,12 @@
   (reset! (:continue? consumer) false)
   (deref (:process consumer)))
 
+(defn set-headers [^ProducerRecord producer-record headers]
+  (let [record-headers (.headers producer-record)]
+    (doseq [[k v] headers]
+      (.add record-headers k v)))
+  producer-record)
+
 (defn build-record
   "Builds a Kafka Producer and assoc it onto the message map"
   [m]
@@ -143,6 +154,7 @@
                                 (:timestamp m)
                                 (:key m)
                                 (:value m))]
+    (set-headers rec (:headers m))
     (assoc m :producer-record rec)))
 
 (defn deliver-ack

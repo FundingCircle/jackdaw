@@ -138,6 +138,40 @@
                    (-> ((by-id "foo" "msg1") journal)
                        :value)))))))))
 
+(deftest test-write-then-read-with-headers
+  (testing "write then watch"
+    (fix/with-fixtures [(fix/topic-fixture kafka-config {"foo" foo-topic})]
+      (with-open [t (jd.test/test-machine (kafka-transport))]
+        (let [write (cmd/write! "foo" {:id "msg1" :payload "yolo"} {:headers
+                                                                    {"MESSAGE.DATE" (.getBytes "1970-01-01")
+                                                                     "MESSAGE.VERSION" (.getBytes "1.0.1")}})
+              watch (cmd/watch (by-id "foo" "msg1")
+                               {:info "failed to find foo with id=msg1"})
+              {:keys [results journal]} (jd.test/run-test t [write watch])
+              [write-result watch-result] results]
+
+          (testing "write result"
+            (is (= :ok (:status write-result)))
+
+            (doseq [record-meta record-meta-fields]
+              (is (contains? (:result write-result) record-meta))))
+
+          (testing "watch result"
+            (is (= :ok (:status watch-result))))
+
+          (testing "written records are journalled"
+            (is (= {:id "msg1" :payload "yolo"}
+                   (-> ((by-id "foo" "msg1") journal)
+                       :value))))
+
+          (testing "written record headers are journalled"
+            (is (= {"MESSAGE.DATE" "1970-01-01"
+                    "MESSAGE.VERSION" "1.0.1"}
+                   (-> ((by-id "foo" "msg1") journal)
+                       :headers
+                       (update "MESSAGE.DATE" (fn [v] (String. v)))
+                       (update "MESSAGE.VERSION" (fn [v] (String. v))))))))))))
+
 (deftest test-reuse-machine
   (fix/with-fixtures [(fix/topic-fixture kafka-config {"foo" foo-topic})]
     (with-open [t (jd.test/test-machine (kafka-transport))]

@@ -4,7 +4,26 @@
 
 * Allow map with keyword keys in streams constructor.
 
-* Fix `ktable` constructor to use supplied `store-name`
+### Added
+
+### Fixed
+
+## [0.7.5] - [2020-07-02] 
+
+### Fixed
+
+* Replaced deprecated methods in avro.clj  with supported methods.
+
+## [0.7.4] - [2020-04-23]
+
+### Fixed
+
+* Fix `ktable` constructor to use supplied `store-name` 
+
+
+* Bump `clj-uuid` version to `0.1.9`
+
+* Minor update to fix harmless but distracting reflection warnings
 
 ## [0.7.3] - [2020-04-08]
 
