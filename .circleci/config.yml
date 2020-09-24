@@ -99,6 +99,13 @@ jobs:
           key: v1-jackdaw-{{ .Branch }}-{{ .Revision }}
           paths:
             - .
+
+  check_formatting:
+    <<: *build_config
+    steps:
+      - run:
+          lein cljfmt check
+
   deps:
     <<: *build_config
     steps:
