@@ -24,8 +24,9 @@
 
   (global-ktable
     [topology-builder topic-config]
+    [topology-builder topic-config store-name]
     "Creates a GlobalKTable that will consist of data from the specified
-    topic.")
+     topic.")
 
   (source-topics
     [topology-builder]
