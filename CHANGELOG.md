@@ -1,6 +1,9 @@
 # Changelog
 
 ## Unreleased
+* Added `jackdaw.streams/topology` to create a Topology object.
+* Modified `jackdaw.streams/kafka-streams` to accept either the default CljStreamsBuilder or a Topology.
+
 
 ### Added
 
