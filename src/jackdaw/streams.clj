@@ -320,7 +320,7 @@
   (.build (streams-builder* builder)))
 
 (defprotocol KafkaStreamsConstructible
-  (kafka-streams ^KafkaStreams [this opts]))
+  (kafka-streams [this opts]))
 
 (extend-protocol KafkaStreamsConstructible
   Topology
