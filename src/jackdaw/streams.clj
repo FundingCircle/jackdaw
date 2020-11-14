@@ -8,7 +8,9 @@
   (:import org.apache.kafka.streams.KafkaStreams
            org.apache.kafka.streams.StreamsBuilder
            org.apache.kafka.streams.KafkaStreams$State
-           org.apache.kafka.streams.Topology))
+           org.apache.kafka.streams.Topology
+           (java.util Properties)
+           (jackdaw.streams.interop CljStreamsBuilder)))
 
 (set! *warn-on-reflection* true)
 
@@ -46,7 +48,7 @@
   [streams-builder]
   (p/source-topics streams-builder))
 
-(defn streams-builder*
+(defn ^StreamsBuilder streams-builder*
   "Returns the underlying KStreamBuilder."
   [streams-builder]
   (p/streams-builder* streams-builder))
@@ -312,13 +314,23 @@
   []
   (interop/streams-builder))
 
-(defn kafka-streams
-  "Makes a Kafka Streams object."
-  ([builder opts]
-   (let [props (java.util.Properties.)]
-     (.putAll props opts)
-     (KafkaStreams. ^Topology (.build ^StreamsBuilder (streams-builder* builder))
-                    ^java.util.Properties props))))
+(defn ^Topology topology
+  "Makes a Kafka Topology object."
+  [builder]
+  (.build (streams-builder* builder)))
+
+(defprotocol KafkaStreamsConstructible
+  (kafka-streams ^KafkaStreams [this opts]))
+
+(extend-protocol KafkaStreamsConstructible
+  Topology
+  (kafka-streams
+    [topology opts]
+    (KafkaStreams. topology (doto (Properties.) (.putAll opts))))
+  CljStreamsBuilder
+  (kafka-streams
+    [builder opts]
+    (kafka-streams (topology builder) opts)))
 
 (defn start
   "Starts processing."
