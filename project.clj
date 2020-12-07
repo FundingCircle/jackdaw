@@ -1,9 +1,11 @@
-(defproject fundingcircle/jackdaw "_"
-  :description "A Clojure library for the Apache Kafka distributed streaming platform."
+(defproject cddr/jackdaw.alpha "_"
+  :description "A Clojure library for the Apache Kafka distributed streaming platform.
+                Incorporates PRs from the community before they are merged into
+                the upstream repo"
 
   :scm {:name "git" :url "https://github.com/fundingcircle/jackdaw"}
 
-  :url "https://github.com/FundingCircle/jackdaw/"
+  :url "https://github.com/cddr/jackdaw.alpha/"
 
   :repositories [["confluent" {:url "https://packages.confluent.io/maven/"}]]
 

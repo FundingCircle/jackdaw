@@ -115,8 +115,6 @@ jobs:
     steps:
       - *restore_repo
       - *restore_mvn
-      - setup_remote_docker:
-          docker_layer_caching: true
       - run:
           lein kaocha --plugin kaocha.plugin/junit-xml --junit-xml-file test-results/kaocha/results.xml --plugin cloverage --codecov
       - store_artifacts:

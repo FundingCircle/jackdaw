@@ -1,6 +1,16 @@
-# Jackdaw &middot; [![Clojars Project](https://img.shields.io/clojars/v/fundingcircle/jackdaw.svg)](https://clojars.org/fundingcircle/jackdaw) [![Code Coverage](https://codecov.io/gh/FundingCircle/jackdaw/branch/master/graph/badge.svg)](https://codecov.io/gh/FundingCircle/jackdaw) [![cljdoc badge](https://cljdoc.org/badge/fundingcircle/jackdaw)](https://cljdoc.org/d/fundingcircle/jackdaw/CURRENT) [![CircleCI](https://circleci.com/gh/FundingCircle/jackdaw.svg?style=shield)](https://circleci.com/gh/FundingCircle/jackdaw)
+# Jackdaw (alpha) &middot; [![Clojars Project](https://img.shields.io/clojars/v/cddr/jackdaw.alpha.svg)](https://clojars.org/cddr/jackdaw.alpha) [![CircleCI](https://circleci.com/gh/cddr/jackdaw.alpha.svg?style=shield)](https://circleci.com/gh/cddr/jackdaw.alpha)
 
-Jackdaw is a Clojure library for the Apache Kafka distributed streaming platform. With Jackdaw, you can create and list topics using the AdminClient API, produce and consume records using the Producer and Consumer APIs, and create stream processing applications using the Streams API. Jackdaw also contains functions to serialize and deserialize records as JSON, EDN, and Avro, as well as functions for writing unit and integration tests.
+This is a fork of the upstream jackdaw project that merges upstream
+PRs when they pass CI to allow the community to test out the changes
+while they are being considered by the maintainers
+
+Jackdaw is a Clojure library for the Apache Kafka distributed
+streaming platform. With Jackdaw, you can create and list topics using
+the AdminClient API, produce and consume records using the Producer
+and Consumer APIs, and create stream processing applications using the
+Streams API. Jackdaw also contains functions to serialize and
+deserialize records as JSON, EDN, and Avro, as well as functions for
+writing unit and integration tests.
 
 # Supported versions
 
@@ -38,7 +48,7 @@ Anyone with the appropriate credentials can "cut a release" of jackdaw using the
  5. In the "describe this release" field, enter the contents of the Changelog and add a credit to the contributors of the release
  6. When happy, use the "Publish Release" button to publish the release in github which creates a corresponding git tag
  7. Once the tag is seen by circleci, a deployment build is triggered which builds the project and deploys a release to clojars
- 
+
 Steps 2 to 6 is essentially `git tag $version -m "$title\n\n$description" && git push --tags`
 
 
