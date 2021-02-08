@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+* Added serializer properties when creating an avro serializer
+* Exposed deserializer and serializer properties in the serde-resolver. Ideally I would have liked the configs to be restructured, but extended what we have to not break compatibility.
+
 ### Added
 
 ### Fixed
