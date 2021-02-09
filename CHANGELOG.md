@@ -2,12 +2,20 @@
 
 ## Unreleased
 
-* Added serializer properties when creating an avro serializer
-* Exposed deserializer and serializer properties in the serde-resolver. Ideally I would have liked the configs to be restructured, but extended what we have to not break compatibility.
+
+## [0.7.7] - [2021-02-09]
 
 ### Added
 
-### Fixed
+* Added serializer properties when creating an avro serializer
+
+* Exposed deserializer and serializer properties in the serde-resolver.
+
+## [0.7.6] - [2021-07-16]
+
+### Added
+
+* Added support for kafka message headers to Test Machine
 
 ## [0.7.5] - [2020-07-02] 
 
