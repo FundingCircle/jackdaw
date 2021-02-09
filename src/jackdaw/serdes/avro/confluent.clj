@@ -11,7 +11,9 @@
   [schema-registry-url schema key? & [{:keys [type-registry
                                               schema-registry-client
                                               coercion-cache
-                                              read-only?]}]]
+                                              read-only?
+                                              serializer-properties
+                                              deserializer-properties]}]]
   (let [reg (if (nil? type-registry)
               jsa/+base-schema-type-registry+
               type-registry)]
@@ -21,4 +23,6 @@
                {:avro/schema schema
                 :key? key?
                 :avro/coercion-cache coercion-cache
-                :read-only? read-only?})))
+                :read-only? read-only?
+                :serializer-properties serializer-properties
+                :deserializer-properties deserializer-properties})))

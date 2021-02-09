@@ -505,14 +505,17 @@
   {"schema.registry.url" registry-url})
 
 (defn- serializer [schema->coercion serde-config]
-  (let [{:keys [registry-client registry-url avro-schema read-only? key?]} serde-config
-        base-serializer (KafkaAvroSerializer. registry-client)
+  (let [{:keys [registry-client registry-url avro-schema read-only? key?
+                serializer-properties]} serde-config
+        serializer-config (-> (base-config registry-url)
+                              (merge serializer-properties))
+        base-serializer (KafkaAvroSerializer. registry-client serializer-config)
         ;; This is invariant across subject schema changes, shockingly.
         coercion-type (schema->coercion avro-schema)
         methods {:close     (fn [_]
                               (.close base-serializer))
-                 :configure (fn [_ base-config key?]
-                              (.configure base-serializer base-config key?))
+                 :configure (fn [_ config key?]
+                              (.configure base-serializer config key?))
                  :serialize (fn [_ topic data]
                               (when read-only?
                                 (throw (ex-info "Cannot serialize from a read-only serde"
@@ -525,21 +528,22 @@
                                                  (assoc :topic topic :clj-data data))]
                                     (throw (ex-info (.getMessage e) data))))))}
         clj-serializer (fn/new-serializer methods)]
-    (.configure ^Serializer clj-serializer (base-config registry-url) key?)
+    (.configure ^Serializer clj-serializer serializer-config key?)
     clj-serializer))
 
 (defn- deserializer [schema->coercion serde-config]
   (let [{:keys [registry-client registry-url avro-schema key?
                 deserializer-properties]} serde-config
-        base-deserializer (KafkaAvroDeserializer. registry-client (let [min-props {"schema.registry.url" registry-url}]
-                                                                    (merge min-props deserializer-properties)))
+        deserializer-config (-> (base-config registry-url)
+                                (merge deserializer-properties))
+        base-deserializer (KafkaAvroDeserializer. registry-client deserializer-config)
         methods {:close       (fn [_]
                                 (.close base-deserializer))
-                 :configure   (fn [_ base-config key?]
-                                (.configure base-deserializer base-config key?))
+                 :configure   (fn [_ config key?]
+                                (.configure base-deserializer config key?))
                  :deserialize (fn [_ topic raw-data]
                                 (try
-                                  (let [avro-data (if (get deserializer-properties "specific.avro.reader")
+                                  (let [avro-data (if (get deserializer-config "specific.avro.reader")
                                                     (.deserialize base-deserializer ^String topic #^bytes raw-data ^Schema avro-schema)
                                                     (.deserialize base-deserializer ^String topic #^bytes raw-data))]
                                     ;; Note that `.deserialize` will return EITHER a Java Object, or
@@ -560,7 +564,7 @@
                                       (log/error e (str msg " for " topic))
                                       (throw (ex-info msg {:topic topic} e))))))}
         clj-deserializer (fn/new-deserializer methods)]
-    (.configure ^Deserializer clj-deserializer (base-config registry-url) key?)
+    (.configure ^Deserializer clj-deserializer deserializer-config key?)
     clj-deserializer))
 
 ;; Public API
@@ -674,6 +678,7 @@
    {:keys [avro/schema
            avro/coercion-cache
            key?
+           serializer-properties
            deserializer-properties
            read-only?]
     :as   topic-config}]
@@ -702,6 +707,6 @@
                         :coercion-cache coercion-cache}
 
         ;; The final serdes based on the (cached) coercion stack.
-        avro-serializer (serializer (schema->coercion coercion-stack) config)
+        avro-serializer (serializer (schema->coercion coercion-stack) (assoc config :serializer-properties serializer-properties))
         avro-deserializer (deserializer (schema->coercion coercion-stack) (assoc config :deserializer-properties deserializer-properties))]
     (Serdes/serdeFrom avro-serializer avro-deserializer)))
