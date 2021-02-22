@@ -14,7 +14,7 @@
   (:import java.time.Duration
            java.util.Collection
            [org.apache.kafka.clients.consumer
-            Consumer KafkaConsumer OffsetAndTimestamp]
+            Consumer ConsumerRebalanceListener KafkaConsumer OffsetAndTimestamp]
            [org.apache.kafka.clients.producer
             Callback KafkaProducer Producer ProducerRecord]
            [org.apache.kafka.common
@@ -124,15 +124,21 @@
   "Subscribe a consumer to the specified topics.
 
   Returns the consumer."
-  ^KafkaConsumer [^KafkaConsumer consumer topic-configs]
-  (.subscribe consumer
-              ^Collection (mapv (fn [{:keys [topic-name] :as t}]
-                                  (when-not (string? topic-name)
-                                    (throw (ex-info "No name for topic!"
-                                                    {:topic t})))
-                                  topic-name)
-                                topic-configs))
-  consumer)
+  ^KafkaConsumer
+  ([consumer topic-configs] (subscribe consumer topic-configs nil))
+  ([^KafkaConsumer consumer
+    topic-configs
+    ^ConsumerRebalanceListener listener]
+   (let [topics (mapv (fn [{:keys [topic-name] :as t}]
+                        (when-not (string? topic-name)
+                          (throw (ex-info "No name for topic!"
+                                          {:topic t})))
+                        topic-name)
+                      topic-configs)]
+     (if listener
+       (.subscribe consumer ^Collection topics listener)
+       (.subscribe consumer ^Collection topics)))
+   consumer))
 
 (defn ^KafkaConsumer subscribed-consumer
   "Given a broker configuration and topics, returns a consumer that is
@@ -142,13 +148,14 @@
   single pair of key and value serde instances. The serdes of the
   first requested topic are used, and all other topics are expected to
   be able to use same serdes."
-  [config topic-configs]
-  (when-not (sequential? topic-configs)
-    (throw (ex-info "subscribed-consumer takes a seq of topics!"
-                    {:topic-configs topic-configs})))
+  ([config topic-configs] (subscribed-consumer config topic-configs nil))
+  ([config topic-configs consumer-rebalance-listener]
+   (when-not (sequential? topic-configs)
+     (throw (ex-info "subscribed-consumer takes a seq of topics!"
+                     {:topic-configs topic-configs})))
 
-  (-> (consumer config (first topic-configs))
-      (subscribe topic-configs)))
+   (-> (consumer config (first topic-configs))
+       (subscribe topic-configs consumer-rebalance-listener))))
 
 (defn partitions-for
   "Given a producer or consumer and a Jackdaw topic descriptor, return

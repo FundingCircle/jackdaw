@@ -3,6 +3,12 @@
 ## Unreleased
 
 
+## [0.7.8] - [2021-02-09]
+
+### Added
+
+* Optional ConsumerRebalanceListener can be passed to `subscribe` & `subcribed-consumer`
+
 ## [0.7.7] - [2021-02-09]
 
 ### Added
@@ -17,7 +23,7 @@
 
 * Added support for kafka message headers to Test Machine
 
-## [0.7.5] - [2020-07-02] 
+## [0.7.5] - [2020-07-02]
 
 ### Fixed
 
@@ -27,7 +33,7 @@
 
 ### Fixed
 
-* Fix `ktable` constructor to use supplied `store-name` 
+* Fix `ktable` constructor to use supplied `store-name`
 
 * Bump `clj-uuid` version to `0.1.9`
 
