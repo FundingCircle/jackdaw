@@ -11,21 +11,34 @@
                  [clj-time "0.15.1"]
                  [danlentz/clj-uuid "0.1.9"
                   :exclusions [primitive-math]]
+
                  ;; Confluent does paired releases with Kafka, this should tie
                  ;; off with the kafka version.
                  ;; See https://docs.confluent.io/current/release-notes.html
-
                  [io.confluent/kafka-schema-registry-client "5.3.1"
                   :exclusions [com.fasterxml.jackson.core/jackson-databind]]
                  [io.confluent/kafka-avro-serializer "5.3.1"]
                  [org.apache.kafka/kafka-clients "2.3.1"]
                  [org.apache.kafka/kafka-streams "2.3.1"]
                  [org.apache.kafka/kafka-streams-test-utils "2.3.1"]
+
                  [org.clojure/clojure "1.10.1" :scope "provided"]
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/data.fressian "0.2.1"]
                  [org.clojure/tools.logging "0.4.1"]
-                 [org.clojure/core.cache "0.7.2"]]
+                 [org.clojure/core.cache "0.7.2"]
+
+                 ;; Pull specific netty version to avoid critical CVE
+                 ;; pulled by Aleph v0.4.6 (last stable version)
+                 [io.netty/netty-transport "4.1.59.Final"]
+                 [io.netty/netty-transport-native-epoll "4.1.59.Final"]
+                 [io.netty/netty-codec "4.1.59.Final"]
+                 [io.netty/netty-codec-http "4.1.59.Final"]
+                 [io.netty/netty-handler "4.1.59.Final"]
+                 [io.netty/netty-handler-proxy "4.1.59.Final"]
+                 [io.netty/netty-resolver "4.1.59.Final"]
+                 [io.netty/netty-resolver-dns "4.1.59.Final"]
+                 ]
 
   :aliases {"kaocha" ["run" "-m" "kaocha.runner"]}
   :aot [jackdaw.serdes.edn2 jackdaw.serdes.fressian jackdaw.serdes.fn-impl]

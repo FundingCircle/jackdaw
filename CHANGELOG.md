@@ -1,7 +1,7 @@
 # Changelog
 
 ## Unreleased
-
+* Override the netty version pulled by Aleph with one which fixes https://nvd.nist.gov/vuln/detail/CVE-2020-11612
 
 ## [0.7.7] - [2021-02-09]
 
