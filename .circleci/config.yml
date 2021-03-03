@@ -157,6 +157,28 @@ jobs:
           command: |
             [ -z "$CLOJARS_USERNAME" ] || lein do jar, pom, deploy clojars
 
+  debug:
+    <<: *deploy_config
+    steps:
+      - *restore_repo
+      - checkout
+      - *restore_mvn
+      - run:
+          name: try things
+          command: |
+            echo $GPG_PRIVATE_KEY2 |base64 --decode |gpg --yes --batch --import
+            printf "\n\n\n"
+            gpg --list-keys
+            # echo $GPG_PASSPHRASE > passphrase.txt
+            # printf "key 0\nexpire\n10y\nsave\n" | gpg --batch --pinentry-mode loopback --passphrase-fd 3 --command-fd 0 --status-fd=2 --edit-key fundingcirclebot@fundingcircle.com 3<passphrase.txt
+            # printf "key 1\nexpire\n10y\nsave\n" | gpg --batch --pinentry-mode loopback --passphrase-fd 3 --command-fd 0 --status-fd=2 --edit-key fundingcirclebot@fundingcircle.com 3<passphrase.txt
+            # echo "\n\n\n"
+            # gpg --list-keys
+            # echo "\n\n\n"
+            # gpg --send-keys
+            # echo "\n\n\n"
+            # gpg --list-keys
+
 workflows:
   version: 2
   build_and_test:
@@ -165,18 +187,21 @@ workflows:
       - deps:
           requires:
             - checkout_code
-      - test:
+      - debug:
           requires:
             - deps
-      - deploy_snapshot:
-          context: clojars-deploy
-          requires:
-            - test
-          filters:
-            tags:
-              ignore: /.*/
-            branches:
-              ignore: /master/
+      # - test:
+      #     requires:
+      #       - deps
+      # - deploy_snapshot:
+      #     context: clojars-deploy
+      #     requires:
+      #       - test
+      #     filters:
+      #       tags:
+      #         ignore: /.*/
+      #       branches:
+      #         ignore: /master/
 
   checkout_and_deploy:
     jobs:
