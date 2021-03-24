@@ -2,11 +2,24 @@
 
 ## Unreleased
 
-### Added
-
+## [0.7.8] - [2021-03-01]
+* Override the netty version pulled by Aleph with one which fixes https://nvd.nist.gov/vuln/detail/CVE-2020-11612 [#261](https://github.com/FundingCircle/jackdaw/pull/261)
+* Restore the test fixture namespace [#266](https://github.com/FundingCircle/jackdaw/pull/266)
 * Add `divert?` stream operation
 
-### Fixed
+## [0.7.7] - [2021-02-09]
+
+### Added
+
+* Added serializer properties when creating an avro serializer
+
+* Exposed deserializer and serializer properties in the serde-resolver.
+
+## [0.7.6] - [2021-07-16]
+
+### Added
+
+* Added support for kafka message headers to Test Machine
 
 ## [0.7.5] - [2020-07-02] 
 
