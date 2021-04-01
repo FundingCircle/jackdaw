@@ -120,8 +120,7 @@ provide more detailed information about how the consumer works behind the scenes
     (println "offset: " offset)))
 ```
 
-There is also a convenience function `subscribed-consumer` which takes a `consumer-config` and a vector of `topic-configs` and returns a `consumer` that is
- subscribed to all of the given topics. Note that in this case all topics subscribed to by a single consumer must use the same pair of key and value serde instances. This is because the serdes of the first topic from `topic-configs` are used, or those provided in the `consumer-config`, if none are provided in the first topic), and therefore all other topics are expected to be able to use same serdes.
+There is also a convenience function `subscribed-consumer` which takes a `consumer-config` and a vector of `topic-configs` and returns a `consumer` that is subscribed to all of the given topics. Note that in this case all topics subscribed to by a single consumer must use the same pair of key and value serde instances. This is because the serdes of the first topic from `topic-configs` are used (or if none are provided those from the `consumer-config`), and therefore all other topics are expected to be able to use same serdes.
 ```
 (with-open [my-consumer (jc/subscribed-consumer consumer-config [topic-config-1 topic-config-2 ...])
 ```
