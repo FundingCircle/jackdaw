@@ -20,7 +20,7 @@ further reading.
 ## Producing
 
 The producer example below demonstrates how to use the Kafka Producer API. The configuration<sup>[3](#producerconfig)</sup>
-is represented as a simple map (Jackdaw will convert this to a `Properties` object) and in 
+is represented as a simple map (Jackdaw will convert this to a `Properties` object) and in
 this example, the producer is minimally configured just to illustrate a few
 important options.
 
@@ -87,8 +87,8 @@ in the ConsumerRecord. In this example, the consumer will see all records writte
 topic due to the use of `jc/subscribe`.
 
 The `jackdaw.client.log/log` function takes a consumer instance that has already been subscribed
-to one or more topics, and returns a lazy infinite sequence of "datafied" records in the order
-that they were received by calls to the Consumer's `.poll` method. In this example, we just
+to one or more topics, a polling interval in ms, and optionally a `fuse-fn`, and returns a lazy infinite sequence of "datafied" records in the order
+that they were received by calls to the Consumer's `.poll` method.  If `fuse-fn` was provided, it stops after `fuse-fn` returns false. In this example, we just
 write the record to standard out to demonstrate the keys that are available in each record. To
 see what other keys are available, see data/consumer.clj<sup>[6](#consumerdata)</sup>
 
@@ -112,12 +112,17 @@ provide more detailed information about how the consumer works behind the scenes
 
 (with-open [my-consumer (-> (jc/consumer consumer-config)
                             (jc/subscribe [topic-foo]))]
-  (doseq [{:keys [key value partition timestamp offset]} (jl/log my-consumer)]
+  (doseq [{:keys [key value partition timestamp offset]} (jl/log my-consumer 500)]
     (println "key: " key)
     (println "value: " value)
     (println "partition: " partition)
     (println "timestamp: " timestamp)
     (println "offset: " offset)))
+```
+
+There is also a convenience function `subscribed-consumer` which takes a `consumer-config` and a vector of `topic-configs` and returns a `consumer` that is subscribed to all of the given topics. Note that in this case all topics subscribed to by a single consumer must use the same pair of key and value serde instances. This is because the serdes of the first topic from `topic-configs` are used (or if none are provided those from the `consumer-config`), and therefore all other topics are expected to be able to use same serdes.
+```
+(with-open [my-consumer (jc/subscribed-consumer consumer-config [topic-config-1 topic-config-2 ...])
 ```
 
 ## References
