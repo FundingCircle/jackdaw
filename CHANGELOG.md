@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Bump netty related packages to latest version (related to changes in `0.7.8` which fixes CVEs).
+
 ## [0.7.8] - [2021-03-01]
 * Override the netty version pulled by Aleph with one which fixes https://nvd.nist.gov/vuln/detail/CVE-2020-11612 [#261](https://github.com/FundingCircle/jackdaw/pull/261)
 * Restore the test fixture namespace [#266](https://github.com/FundingCircle/jackdaw/pull/266)
