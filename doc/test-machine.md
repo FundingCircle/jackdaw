@@ -56,7 +56,7 @@ to these services in a shared environment like uat/staging.
   (let [t (trns/transport {:type :kafka
                            :config local-kafka-config
                            :topics topic-config})]
-    (test-machine {:transport t})))
+    (test-machine t)))
 
 (def remote-machine []
   (let [t (trns/transport {:type :confluent-rest-proxy
@@ -113,7 +113,7 @@ specific arguments. Currently the following commands are the supported.
 
 ### Test Results
 
-A `test-machine` is used in conjunction with `run-test`, which runs a sequence of test commands against a test-machine. The first parameter to `run-test` is a test-machine and the second is a list of commands to execute. The return value from `run-test` is a map with just two keys
+A `test-machine` is used in conjunction with `run-test`, which runs a sequence of test commands against the test-machine. The first parameter to `run-test` is a test-machine and the second is a list of commands to execute. The return value from `run-test` is a map with just two keys
 
 ```clojure
 :results   A sequence of execution results. One for each command attempted
@@ -144,8 +144,7 @@ requirements.
   (:require
     [my.app :as app]
     [jackdaw.test :refer [test-machine]]
-    [jackdaw.test.fixtures :as fix]
-    [jackdaw.test.transports :as trns]))
+    [jackdaw.test.fixtures :as fix]))
 
 (defn with-test-machine [f {:keys [transport}]}]
   (fix/with-fixtures [(fix/topic-fixture kafka-config input-topics)
