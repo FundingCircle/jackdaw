@@ -40,6 +40,10 @@ to these services in a shared environment like uat/staging.
   {"bootstrap.servers" "localhost:9092"
    "group.id" "my-app"})
 
+(def remote-kafka-config
+  {:bootstrap-uri "my-real-rest-proxy-url"
+   :group-id "my-app"})
+
 (def topic-config
   {:foo {:topic-name "foo"
          :key-serde (string-serde)
