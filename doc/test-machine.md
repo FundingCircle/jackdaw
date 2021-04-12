@@ -87,7 +87,6 @@ conjunction with `with-open` to ensure that associated resources are shut down
 cleanly when you are finished with a machine.
 
 ### Test Commands
-
 Each test-command is a vector with the first item being a keyword representing the
 type of operation this command represents, and subsequent items being command
 specific arguments. Currently the following commands are the supported.
@@ -114,7 +113,7 @@ specific arguments. Currently the following commands are the supported.
 
 ### Test Results
 
-The return value from `run-test` is a map with just two keys
+A `test-machine` is used in conjunction with `run-test`, which runs a sequence of test commands against a test-machine. The first parameter to `run-test` is a test-machine and the second is a list of commands to execute. The return value from `run-test` is a map with just two keys
 
 ```clojure
 :results   A sequence of execution results. One for each command attempted
