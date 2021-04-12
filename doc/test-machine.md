@@ -31,7 +31,7 @@ to these services in a shared environment like uat/staging.
 (ns my.app-test
   (:require
     [my.app :as app]
-    [jackdaw.test :as j.t]
+    [jackdaw.test :refer [test-machine]]
     [jackdaw.test.transports :as trns]))
 
 (def local-kafka-config
@@ -50,13 +50,13 @@ to these services in a shared environment like uat/staging.
   (let [t (trns/transport {:type :kafka
                            :config local-kafka-config
                            :topics topic-config})]
-    (j.t/test-machine {:transport t})))
+    (test-machine {:transport t})))
 
 (def remote-machine []
   (let [t (trns/transport {:type :confluent-rest-proxy
                            :config remote-kafka-config
                            :topics topic-config})]
-   (j.t/test-machine t)))
+   (test-machine t)))
 ```
 
 ### Serialization/Deserialization
@@ -135,6 +135,13 @@ better that you write this macro yourself so that you can tailor it to your own
 requirements.
 
 ```clojure
+(ns my.app-test
+  (:require
+    [my.app :as app]
+    [jackdaw.test :refer [test-machine]]
+    [jackdaw.test.fixtures :as fix]
+    [jackdaw.test.transports :as trns]))
+
 (defn with-test-machine [f {:keys [transport}]}]
   (fix/with-fixtures [(fix/topic-fixture kafka-config input-topics)
                       (fix/topic-fixture kafka-config output-topics)
