@@ -124,7 +124,7 @@ in the order that they were observed.
 
 A selection of fixtures are provided to help setting up required topics and
 to start the applications, and external systems under test. For more details
-see the functions in the jackdaw.test.fixtures namespace.
+see the functions in the [jackdaw.test.fixtures](https://cljdoc.org/d/fundingcircle/jackdaw/CURRENT/api/jackdaw.test.fixtures) namespace.
 
 ### Wrapping up
 
