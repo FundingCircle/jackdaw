@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+## [0.7.9] - [2021-04-13]
 * Bump netty related packages to latest version (related to changes in `0.7.8` which fixes CVEs).
 
 ## [0.7.8] - [2021-03-01]
