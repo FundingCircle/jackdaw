@@ -3,13 +3,13 @@ version: 2
 
 references:
   repo_cache_key: &repo_cache_key
-    v1-jackdaw-{{ .Branch }}-{{ .Revision }}
+    v1-jackdaw-repo-{{ .Branch }}-{{ .Revision }}
 
   repo_cache_backup_1: &repo_cache_backup_1
-    v1-jackdaw-{{ .Branch }}
+    v1-jackdaw-repo-{{ .Branch }}
 
   repo_cache_backup_2: &repo_cache_backup_2
-    v1-jackdaw
+    v1-jackdaw-repo
 
   restore_repo: &restore_repo
     restore_cache:
@@ -72,7 +72,7 @@ jobs:
       - *restore_repo
       - checkout
       - save_cache:
-          key: v1-jackdaw-{{ .Branch }}-{{ .Revision }}
+          key: v1-jackdaw-repo-{{ .Branch }}-{{ .Revision }}
           paths:
             - .
   checkout_tags:
@@ -96,7 +96,7 @@ jobs:
           git fetch --force origin "refs/tags/${CIRCLE_TAG}:refs/tags/${CIRCLE_TAG}"
       - checkout
       - save_cache:
-          key: v1-jackdaw-{{ .Branch }}-{{ .Revision }}
+          key: v1-jackdaw-repo-{{ .Branch }}-{{ .Revision }}
           paths:
             - .
   deps:
