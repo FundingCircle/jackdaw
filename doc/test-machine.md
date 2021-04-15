@@ -47,10 +47,12 @@ to these services in a shared environment like uat/staging.
 (def topic-config
   {:foo {:topic-name "foo"
          :key-serde (string-serde)
-         :value-serde (json-serde/serde)}
+         :value-serde (json-serde/serde)
+         :partition-count 1}
    :bar {:topic-name "foo"
          :key-serde (string-serde)
-         :value-serde (edn-serde)}})
+         :value-serde (edn-serde)
+         :partition-count 1}})
 
 (defn local-machine []
   (let [t (trns/transport {:type :kafka
