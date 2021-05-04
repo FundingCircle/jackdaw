@@ -116,6 +116,7 @@ specific arguments. Currently the following commands are the supported.
                                  function of a single argument. This function will
                                  be passed the entire test machine state.
 ```
+For more details see the functions in the [jackdaw.test.commands](https://cljdoc.org/d/fundingcircle/jackdaw/CURRENT/api/jackdaw.test.commands) namespace.
 
 ### Test Results
 
@@ -183,4 +184,5 @@ requirements.
       (f machine))))
 ```
 
-Note that you have to import `TopologyTestDriver` for `test-machine` to work, which requires you to bring in the `org.apache.kafka/kafka-streams-test-utils` library as a dependency, using a version from `2.0.0` to `2.3.0`. Also note that the `topic-fixture` expects the `topic-config` to contain `:partition-count` and :replication-factor` to be present, as well as the `topic-name` and key-value serdes.
+The `topic-fixture` creates all the topics named in the supplied `topic-config` before running tests.
+Note that you have to import `TopologyTestDriver` for `test-machine` to work, which requires you to bring in the `org.apache.kafka/kafka-streams-test-utils` library as a dependency, using a version within `2.0.0` to `2.3.0`. Also note that the `topic-fixture` expects the `topic-config` to contain `:partition-count` and :replication-factor` to be present, as well as the `topic-name` and key-value serdes.
