@@ -149,10 +149,9 @@ requirements.
 (ns my.app-test
   (:require
     [my.app :as app]
-    [jackdaw.serdes :refer [string-serde edn-serde]]
-    [jackdaw.serdes.json :as json-serde]
+    [jackdaw.serdes :refer [string-serde]]
     [jackdaw.test :refer [test-machine]]
-    [jackdaw.test.fixtures :as fix])
+    [jackdaw.test.fixtures :refer [with-fixtures topic-fixture service-ready?]])
   (:import
     (org.apache.kafka.streams TopologyTestDriver)))
 
@@ -163,23 +162,26 @@ requirements.
 (def input-topic-config
   {:foo {:topic-name "foo"
          :key-serde (string-serde)
-         :value-serde (json-serde/serde)
+         :value-serde (string-serde)
          :partition-count 1
          :replication-factor 1})
 
 (def output-topic-config
   {:foo {:topic-name "bar"
          :key-serde (string-serde)
-         :value-serde (json-serde/serde)
+         :value-serde (string-serde)
          :partition-count 1
          :replication-factor 1})
 
-(defn with-test-machine [f {:keys [transport}]}]
-  (fix/with-fixtures [(fix/topic-fixture kafka-config input-topic-config)
-                      (fix/topic-fixture kafka-config output-topic-config)
-                      (fix/service-ready {:http-url "http://localhost:8082"
-                                          :http-timeout 5000})]
-    (with-open [machine (test-machine {:transport transport})]
+(defn with-test-machine
+  "Creates a test-machine using the supplied `transport` and then
+   passes it to the supplied `f`."
+  [f transport]
+  (with-fixtures [(topic-fixture kafka-config input-topic-config)
+                  (topic-fixture kafka-config output-topic-config)
+                  (service-ready? {:http-url "http://localhost:8082"
+                                   :timeout 5000})]
+    (with-open [machine (test-machine transport)]
       (f machine))))
 ```
 
