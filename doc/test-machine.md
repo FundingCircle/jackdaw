@@ -35,6 +35,8 @@ to these services in a shared environment like uat/staging.
     [jackdaw.serdes.json :as json-serde]
     [jackdaw.test :refer [test-machine]]
     [jackdaw.test.transports :as trns]))
+  (:import
+    (org.apache.kafka.streams TopologyTestDriver))
 
 (def local-kafka-config
   {"bootstrap.servers" "localhost:9092"
@@ -48,11 +50,13 @@ to these services in a shared environment like uat/staging.
   {:foo {:topic-name "foo"
          :key-serde (string-serde)
          :value-serde (json-serde/serde)
-         :partition-count 1}
+         :partition-count 1
+         :replication-factor 1}
    :bar {:topic-name "foo"
          :key-serde (string-serde)
          :value-serde (edn-serde)
-         :partition-count 1}})
+         :partition-count 1
+         :replication-factor 1}})
 
 (defn local-machine []
   (let [t (trns/transport {:type :kafka
@@ -145,14 +149,38 @@ requirements.
 (ns my.app-test
   (:require
     [my.app :as app]
+    [jackdaw.serdes :refer [string-serde edn-serde]]
+    [jackdaw.serdes.json :as json-serde]
     [jackdaw.test :refer [test-machine]]
-    [jackdaw.test.fixtures :as fix]))
+    [jackdaw.test.fixtures :as fix])
+  (:import
+    (org.apache.kafka.streams TopologyTestDriver)))
+
+(def kafka-config
+  {"bootstrap.servers" "localhost:9092"
+   "group.id" "my-app"})
+
+(def input-topic-config
+  {:foo {:topic-name "foo"
+         :key-serde (string-serde)
+         :value-serde (json-serde/serde)
+         :partition-count 1
+         :replication-factor 1})
+
+(def output-topic-config
+  {:foo {:topic-name "bar"
+         :key-serde (string-serde)
+         :value-serde (json-serde/serde)
+         :partition-count 1
+         :replication-factor 1})
 
 (defn with-test-machine [f {:keys [transport}]}]
-  (fix/with-fixtures [(fix/topic-fixture kafka-config input-topics)
-                      (fix/topic-fixture kafka-config output-topics)
+  (fix/with-fixtures [(fix/topic-fixture kafka-config input-topic-config)
+                      (fix/topic-fixture kafka-config output-topic-config)
                       (fix/service-ready {:http-url "http://localhost:8082"
                                           :http-timeout 5000})]
     (with-open [machine (test-machine {:transport transport})]
       (f machine))))
 ```
+
+Note that you have to import `TopologyTestDriver` for `test-machine` to work, which requires you to bring in the `org.apache.kafka/kafka-streams-test-utils` library as a dependency, using a version from `2.0.0` to `2.3.0`. Also note that the `topic-fixture` expects the `topic-config` to contain `:partition-count` and :replication-factor` to be present, as well as the `topic-name` and key-value serdes.
