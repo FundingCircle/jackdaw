@@ -35,8 +35,6 @@ to these services in a shared environment like uat/staging.
     [jackdaw.serdes.json :as json-serde]
     [jackdaw.test :refer [test-machine]]
     [jackdaw.test.transports :as trns]))
-  (:import
-    (org.apache.kafka.streams TopologyTestDriver))
 
 (def local-kafka-config
   {"bootstrap.servers" "localhost:9092"
@@ -93,6 +91,7 @@ conjunction with `with-open` to ensure that associated resources are shut down
 cleanly when you are finished with a machine.
 
 ### Test Commands
+
 Each test-command is a vector with the first item being a keyword representing the
 type of operation this command represents, and subsequent items being command
 specific arguments. Currently the following commands are the supported.
