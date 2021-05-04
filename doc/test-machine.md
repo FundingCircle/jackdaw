@@ -185,4 +185,4 @@ requirements.
       (f machine))))
 ```
 
-The `topic-fixture` function creates all the topics named in the supplied `topic-config` before running tests. You have to import `TopologyTestDriver` for `test-machine` to work, which requires you to bring in the `org.apache.kafka/kafka-streams-test-utils` library as a dependency, using a version within `2.0.0` - `2.3.0`. The `topic-fixture` expects the `topic-config` to contain `:partition-count` and :replication-factor` to be present, besides the `topic-name` and key-value serdes.
+The `topic-fixture` function creates all the topics named in the supplied `topic-config` before running tests. You have to import `TopologyTestDriver` for `test-machine` to work, which requires you to bring in the `org.apache.kafka/kafka-streams-test-utils` library as a dependency, using a version within `2.0.0` - `2.3.0`. The `topic-fixture` expects the `topic-config` to contain `:partition-count` and `:replication-factor` to be present, besides the `topic-name` and key-value serdes.
