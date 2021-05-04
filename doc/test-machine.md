@@ -64,7 +64,7 @@ to these services in a shared environment like uat/staging.
                            :topics topic-config})]
     (test-machine t)))
 
-(def remote-machine []
+(defn remote-machine []
   (let [t (trns/transport {:type :confluent-rest-proxy
                            :config remote-kafka-config
                            :topics topic-config})]
@@ -184,5 +184,4 @@ requirements.
       (f machine))))
 ```
 
-The `topic-fixture` creates all the topics named in the supplied `topic-config` before running tests.
-Note that you have to import `TopologyTestDriver` for `test-machine` to work, which requires you to bring in the `org.apache.kafka/kafka-streams-test-utils` library as a dependency, using a version within `2.0.0` to `2.3.0`. Also note that the `topic-fixture` expects the `topic-config` to contain `:partition-count` and :replication-factor` to be present, as well as the `topic-name` and key-value serdes.
+The `topic-fixture` function creates all the topics named in the supplied `topic-config` before running tests. You have to import `TopologyTestDriver` for `test-machine` to work, which requires you to bring in the `org.apache.kafka/kafka-streams-test-utils` library as a dependency, using a version within `2.0.0` - `2.3.0`. The `topic-fixture` expects the `topic-config` to contain `:partition-count` and :replication-factor` to be present, besides the `topic-name` and key-value serdes.
