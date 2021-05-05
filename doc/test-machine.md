@@ -32,7 +32,7 @@ to these services in a shared environment like uat/staging.
   (:require
     [my.app :as app]
     [jackdaw.serdes :refer [string-serde edn-serde]]
-    [jackdaw.serdes.json :as json-serde]
+    [jackdaw.serdes.json :as jsj]
     [jackdaw.test :refer [test-machine]]
     [jackdaw.test.transports :as trns]))
 
@@ -47,7 +47,7 @@ to these services in a shared environment like uat/staging.
 (def topic-config
   {:foo {:topic-name "foo"
          :key-serde (string-serde)
-         :value-serde (json-serde/serde)
+         :value-serde (jsj/serde)
          :partition-count 1
          :replication-factor 1}
    :bar {:topic-name "foo"
