@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Update Kafka to 2.8.0 (confluent 6.1.1)
+
 ## [0.7.10] - [2021-04-14]
 * Bump netty related packages to latest version (related to changes in `0.7.8` which fixes CVEs).
 

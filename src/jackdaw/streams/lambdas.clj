@@ -150,20 +150,20 @@
   (process [_ key message]
     (processor-fn @context key message)))
 
-(defn processor [processor-fn]
+(defn processor
   "Packages up a Clojure fn as a kstream processor."
+  [processor-fn]
   (FnProcessor. (atom nil) processor-fn))
 
 (deftype FnProcessorSupplier [processor-supplier-fn]
   ProcessorSupplier
   (get [this]
-    processor-supplier-fn))
+    (processor processor-supplier-fn)))
 
 (defn processor-supplier
   "Packages up a Clojure fn in a kstream processor supplier."
   [processor-fn]
-  (let [fn-processor (processor processor-fn)]
-    (FnProcessorSupplier. fn-processor)))
+  (FnProcessorSupplier. processor-fn))
 
 (deftype FnTransformerSupplier [transformer-supplier-fn]
   TransformerSupplier

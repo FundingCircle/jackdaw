@@ -22,8 +22,8 @@
 (defn- new-topic
   [t]
   (doto (NewTopic. (:topic-name t)
-                   (:partition-count t)
-                   (:replication-factor t))
+                   (int (:partition-count t))
+                   (short (:replication-factor t)))
     (.configs (:config t))))
 
 (defn list-topics
