@@ -15,12 +15,12 @@
                  ;; Confluent does paired releases with Kafka, this should tie
                  ;; off with the kafka version.
                  ;; See https://docs.confluent.io/current/release-notes.html
-                 [io.confluent/kafka-schema-registry-client "5.3.1"
+                 [io.confluent/kafka-schema-registry-client "6.1.1"
                   :exclusions [com.fasterxml.jackson.core/jackson-databind]]
-                 [io.confluent/kafka-avro-serializer "5.3.1"]
-                 [org.apache.kafka/kafka-clients "2.3.1"]
-                 [org.apache.kafka/kafka-streams "2.3.1"]
-                 [org.apache.kafka/kafka-streams-test-utils "2.3.1"]
+                 [io.confluent/kafka-avro-serializer "6.1.1"]
+                 [org.apache.kafka/kafka-clients "2.8.0"]
+                 [org.apache.kafka/kafka-streams "2.8.0"]
+                 [org.apache.kafka/kafka-streams-test-utils "2.8.0"]
 
                  [org.clojure/clojure "1.10.1" :scope "provided"]
                  [org.clojure/data.json "0.2.6"]
@@ -83,10 +83,10 @@
               :resource-paths ["test/resources"]
               :injections [(require 'io.aviso.logging.setup)]
               :dependencies [[io.aviso/logging "0.3.2"]
-                             [org.apache.kafka/kafka-streams-test-utils "2.3.1"]
-                             [org.apache.kafka/kafka-clients "2.3.1" :classifier "test"]
+                             [org.apache.kafka/kafka-streams-test-utils "2.8.0"]
+                             [org.apache.kafka/kafka-clients "2.8.0" :classifier "test"]
                              [org.clojure/test.check "0.9.0"]
-                             [org.apache.kafka/kafka_2.11 "2.3.1"]
+                             [org.apache.kafka/kafka_2.13 "2.8.0"]
                              [lambdaisland/kaocha "0.0-529"]
                              [lambdaisland/kaocha-cloverage "0.0-32"]
                              [lambdaisland/kaocha-junit-xml "0.0-70"]]}
