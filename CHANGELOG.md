@@ -2,7 +2,11 @@
 
 ## Unreleased
 
-* Update Kafka to 2.8.0 (confluent 6.1.1)
+## [0.8.0] - [2021-05-13]
+* Update Kafka to 2.8.0 (confluent 6.1.1) [#292](https://github.com/FundingCircle/jackdaw/pull/292)
+* Improve test-machine documentation [#287](https://github.com/FundingCircle/jackdaw/pull/287)
+* Fix CI pipeline: add -repo to repo cache names to not match with deps cache [#288](https://github.com/FundingCircle/jackdaw/pull/288)
+* Remove codecov [#289](https://github.com/FundingCircle/jackdaw/pull/289)
 
 ## [0.7.10] - [2021-04-14]
 * Bump netty related packages to latest version (related to changes in `0.7.8` which fixes CVEs).
