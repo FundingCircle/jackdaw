@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+* Add more arities for windowed streams
 * Drop clj-time dependency
 * Added confluent schema registry support for JSON Schema
 
