@@ -16,3 +16,5 @@ pom.xml.asc
 .lein-*
 .cpcache
 .nrepl-port
+/.idea
+*.iml

@@ -1,4 +1,4 @@
-(defproject fundingcircle/jackdaw "_"
+(defproject markbastian/jackdaw "_"
   :description "A Clojure library for the Apache Kafka distributed streaming platform."
 
   :scm {:name "git" :url "https://github.com/fundingcircle/jackdaw"}
