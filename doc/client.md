@@ -6,7 +6,7 @@ The Jackdaw Client API wraps the core Kafka `Producer`<sup>[1](#producerapi)</su
 `Consumer`<sup>[2](#consumerapi)</sup> APIs and provides functions for building or
 unpacking some of the supporting objects like Callbacks, Serdes, ConsumerRecords etc.
 
-Higher level concepts in the kafka ecosystem like Kafka Streams, Kafka Connect, and KSQL all
+Higher level concepts in the Kafka ecosystem like Kafka Streams, Kafka Connect, and KSQL all
 build on these core APIs so acquiring a deep understanding will be rewarded with increased
 understanding of the many associated technologies.
 
@@ -83,12 +83,56 @@ this example, the Consumer is minimally configured just to illustrate a few impo
 Consumers are usually created using the `with-open` macro so that they are automatically
 closed either when evaluation reaches the end of the body or an exception is thrown. By default
 the StringDeserializer is used to deserialize the key and value before being made available
-in the ConsumerRecord. In this example, the consumer will see all records written to the "foo"
-topic due to the use of `jc/subscribe`.
+in the ConsumerRecord.
 
-The `jackdaw.client.log/log` function takes a consumer instance that has already been subscribed
+The first step is to create a consumer and subscribe it to a list of topics. We can use the `jc/subscribed-consumer` function to achieve this:
+```
+(with-open [consumer (jc/subscribed-consumer consumer-config [topic-config-1 topic-config-2 ...])
+```
+`subscribed-consumer` takes a `consumer-config` and a vector of `topic-configs` and returns a `consumer` that is subscribed to all of the given topics.
+
+To create a polling loop for the consumer, the main body of a consumer loop might look as follows:
+
+```
+(ns consumer-example
+  (:require
+    [jackdaw.client :as jc])
+  (:import
+    (org.apache.kafka.common.serialization Serdes)))
+
+(def consumer-config
+  {"bootstrap.servers" "localhost:9092"
+   "group.id"  "com.foo.my-consumer"})
+
+(def topic-config
+  {:topic-name "foo"})
+
+(defn poll-and-loop!
+  "Continuously fetches records every `poll-ms`, processes them with `processing-fn` and commits offset after each poll."
+  [consumer processing-fn continue?]
+  (let [poll-ms        5000
+        fetch-records! #(jc/poll consumer poll-ms)]
+    (loop []
+      (if @continue?
+        (let [records (fetch-records!)]
+          (when (seq records)
+            (info "records retrieved for processing:" (count records))
+            (consumer-fn records)
+            (info "commit sync at offset" (-> records last :offset inc))
+            (.commitSync consumer))
+          (recur))))))
+
+(defn process-messages [processing-fn]
+  (let [continue? (atom true)]
+    (with-open [my-consumer (jc/subscribed-consumer consumer-config [topic-config])
+      (poll-and-loop! my-consumer processing-fn continue?))))
+```
+Here, we create a consumer and subscribe it to the "foo" topic. The `poll-and-loop` function continuously fetches records every `poll-ms`, processes them with `processing-fn` and commits offset after each poll.
+
+The `jackdaw.client.log/log` function can be useful for testing. It takes a consumer instance that has already been subscribed
 to one or more topics, a polling interval in ms, and optionally a `fuse-fn`, and returns a lazy infinite sequence of "datafied" records in the order
-that they were received by calls to the Consumer's `.poll` method.  If `fuse-fn` was provided, it stops after `fuse-fn` returns false. In this example, we just
+that they were received by calls to the Consumer's `.poll` method. If `fuse-fn` was provided, it stops after `fuse-fn` returns false, otherwise it keeps polling, because `log` takes care of the looping. In this example, the consumer will see all records written to the "foo"
+topic due to the use of `jc/subscribe`. We just
 write the record to standard out to demonstrate the keys that are available in each record. To
 see what other keys are available, see data/consumer.clj<sup>[6](#consumerdata)</sup>
 
