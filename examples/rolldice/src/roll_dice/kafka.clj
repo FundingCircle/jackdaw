@@ -77,5 +77,5 @@
   (let [topic-config      (topic-config topic)
         producer-config   (producer-config topic)]
     (with-open [producer (jc/producer producer-config topic-config)]
-      (let [value (producer-fn)]
-        @(jc/produce! producer topic-config value)))))
+      (let [values (producer-fn)]
+        @(jc/produce! producer topic-config values)))))
