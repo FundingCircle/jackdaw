@@ -96,13 +96,11 @@ To create a polling loop for the consumer, the main body of a consumer loop migh
 ```
 (ns consumer-example
   (:require
-    [jackdaw.client :as jc])
-  (:import
-    (org.apache.kafka.common.serialization Serdes)))
+    [jackdaw.client :as jc]))
 
 (def consumer-config
   {"bootstrap.servers" "localhost:9092"
-   "group.id"  "com.foo.my-consumer"})
+   "group.id" "com.foo.my-consumer"})
 
 (def topic-config
   {:topic-name "foo"})
@@ -124,11 +122,11 @@ To create a polling loop for the consumer, the main body of a consumer loop migh
     (with-open [consumer (jc/subscribed-consumer consumer-config [topic-config])]
       (poll-and-loop! consumer processing-fn continue?))))
 ```
-Here, we create a consumer and subscribe it to the "foo" topic. The `poll-and-loop` function continuously fetches records every `poll-ms`, processes them with `processing-fn` and commits offset after each poll. A sample app using the Client API can be found in [Jackdaw/examples](https://github.com/FundingCircle/jackdaw/tree/master/examples)
+Here, we create a consumer and subscribe it to the "foo" topic. The `poll-and-loop` function continuously fetches records every `poll-ms`, processes them with `processing-fn` (app specific) and commits offset after each poll. For a simple sample app using the Client API see examples/rolldice<sup>[7](#clientapiexample)</sup>).
 
 The `jackdaw.client.log/log` function can be useful for testing. It takes a consumer instance that has already been subscribed
 to one or more topics, a polling interval in ms, and optionally a `fuse-fn`, and returns a lazy infinite sequence of "datafied" records in the order
-that they were received by calls to the Consumer's `.poll` method. If `fuse-fn` was provided, it stops after `fuse-fn` returns false, otherwise it keeps polling, because `log` takes care of the looping. In this example, the consumer will see all records written to the "foo"
+that they were received by calls to the Consumer's `.poll` method. If `fuse-fn` was provided, it stops after `fuse-fn` returns false, otherwise it keeps polling. In this example, the consumer will see all records written to the "foo"
 topic due to the use of `jc/subscribe`. We just
 write the record to standard out to demonstrate the keys that are available in each record. To
 see what other keys are available, see data/consumer.clj<sup>[6](#consumerdata)</sup>
@@ -140,9 +138,7 @@ provide more detailed information about how the consumer works behind the scenes
 (ns consumer-example
   (:require
     [jackdaw.client :as jc]
-    [jackdaw.client.log :as jl])
-  (:import
-    (org.apache.kafka.common.serialization Serdes)))
+    [jackdaw.client.log :as jl]))
 
 (def consumer-config
   {"bootstrap.servers" "localhost:9092"
@@ -161,7 +157,7 @@ provide more detailed information about how the consumer works behind the scenes
     (println "offset: " offset)))
 ```
 
-Note that in the case of using `subscribed-consumer` all topics subscribed to by a single consumer must use the same pair of key and value serde instances. This is because the serdes of the first topic from `topic-configs` are used (or if none are provided those from the `consumer-config`), and therefore all other topics are expected to be able to use same serdes.
+Note that when using `subscribed-consumer` all topics subscribed to by the consumer must use the same pair of key and value serde instances. This is because the serdes of the first topic from the `topic-configs` vector are used (or if none are provided those from the `consumer-config`), and therefore all topics are expected to be able to use same serdes.
 
 ## References
 
@@ -170,4 +166,5 @@ Note that in the case of using `subscribed-consumer` all topics subscribed to by
  <a name="producerconfig">3</a>: https://kafka.apache.org/documentation/#producerconfigs <br />
  <a name="serdesdirectory">4</a>: https://github.com/FundingCircle/jackdaw/blob/master/src/jackdaw/serdes <br />
  <a name="consumerconfig">5</a>: https://kafka.apache.org/documentation/#consumerconfigs <br />
- <a name="consumerdata">6</a>: https://github.com/FundingCircle/jackdaw/blob/master/src/jackdaw/data/consumer.clj
+ <a name="consumerdata">6</a>: https://github.com/FundingCircle/jackdaw/blob/master/src/jackdaw/data/consumer.clj <br />
+ <a name="clientapiexample">7</a>: https://github.com/FundingCircle/jackdaw/blob/master/examples/rolldice <br />
