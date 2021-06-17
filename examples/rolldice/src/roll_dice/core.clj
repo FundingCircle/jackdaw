@@ -10,8 +10,8 @@
    [roll-dice.kafka :as kafka]))
 
 (defn roll-dice [n]
-  (for [i (range n)]
-    (let [rnd-side  #(inc (rand-int 6))]
+  (repeatedly n
+    #(let [rnd-side  (fn [] (inc (rand-int 6)))]
       [(rnd-side) (rnd-side)])))
 
 (defn process-records [records]
@@ -30,8 +30,9 @@
     (start-consumer-thread! topic group-id)
     (loop []
       (println "How many times would you like to roll the dice? \nPlease enter a positive integer:")
-      (let [n (Integer/parseInt (read-line))]
-        (kafka/produce-message! topic (partial roll-dice n))
+      (let [n (Integer/parseInt (read-line))
+            roll-n-times! #(roll-dice n)]
+        (kafka/produce-message! topic roll-n-times!)
         (Thread/sleep 2000)
         (println "\nPress Ctr+c to exit or keep rolling.\n")
         (recur)))))
