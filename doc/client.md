@@ -85,7 +85,7 @@ closed either when evaluation reaches the end of the body or an exception is thr
 the StringDeserializer is used to deserialize the key and value before being made available
 in the ConsumerRecord.
 
-The first step is to create a consumer and subscribe it to a list of topics. We can use the `jc/subscribed-consumer` function to achieve this:
+The first step is to create a consumer and subscribe it to a list of topics. We can use the `jc/subscribed-consumer` function:
 ```
 (with-open [consumer (jc/subscribed-consumer consumer-config [topic-config-1 topic-config-2 ...])
 ```
@@ -110,24 +110,21 @@ To create a polling loop for the consumer, the main body of a consumer loop migh
 (defn poll-and-loop!
   "Continuously fetches records every `poll-ms`, processes them with `processing-fn` and commits offset after each poll."
   [consumer processing-fn continue?]
-  (let [poll-ms        5000
-        fetch-records! #(jc/poll consumer poll-ms)]
+  (let [poll-ms 5000]
     (loop []
       (if @continue?
-        (let [records (fetch-records!)]
+        (let [records (jc/poll consumer poll-ms)]
           (when (seq records)
-            (info "records retrieved for processing:" (count records))
-            (consumer-fn records)
-            (info "commit sync at offset" (-> records last :offset inc))
+            (processing-fn records)
             (.commitSync consumer))
           (recur))))))
 
-(defn process-messages [processing-fn]
+(defn process-messages! [topic-config processing-fn]
   (let [continue? (atom true)]
-    (with-open [my-consumer (jc/subscribed-consumer consumer-config [topic-config])
-      (poll-and-loop! my-consumer processing-fn continue?))))
+    (with-open [consumer (jc/subscribed-consumer consumer-config [topic-config])]
+      (poll-and-loop! consumer processing-fn continue?))))
 ```
-Here, we create a consumer and subscribe it to the "foo" topic. The `poll-and-loop` function continuously fetches records every `poll-ms`, processes them with `processing-fn` and commits offset after each poll.
+Here, we create a consumer and subscribe it to the "foo" topic. The `poll-and-loop` function continuously fetches records every `poll-ms`, processes them with `processing-fn` and commits offset after each poll. A sample app using the Client API can be found in [Jackdaw/examples](https://github.com/FundingCircle/jackdaw/tree/master/examples)
 
 The `jackdaw.client.log/log` function can be useful for testing. It takes a consumer instance that has already been subscribed
 to one or more topics, a polling interval in ms, and optionally a `fuse-fn`, and returns a lazy infinite sequence of "datafied" records in the order
@@ -164,10 +161,7 @@ provide more detailed information about how the consumer works behind the scenes
     (println "offset: " offset)))
 ```
 
-There is also a convenience function `subscribed-consumer` which takes a `consumer-config` and a vector of `topic-configs` and returns a `consumer` that is subscribed to all of the given topics. Note that in this case all topics subscribed to by a single consumer must use the same pair of key and value serde instances. This is because the serdes of the first topic from `topic-configs` are used (or if none are provided those from the `consumer-config`), and therefore all other topics are expected to be able to use same serdes.
-```
-(with-open [my-consumer (jc/subscribed-consumer consumer-config [topic-config-1 topic-config-2 ...])
-```
+Note that in the case of using `subscribed-consumer` all topics subscribed to by a single consumer must use the same pair of key and value serde instances. This is because the serdes of the first topic from `topic-configs` are used (or if none are provided those from the `consumer-config`), and therefore all other topics are expected to be able to use same serdes.
 
 ## References
 
