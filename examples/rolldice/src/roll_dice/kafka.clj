@@ -72,7 +72,7 @@
       (start-consumer! consumer processing-fn continue?)))
 
 (defn produce-message!
-  "Creates a Kafka Producer and writes message to `topic`"
+  "Creates a Kafka Producer and writes message to `topic` by calling `producer-fn`"
   [topic producer-fn]
   (let [topic-config      (topic-config topic)
         producer-config   (producer-config topic)]
