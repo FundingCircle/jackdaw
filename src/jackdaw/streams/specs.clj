@@ -101,6 +101,12 @@
 
 ;; IKStreamBase
 
+(s/fdef k/join
+        :args (s/cat :kstream-or-ktable ::kstream-or-ktable
+                     :ktable ktable?
+                     :value-joiner-fn ifn?)
+        :ret ::kstream-or-ktable)
+
 (s/fdef k/left-join
         :args (s/cat :kstream-or-ktable ::kstream-or-ktable
                      :ktable ktable?
@@ -253,12 +259,6 @@
         :ret kstream?)
 
 ;; IKTable
-
-(s/fdef k/join
-        :args (s/cat :ktable ktable?
-                     :other-ktable ktable?
-                     :value-joiner-fn ifn?)
-        :ret ktable?)
 
 (s/fdef k/outer-join
         :args (s/cat :ktable ktable?
