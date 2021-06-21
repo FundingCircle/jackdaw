@@ -138,6 +138,13 @@
 
 (deftype CljKStream [^KStream kstream]
   IKStreamBase
+  (join
+    [_ ktable value-joiner-fn]
+    (clj-kstream
+     (.join ^KStream kstream
+            ^KTable (ktable* ktable)
+            ^ValueJoiner (value-joiner value-joiner-fn))))
+
   (left-join
     [_ ktable value-joiner-fn]
     (clj-kstream
@@ -363,6 +370,13 @@
 
 (deftype CljKTable [^KTable ktable]
   IKStreamBase
+  (join
+    [_ other-ktable value-joiner-fn]
+    (clj-ktable
+     (.join ^KTable ktable
+            ^KTable (ktable* other-ktable)
+            ^ValueJoiner (value-joiner value-joiner-fn))))
+
   (left-join
     [_ other-ktable value-joiner-fn]
     (clj-ktable
@@ -399,13 +413,6 @@
      (.groupBy ktable
                ^KeyValueMapper (key-value-mapper key-value-mapper-fn)
                ^Serialized (topic->serialized topic-config))))
-
-  (join
-    [_ other-ktable value-joiner-fn]
-    (clj-ktable
-     (.join ^KTable ktable
-            ^KTable (ktable* other-ktable)
-            ^ValueJoiner (value-joiner value-joiner-fn))))
 
   (outer-join
     [_ other-ktable value-joiner-fn]

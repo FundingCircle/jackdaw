@@ -64,6 +64,33 @@
   (apply + (filter some? args)))
 
 (deftest KStream
+  (testing "join"
+    (let [topic-a (mock/topic "table-a")
+          topic-b (mock/topic "table-b")
+          topic-c (mock/topic "topic-c")]
+
+      (with-open [driver (mock/build-driver (fn [builder]
+                                              (let [left (k/kstream builder topic-a)
+                                                    right (k/ktable builder topic-b)]
+                                                (-> (k/join left right +)
+                                                    (k/to topic-c)))))]
+        (let [publish-left (partial mock/publish driver topic-a)
+              publish-right (partial mock/publish driver topic-b)]
+
+          (publish-left  1 1)
+          (publish-right 1 10)
+          (publish-left  1 100)
+          (publish-right 1 1000)
+          (publish-left  1 10000)
+          (publish-right 2 1)
+          (publish-left  2 10)
+
+          (let [keyvals (mock/get-keyvals driver topic-c)]
+            (is (= 3 (count keyvals)))
+            (is (= [1 110]   (first keyvals)))
+            (is (= [1 11000] (second keyvals)))
+            (is (= [2 11]    (nth keyvals 2))))))))
+
   (testing "left-join"
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
