@@ -37,6 +37,11 @@
 
 (defprotocol IKStreamBase
   "Methods common to KStream and KTable."
+  (join
+    [kstream-or-ktable ktable value-joiner-fn]
+    "Combines the values of the KStream-or-KTable with the values of the
+    KTable that share the same key using an inner join.")
+
   (left-join
     [kstream-or-ktable ktable value-joiner-fn]
     [kstream-or-ktable ktable value-joiner-fn this-topic-config other-topic-config]
@@ -179,10 +184,6 @@
 
 (defprotocol IKTable
   "A Ktable is an abstraction of a changlog stream."
-  (join
-    [ktable other-ktable value-joiner-fn]
-    "Combines the values of the two KTables that share the same key using an
-    inner join.")
 
   (outer-join
     [ktable other-ktable value-joiner-fn]

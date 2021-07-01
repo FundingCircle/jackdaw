@@ -74,6 +74,12 @@
 
 (deftype ConfiguredKStream [config kstream]
   IKStreamBase
+  (join
+    [_ ktable value-joiner-fn]
+    (configured-kstream
+     config
+     (join kstream ktable value-joiner-fn)))
+
   (left-join
     [_ ktable value-joiner-fn]
     (configured-kstream
@@ -301,6 +307,12 @@
 
 (deftype ConfiguredKTable [config ktable]
   IKStreamBase
+  (join
+    [_ other-ktable value-joiner-fn]
+    (configured-ktable
+     config
+     (join ktable other-ktable value-joiner-fn)))
+
   (left-join
     [_ other-ktable value-joiner-fn]
     (configured-ktable
@@ -337,12 +349,6 @@
     (configured-kgroupedtable
      config
      (group-by ktable key-value-mapper-fn topic-config)))
-
-  (join
-    [_ other-ktable value-joiner-fn]
-    (configured-ktable
-     config
-     (join ktable other-ktable value-joiner-fn)))
 
   (outer-join
     [_ other-ktable value-joiner-fn]
