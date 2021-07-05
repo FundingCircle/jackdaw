@@ -44,6 +44,7 @@
 ### Fixed
 
 * Fix `ktable` constructor to use supplied `store-name` 
+* Fix inability to materialize without supplying a topic name
 
 * Bump `clj-uuid` version to `0.1.9`
 
