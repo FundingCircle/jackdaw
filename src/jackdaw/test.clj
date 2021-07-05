@@ -20,6 +20,7 @@
    kafka cluster shared with other users."
   (:require
    [clojure.tools.logging :as log]
+   [clojure.spec.alpha :as s]
    [jackdaw.streams :as k]
    [jackdaw.test.commands :refer [with-handler command-handler]]
    [jackdaw.test.commands.base]
@@ -67,6 +68,7 @@
 ;; resources when the test machine is closed.
 
 (def +default-executor+ (-> (fn [machine cmd]
+                              (s/assert :jackdaw.test.commands/test-event cmd)
                               ((:command-handler machine) machine cmd))
                             with-status
                             with-timing
