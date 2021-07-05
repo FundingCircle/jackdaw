@@ -24,12 +24,18 @@
             Suppressed Suppressed$BufferConfig TimeWindowedKStream ValueJoiner
             ValueMapper ValueMapperWithKey ValueTransformerSupplier Windows]
            [org.apache.kafka.streams.processor
-            StreamPartitioner]))
+            StreamPartitioner]
+           [org.apache.kafka.streams
+            Topology$AutoOffsetReset]))
+
 
 (set! *warn-on-reflection* true)
 
-(defn topic->consumed [{:keys [key-serde value-serde]}]
-  (Consumed/with key-serde value-serde))
+(defn topic->consumed [{:keys [key-serde value-serde timestamp-extractor reset-policy]}]
+  (let [reset-policy (and reset-policy
+                          (Topology$AutoOffsetReset/valueOf
+                           (str/upper-case (name reset-policy))))]
+    (Consumed/with key-serde value-serde timestamp-extractor reset-policy)))
 
 (defn topic->produced [{:keys [key-serde value-serde partition-fn]}]
   (if partition-fn
