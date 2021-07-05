@@ -119,3 +119,10 @@
   {:topic-name topic-name
    :key-serde (Serdes/Long)
    :value-serde (Serdes/Long)})
+
+(defn string-topic
+  "Helper to create a topic."
+  [topic-name]
+  {:topic-name topic-name
+   :key-serde (Serdes/Long)
+   :value-serde (Serdes/String)})

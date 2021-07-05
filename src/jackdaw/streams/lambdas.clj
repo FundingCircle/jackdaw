@@ -4,8 +4,9 @@
   (:import org.apache.kafka.streams.KeyValue
            [org.apache.kafka.streams.kstream
             Aggregator ForeachAction Initializer KeyValueMapper
-            Merger Predicate Reducer TransformerSupplier ValueJoiner
-            ValueMapper ValueTransformerSupplier]
+            Merger Predicate Reducer Transformer TransformerSupplier
+            ValueJoiner ValueMapper ValueTransformer
+            ValueTransformerSupplier]
            [org.apache.kafka.streams.processor
             Processor ProcessorSupplier StreamPartitioner]))
 
@@ -184,3 +185,43 @@
   "Packages up a Clojure fn in a kstream value transformer supplier."
   [value-transformer-supplier-fn]
   (FnValueTransformerSupplier. value-transformer-supplier-fn))
+
+(defn transformer-with-ctx
+  "Packages a Clojure fn inside the structure required by the transformer
+  supplier, and records the ProcessorContext for it - passing the captured
+  context to the provided function."
+  [xfm]
+  (fn []
+    (let [ctx (atom nil)]
+      (reify Transformer
+        (init [_ processor-context]
+          (reset! ctx processor-context))
+        (close [_])
+        (transform [_ k v]
+          (xfm @ctx k v))))))
+
+(defn value-transformer-with-ctx
+  "Packages a Clojure fn inside the structure required by the value transformer
+  supplier, and records the ProcessorContext for it - passing the captured
+  context to the provided function."
+  [xfm]
+  (fn []
+    (let [ctx (atom nil)]
+      (reify ValueTransformer
+        (init [_ processor-context]
+          (reset! ctx processor-context))
+        (close [_])
+        (transform [_ v]
+          (xfm @ctx v))))))
+
+(defn with-stores
+  "Decorates a call to a fn used in a transform with the named state stores
+  from the Processor context. The named stores are passed in a map, keyed by
+  the store name. The name may be a keyword or string.
+  Primarily this is an aid to testing, as it allows the wrapped fn to access
+  state stores without having to know about the ProcessorContext."
+  [store-names xfm]
+  (fn [ctx & args]
+    (let [state-stores (into {} (map (fn [n]
+                                       [n (.getStateStore ctx (name n))])) store-names)]
+      (apply xfm ctx state-stores args))))

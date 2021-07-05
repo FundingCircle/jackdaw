@@ -7,7 +7,7 @@
             [jackdaw.streams.lambdas :as lambdas]
             [jackdaw.streams.protocols
              :refer [IStreamsBuilder IGlobalKTable IKGroupedTable
-                     IKGroupedStream IKStream IKTable
+                     IKGroupedStream IKStream IKTable ITransformingKStream
                      ITimeWindowedKStream ISessionWindowedKStream]])
   (:import org.apache.kafka.common.serialization.Serde
            org.apache.kafka.streams.kstream.JoinWindows))
@@ -33,7 +33,9 @@
   (partial satisfies? IKGroupedTable))
 
 (def kstream?
-  (partial satisfies? IKStream))
+  (fn [thing]
+    (and (satisfies? IKStream thing)
+         (satisfies? ITransformingKStream thing))))
 
 (def ktable?
   (partial satisfies? IKTable))
@@ -228,18 +230,6 @@
                      :select-key-value-mapper-fn ifn?)
         :ret kstream?)
 
-(s/fdef k/transform
-        :args (s/cat :kstream kstream?
-                     :transformer-supplier-fn ifn?
-                     :state-store-names (s/? (s/coll-of string?)))
-        :ret kstream?)
-
-(s/fdef k/transform-values
-        :args (s/cat :kstream kstream?
-                     :value-transformer-supplier-fn ifn?
-                     :state-store-names (s/? (s/coll-of string?)))
-        :ret kstream?)
-
 (s/fdef k/join-global
         :args (s/cat :kstream kstream?
                      :global-ktable global-ktable?
@@ -256,6 +246,32 @@
 
 (s/fdef k/kstream*
         :args (s/cat :kstream kstream?)
+        :ret kstream?)
+
+;; ITransformingKStream
+
+(s/fdef k/transform
+        :args (s/cat :kstream kstream?
+                     :transformer-supplier-fn ifn?
+                     :state-store-names (s/? (s/coll-of string?)))
+        :ret kstream?)
+
+(s/fdef k/flat-transform
+        :args (s/cat :kstream kstream?
+                     :transformer-supplier-fn ifn?
+                     :state-store-names (s/? (s/coll-of string?)))
+        :ret kstream?)
+
+(s/fdef k/transform-values
+        :args (s/cat :kstream kstream?
+                     :value-transformer-supplier-fn ifn?
+                     :state-store-names (s/? (s/coll-of string?)))
+        :ret kstream?)
+
+(s/fdef k/flat-transform-values
+        :args (s/cat :kstream kstream?
+                     :value-transformer-supplier-fn ifn?
+                     :state-store-names (s/? (s/coll-of string?)))
         :ret kstream?)
 
 ;; IKTable

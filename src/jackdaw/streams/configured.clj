@@ -54,6 +54,10 @@
     [_]
     (source-topics streams-builder))
 
+  (with-state-store
+    [_ store-config]
+    (with-state-store streams-builder store-config))
+
   (streams-builder*
     [_]
     (streams-builder* streams-builder))
@@ -256,26 +260,6 @@
      config
      (select-key kstream key-value-mapper-fn)))
 
-  (transform
-      [this transformer-supplier-fn]
-    (transform this transformer-supplier-fn []))
-
-  (transform
-    [_ transformer-supplier-fn state-store-names]
-    (configured-kstream
-     config
-     (transform kstream transformer-supplier-fn state-store-names)))
-
-  (transform-values
-      [this value-transformer-supplier-fn]
-    (transform-values this value-transformer-supplier-fn []))
-
-  (transform-values
-    [_ value-transformer-supplier-fn state-store-names]
-    (configured-kstream
-     config
-     (transform-values kstream value-transformer-supplier-fn state-store-names)))
-
   (left-join-global
     [_ global-ktable kv-mapper joiner]
     (configured-kstream
@@ -290,6 +274,47 @@
 
   (kstream* [_]
     (kstream* kstream))
+
+  ITransformingKStream
+  (transform
+    [this transformer-supplier-fn]
+    (transform this transformer-supplier-fn []))
+
+  (transform
+    [_ transformer-supplier-fn state-store-names]
+    (configured-kstream
+     config
+     (transform kstream transformer-supplier-fn state-store-names)))
+
+  (flat-transform
+    [this transformer-supplier-fn]
+    (flat-transform this transformer-supplier-fn []))
+
+  (flat-transform
+    [_ transformer-supplier-fn state-store-names]
+    (configured-kstream
+     config
+     (flat-transform kstream transformer-supplier-fn state-store-names)))
+
+  (transform-values
+    [this value-transformer-supplier-fn]
+    (transform-values this value-transformer-supplier-fn []))
+
+  (transform-values
+    [_ value-transformer-supplier-fn state-store-names]
+    (configured-kstream
+     config
+     (transform-values kstream value-transformer-supplier-fn state-store-names)))
+
+  (flat-transform-values
+    [this value-transformer-supplier-fn]
+    (flat-transform-values this value-transformer-supplier-fn []))
+
+  (flat-transform-values
+    [_ value-transformer-supplier-fn state-store-names]
+    (configured-kstream
+     config
+     (flat-transform-values kstream value-transformer-supplier-fn state-store-names)))
 
   IConfigurable
   (config [_]
