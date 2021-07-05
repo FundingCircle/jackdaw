@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Allow map with keyword keys in streams constructor.
+
 ### Added
 
 * Add KStream-KTable inner join.
@@ -44,6 +46,7 @@
 ### Fixed
 
 * Fix `ktable` constructor to use supplied `store-name` 
+
 
 * Bump `clj-uuid` version to `0.1.9`
 
