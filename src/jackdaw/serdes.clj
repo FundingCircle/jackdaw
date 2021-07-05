@@ -9,7 +9,7 @@
 
 (set! *warn-on-reflection* true)
 
-(defn string-serde
+(defn ^{:deprecated "Use jackdaw.serdes.string/serde instead"} string-serde
   []
   (Serdes/String))
 
