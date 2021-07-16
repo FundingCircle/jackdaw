@@ -8,7 +8,6 @@
   :repositories [["confluent" {:url "https://packages.confluent.io/maven/"}]]
 
   :dependencies [[aleph "0.4.6"]
-                 [clj-time "0.15.1"]
                  [danlentz/clj-uuid "0.1.9"
                   :exclusions [primitive-math]]
 
