@@ -581,6 +581,12 @@
                  ^Initializer (initializer initializer-fn)
                  ^Aggregator (aggregator aggregator-fn)
                  ^Materialized (topic->materialized topic))))
+  (aggregate
+    [_ initializer-fn aggregator-fn]
+    (clj-ktable
+     (.aggregate ^TimeWindowedKStream windowed-kstream
+                 ^Initializer (initializer initializer-fn)
+                 ^Aggregator (aggregator aggregator-fn))))
 
   (count
     [_]
@@ -599,6 +605,11 @@
      (.reduce ^TimeWindowedKStream windowed-kstream
               ^Reducer (reducer reducer-fn)
               ^Materialized (topic->materialized topic-config))))
+  (reduce
+    [_ reducer-fn]
+    (clj-ktable
+     (.reduce ^TimeWindowedKStream windowed-kstream
+              ^Reducer (reducer reducer-fn))))
 
   ITimeWindowedKStream
   (time-windowed-kstream*
@@ -620,6 +631,13 @@
                  ^Aggregator (aggregator aggregator-fn)
                  ^Merger (merger merger-fn)
                  ^Materialized (topic->materialized topic))))
+  (aggregate
+    [_ initializer-fn aggregator-fn merger-fn]
+    (clj-ktable
+     (.aggregate ^SessionWindowedKStream windowed-kstream
+                 ^Initializer (initializer initializer-fn)
+                 ^Aggregator (aggregator aggregator-fn)
+                 ^Merger (merger merger-fn))))
 
   (count
     [_]
@@ -638,6 +656,11 @@
      (.reduce ^SessionWindowedKStream windowed-kstream
               ^Reducer (reducer reducer-fn)
               ^Materialized (topic->materialized topic-config))))
+  (reduce
+    [_ reducer-fn]
+    (clj-ktable
+     (.reduce ^SessionWindowedKStream windowed-kstream
+              ^Reducer (reducer reducer-fn))))
 
   ISessionWindowedKStream
   (session-windowed-kstream*

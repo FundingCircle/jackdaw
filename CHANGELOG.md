@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+* Add reduced arity (without topic-config) `aggregate` functions to windowed streams.
 
 ### Added
 
