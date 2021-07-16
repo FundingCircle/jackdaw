@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+* Drop clj-time dependency
 
 * Added confluent schema registry support for JSON Schema
 
