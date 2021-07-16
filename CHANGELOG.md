@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+* Drop clj-time dependency
 
 ## [0.8.0] - [2021-05-13]
 * Update Kafka to 2.8.0 (confluent 6.1.1) [#292](https://github.com/FundingCircle/jackdaw/pull/292)
