@@ -193,12 +193,16 @@
               "description" "Do I like this vegetable?"}}}}
         serde (->serde (json/write-str schema))]
 
-    (round-trip serde "bananas"
-                [1]
-                #_(into-array [{"veggieName" "potato",
-                                "veggieLike" true}
-                               {"veggieName" "broccoli",
-                                "veggieLike" false}])))
+    (try
+      (round-trip serde "bananas"
+                  [1]
+                  #_(into-array [{"veggieName" "potato",
+                                  "veggieLike" true}
+                                 {"veggieName" "broccoli",
+                                  "veggieLike" false}]))
+      (catch Exception ex
+             (clojure.stacktrace/root-cause ex))))
+
 
   )
 
