@@ -17,6 +17,7 @@
                  [io.confluent/kafka-schema-registry-client "6.1.1"
                   :exclusions [com.fasterxml.jackson.core/jackson-databind]]
                  [io.confluent/kafka-avro-serializer "6.1.1"]
+                 [io.confluent/kafka-json-schema-serializer "6.1.1"]
                  [org.apache.kafka/kafka-clients "2.8.0"]
                  [org.apache.kafka/kafka-streams "2.8.0"]
                  [org.apache.kafka/kafka-streams-test-utils "2.8.0"]
@@ -26,6 +27,7 @@
                  [org.clojure/data.fressian "0.2.1"]
                  [org.clojure/tools.logging "0.4.1"]
                  [org.clojure/core.cache "0.7.2"]
+                 [metosin/jsonista "0.3.3"]
 
                  ;; Pull specific netty version to avoid critical CVE
                  ;; pulled by Aleph v0.4.6 (last stable version)
@@ -36,8 +38,7 @@
                  [io.netty/netty-handler "4.1.63.Final"]
                  [io.netty/netty-handler-proxy "4.1.63.Final"]
                  [io.netty/netty-resolver "4.1.63.Final"]
-                 [io.netty/netty-resolver-dns "4.1.63.Final"]
-                 ]
+                 [io.netty/netty-resolver-dns "4.1.63.Final"]]
 
   :aliases {"kaocha" ["run" "-m" "kaocha.runner"]}
   :aot [jackdaw.serdes.edn2 jackdaw.serdes.fressian jackdaw.serdes.fn-impl]
