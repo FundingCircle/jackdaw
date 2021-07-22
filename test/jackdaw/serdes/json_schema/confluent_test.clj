@@ -2,9 +2,7 @@
   (:require [jackdaw.serdes.json-schema.confluent :as jsco]
             [jackdaw.serdes.avro.schema-registry :as reg]
             [clojure.data.json :as json]
-            [clojure.test :refer [deftest is testing] :as test])
-  (:import [org.apache.kafka.common.errors SerializationException]
-           [org.everit.json.schema ValidationException]))
+            [clojure.test :refer [deftest is testing] :as test]))
 
 (defn ->serde
   ([schema-str]
@@ -57,11 +55,11 @@
       (is (= (round-trip serde "bananas" "foo")
              "foo"))
 
-      (is (thrown-with-msg? SerializationException
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo
                             #"Error serializing JSON message"
                             (round-trip serde "bananas" 1.1)))
 
-      (is (thrown-with-msg? SerializationException
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo
                             #"Error serializing JSON message"
                             (round-trip serde "bananas" ["foo"]))))))
 
@@ -76,11 +74,11 @@
       (is (= (round-trip serde "bananas" false)
              false))
 
-      (is (thrown-with-msg? SerializationException
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo
                             #"Error serializing JSON message"
                             (round-trip serde "bananas" 0)))
 
-      (is (thrown-with-msg? SerializationException
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo
                             #"Error serializing JSON message"
                             (round-trip serde "bananas" "true"))))))
 
@@ -92,15 +90,15 @@
       (is (= (round-trip serde "bananas" nil)
              nil))
 
-      (is (thrown-with-msg? SerializationException
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo
                             #"Error serializing JSON message"
                             (round-trip serde "bananas" false)))
 
-      (is (thrown-with-msg? SerializationException
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo
                             #"Error serializing JSON message"
                             (round-trip serde "bananas" "")))
 
-      (is (thrown-with-msg? SerializationException
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo
                             #"Error serializing JSON message"
                             (round-trip serde "bananas" 0))))))
 
@@ -115,11 +113,11 @@
       (is (= (round-trip serde "bananas" (int 1))
              1))
 
-      (is (thrown-with-msg? SerializationException
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo
                             #"Error serializing JSON message"
                             (round-trip serde "bananas" 1.1)))
 
-      (is (thrown-with-msg? SerializationException
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo
                             #"Error serializing JSON message"
                             (round-trip serde "bananas" "1"))))))
 
@@ -134,7 +132,7 @@
       (is (= (round-trip serde "bananas" 1.1)
              1.1M))
 
-      (is (thrown-with-msg? SerializationException
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo
                             #"Error serializing JSON message"
                             (round-trip serde "bananas" "1"))))))
 
@@ -166,7 +164,7 @@
                            "veggieLike" false}])
              {"array" ["foo" 1]}))
 
-      (is (thrown-with-msg? SerializationException
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo
                             ;; TODO: refactor so I can actually validate against the nested ValidationException and message
                             ;;ValidationException
                             ;;#"array: expected minimum item count: 2, found: 1"
@@ -220,7 +218,7 @@
              {:array ["foo" 1]
               :bool false}))
 
-      (is (thrown-with-msg? SerializationException
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo
                             #"Error serializing JSON message"
                             (round-trip serde "bananas" {:array ["foo"]}))))))
 
