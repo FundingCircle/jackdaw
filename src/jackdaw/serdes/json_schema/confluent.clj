@@ -53,10 +53,8 @@
                                 (let [envelope (->json-schema-jackson-envelope json-schema data)]
                                   (.serialize base-serializer topic envelope))
                                 (catch Throwable e
-                                  (let [data (-> e
-                                                 ex-data
-                                                 (assoc :topic topic :clj-data data))]
-                                    (throw (ex-info (.getMessage e) data))))))}
+                                  (let [data {:topic topic :clj-data data}]
+                                    (throw (ex-info (.getMessage e) data e))))))}
         clj-serializer (jsfn/new-serializer methods)]
     (.configure ^Serializer clj-serializer serializer-config key?)
     clj-serializer))
@@ -87,11 +85,8 @@
                                            walk/keywordize-keys)
                                       json-data))
                                   (catch Throwable e
-                                    (prn (.getCause e))
-                                    (let [data (-> e
-                                                   ex-data
-                                                   (assoc :topic topic :raw-data raw-data))]
-                                      (throw (ex-info (.getMessage e) data))))))}
+                                    (let [data {:topic topic :raw-data raw-data}]
+                                      (throw (ex-info (.getMessage e) data e))))))}
         clj-deserializer (jsfn/new-deserializer methods)]
     (.configure ^Deserializer clj-deserializer deserializer-config key?)
     clj-deserializer))
