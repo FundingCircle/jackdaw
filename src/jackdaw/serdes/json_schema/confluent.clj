@@ -63,9 +63,13 @@
   "Returns a JSON schema-registry deserializer."
   [serde-config]
   (let [{:keys [registry-url key? deserializer-properties
-                registry-client]} serde-config
+                registry-client json-schema]} serde-config
         deserializer-config (-> (base-config registry-url)
-                                (merge deserializer-properties))
+                                (merge
+                                 (cond-> deserializer-properties
+                                   ;; Detect top level array types
+                                   (= "array" (get json-schema "type"))
+                                   (assoc "json.value.type" "com.fasterxml.jackson.databind.node.ArrayNode"))))
         base-deserializer (KafkaJsonSchemaDeserializer. registry-client)
         methods {:close       (fn [_]
                                 (.close base-deserializer))
@@ -77,12 +81,20 @@
                                         (.deserialize base-deserializer
                                                       topic
                                                       #^bytes raw-data)]
+
                                     ;; Clojurify deserialized data
-                                    (if (= java.util.LinkedHashMap
-                                           (type json-data))
+                                    (cond
+                                      (instance? java.util.LinkedHashMap json-data)
                                       (->> json-data
                                            (into {})
                                            walk/keywordize-keys)
+                                      ;; There might be a more efficient way for this converison
+                                      (instance? com.fasterxml.jackson.databind.node.ArrayNode json-data)
+                                      (->> json-data
+                                           str
+                                           jsonista/read-value
+                                           walk/keywordize-keys)
+                                      :else
                                       json-data))
                                   (catch Throwable e
                                     (let [data {:topic topic :raw-data raw-data}]
