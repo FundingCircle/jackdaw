@@ -2,7 +2,6 @@
   "Implements a Confluent JSON SCHEMA REGISTRY SerDes (Serializer/Deserializer)."
   (:require [clojure.walk :as walk]
             [jackdaw.serdes.fn :as jsfn]
-            [jackdaw.serdes.avro.schema-registry :as registry]
             [jsonista.core :as jsonista])
   (:import org.apache.kafka.common.serialization.Serdes
            [org.apache.kafka.common.serialization
@@ -120,8 +119,7 @@
 
   (let [config {:key? key?
                 :registry-url url
-                :registry-client (or client
-                                     (registry/client url 128))
+                :registry-client client
                 :read-only? read-only?
                 :json-schema (parse-schema-str schema)}
 
