@@ -136,74 +136,39 @@
                             #"Error serializing JSON message"
                             (round-trip serde "bananas" "1"))))))
 
-;; TODO: does not like top level array types?
 (deftest array-type-test
   (testing "Array type"
     (let [schema
           {"$id" "https://example.com/arrays.schema.json",
            "$schema" "http://json-schema.org/draft-07/schema#",
            "description" "A representation of a person, company, organization, or place",
-           "type" "array",
+           "type" "array"
            "items"
            {"type" "object",
-            "required" ["veggieName",
-                        "veggieLike"],
+            "required" ["veggieName"
+                        "veggieLike"]
             "properties"
             {"veggieName"
-             {"type" "string",
+             {"type" "string"
               "description" "The name of the vegetable."},
              "veggieLike"
-             {"type" "boolean",
+             {"type" "boolean"
               "description" "Do I like this vegetable?"}}}}
           serde (->serde (json/write-str schema))]
 
       (is (= (round-trip serde "bananas"
-                         [{"veggieName" "potato",
+                         [{"veggieName" "potato"
                            "veggieLike" true}
-                          {"veggieName" "broccoli",
+                          {"veggieName" "broccoli"
                            "veggieLike" false}])
-             {"array" ["foo" 1]}))
+             [{:veggieName "potato"
+               :veggieLike true}
+              {:veggieName "broccoli"
+               :veggieLike false}]))
 
       (is (thrown-with-msg? clojure.lang.ExceptionInfo
-                            ;; TODO: refactor so I can actually validate against the nested ValidationException and message
-                            ;;ValidationException
-                            ;;#"array: expected minimum item count: 2, found: 1"
                             #"Error serializing JSON message"
                             (round-trip serde "bananas" {:array ["foo"]}))))))
-
-(comment
-
-  (let [schema
-        {"$id" "https://example.com/arrays.schema.json",
-         "$schema" "http://json-schema.org/draft-07/schema#",
-         "description" "A representation of a person, company, organization, or place",
-         "type" "array"
-         #_"items"
-         #_{"type" "object",
-            "required" ["veggieName",
-                        "veggieLike"],
-            "properties"
-            {"veggieName"
-             {"type" "string",
-              "description" "The name of the vegetable."},
-             "veggieLike"
-             {"type" "boolean",
-              "description" "Do I like this vegetable?"}}}}
-        serde (->serde (json/write-str schema))]
-
-    (try
-      (round-trip serde "bananas"
-                  [1]
-                  #_(into-array [{"veggieName" "potato",
-                                  "veggieLike" true}
-                                 {"veggieName" "broccoli",
-                                  "veggieLike" false}]))
-      (catch Exception ex
-             (clojure.stacktrace/root-cause ex))))
-
-
-  )
-
 
 (deftest object-type-test
   (testing "Object type"
@@ -213,9 +178,9 @@
                                          "minItems" 2}}}
           serde (->serde (json/write-str schema))]
 
-      (is (= (round-trip serde "bananas" {:array ["foo" 1]
+      (is (= (round-trip serde "bananas" {:array ["foo" 1 {"foo" "bar"}]
                                           :bool false})
-             {:array ["foo" 1]
+             {:array ["foo" 1 {"foo" "bar"}]
               :bool false}))
 
       (is (thrown-with-msg? clojure.lang.ExceptionInfo
