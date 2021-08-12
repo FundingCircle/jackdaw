@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Added confluent schema registry support for JSON Schema
+
 ### Added
 
 * Add KStream-KTable inner join.
