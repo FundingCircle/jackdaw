@@ -3,6 +3,7 @@
   (:require [clojure.java.io :as io]
             [clojure.spec.alpha :as s]
             [jackdaw.serdes.avro.confluent :as c-avro]
+            [jackdaw.serdes.json-schema.confluent :as c-json]
             [jackdaw.serdes.edn]
             [jackdaw.serdes.json]
             [jackdaw.serdes]
@@ -64,6 +65,11 @@
                      :else           nil)
             serde-fn (find-serde-var serde-config)]
         (case serde-keyword
+          :jackdaw.serdes.json-schema.confluent/serde
+          (serde-fn schema-registry-url schema key? {:schema-registry-client schema-registry-client
+                                                     :read-only? read-only?
+                                                     :serializer-properties serializer-properties
+                                                     :deserializer-properties deserializer-properties})
           :jackdaw.serdes.avro.confluent/serde
           (if-not (s/valid? :jackdaw.serde/confluent-avro-serde serde-config)
             (throw (ex-info "Invalid serde config."

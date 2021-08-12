@@ -77,12 +77,29 @@
                     (.serialize (.serializer resolved) "avro-topic")
                     (.deserialize (.deserializer resolved) "avro-topic"))))))
 
+    (testing "json-schema serdes"
+      (let [resolver-fn (resolver/serde-resolver :schema-registry-url ""
+                                                 :schema-registry-client (reg/mock-client))
+            json-config {:serde-keyword :jackdaw.serdes.json-schema.confluent/serde
+                         :schema-filename "resources/example_json_schema.json"
+                         :key? false}
+            resolved (resolver-fn json-config)
+            example-data {:firstName "Peter"
+                          :address "Griffin"
+                          :age 45}]
+        (is (instance? Serde resolved))
+        ;; round trip test
+        (is (= example-data
+               (->> example-data
+                    (.serialize (.serializer resolved) "json-topic")
+                    (.deserialize (.deserializer resolved) "json-topic"))))))
+
     (testing "avro serdes with UUID logical type"
       (let [resolver-fn (resolver/serde-resolver :schema-registry-url ""
                                                  :schema-registry-client (reg/mock-client)
                                                  :type-registry (merge
-                                                                  avro/+base-schema-type-registry+
-                                                                  avro/+UUID-type-registry+))
+                                                                 avro/+base-schema-type-registry+
+                                                                 avro/+UUID-type-registry+))
             avro-config {:serde-keyword :jackdaw.serdes.avro.confluent/serde
                          :schema-filename "resources/example_schema.avsc"
                          :key? false}

@@ -104,22 +104,18 @@
 
 (defn serde
   "Returns a Confluent JSON Schema serde."
-  [{:keys [json.schema-registry/url
-           json.schema-registry/client]}
-   {:keys [json/schema
-           key?
-           serializer-properties
-           deserializer-properties
-           read-only?]}]
-
-  (when-not url
+  [schema-registry-url schema key? & [{:keys [read-only?
+                                              schema-registry-client
+                                              serializer-properties
+                                              deserializer-properties]}]]
+  (when-not schema-registry-url
     (throw
      (IllegalArgumentException.
       ":schema-registry/url is required in the registry config")))
 
   (let [config {:key? key?
-                :registry-url url
-                :registry-client client
+                :registry-url schema-registry-url
+                :registry-client schema-registry-client
                 :read-only? read-only?
                 :json-schema (parse-schema-str schema)}
 
