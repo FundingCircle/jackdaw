@@ -7,26 +7,17 @@
 (defn ->serde
   ([schema-str]
    (->serde schema-str (reg/mock-client)))
-
   ([schema-str registry-client]
-   (let [serde-config {:json/schema schema-str
-                       :key?        false}]
-     (->serde schema-str registry-client serde-config)))
-
-  ([schema-str registry-client serde-config]
-   (let [serde-config (-> serde-config
-                          (merge {:avro/schema schema-str
-                                  :key?        false})
+   (let [serde-config (-> {:schema-registry-client registry-client}
                           ;; if no schema dont fail on invalid schema
                           (cond-> (nil? schema-str)
                             (merge {:deserializer-properties
                                     {"json.fail.invalid.schema" false}
                                     :serializer-properties
                                     {"json.fail.invalid.schema" false}})))
-         schema-registry-config
-         {:json.schema-registry/client registry-client
-          :json.schema-registry/url    "localhost:8081"}]
-     (jsco/serde schema-registry-config serde-config))))
+         schema-registry-url "localhost:8081"
+         key? false]
+     (jsco/serde schema-registry-url schema-str key? serde-config))))
 
 (defn ser [serde topic x]
   (let [serializer (.serializer serde)]
