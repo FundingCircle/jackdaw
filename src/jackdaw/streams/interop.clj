@@ -3,7 +3,8 @@
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:refer-clojure :exclude [count map reduce group-by merge filter peek])
   (:require [jackdaw.streams.protocols :refer :all]
-            [jackdaw.streams.lambdas :refer :all])
+            [jackdaw.streams.lambdas :refer :all]
+            [clojure.string :as str])
   (:import [java.util
             Collection]
            [java.util.regex
@@ -28,12 +29,17 @@
            [org.apache.kafka.streams.state
             KeyValueStore Stores]
            (org.apache.kafka.streams.processor.api
-            ProcessorSupplier)))
+            ProcessorSupplier)
+           [org.apache.kafka.streams
+            Topology$AutoOffsetReset]))
 
 (set! *warn-on-reflection* true)
 
-(defn topic->consumed [{:keys [key-serde value-serde]}]
-  (Consumed/with key-serde value-serde))
+(defn topic->consumed [{:keys [key-serde value-serde timestamp-extractor reset-policy]}]
+  (let [reset-policy (and reset-policy
+                          (Topology$AutoOffsetReset/valueOf
+                            (str/upper-case (name reset-policy))))]
+    (Consumed/with key-serde value-serde timestamp-extractor reset-policy)))
 
 (defn topic->produced [{:keys [key-serde value-serde partition-fn]}]
   (if partition-fn

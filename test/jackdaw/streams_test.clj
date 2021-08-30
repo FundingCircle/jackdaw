@@ -1,6 +1,7 @@
 (ns jackdaw.streams-test
   "Tests of the kafka streams wrapper."
   (:require [clojure.spec.test.alpha :as stest]
+            [clojure.spec.alpha :as s]
             [clojure.test :refer :all]
             [jackdaw.serdes.edn :as jse]
             [jackdaw.streams :as k]
@@ -9,15 +10,18 @@
             [jackdaw.streams.lambdas :as lambdas :refer [key-value]]
             [jackdaw.streams.lambdas.specs]
             [jackdaw.streams.mock :as mock]
+            [jackdaw.streams.interop :as interop]
+            [jackdaw.streams.specs :as streams.specs]
             [jackdaw.streams.protocols
              :refer [IKStream IKTable IStreamsBuilder]]
             [jackdaw.streams.specs])
   (:import [java.time Duration]
            [org.apache.kafka.streams.kstream
             JoinWindows SessionWindows TimeWindows Transformer
-            ValueTransformer]
+            ValueTransformer Consumed]
            org.apache.kafka.streams.StreamsBuilder
-           [org.apache.kafka.common.serialization Serdes]))
+           [org.apache.kafka.common.serialization Serdes Serdes$ByteArraySerde]
+           [org.apache.kafka.streams.processor WallclockTimestampExtractor]))
 
 (set! *warn-on-reflection* false)
 
@@ -1457,3 +1461,24 @@
           (let [msgs (into {} (mock/get-keyvals driver output-t))]
             (is (= 6 (:value (msgs 1))))
             (is (= 60 (:value (msgs 2))))))))))
+
+(defn topic->consumed
+  [x]
+  {:pre [(s/valid? ::streams.specs/topic-config x)]}
+  (interop/topic->consumed x))
+
+(deftest topic->consumedTest
+  (let [base {:topic-name "foo"
+              :key-serde (Serdes$ByteArraySerde.)
+              :value-serde (Serdes$ByteArraySerde.)}]
+    (testing "defaults handled"
+      (is (instance? Consumed (topic->consumed base))))
+    (testing "invalid TimestampExtractor"
+      (is (thrown? java.lang.AssertionError (topic->consumed (assoc base :timestamp-extractor :bad)))))
+    (testing "valid TimestampExtractor"
+      (is (instance? Consumed (topic->consumed (assoc base :timestamp-extractor (WallclockTimestampExtractor.))))))
+    (testing "valid reset-policy"
+      (is (every? #(instance? Consumed (topic->consumed (assoc base :reset-policy %))) [:earliest :latest])))
+    (testing "invalid reset-policy"
+      (is (thrown? java.lang.AssertionError (topic->consumed (assoc base :reset-policy :bad)))))))
+

@@ -1,6 +1,7 @@
 # Changelog
 
 ## Unreleased
+* Add support for TimestampExtractor
 
 
 ### [0.9.4] - [2022-05-23]

@@ -10,7 +10,8 @@
                      IKGroupedStream IKStream IKTable
                      ITimeWindowedKStream ISessionWindowedKStream]])
   (:import org.apache.kafka.common.serialization.Serde
-           org.apache.kafka.streams.kstream.JoinWindows))
+           org.apache.kafka.streams.kstream.JoinWindows
+           org.apache.kafka.streams.processor.TimestampExtractor))
 
 (set! *warn-on-reflection* true)
 
@@ -41,6 +42,12 @@
 (def serde?
   (partial instance? Serde))
 
+(def timestamp-extractor?
+  (partial instance? TimestampExtractor))
+
+(def reset-policy?
+  (partial contains? #{:earliest :latest}))
+
 (def streams-builder?
   (partial satisfies? IStreamsBuilder))
 
@@ -53,13 +60,17 @@
 (s/def ::topic-name string?)
 (s/def ::key-serde any?)
 (s/def ::value-serde any?)
+(s/def ::timestamp-extractor timestamp-extractor?)
+(s/def ::reset-policy reset-policy?)
 (s/def ::partition-fn fn?)
 
 (s/def ::topic-config
   (s/keys :req-un [::topic-name
                    ::key-serde
                    ::value-serde]
-          :opt-un [::partition-fn]))
+          :opt-un [::timestamp-extractor
+                   ::reset-policy
+                   ::partition-fn]))
 
 (s/def ::topic-configs (s/coll-of ::topic-config))
 
