@@ -17,10 +17,10 @@
            [org.apache.kafka.streams
             StreamsBuilder]
            [org.apache.kafka.streams.kstream
-            Aggregator Consumed GlobalKTable Initializer Joined
+            Aggregator Consumed GlobalKTable Grouped Initializer Joined
             JoinWindows KGroupedStream KGroupedTable KStream KTable
             KeyValueMapper Materialized Merger Predicate Printed Produced
-            Reducer Serialized SessionWindowedKStream SessionWindows
+            Reducer SessionWindowedKStream SessionWindows
             Suppressed Suppressed$BufferConfig TimeWindowedKStream ValueJoiner
             ValueMapper ValueMapperWithKey ValueTransformerSupplier Windows]
            [org.apache.kafka.streams.processor
@@ -36,8 +36,8 @@
     (Produced/with key-serde value-serde (->FnStreamPartitioner partition-fn))
     (Produced/with key-serde value-serde)))
 
-(defn topic->serialized [{:keys [key-serde value-serde]}]
-  (Serialized/with key-serde value-serde))
+(defn topic->grouped [{:keys [key-serde value-serde]}]
+  (Grouped/with key-serde value-serde))
 
 (defn topic->materialized [{:keys [topic-name key-serde value-serde]}]
   (cond-> (Materialized/as ^String topic-name)
@@ -187,7 +187,7 @@
     (clj-kgroupedstream
      (.groupBy kstream
                ^KeyValueMapper (select-key-value-mapper key-value-mapper-fn)
-               ^Serialized (topic->serialized topic-config))))
+               ^Grouped (topic->grouped topic-config))))
 
   (map-values
     [_ value-mapper-fn]
@@ -240,7 +240,7 @@
     [_ topic-config]
     (clj-kgroupedstream
      (.groupByKey ^KStream kstream
-                  ^Serialized (topic->serialized topic-config))))
+                  ^Grouped (topic->grouped topic-config))))
 
   (join-windowed
     [_ other-kstream value-joiner-fn windows]
@@ -412,7 +412,7 @@
     (clj-kgroupedtable
      (.groupBy ktable
                ^KeyValueMapper (key-value-mapper key-value-mapper-fn)
-               ^Serialized (topic->serialized topic-config))))
+               ^Grouped (topic->grouped topic-config))))
 
   (outer-join
     [_ other-ktable value-joiner-fn]
