@@ -24,7 +24,9 @@
             Suppressed Suppressed$BufferConfig TimeWindowedKStream ValueJoiner
             ValueMapper ValueMapperWithKey ValueTransformerSupplier Windows]
            [org.apache.kafka.streams.processor
-            StreamPartitioner]))
+            StreamPartitioner]
+           (org.apache.kafka.streams.processor.api
+            ProcessorSupplier)))
 
 (set! *warn-on-reflection* true)
 
