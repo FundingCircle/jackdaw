@@ -3,6 +3,7 @@
 ## Unreleased
 * Drop clj-time dependency
 * Added confluent schema registry support for JSON Schema
+* Removed dependency on deprecated `org.apache.kafka.streams.kstream.Serialized` class
 
 ### Added
 
