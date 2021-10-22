@@ -5,6 +5,7 @@
             [jackdaw.serdes.edn :as jse]
             [jackdaw.streams :as k]
             [jackdaw.streams.configurable :as cfg]
+            [jackdaw.streams.interop :as interop]
             [jackdaw.streams.lambdas :as lambdas :refer [key-value]]
             [jackdaw.streams.lambdas.specs]
             [jackdaw.streams.mock :as mock]
@@ -22,22 +23,16 @@
 
 (stest/instrument)
 
-(defn close-test-driver [cfg-topology]
-  (-> cfg-topology
-      (cfg/config)
-      (:jackdaw.streams.mock/test-driver)
-      (.close)))
-
 (deftest streams-builder
   (testing "kstream"
-    (let [streams-builder (mock/streams-builder)
+    (let [streams-builder (interop/streams-builder)
           kstream-a (-> streams-builder
                         (k/kstream (mock/topic "topic-a")))]
 
       (is (satisfies? IKStream kstream-a))))
 
   (testing "kstreams"
-    (let [streams-builder (mock/streams-builder)
+    (let [streams-builder (interop/streams-builder)
           kstream (-> streams-builder
                       (k/kstreams [(mock/topic "topic-a")
                                    (mock/topic "topic-b")]))]
@@ -45,7 +40,7 @@
       (is (satisfies? IKStream kstream))))
 
   (testing "ktable"
-    (let [streams-builder (mock/streams-builder)
+    (let [streams-builder (interop/streams-builder)
           ktable-a (-> streams-builder
                        (k/ktable (mock/topic "topic-a")))
           ktable-b (-> streams-builder
@@ -55,7 +50,7 @@
 
   (testing "streams-builder*"
     (is (instance? StreamsBuilder
-                   (k/streams-builder* (mock/streams-builder)))))
+                   (k/streams-builder* (interop/streams-builder)))))
 
   (testing "streams-builder"
     (is (satisfies? IStreamsBuilder (k/streams-builder)))))
@@ -475,6 +470,41 @@
         (is (= [2 3] (second keyvals)))
         (is (= [2 7] (nth keyvals 2))))))
 
+  (testing "flat-transform"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          transformer-supplier-fn #(let [total (atom 0)]
+                                     (reify Transformer
+                                       (init [_ _])
+                                       (close [_])
+                                       (transform [_ k v]
+                                         ;; each input creates two outputs
+                                         ;; each v' accumulating the v read in:
+                                         ;; [[k * 10, v'] [k * 20, v'']]
+                                         (map (fn [x]
+                                                (swap! total + v)
+                                                (key-value [(* k x) @total]))
+                                              [10 20]))))
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/flat-transform transformer-supplier-fn)
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
+
+      (publish 1 1)
+      (publish 1 2)
+      (publish 1 4)
+
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= 6 (count keyvals)))
+        (is (= [10 1] (first keyvals)))
+        (is (= [20 2] (second keyvals)))
+        (is (= [10 4] (nth keyvals 2)))
+        (is (= [20 6] (nth keyvals 3)))
+        (is (= [10 10] (nth keyvals 4)))
+        (is (= [20 14] (nth keyvals 5))))))
+
   (testing "transform-values"
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
@@ -501,6 +531,40 @@
         (is (= [1 1] (first keyvals)))
         (is (= [1 3] (second keyvals)))
         (is (= [1 7] (nth keyvals 2))))))
+
+  (testing "flat-transform-values"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          transformer-supplier-fn #(let [total (atom 0)]
+                                    (reify ValueTransformer
+                                      (init [_ _])
+                                      (close [_])
+                                      (transform [_ v]
+                                        ;; returns value + 100,
+                                        ;; then value + 200
+                                        (map (fn [x]
+                                               (swap! total + v)
+                                               (+ @total x))
+                                             [100 200]))))
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          (k/flat-transform-values transformer-supplier-fn)
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
+
+      (publish 1 1)
+      (publish 1 2)
+      (publish 1 4)
+
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= 6 (count keyvals)))
+        (is (= [1 101] (first keyvals)))
+        (is (= [1 202] (second keyvals)))
+        (is (= [1 104] (nth keyvals 2)))
+        (is (= [1 206] (nth keyvals 3)))
+        (is (= [1 110] (nth keyvals 4)))
+        (is (= [1 214] (nth keyvals 5))))))
 
   (testing "kstreams"
     (let [topic-a (mock/topic "topic-a")
@@ -1335,3 +1399,61 @@
             (is (= [1 1] (first keyvals)))
             (is (= [1 6] (second keyvals)))))))))
 
+(deftest transformer-with-ctx-test
+  (testing "Value Transformer sugar with context"
+    (let [input-t (merge (mock/topic "input-topic") {:value-serde (jse/serde)})
+          output-t (merge (mock/topic "output-topic") {:value-serde (jse/serde)})]
+      (with-open [driver (mock/build-driver
+                           (fn [builder]
+                             (-> (k/kstream builder input-t)
+                                 (k/transform-values
+                                   (lambdas/value-transformer-with-ctx
+                                     (fn [ctx v]
+                                       {:new-val (+ (:val v) 1)
+                                        :topic (.topic ctx)})))
+                                 (k/to output-t))))]
+        (let [publisher (partial mock/publish driver input-t)]
+          
+          (publisher 100 {:val 10})
+
+          (let [[[k v]] (mock/get-keyvals driver output-t)]
+            (is (= 11 (:new-val v)))
+            (is (= "input-topic" (:topic v)))))))))
+
+(deftest with-kv-state-store-test
+  (testing "Transfromer with state store sugar"
+    (let [input-t (mock/topic "input-topic")
+          output-t (merge (mock/topic "output-topic") {:value-serde (jse/serde)})]
+      (with-open [driver (mock/build-driver
+                           (fn [builder]
+                             (-> builder
+                                 (k/with-kv-state-store {:store-name "test-store"
+                                                       :key-serde (:key-serde input-t)
+                                                       :value-serde (jse/serde)})
+                                 (k/kstream input-t)
+                                 (k/transform
+                                   (lambdas/transformer-with-ctx
+                                     (fn [ctx k v]
+                                       ;; Side effects on state store, procedural let ...
+                                       (let [store (.getStateStore ctx "test-store")
+                                             cur-val (.get store k)
+                                             new-val (if-not cur-val
+                                                       {:value v}
+                                                       (update cur-val :value + v))]
+                                         (.put store k new-val) 
+                                         (key-value [k new-val]))))
+                                   ["test-store"])
+                                 (k/to output-t))))]
+        (let [publisher (partial mock/publish driver input-t)]
+          
+          (publisher 1 1)
+          (publisher 1 2)
+          (publisher 1 3)
+
+          (publisher 2 10)
+          (publisher 2 20)
+          (publisher 2 30)
+
+          (let [msgs (into {} (mock/get-keyvals driver output-t))]
+            (is (= 6 (:value (msgs 1))))
+            (is (= 60 (:value (msgs 2))))))))))

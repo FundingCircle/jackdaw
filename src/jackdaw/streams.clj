@@ -46,6 +46,12 @@
   [streams-builder]
   (p/source-topics streams-builder))
 
+(defn with-kv-state-store
+  "Adds a persistent state store to the topology with the configured name
+  and serdes"
+  [streams-builder store-config]
+  (p/with-kv-state-store streams-builder store-config))
+
 (defn streams-builder*
   "Returns the underlying KStreamBuilder."
   [streams-builder]
@@ -219,6 +225,40 @@
 (defn merge
   [kstream other]
   (p/merge kstream other))
+
+(defn transform
+  "Creates a KStream that consists of the results of applying the transformer
+  to each key/value in the input stream."
+  ([kstream transformer-supplier-fn]
+   (p/transform kstream transformer-supplier-fn))
+  ([kstream transformer-supplier-fn state-store-names]
+   (p/transform kstream transformer-supplier-fn state-store-names)))
+
+(defn flat-transform
+  "Creates a KStream that consists of the results of applying the transformer
+  to each value in the input stream. Result of the transform should be iterable,
+  and the resulting stream is as per flatMap"
+  ([kstream transformer-supplier-fn]
+   (p/flat-transform kstream transformer-supplier-fn))
+  ([kstream transformer-supplier-fn state-store-names]
+   (p/flat-transform kstream transformer-supplier-fn state-store-names)))
+
+(defn transform-values
+  "Creates a KStream that consists of the results of applying the transformer
+  to each value in the input stream."
+  ([kstream value-transformer-supplier-fn]
+   (p/transform-values kstream value-transformer-supplier-fn))
+  ([kstream value-transformer-supplier-fn state-store-names]
+   (p/transform-values kstream value-transformer-supplier-fn state-store-names)))
+
+(defn flat-transform-values
+  "Creates a KStream that consists of the results of applying the transformer
+  to each value in the input stream. Result of the transform should be iterable,
+  and the resulting stream is as per flatMap"
+  ([kstream value-transformer-supplier-fn]
+   (p/flat-transform-values kstream value-transformer-supplier-fn))
+  ([kstream value-transformer-supplier-fn state-store-names]
+   (p/flat-transform-values kstream value-transformer-supplier-fn state-store-names)))
 
 (defn kstream*
   "Returns the underlying KStream object."
