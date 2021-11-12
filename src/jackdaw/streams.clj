@@ -206,34 +206,6 @@
   ([kstream transformer-supplier-fn state-store-names]
    (p/transform kstream transformer-supplier-fn state-store-names)))
 
-(defn transform-values
-  "Creates a KStream that consists of the results of applying the transformer
-  to each value in the input stream."
-  ([kstream value-transformer-supplier-fn]
-   (p/transform-values kstream value-transformer-supplier-fn))
-  ([kstream value-transformer-supplier-fn state-store-names]
-   (p/transform-values kstream value-transformer-supplier-fn state-store-names)))
-
-(defn join-global
-  [kstream global-ktable kv-mapper joiner]
-  (p/join-global kstream global-ktable kv-mapper joiner))
-
-(defn left-join-global
-  [kstream global-ktable kv-mapper joiner]
-  (p/left-join-global kstream global-ktable kv-mapper joiner))
-
-(defn merge
-  [kstream other]
-  (p/merge kstream other))
-
-(defn transform
-  "Creates a KStream that consists of the results of applying the transformer
-  to each key/value in the input stream."
-  ([kstream transformer-supplier-fn]
-   (p/transform kstream transformer-supplier-fn))
-  ([kstream transformer-supplier-fn state-store-names]
-   (p/transform kstream transformer-supplier-fn state-store-names)))
-
 (defn flat-transform
   "Creates a KStream that consists of the results of applying the transformer
   to each value in the input stream. Result of the transform should be iterable,
@@ -259,6 +231,18 @@
    (p/flat-transform-values kstream value-transformer-supplier-fn))
   ([kstream value-transformer-supplier-fn state-store-names]
    (p/flat-transform-values kstream value-transformer-supplier-fn state-store-names)))
+
+(defn join-global
+  [kstream global-ktable kv-mapper joiner]
+  (p/join-global kstream global-ktable kv-mapper joiner))
+
+(defn left-join-global
+  [kstream global-ktable kv-mapper joiner]
+  (p/left-join-global kstream global-ktable kv-mapper joiner))
+
+(defn merge
+  [kstream other]
+  (p/merge kstream other))
 
 (defn kstream*
   "Returns the underlying KStream object."
