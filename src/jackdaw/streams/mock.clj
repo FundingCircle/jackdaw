@@ -17,7 +17,7 @@
 (set! *warn-on-reflection* false)
 
 (defn topology->test-driver
-  ""
+  "Given a kafka streams topology, return a topology test driver for it"
   [topology]
   (TopologyTestDriver.
     topology
@@ -28,13 +28,15 @@
       (.put "default.value.serde" "jackdaw.serdes.EdnSerde"))))
 
 (defn streams-builder->test-driver
-  ""
+  "Given the jackdaw streams builder, return a builds the described topology
+  and returns a topology test driver for that topology"
   [streams-builder]
   (let [topology (.build (js/streams-builder* streams-builder))]
     (topology->test-driver topology)))
 
 (defn producer
-  ""
+  "Returns a function which can be used to pubish data to a topic for the
+  topology test driver"
   [test-driver
    {:keys [topic-name
            ^Serde key-serde

@@ -1421,7 +1421,7 @@
             (is (= "input-topic" (:topic v)))))))))
 
 (deftest with-kv-state-store-test
-  (testing "Transfromer with state store sugar"
+  (testing "Transformer with state store sugar"
     (let [input-t (mock/topic "input-topic")
           output-t (merge (mock/topic "output-topic") {:value-serde (jse/serde)})]
       (with-open [driver (mock/build-driver

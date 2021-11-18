@@ -187,8 +187,8 @@
 
 (deftype FnTransformer [context xfm-fn]
   Transformer
-  (init [this trasnformer-context]
-    (reset! context trasnformer-context))
+  (init [this transformer-context]
+    (reset! context transformer-context))
   (close [this])
   (transform [this k v]
     (xfm-fn @context k v)))
@@ -211,8 +211,8 @@
 
 (deftype FnValueTransformer [context xfm-fn]
   ValueTransformer
-  (init [this trasnformer-context]
-    (reset! context trasnformer-context))
+  (init [this transformer-context]
+    (reset! context transformer-context))
   (close [this])
   (transform [this v]
     (xfm-fn @context v)))
