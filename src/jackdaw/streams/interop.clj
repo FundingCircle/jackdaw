@@ -25,6 +25,8 @@
             ValueMapper ValueMapperWithKey ValueTransformerSupplier Windows]
            [org.apache.kafka.streams.processor
             StreamPartitioner]
+           [org.apache.kafka.streams.state
+            KeyValueStore Stores]
            (org.apache.kafka.streams.processor.api
             ProcessorSupplier)))
 
@@ -129,6 +131,15 @@
                    ^String topic-name
                    ^Consumed (topic->consumed topic-config))))
 
+  (with-kv-state-store
+    [builder {:keys [store-name key-serde value-serde] :as store-config}]
+    (.addStateStore ^StreamsBuilder streams-builder
+                    (Stores/keyValueStoreBuilder
+                     (Stores/persistentKeyValueStore store-name)
+                     key-serde
+                     value-serde))
+    builder)
+  
   (streams-builder*
     [_]
     streams-builder))
@@ -335,6 +346,17 @@
                  ^TransformerSupplier (transformer-supplier transformer-supplier-fn)
                  ^"[Ljava.lang.String;" (into-array String state-store-names))))
 
+  (flat-transform
+    [this transformer-supplier-fn]
+    (flat-transform this transformer-supplier-fn []))
+
+  (flat-transform
+    [_ transformer-supplier-fn state-store-names]
+    (clj-kstream
+     (.flatTransform ^KStream kstream
+                     ^TransformerSupplier (transformer-supplier transformer-supplier-fn)
+                     ^"[Ljava.lang.String;" (into-array String
+                                                        (clojure.core/map name state-store-names)))))
   (transform-values
     [this value-transformer-supplier-fn]
     (transform-values this value-transformer-supplier-fn []))
@@ -345,6 +367,18 @@
      (.transformValues ^KStream kstream
                        ^ValueTransformerSupplier (value-transformer-supplier value-transformer-supplier-fn)
                        ^"[Ljava.lang.String;" (into-array String state-store-names))))
+
+  (flat-transform-values
+    [this value-transformer-supplier-fn]
+    (flat-transform-values this value-transformer-supplier-fn []))
+
+  (flat-transform-values
+    [_ value-transformer-supplier-fn state-store-names]
+    (clj-kstream
+     (.flatTransformValues ^KStream kstream
+                           ^ValueTransformerSupplier (value-transformer-supplier value-transformer-supplier-fn)
+                           ^"[Ljava.lang.String;" (into-array String
+                                                              (clojure.core/map name state-store-names)))))
 
   (join-global
     [_ global-ktable key-value-mapper-fn joiner-fn]

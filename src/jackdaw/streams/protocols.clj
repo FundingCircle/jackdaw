@@ -31,6 +31,11 @@
     [topology-builder]
     "Gets the names of source topics for the topology.")
 
+  (with-kv-state-store
+    [topology-builder store-config]
+    "Adds a persistent state store to the topology with the configured name
+    and serdes.")
+    
   (streams-builder*
     [streams-builder]
     "Returns the underlying KStreamBuilder."))
@@ -166,11 +171,23 @@
     "Creates a KStream that consists of the results of applying the transformer
     to each key/value in the input stream.")
 
+  (flat-transform
+    [kstream transformer-supplier-fn]
+    [kstream transformer-supplier-fn state-store-names]
+    "Creates a KStream that consists of the results of applying the transformer
+    to each key/value in the input stream via flatTransform.")
+
   (transform-values
     [kstream value-transformer-supplier-fn]
     [kstream value-transformer-supplier-fn state-store-names]
     "Creates a KStream that consists of the results of applying the transformer
     to each value in the input stream.")
+
+  (flat-transform-values
+    [kstream value-transformer-supplier-fn]
+    [kstream value-transformer-supplier-fn state-store-names]
+    "Creates a KStream that consists of the results of applying the transformer
+    to each key/value in the input stream via flatTransformValues.")
 
   (join-global
     [kstream global-ktable kv-mapper joiner])

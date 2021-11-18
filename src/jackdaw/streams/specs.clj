@@ -234,7 +234,19 @@
                      :state-store-names (s/? (s/coll-of string?)))
         :ret kstream?)
 
+(s/fdef k/flat-transform
+        :args (s/cat :kstream kstream?
+                     :transformer-supplier-fn ifn?
+                     :state-store-names (s/? (s/coll-of string?)))
+        :ret kstream?)
+
 (s/fdef k/transform-values
+        :args (s/cat :kstream kstream?
+                     :value-transformer-supplier-fn ifn?
+                     :state-store-names (s/? (s/coll-of string?)))
+        :ret kstream?)
+
+(s/fdef k/flat-transform-values
         :args (s/cat :kstream kstream?
                      :value-transformer-supplier-fn ifn?
                      :state-store-names (s/? (s/coll-of string?)))
