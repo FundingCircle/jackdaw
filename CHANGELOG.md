@@ -1,9 +1,12 @@
 # Changelog
 
 ## Unreleased
-* Drop clj-time dependency
-* Added confluent schema registry support for JSON Schema
-* Removed dependency on deprecated `org.apache.kafka.streams.kstream.Serialized` class
+* Drop clj-time dependency.
+* Added confluent schema registry support for JSON Schema.
+* Removed dependency on deprecated `org.apache.kafka.streams.kstream.Serialized` class.
+* Added simple helpers in lambdas for using transformers more easily in a stream. [#305](https://github.com/FundingCircle/jackdaw/pull/305)
+* Added the `flatTransform` and `flatTransfromValues` calls to the core streams interface. [#305](https://github.com/FundingCircle/jackdaw/pull/305)
+* Aded a helper function to add KV state stores to a streams builder. [#305](https://github.com/FundingCircle/jackdaw/pull/305)
 
 ### Added
 
