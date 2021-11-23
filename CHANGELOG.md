@@ -1,15 +1,26 @@
 # Changelog
 
 ## Unreleased
+
+
+### [0.9.2] - [2021-11-23]
+
+* Fixed CVE-2021-37137, CVE-2021-37136 and CVE-2021-36090
+
+### [0.9.1] - [2021-11-19]
+
+* Fixed Circle CI build process.
+
+### [0.9.0] 
+
+This version has been tagged in the repo but unreleased due to the broken build process.
+
 * Drop clj-time dependency.
 * Added confluent schema registry support for JSON Schema.
 * Removed dependency on deprecated `org.apache.kafka.streams.kstream.Serialized` class.
 * Added simple helpers in lambdas for using transformers more easily in a stream. [#305](https://github.com/FundingCircle/jackdaw/pull/305)
 * Added the `flatTransform` and `flatTransfromValues` calls to the core streams interface. [#305](https://github.com/FundingCircle/jackdaw/pull/305)
 * Aded a helper function to add KV state stores to a streams builder. [#305](https://github.com/FundingCircle/jackdaw/pull/305)
-
-### Added
-
 * Add KStream-KTable inner join.
 
 ## [0.8.0] - [2021-05-13]
