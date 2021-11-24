@@ -7,19 +7,6 @@
 
   :repositories [["confluent" {:url "https://packages.confluent.io/maven/"}]]
 
-  :managed-dependencies [;; Pull specific netty version to avoid critical CVE
-                         ;; pulled by Aleph v0.4.6 (last stable version)
-                         [io.netty/netty-transport "4.1.68.Final"]
-                         [io.netty/netty-transport-native-epoll "4.1.68.Final"]
-                         [io.netty/netty-codec "4.1.68.Final"]
-                         [io.netty/netty-codec-http "4.1.68.Final"]
-                         [io.netty/netty-handler "4.1.68.Final"]
-                         [io.netty/netty-handler-proxy "4.1.68.Final"]
-                         [io.netty/netty-resolver "4.1.68.Final"]
-                         [io.netty/netty-resolver-dns "4.1.68.Final"]
-                         ;; avro 1.9.2 pulls commons-compress 1.19 which suffers CVE-2021-36090
-                         [org.apache.commons/commons-compress "1.21"]
-                         ]
   :dependencies [[aleph "0.4.6"]
                  [danlentz/clj-uuid "0.1.9"
                   :exclusions [primitive-math]]
@@ -40,7 +27,22 @@
                  [org.clojure/data.fressian "0.2.1"]
                  [org.clojure/tools.logging "0.4.1"]
                  [org.clojure/core.cache "0.7.2"]
-                 [metosin/jsonista "0.3.3"]]
+                 [metosin/jsonista "0.3.3"]
+
+                 ;; Use specific netty version to avoid critical CVE
+                 ;; pulled by Aleph v0.4.6 (last stable version)
+                 [io.netty/netty-transport "4.1.68.Final"]
+                 [io.netty/netty-transport-native-epoll "4.1.68.Final"]
+                 [io.netty/netty-codec "4.1.68.Final"]
+                 [io.netty/netty-codec-http "4.1.68.Final"]
+                 [io.netty/netty-handler "4.1.68.Final"]
+                 [io.netty/netty-handler-proxy "4.1.68.Final"]
+                 [io.netty/netty-resolver "4.1.68.Final"]
+                 [io.netty/netty-resolver-dns "4.1.68.Final"]
+
+                 ;; Use specific commons-compress version to avoid
+                 ;; CVE-2021-36090 pulled by avro 1.9.2
+                 [org.apache.commons/commons-compress "1.21"]]
 
   :aliases {"kaocha" ["run" "-m" "kaocha.runner"]}
   :aot [jackdaw.serdes.edn2 jackdaw.serdes.fressian jackdaw.serdes.fn-impl]
