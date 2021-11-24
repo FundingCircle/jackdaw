@@ -54,7 +54,6 @@
             string-config {:serde-keyword :jackdaw.serdes/string-serde}
             resolved (resolver-fn string-config)]
         (is (instance? Serde resolved))
-        (is (instance? Serde resolved))
         ;; round trip test
         (is (= "foo"
                (->> "foo"
@@ -72,19 +71,35 @@
                           :address {:value "foo"
                                     :key-path "foo.bar.baz"}}]
         (is (instance? Serde resolved))
-        (is (instance? Serde resolved))
         ;; round trip test
         (is (= example-data
                (->> example-data
                     (.serialize (.serializer resolved) "avro-topic")
                     (.deserialize (.deserializer resolved) "avro-topic"))))))
 
+    (testing "json-schema serdes"
+      (let [resolver-fn (resolver/serde-resolver :schema-registry-url ""
+                                                 :schema-registry-client (reg/mock-client))
+            json-config {:serde-keyword :jackdaw.serdes.json-schema.confluent/serde
+                         :schema-filename "resources/example_json_schema.json"
+                         :key? false}
+            resolved (resolver-fn json-config)
+            example-data {:firstName "Peter"
+                          :address "Griffin"
+                          :age 45}]
+        (is (instance? Serde resolved))
+        ;; round trip test
+        (is (= example-data
+               (->> example-data
+                    (.serialize (.serializer resolved) "json-topic")
+                    (.deserialize (.deserializer resolved) "json-topic"))))))
+
     (testing "avro serdes with UUID logical type"
       (let [resolver-fn (resolver/serde-resolver :schema-registry-url ""
                                                  :schema-registry-client (reg/mock-client)
                                                  :type-registry (merge
-                                                                  avro/+base-schema-type-registry+
-                                                                  avro/+UUID-type-registry+))
+                                                                 avro/+base-schema-type-registry+
+                                                                 avro/+UUID-type-registry+))
             avro-config {:serde-keyword :jackdaw.serdes.avro.confluent/serde
                          :schema-filename "resources/example_schema.avsc"
                          :key? false}
@@ -93,12 +108,23 @@
                           :address {:value "foo"
                                     :key-path "foo.bar.baz"}}]
         (is (instance? Serde resolved))
-        (is (instance? Serde resolved))
         ;; round trip test
         (is (= example-data
                (->> example-data
                     (.serialize (.serializer resolved) "avro-topic")
                     (.deserialize (.deserializer resolved) "avro-topic"))))))
+
+    (testing "avro serde properties are validated"
+      (let [serde-properties {"value.subject.name.strategy" ""}
+            avro-config {:serde-keyword :jackdaw.serdes.avro.confluent/serde
+                         :schema-filename "resources/example_schema.avsc"
+                         :key? false}]
+        (is (thrown? Exception ((resolver/serde-resolver :schema-registry-url ""
+                                                         :schema-registry-client (reg/mock-client)
+                                                         :serializer-properties serde-properties) avro-config)))
+        (is (thrown? Exception ((resolver/serde-resolver :schema-registry-url ""
+                                                         :schema-registry-client (reg/mock-client)
+                                                         :deserializer-properties serde-properties) avro-config)))))
 
     (testing "bad config"
       (is (thrown-with-msg? ExceptionInfo

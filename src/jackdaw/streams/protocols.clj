@@ -31,12 +31,22 @@
     [topology-builder]
     "Gets the names of source topics for the topology.")
 
+  (with-kv-state-store
+    [topology-builder store-config]
+    "Adds a persistent state store to the topology with the configured name
+    and serdes.")
+    
   (streams-builder*
     [streams-builder]
     "Returns the underlying KStreamBuilder."))
 
 (defprotocol IKStreamBase
   "Methods common to KStream and KTable."
+  (join
+    [kstream-or-ktable ktable value-joiner-fn]
+    "Combines the values of the KStream-or-KTable with the values of the
+    KTable that share the same key using an inner join.")
+
   (left-join
     [kstream-or-ktable ktable value-joiner-fn]
     [kstream-or-ktable ktable value-joiner-fn this-topic-config other-topic-config]
@@ -161,11 +171,23 @@
     "Creates a KStream that consists of the results of applying the transformer
     to each key/value in the input stream.")
 
+  (flat-transform
+    [kstream transformer-supplier-fn]
+    [kstream transformer-supplier-fn state-store-names]
+    "Creates a KStream that consists of the results of applying the transformer
+    to each key/value in the input stream via flatTransform.")
+
   (transform-values
     [kstream value-transformer-supplier-fn]
     [kstream value-transformer-supplier-fn state-store-names]
     "Creates a KStream that consists of the results of applying the transformer
     to each value in the input stream.")
+
+  (flat-transform-values
+    [kstream value-transformer-supplier-fn]
+    [kstream value-transformer-supplier-fn state-store-names]
+    "Creates a KStream that consists of the results of applying the transformer
+    to each key/value in the input stream via flatTransformValues.")
 
   (join-global
     [kstream global-ktable kv-mapper joiner])
@@ -179,10 +201,6 @@
 
 (defprotocol IKTable
   "A Ktable is an abstraction of a changlog stream."
-  (join
-    [ktable other-ktable value-joiner-fn]
-    "Combines the values of the two KTables that share the same key using an
-    inner join.")
 
   (outer-join
     [ktable other-ktable value-joiner-fn]
