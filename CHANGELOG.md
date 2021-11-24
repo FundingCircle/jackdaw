@@ -3,9 +3,13 @@
 ## Unreleased
 
 
+### [0.9.3] - [2021-11-24]
+
+* Move libraries overrides back to dependencies.
+
 ### [0.9.2] - [2021-11-23]
 
-* Fixed CVE-2021-37137, CVE-2021-37136 and CVE-2021-36090
+* Fixed CVE-2021-37137, CVE-2021-37136 and CVE-2021-36090.
 
 ### [0.9.1] - [2021-11-19]
 
