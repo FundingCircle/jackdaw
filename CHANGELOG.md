@@ -3,9 +3,11 @@
 ## Unreleased
 
 ### [0.9.4] - [2021-11-24]
+
 * Fixed Type checking against concrete class instead of interface
 
 ### [0.9.3] - [2021-11-24]
+
 * Move libraries overrides back to dependencies.
 
 ### [0.9.2] - [2021-11-23]
