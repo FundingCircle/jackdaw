@@ -3,6 +3,10 @@
 ## Unreleased
 
 
+### [0.9.3] - [2021-11-24]
+
+* Fixed Type checking against concrete class instead of interface
+
 ### [0.9.2] - [2021-11-23]
 
 * Fixed CVE-2021-37137, CVE-2021-37136 and CVE-2021-36090
