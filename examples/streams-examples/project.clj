@@ -9,10 +9,7 @@
 
   :dependencies [[org.clojure/clojure "1.10.3"]
 
-                 [aero "1.1.6"]
                  [danlentz/clj-uuid "0.1.9"]
-                 [environ "1.2.0"]
-                 [org.clojure/data.json "2.3.1"]
                  [org.clojure/tools.logging "1.1.0"]
                  [ch.qos.logback/logback-classic "1.2.7"]
 
@@ -38,13 +35,10 @@
 
   :repl-options {:init-ns streams.main}
 
-  :plugins [[lein-environ "1.2.0"]]
-
   :profiles
   {:dev {:resource-paths ["test/resources"]
          :dependencies [[org.apache.kafka/kafka-streams-test-utils "2.8.1"]
-                        [org.apache.kafka/kafka_2.13 "2.8.1"]]
-         :env {:environment "dev"}}}
+                        [org.apache.kafka/kafka_2.13 "2.8.1"]]}}
 
   :repositories
   {"confluent" {:url "https://packages.confluent.io/maven/"}})

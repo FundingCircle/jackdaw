@@ -45,6 +45,7 @@
          rfile (File. rdir (str "journal-" (LocalDateTime/now)))]
      (when (or (.exists rdir) (.mkdir rdir))
        (println (str "writing results to \"" rfile "\""))
+       (println)
        (with-open [f (io/writer rfile)]
          (pp/pprint journal f))))))
 
@@ -189,12 +190,11 @@
   - run-topology-fixture
   The `integration-fixture` will call one of those also, based on the value
   of *test-machine-mode*"
-  ([commands] (run-test c.t/*testing-contexts* commands))
-  ([description commands]
+  ([commands] (run-test commands c.t/*testing-contexts* ))
+  ([commands descriptions]
    (when (not *test-machine-transport-fn*)
      (throw (ex-info "run-test must be called wrapped by a fixture which binds *test-machine-transport-fn*, see docs" {})))
-   (when description
-     (println description))
+   (doseq [m descriptions] (println "*" m))
    (jd.test/with-test-machine
      (*test-machine-transport-fn*)
      (fn [machine]

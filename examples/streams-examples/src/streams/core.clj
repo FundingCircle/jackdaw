@@ -1,12 +1,11 @@
 (ns streams.core
   (:require
-   [aero.core :as aero]
    [clojure.tools.logging :as log]
    [clojure.java.io :as io]
    [clojure.string :as string]
-   [environ.core :refer [env]]
    [jackdaw.serdes.resolver :as jd-resolver]
    [jackdaw.streams :as js]
+   [streams.config :refer [config]]
    [topology-grapher.describe :as td]
    [topology-grapher.render :as tr])
   (:import
@@ -20,7 +19,7 @@
 ;; Config
 
 (defn load-config []
-  (aero/read-config (io/resource "config.edn") {:profile (keyword (:environment env))}))
+   (config))
 
 (defn props-for ^Properties [config-map]
   (doto (Properties.)
