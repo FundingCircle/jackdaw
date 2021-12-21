@@ -50,7 +50,7 @@
    ;; If no schema-reg-client is provided, Jackdaw will construct
    ;; one as needed using the :streams-settings :schema-registry-url in the kafka config
    ;; for the app (see config.edn).
-   ;; Typically a schema-reg-client is apssed here for testing (to pass a mock)
+   ;; Typically a schema-reg-client is passed here for testing (to pass a mock)
    (let [schema-reg-url (get-in config [:streams-settings :schema-registry-url])
          topics (into {} (map (fn [[k t]]
                                 [k (resolve-serde schema-reg-url schema-reg-client t)])
