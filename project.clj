@@ -33,8 +33,8 @@
                  ;; pulled by Aleph v0.4.6 (last stable version)
                  [io.netty/netty-transport "4.1.68.Final"]
                  [io.netty/netty-transport-native-epoll "4.1.68.Final"]
-                 [io.netty/netty-codec "4.1.68.Final"]
-                 [io.netty/netty-codec-http "4.1.68.Final"]
+                 [io.netty/netty-codec "4.1.73.Final"]
+                 [io.netty/netty-codec-http "4.1.73.Final"]
                  [io.netty/netty-handler "4.1.68.Final"]
                  [io.netty/netty-handler-proxy "4.1.68.Final"]
                  [io.netty/netty-resolver "4.1.68.Final"]
