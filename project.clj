@@ -31,14 +31,14 @@
 
                  ;; Use specific netty version to avoid critical CVE
                  ;; pulled by Aleph v0.4.6 (last stable version)
-                 [io.netty/netty-transport "4.1.68.Final"]
-                 [io.netty/netty-transport-native-epoll "4.1.68.Final"]
+                 [io.netty/netty-transport "4.1.73.Final"]
+                 [io.netty/netty-transport-native-epoll "4.1.73.Final"]
                  [io.netty/netty-codec "4.1.73.Final"]
-                 [io.netty/netty-codec-http "4.1.68.Final"]
-                 [io.netty/netty-handler "4.1.68.Final"]
-                 [io.netty/netty-handler-proxy "4.1.68.Final"]
-                 [io.netty/netty-resolver "4.1.68.Final"]
-                 [io.netty/netty-resolver-dns "4.1.68.Final"]
+                 [io.netty/netty-codec-http "4.1.73.Final"]
+                 [io.netty/netty-handler "4.1.73.Final"]
+                 [io.netty/netty-handler-proxy "4.1.73.Final"]
+                 [io.netty/netty-resolver "4.1.73.Final"]
+                 [io.netty/netty-resolver-dns "4.1.73.Final"]
 
                  ;; Use specific commons-compress version to avoid
                  ;; CVE-2021-36090 pulled by avro 1.9.2
