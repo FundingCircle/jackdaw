@@ -117,6 +117,7 @@
 
   (to!
     [kstream topic-config]
+    [kstream topic-config topic-name-extractor-fn]
     "Materializes a stream to a topic.")
 
   (group-by-key

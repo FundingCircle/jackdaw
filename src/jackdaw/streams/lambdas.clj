@@ -7,7 +7,7 @@
             Merger Predicate Reducer Transformer TransformerSupplier
             ValueJoiner ValueMapper ValueTransformer ValueTransformerSupplier]
            [org.apache.kafka.streams.processor
-            Processor ProcessorSupplier StreamPartitioner]))
+            Processor ProcessorSupplier StreamPartitioner TopicNameExtractor]))
 
 (set! *warn-on-reflection* true)
 
@@ -110,6 +110,16 @@
   "Packages up a Clojure fn in a kstream reducer."
   ^Reducer [reducer-fn]
   (FnReducer. reducer-fn))
+
+(deftype FnTopicNameExtractor [topic-name-extractor-fn]
+  TopicNameExtractor
+  (extract [this k v record-ctx]
+    (topic-name-extractor-fn k v record-ctx)))
+
+(defn topic-name-extractor
+  "Packages up a Clojure fn in a kstream topic name extractor."
+  [topic-name-extractor-fn]
+  (FnTopicNameExtractor. topic-name-extractor-fn))
 
 (deftype FnValueJoiner [value-joiner-fn]
   ValueJoiner

@@ -1,7 +1,7 @@
 # Changelog
 
 ## Unreleased
-
+* Added support for TopicNameExtractor in `jackdaw.streams/to`
 
 ### [0.9.3] - [2021-11-24]
 

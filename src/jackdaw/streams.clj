@@ -116,8 +116,10 @@
 
 (defn to
   "Materializes a stream to a topic."
-  [kstream topic-config]
-  (p/to! kstream topic-config))
+  ([kstream topic-config]
+   (p/to! kstream topic-config))
+  ([kstream topic-config topic-name-extractor-fn]
+   (p/to! kstream topic-config topic-name-extractor-fn)))
 
 ;; IKStream
 

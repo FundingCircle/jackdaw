@@ -17,6 +17,7 @@
             JoinWindows SessionWindows TimeWindows Transformer
             ValueTransformer]
            org.apache.kafka.streams.StreamsBuilder
+           [org.apache.kafka.streams.processor RecordContext]
            [org.apache.kafka.common.serialization Serdes]))
 
 (set! *warn-on-reflection* false)
@@ -1419,6 +1420,30 @@
           (let [[[k v]] (mock/get-keyvals driver output-t)]
             (is (= 11 (:new-val v)))
             (is (= "input-topic" (:topic v)))))))))
+
+(deftest topic-name-extractor-test
+  (testing "Output topic is determined dynamically"
+    (let [input-t (merge (mock/topic "input-topic") {:value-serde (jse/serde)})
+          urgent-t (merge (mock/topic "urgent-priority") {:value-serde (jse/serde)})
+          low-t (merge (mock/topic "low-priority") {:value-serde (jse/serde)})
+          to-config {:key-serde (Serdes/Long) :value-serde (jse/serde)}
+          topic-name-extractor-fn (fn [_k v ^RecordContext _record-ctx] (str (:priority v) "-priority"))]
+      (with-open [driver (mock/build-driver
+                          (fn [builder]
+                            (-> (k/kstream builder input-t)
+                                (k/to to-config topic-name-extractor-fn))))]
+        (let [publisher (partial mock/publish driver input-t)]
+
+          (publisher 100 {:val 10 :priority "urgent"})
+          (publisher 100 {:val 42 :priority "low"})
+
+          (let [[[_k v]] (mock/get-keyvals driver low-t)]
+            (is (= 42 (:val v)))
+            (is (= "low" (:priority v))))
+
+          (let [[[_k v]] (mock/get-keyvals driver urgent-t)]
+            (is (= 10 (:val v)))
+            (is (= "urgent" (:priority v)))))))))
 
 (deftest with-kv-state-store-test
   (testing "Transformer with state store sugar"

@@ -24,6 +24,7 @@
             Suppressed Suppressed$BufferConfig TimeWindowedKStream ValueJoiner
             ValueMapper ValueMapperWithKey ValueTransformerSupplier Windows]
            [org.apache.kafka.streams.processor
+            TopicNameExtractor
             StreamPartitioner]
            [org.apache.kafka.streams.state
             KeyValueStore Stores]
@@ -237,6 +238,11 @@
   (to!
     [_ {:keys [topic-name] :as topic-config}]
     (.to kstream ^String topic-name ^Produced (topic->produced topic-config))
+    nil)
+
+  (to!
+    [_ topic-config topic-name-extractor-fn]
+    (.to kstream ^TopicNameExtractor (topic-name-extractor topic-name-extractor-fn) ^Produced (topic->produced topic-config))
     nil)
 
   (flat-map-values
