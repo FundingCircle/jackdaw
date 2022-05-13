@@ -4,15 +4,13 @@
   (:refer-clojure :exclude [send])
   (:require [jackdaw.streams :as js]
             [jackdaw.streams.interop :as interop]
-            [jackdaw.streams.protocols :as k]
             [jackdaw.data :as data])
-  (:import java.nio.file.Files
-           java.nio.file.attribute.FileAttribute
-           [org.apache.kafka.streams Topology TopologyTestDriver]
+  (:import [org.apache.kafka.streams Topology TopologyTestDriver]
            java.util.Properties
-           org.apache.kafka.streams.test.ConsumerRecordFactory
            org.apache.kafka.common.header.internals.RecordHeaders
-           [org.apache.kafka.common.serialization Serde Serdes Serializer]))
+           [org.apache.kafka.common.serialization Serde Serdes]
+           (org.apache.kafka.streams.test TestRecord)
+           (java.util UUID List)))
 
 (set! *warn-on-reflection* false)
 
@@ -20,9 +18,9 @@
   "Given a kafka streams topology, return a topology test driver for it"
   [topology]
   (TopologyTestDriver.
-    topology
+    ^Topology topology
     (doto (Properties.)
-      (.put "application.id"      (str (java.util.UUID/randomUUID)))
+      (.put "application.id" (str (UUID/randomUUID)))
       (.put "bootstrap.servers"   "fake")
       (.put "default.key.serde"   "jackdaw.serdes.EdnSerde")
       (.put "default.value.serde" "jackdaw.serdes.EdnSerde"))))
@@ -41,15 +39,16 @@
    {:keys [topic-name
            ^Serde key-serde
            ^Serde value-serde]}]
-  (let [record-factory (ConsumerRecordFactory.
-                        topic-name
-                        (.serializer key-serde)
-                        (.serializer value-serde))]
+  (let [test-input-topic (.createTopic test-driver
+                                       topic-name
+                                       (.serializer key-serde)
+                                       (.serializer value-serde))]
     (fn produce!
       ([k v]
-       (.pipeInput test-driver (.create record-factory k v)))
+       (.pipeInput test-input-topic k v))
       ([time-ms k v]
-       (.pipeInput test-driver (.create record-factory topic-name k v (RecordHeaders.) time-ms))))))
+       (let [record (TestRecord. k v (RecordHeaders.) ^Long time-ms)]
+         (.pipeRecordList test-input-topic (List/of record)))))))
 
 (defn publish
   ([test-driver topic-config k v]
@@ -62,9 +61,11 @@
    {:keys [topic-name
            ^Serde key-serde
            ^Serde value-serde]}]
-  (let [record (.readOutput test-driver topic-name
-                            (.deserializer key-serde)
-                            (.deserializer value-serde))]
+  (let [test-output-topic (.createOutputTopic test-driver
+                                              topic-name
+                                              (.deserializer key-serde)
+                                              (.deserializer value-serde))
+        record (.readRecord test-output-topic)]
     (when record
       (data/datafy record))))
 
