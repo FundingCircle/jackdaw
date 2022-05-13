@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* Move away from deprecated class ConsumerRecordFactory
 
 ### [0.9.4] - [2022-05-23]
 
