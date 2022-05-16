@@ -64,7 +64,7 @@
   {:key (.getKey tr)
    :value (.getValue tr)
    :headers (.headers tr)
-   :timestamp (.getRecordTime r)})
+   :timestamp (.getRecordTime tr)})
 
 ;;; Record metadata
 
