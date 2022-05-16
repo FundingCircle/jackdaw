@@ -6,7 +6,8 @@
 
 (import '[org.apache.kafka.clients.producer
           ProducerRecord RecordMetadata]
-        'org.apache.kafka.common.header.Headers)
+        'org.apache.kafka.common.header.Headers
+        '(org.apache.kafka.streams.test TestRecord))
 
 (set! *warn-on-reflection* true)
 
@@ -48,8 +49,7 @@
            value
            headers
            partition
-           timestamp]
-    :as m}]
+           timestamp]}]
   (->ProducerRecord {:topic-name topic-name} partition timestamp key value headers))
 
 (defn->data ProducerRecord->data [^ProducerRecord pr]
@@ -60,6 +60,11 @@
    :partition (.partition pr)
    :timestamp (.timestamp pr)})
 
+(defn->data TestRecord->data [^TestRecord tr]
+  {:key (.getKey tr)
+   :value (.getValue tr)
+   :headers (.headers tr)
+   :timestamp (.getRecordTime r)})
 
 ;;; Record metadata
 
