@@ -33,16 +33,16 @@
     (topology->test-driver topology)))
 
 (defn producer
-  "Returns a function which can be used to pubish data to a topic for the
+  "Returns a function which can be used to publish data to a topic for the
   topology test driver"
   [test-driver
    {:keys [topic-name
            ^Serde key-serde
            ^Serde value-serde]}]
-  (let [test-input-topic (.createTopic test-driver
-                                       topic-name
-                                       (.serializer key-serde)
-                                       (.serializer value-serde))]
+  (let [test-input-topic (.createInputTopic test-driver
+                                            topic-name
+                                            (.serializer key-serde)
+                                            (.serializer value-serde))]
     (fn produce!
       ([k v]
        (.pipeInput test-input-topic k v))
@@ -64,10 +64,11 @@
   (let [test-output-topic (.createOutputTopic test-driver
                                               topic-name
                                               (.deserializer key-serde)
-                                              (.deserializer value-serde))
-        record (.readRecord test-output-topic)]
-    (when record
-      (data/datafy record))))
+                                              (.deserializer value-serde))]
+    (when (not (.isEmpty test-output-topic))
+      (-> test-output-topic
+          (.readRecord)
+          (data/datafy)))))
 
 (defn repeatedly-consume
   [test-driver topic-config]
