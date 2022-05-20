@@ -71,7 +71,7 @@
            [java.io ByteArrayOutputStream ByteArrayInputStream]
            [java.util Collection Map UUID]
            [org.apache.avro
-            Schema$Parser Schema$ArraySchema Schema Schema$Field]
+            AvroTypeException Schema$Parser Schema$ArraySchema Schema Schema$Field]
            [org.apache.avro.io
             EncoderFactory DecoderFactory JsonEncoder]
            [org.apache.avro.generic
@@ -149,7 +149,8 @@
 (defn validate-clj! [this x path expected-type]
   (when-not (match-clj? this x)
     (throw (ex-info (serialization-error-msg x expected-type)
-                    {:path path, :data x}))))
+                    {:path path, :data x}
+                    (AvroTypeException. "Type Error")))))
 
 ;;;; Primitive Types
 
@@ -428,7 +429,8 @@
   (clj->avro [_ clj-map path]
     (when-not (map? clj-map)
       (throw (ex-info (serialization-error-msg clj-map "record")
-                      {:path path, :clj-data clj-map})))
+                      {:path path, :clj-data clj-map}
+                      (AvroTypeException. "Type Error"))))
 
     (let [record-builder (GenericRecordBuilder. schema)]
       (try
@@ -485,7 +487,8 @@
                                                     (map #(.getType ^Schema %))
                                                     (str/join ", ")
                                                     (format "union [%s]")))
-                      {:path path, :clj-data clj-data})))))
+                      {:path path, :clj-data clj-data}
+                      (AvroTypeException. "Type Error"))))))
 
 (defn ->UnionType
   "Wrapper by which to construct a `UnionType` which handles the
@@ -523,10 +526,16 @@
                               (try
                                 (.serialize base-serializer topic (clj->avro coercion-type data []))
                                 (catch clojure.lang.ExceptionInfo e
-                                  (let [data (-> e
-                                                 ex-data
-                                                 (assoc :topic topic :clj-data data))]
-                                    (throw (ex-info (.getMessage e) data))))))}
+                                  (let [exception-data    (-> e
+                                                              ex-data
+                                                              (assoc :topic topic :clj-data data))
+                                        path              (:path exception-data)
+                                        exception-message (str (merge {:message (.getMessage e)
+                                                                       :topic   (:topic exception-data)
+                                                                       :path    path}
+                                                                      (when (instance? org.apache.avro.AvroTypeException (ex-cause e))
+                                                                        {:data (get-in data path)})))]
+                                    (throw (ex-info exception-message exception-data))))))}
         clj-serializer (fn/new-serializer methods)]
     (.configure ^Serializer clj-serializer serializer-config key?)
     clj-serializer))
