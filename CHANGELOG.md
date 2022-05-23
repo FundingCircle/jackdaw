@@ -3,6 +3,10 @@
 ## Unreleased
 
 
+### [0.9.4] - [2022-05-23]
+
+* More verbose avro serialization exception errors
+
 ### [0.9.3] - [2021-11-24]
 
 * Move libraries overrides back to dependencies.
