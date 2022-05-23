@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* Update to kafka v3.2.0 and latest deps
 
 ### [0.9.4] - [2022-05-23]
 

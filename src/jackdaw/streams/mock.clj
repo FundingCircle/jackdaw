@@ -3,16 +3,11 @@
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:refer-clojure :exclude [send])
   (:require [jackdaw.streams :as js]
-            [jackdaw.streams.interop :as interop]
-            [jackdaw.streams.protocols :as k]
-            [jackdaw.data :as data])
-  (:import java.nio.file.Files
-           java.nio.file.attribute.FileAttribute
-           [org.apache.kafka.streams Topology TopologyTestDriver]
+            [jackdaw.streams.interop :as interop])
+  (:import [org.apache.kafka.streams Topology TopologyTestDriver]
            java.util.Properties
-           org.apache.kafka.streams.test.ConsumerRecordFactory
-           org.apache.kafka.common.header.internals.RecordHeaders
-           [org.apache.kafka.common.serialization Serde Serdes Serializer]))
+           [org.apache.kafka.common.serialization Serde Serdes]
+           [java.util NoSuchElementException]))
 
 (set! *warn-on-reflection* false)
 
@@ -37,19 +32,19 @@
 (defn producer
   "Returns a function which can be used to pubish data to a topic for the
   topology test driver"
-  [test-driver
+  [^TopologyTestDriver test-driver
    {:keys [topic-name
            ^Serde key-serde
            ^Serde value-serde]}]
-  (let [record-factory (ConsumerRecordFactory.
-                        topic-name
-                        (.serializer key-serde)
-                        (.serializer value-serde))]
+  (let [input-topic (.createInputTopic test-driver
+                                       topic-name
+                                       (.serializer key-serde)
+                                       (.serializer value-serde))]
     (fn produce!
       ([k v]
-       (.pipeInput test-driver (.create record-factory k v)))
-      ([time-ms k v]
-       (.pipeInput test-driver (.create record-factory topic-name k v (RecordHeaders.) time-ms))))))
+       (.pipeInput input-topic k v))
+      ([^long time-ms k v]
+       (.pipeInput input-topic k v time-ms)))))
 
 (defn publish
   ([test-driver topic-config k v]
@@ -58,15 +53,17 @@
    ((producer test-driver topic-config) time-ms k v)))
 
 (defn consume
-  [test-driver
+  [^TopologyTestDriver test-driver
    {:keys [topic-name
            ^Serde key-serde
            ^Serde value-serde]}]
-  (let [record (.readOutput test-driver topic-name
-                            (.deserializer key-serde)
-                            (.deserializer value-serde))]
+  (let [output-topic (.createOutputTopic test-driver
+                                   topic-name
+                                   (.deserializer key-serde)
+                                   (.deserializer value-serde))
+        record (try (.readKeyValue output-topic) (catch NoSuchElementException e))]
     (when record
-      (data/datafy record))))
+      {:key (.-key record) :value (.-value record)})))
 
 (defn repeatedly-consume
   [test-driver topic-config]
