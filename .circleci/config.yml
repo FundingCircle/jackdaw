@@ -2,45 +2,45 @@
 version: 2
 
 references:
-  repo_cache_key: &repo_cache_key
-    v1-jackdaw-repo-{{ .Branch }}-{{ .Revision }}
+  repo_cache_key: &repo_cache_key v1-jackdaw-repo-{{ .Branch }}-{{ .Revision }}
 
-  repo_cache_backup_1: &repo_cache_backup_1
-    v1-jackdaw-repo-{{ .Branch }}
+  repo_cache_backup_1: &repo_cache_backup_1 v1-jackdaw-repo-{{ .Branch }}
 
-  repo_cache_backup_2: &repo_cache_backup_2
-    v1-jackdaw-repo
+  repo_cache_backup_2: &repo_cache_backup_2 v1-jackdaw-repo
 
-  restore_repo: &restore_repo
+  restore_repo:
+    &restore_repo
     restore_cache:
       keys:
         - *repo_cache_key
         - *repo_cache_backup_1
         - *repo_cache_backup_2
 
-  mvn_cache_key: &mvn_cache_key
-    v1-jackdaw-deps-{{ checksum "project.clj" }}
+  mvn_cache_key: &mvn_cache_key v1-jackdaw-deps-{{ checksum "project.clj" }}
 
-  mvn_cache_backup: &mvn_cache_backup
-    v1-jackdaw-deps
+  mvn_cache_backup: &mvn_cache_backup v1-jackdaw-deps
 
-  restore_mvn: &restore_mvn
+  restore_mvn:
+    &restore_mvn
     restore_cache:
       keys:
         - *mvn_cache_key
         - *mvn_cache_backup
 
-  build_config: &build_config
+  build_config:
+    &build_config
     docker:
       - image: circleci/clojure:lein-2.9.1
     working_directory: /home/circleci/jackdaw
 
-  deploy_config: &deploy_config
+  deploy_config:
+    &deploy_config
     docker:
       - image: circleci/clojure:lein-2.9.1
     working_directory: /home/circleci/jackdaw
 
-  test_config: &test_config
+  test_config:
+    &test_config
     docker:
       - image: circleci/clojure:lein-2.9.1
       - image: confluentinc/cp-zookeeper:6.1.1
@@ -105,8 +105,7 @@ jobs:
     steps:
       - *restore_repo
       - *restore_mvn
-      - run:
-          lein with-profiles +test deps
+      - run: lein with-profiles +test deps
       - save_cache:
           key: *mvn_cache_key
           paths:
@@ -118,14 +117,16 @@ jobs:
       - *restore_mvn
       - setup_remote_docker:
           docker_layer_caching: true
-      - run:
-          lein kaocha --plugin kaocha.plugin/junit-xml --junit-xml-file test-results/kaocha/results.xml
+      - run: lein kaocha --plugin kaocha.plugin/junit-xml --junit-xml-file
+          test-results/kaocha/results.xml
       - store_artifacts:
           path: ./logs
       - store_artifacts:
           path: target/coverage
       - store_test_results:
           path: test-results
+    # The resource_class feature allows configuring CPU and RAM resources for each job. Different resource classes are available for different executors. https://circleci.com/docs/2.0/configuration-reference/#resourceclass
+    resource_class: large
 
   deploy:
     <<: *deploy_config
