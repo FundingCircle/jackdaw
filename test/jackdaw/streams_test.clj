@@ -240,30 +240,7 @@
         (publish 1 1)
 
         (is (= [[1 1]] (mock/get-keyvals driver topic-b)))
-        (is (= [[1 1]] (mock/get-keyvals driver topic-c)))))
-    (testing "with partition"
-      (let [topic-a (mock/topic "topic-a")
-            topic-b (assoc (mock/topic "topic-b") :partition-fn (fn [topic-name key value partition-count]
-                                                                  (int 10)))
-            topic-c (mock/topic "topic-c")
-            driver (mock/build-driver (fn [builder]
-                                        (-> builder
-                                            (k/kstream topic-a)
-                                            (k/through topic-b)
-                                            (k/to topic-c))))
-            publish (partial mock/publish driver topic-a)]
-
-        (publish 1 1)
-
-
-        (is (= [{:key 1
-                 :value 1
-                 :partition 10}] (map #(select-keys % [:key :value :partition])
-                                       (mock/get-records driver
-                                                         topic-b))))
-
         (is (= [[1 1]] (mock/get-keyvals driver topic-c))))))
-
 
   (testing "to"
     (let [topic-a (mock/topic "topic-a")
