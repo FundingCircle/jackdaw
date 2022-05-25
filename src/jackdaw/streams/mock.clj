@@ -45,7 +45,7 @@
                                             (.serializer value-serde))]
     (fn produce!
       ([k v]
-       (.pipeInput test-input-topic k v))
+       (.pipeInput test-input-topic (TestRecord. k v)))
       ([time-ms k v]
        (let [record (TestRecord. k v (RecordHeaders.) ^Long time-ms)]
          (.pipeRecordList test-input-topic (List/of record)))))))
