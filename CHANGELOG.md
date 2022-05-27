@@ -1,8 +1,12 @@
 # Changelog
 
 ## Unreleased
+
 * Add support for TimestampExtractor
 
+### [0.9.5] - [2022-05-26]
+
+* Move away from deprecated class ConsumerRecordFactory (to prepare migration to Kafka Streams 3.2.0)
 
 ### [0.9.4] - [2022-05-23]
 
