@@ -29,16 +29,20 @@
                  [org.clojure/core.cache "0.7.2"]
                  [metosin/jsonista "0.3.3"]
 
-                 ;; Pull specific netty version to avoid critical CVE
+                 ;; Use specific netty version to avoid critical CVE
                  ;; pulled by Aleph v0.4.6 (last stable version)
-                 [io.netty/netty-transport "4.1.63.Final"]
-                 [io.netty/netty-transport-native-epoll "4.1.63.Final"]
-                 [io.netty/netty-codec "4.1.63.Final"]
-                 [io.netty/netty-codec-http "4.1.63.Final"]
-                 [io.netty/netty-handler "4.1.63.Final"]
-                 [io.netty/netty-handler-proxy "4.1.63.Final"]
-                 [io.netty/netty-resolver "4.1.63.Final"]
-                 [io.netty/netty-resolver-dns "4.1.63.Final"]]
+                 [io.netty/netty-transport "4.1.68.Final"]
+                 [io.netty/netty-transport-native-epoll "4.1.68.Final"]
+                 [io.netty/netty-codec "4.1.68.Final"]
+                 [io.netty/netty-codec-http "4.1.68.Final"]
+                 [io.netty/netty-handler "4.1.68.Final"]
+                 [io.netty/netty-handler-proxy "4.1.68.Final"]
+                 [io.netty/netty-resolver "4.1.68.Final"]
+                 [io.netty/netty-resolver-dns "4.1.68.Final"]
+
+                 ;; Use specific commons-compress version to avoid
+                 ;; CVE-2021-36090 pulled by avro 1.9.2
+                 [org.apache.commons/commons-compress "1.21"]]
 
   :aliases {"kaocha" ["run" "-m" "kaocha.runner"]}
   :aot [jackdaw.serdes.edn2 jackdaw.serdes.fressian jackdaw.serdes.fn-impl]

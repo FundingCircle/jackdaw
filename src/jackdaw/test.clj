@@ -35,7 +35,7 @@
   (:import
    (java.io Closeable)
    (java.util Properties)
-   (org.apache.kafka.streams TopologyTestDriver StreamsBuilder)))
+   (org.apache.kafka.streams Topology TopologyTestDriver StreamsBuilder)))
 
 (set! *warn-on-reflection* true)
 
@@ -247,4 +247,4 @@
                        .build))
         props (-> (Properties.)
                   (set-properties app-config))]
-    (TopologyTestDriver. topology props)))
+    (TopologyTestDriver. ^Topology topology ^Properties props)))

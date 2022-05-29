@@ -95,7 +95,7 @@ jobs:
       - run: |
           .circleci/bin/add-key github.com $GITHUB_SSH_FINGERPRINT
           git fetch --force origin "refs/tags/${CIRCLE_TAG}:refs/tags/${CIRCLE_TAG}"
-      - checkout
+          git checkout --force "$CIRCLE_TAG"
       - save_cache:
           key: v1-jackdaw-repo-{{ .Branch }}-{{ .Revision }}
           paths:

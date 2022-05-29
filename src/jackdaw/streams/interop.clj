@@ -17,14 +17,18 @@
            [org.apache.kafka.streams
             StreamsBuilder]
            [org.apache.kafka.streams.kstream
-            Aggregator Consumed GlobalKTable Initializer Joined
+            Aggregator Consumed GlobalKTable Grouped Initializer Joined
             JoinWindows KGroupedStream KGroupedTable KStream KTable
             KeyValueMapper Materialized Merger Predicate Printed Produced
-            Reducer Serialized SessionWindowedKStream SessionWindows
+            Reducer SessionWindowedKStream SessionWindows
             Suppressed Suppressed$BufferConfig TimeWindowedKStream ValueJoiner
             ValueMapper ValueMapperWithKey ValueTransformerSupplier Windows]
            [org.apache.kafka.streams.processor
-            StreamPartitioner]))
+            StreamPartitioner]
+           [org.apache.kafka.streams.state
+            KeyValueStore Stores]
+           (org.apache.kafka.streams.processor.api
+            ProcessorSupplier)))
 
 (set! *warn-on-reflection* true)
 
@@ -36,8 +40,8 @@
     (Produced/with key-serde value-serde (->FnStreamPartitioner partition-fn))
     (Produced/with key-serde value-serde)))
 
-(defn topic->serialized [{:keys [key-serde value-serde]}]
-  (Serialized/with key-serde value-serde))
+(defn topic->grouped [{:keys [key-serde value-serde]}]
+  (Grouped/with key-serde value-serde))
 
 (defn topic->materialized [{:keys [topic-name key-serde value-serde]}]
   (cond-> (Materialized/as ^String topic-name)
@@ -127,6 +131,15 @@
                    ^String topic-name
                    ^Consumed (topic->consumed topic-config))))
 
+  (with-kv-state-store
+    [builder {:keys [store-name key-serde value-serde] :as store-config}]
+    (.addStateStore ^StreamsBuilder streams-builder
+                    (Stores/keyValueStoreBuilder
+                     (Stores/persistentKeyValueStore store-name)
+                     key-serde
+                     value-serde))
+    builder)
+  
   (streams-builder*
     [_]
     streams-builder))
@@ -187,7 +200,7 @@
     (clj-kgroupedstream
      (.groupBy kstream
                ^KeyValueMapper (select-key-value-mapper key-value-mapper-fn)
-               ^Serialized (topic->serialized topic-config))))
+               ^Grouped (topic->grouped topic-config))))
 
   (map-values
     [_ value-mapper-fn]
@@ -240,7 +253,7 @@
     [_ topic-config]
     (clj-kgroupedstream
      (.groupByKey ^KStream kstream
-                  ^Serialized (topic->serialized topic-config))))
+                  ^Grouped (topic->grouped topic-config))))
 
   (join-windowed
     [_ other-kstream value-joiner-fn windows]
@@ -333,6 +346,17 @@
                  ^TransformerSupplier (transformer-supplier transformer-supplier-fn)
                  ^"[Ljava.lang.String;" (into-array String state-store-names))))
 
+  (flat-transform
+    [this transformer-supplier-fn]
+    (flat-transform this transformer-supplier-fn []))
+
+  (flat-transform
+    [_ transformer-supplier-fn state-store-names]
+    (clj-kstream
+     (.flatTransform ^KStream kstream
+                     ^TransformerSupplier (transformer-supplier transformer-supplier-fn)
+                     ^"[Ljava.lang.String;" (into-array String
+                                                        (clojure.core/map name state-store-names)))))
   (transform-values
     [this value-transformer-supplier-fn]
     (transform-values this value-transformer-supplier-fn []))
@@ -343,6 +367,18 @@
      (.transformValues ^KStream kstream
                        ^ValueTransformerSupplier (value-transformer-supplier value-transformer-supplier-fn)
                        ^"[Ljava.lang.String;" (into-array String state-store-names))))
+
+  (flat-transform-values
+    [this value-transformer-supplier-fn]
+    (flat-transform-values this value-transformer-supplier-fn []))
+
+  (flat-transform-values
+    [_ value-transformer-supplier-fn state-store-names]
+    (clj-kstream
+     (.flatTransformValues ^KStream kstream
+                           ^ValueTransformerSupplier (value-transformer-supplier value-transformer-supplier-fn)
+                           ^"[Ljava.lang.String;" (into-array String
+                                                              (clojure.core/map name state-store-names)))))
 
   (join-global
     [_ global-ktable key-value-mapper-fn joiner-fn]
@@ -412,7 +448,7 @@
     (clj-kgroupedtable
      (.groupBy ktable
                ^KeyValueMapper (key-value-mapper key-value-mapper-fn)
-               ^Serialized (topic->serialized topic-config))))
+               ^Grouped (topic->grouped topic-config))))
 
   (outer-join
     [_ other-ktable value-joiner-fn]
