@@ -24,7 +24,7 @@
 (defn ->TimestampType
   "Given a keyword being a datafied Kafka `TimestampType`, return the
   equivalent `TimestampType` instance."
-  [kw]
+  ^TimestampType [kw]
   (case kw
     :timestamp-type/create TimestampType/CREATE_TIME
     :timestamp-type/log-append TimestampType/LOG_APPEND_TIME

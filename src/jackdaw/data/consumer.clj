@@ -7,7 +7,8 @@
 (import '[org.apache.kafka.clients.consumer
           ConsumerRecord OffsetAndTimestamp]
         'org.apache.kafka.common.header.Headers
-        'org.apache.kafka.common.record.TimestampType)
+        'org.apache.kafka.common.record.TimestampType
+        'java.util.Optional)
 
 (set! *warn-on-reflection* true)
 
@@ -17,18 +18,18 @@
   Convenient for testing the consumer API and its helpers."
   ^ConsumerRecord [{:keys [:topic-name]} partition offset ts ts-type
    key-size value-size key value ^Headers headers]
-  (ConsumerRecord. topic-name
+  (ConsumerRecord. ^String topic-name
                    (int partition)
                    (long offset)
                    (long ts)
                    (if (keyword? ts-type)
                      (->TimestampType ts-type)
                      ^TimestampType ts-type)
-                   nil ;; Deprecated checksum
                    (int key-size)
                    (int value-size)
                    key value
-                   headers))
+                   ^Headers headers
+                   (Optional/empty)))
 
 (defn map->ConsumerRecord
   "Given a `::consumer-record`, build an equivalent `ConsumerRecord`.
@@ -56,8 +57,6 @@
    :headers (.headers r)
    :partition (.partition r)
    :timestamp (.timestamp r)
-   ;; Deprecated field
-   ;; :checksum (.checksum r)
    :timestamp-type (TimestampType->data (.timestampType r))
    :offset (.offset r)
    :serialized-key-size (.serializedKeySize r)

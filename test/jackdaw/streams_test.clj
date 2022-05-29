@@ -313,7 +313,7 @@
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
           topic-c (mock/topic "topic-c")
-          windows (JoinWindows/of 1000)
+          windows (JoinWindows/ofTimeDifferenceWithNoGrace (Duration/ofMillis 1000))
           driver (mock/build-driver (fn [builder]
                                       (let [left-kstream (k/kstream builder topic-a)
                                             right-kstream (k/kstream builder topic-b)]
@@ -368,7 +368,7 @@
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
           topic-c (mock/topic "topic-c")
-          windows (JoinWindows/of 1000)
+          windows (JoinWindows/of (Duration/ofMillis 1000))
           driver (mock/build-driver (fn [builder]
                                       (let [left-kstream (k/kstream builder topic-a)
                                             right-kstream (k/kstream builder topic-b)]
@@ -727,9 +727,7 @@
           ;; default is used: 24h - window
           window       (Duration/ofMillis 100)
           grace        (Duration/ofMillis 1)
-          time-windows (-> window
-                           TimeWindows/of
-                           (.grace grace))]
+          time-windows (TimeWindows/ofSizeAndGrace window grace)]
 
       (with-open [driver (mock/build-driver (fn [builder]
                                               (-> builder
@@ -763,9 +761,7 @@
 
           window       (Duration/ofMillis 100)
           grace        (Duration/ofMillis 1)
-          time-windows (-> window
-                           TimeWindows/of
-                           (.grace grace))
+          time-windows (TimeWindows/ofSizeAndGrace window grace)
           max-records  2]
 
       (with-open [driver (mock/build-driver (fn [builder]
@@ -801,9 +797,7 @@
 
           window       (Duration/ofMillis 100)
           grace        (Duration/ofMillis 1)
-          time-windows (-> window
-                           TimeWindows/of
-                           (.grace grace))
+          time-windows (TimeWindows/ofSizeAndGrace window grace)
           max-records  2]
 
       (with-open [driver (mock/build-driver (fn [builder]
@@ -1060,7 +1054,7 @@
                                       (-> builder
                                           (k/kstream topic-a)
                                           (k/group-by (fn [[k _v]] (long (/ k 10))) topic-a)
-                                          (k/window-by-time (TimeWindows/of 1000))
+                                          (k/window-by-time (TimeWindows/ofSizeWithNoGrace (Duration/ofMillis 1000)))
                                           (k/reduce + topic-a)
                                           (k/to-kstream)
                                           (k/map (fn [[k v]] [(.key k) v]))
@@ -1084,7 +1078,7 @@
                                       (-> builder
                                           (k/kstream topic-a)
                                           (k/group-by-key)
-                                          (k/window-by-time (TimeWindows/of 1000))
+                                          (k/window-by-time (TimeWindows/ofSizeWithNoGrace (Duration/ofMillis 1000)))
                                           (k/reduce + topic-a)
                                           (k/to-kstream)
                                           (k/map (fn [[k v]] [(.key k) v]))
@@ -1108,7 +1102,7 @@
                                       (-> builder
                                           (k/kstream topic-a)
                                           (k/group-by (fn [[k _v]] (long (/ k 10))) topic-a)
-                                          (k/window-by-session (SessionWindows/with 1000))
+                                          (k/window-by-session (SessionWindows/ofInactivityGapWithNoGrace (Duration/ofMillis 1000)))
                                           (k/reduce + topic-a)
                                           (k/to-kstream)
                                           (k/map (fn [[k v]] [(.key k) v]))
@@ -1135,7 +1129,7 @@
                                       (-> builder
                                           (k/kstream topic-a)
                                           (k/group-by-key)
-                                          (k/window-by-session (SessionWindows/with 1000))
+                                          (k/window-by-session (SessionWindows/ofInactivityGapWithNoGrace (Duration/ofMillis 1000)))
                                           (k/aggregate (constantly 0)
                                                        (fn [agg [_k v]]
                                                          (+ agg v))
