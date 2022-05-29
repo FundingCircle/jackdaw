@@ -14,7 +14,6 @@
   (:import
    org.apache.kafka.common.header.Header
    org.apache.kafka.clients.consumer.Consumer
-   org.apache.kafka.streams.KafkaStreams$StateListener
    org.apache.kafka.clients.consumer.ConsumerRecord
    org.apache.kafka.clients.producer.Producer
    org.apache.kafka.clients.producer.ProducerRecord))
@@ -71,8 +70,7 @@
   "Clojurize the ConsumerRecord returned from consuming a kafka record"
   [^ConsumerRecord consumer-record]
   (when consumer-record
-    {:checksum (.checksum consumer-record)
-     :key (.key consumer-record)
+    {:key (.key consumer-record)
      :offset (.offset consumer-record)
      :partition (.partition consumer-record)
      :serializedKeySize (.serializedKeySize consumer-record)

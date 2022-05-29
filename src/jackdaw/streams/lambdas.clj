@@ -7,7 +7,9 @@
             Merger Predicate Reducer Transformer TransformerSupplier
             ValueJoiner ValueMapper ValueTransformer ValueTransformerSupplier]
            [org.apache.kafka.streams.processor
-            Processor ProcessorSupplier StreamPartitioner]))
+            StreamPartitioner]
+           [org.apache.kafka.streams.processor.api
+            Processor ProcessorSupplier]))
 
 (set! *warn-on-reflection* true)
 
@@ -147,8 +149,8 @@
   (close [_])
   (init [_ processor-context]
     (reset! context processor-context))
-  (process [_ key message]
-    (processor-fn @context key message)))
+  (process [_ record]
+    (processor-fn @context (.key record) (.value record))))
 
 (defn processor
   "Packages up a Clojure fn as a kstream processor."
@@ -162,7 +164,7 @@
 
 (defn processor-supplier
   "Packages up a Clojure fn in a kstream processor supplier."
-  [processor-fn]
+  ^ProcessorSupplier [processor-fn]
   (FnProcessorSupplier. processor-fn))
 
 (deftype FnTransformerSupplier [transformer-supplier-fn]

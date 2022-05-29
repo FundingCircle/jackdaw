@@ -9,8 +9,8 @@
    [jackdaw.test.serde :as serde]
    [manifold.stream :as s])
   (:import
-   (java.util Properties)
-   (org.apache.kafka.streams TopologyTestDriver)))
+    (java.util Properties)
+    (org.apache.kafka.streams TopologyTestDriver Topology)))
 
 (set! *warn-on-reflection* false)
 
@@ -45,14 +45,14 @@
 (defn test-driver
   [f app-config]
   (let [builder (k/streams-builder)
-        topology (let [builder (f builder)]
+        ^Topology topology (let [builder (f builder)]
                    (-> (k/streams-builder* builder)
-                       (.build)))]
-    (TopologyTestDriver. topology
-                         (let [props (Properties.)]
-                           (doseq [[k v] app-config]
-                             (.setProperty props k v))
-                           props))))
+                       (.build)))
+        ^Properties props (let [props (Properties.)]
+                            (doseq [[k v] app-config]
+                              (.setProperty props k v))
+                            props)]
+    (TopologyTestDriver. topology props)))
 
 (defn mock-transport
   []

@@ -2,15 +2,20 @@
   (:require
    [clojure.stacktrace :as stacktrace]
    [clojure.tools.logging :as log]
+   [jackdaw.serdes.fn :as jfn]
+   [jackdaw.streams.mock :as smock]
    [jackdaw.test.journal :as j]
    [jackdaw.test.transports :as t :refer [deftransport]]
-   [jackdaw.test.serde :refer [byte-array-serializer byte-array-deserializer
+   [jackdaw.test.serde :refer [byte-array-serde
                                apply-serializers apply-deserializers serde-map]]
    [manifold.stream :as s]
    [manifold.deferred :as d])
   (:import
-   (org.apache.kafka.common.record TimestampType)
-   (org.apache.kafka.clients.consumer ConsumerRecord)))
+    (org.apache.kafka.common.record TimestampType)
+    (org.apache.kafka.clients.consumer ConsumerRecord)
+    (org.apache.kafka.clients.producer ProducerRecord)
+    (org.apache.kafka.common.header.internals RecordHeaders)
+    (java.util Optional)))
 
 (set! *warn-on-reflection* false)
 
@@ -40,20 +45,23 @@
   node by the TopologyTestDriver"
   [_topic-config]
   (fn [m]
-    (let [record (ConsumerRecord. (get-in m [:topic :topic-name])
+    (let [record (ConsumerRecord. ^String (get-in m [:topic :topic-name])
                                   (int -1)
                                   (long -1)
-                                  (:timestamp m)
+                                  (long (:timestamp m))
                                   TimestampType/CREATE_TIME,
-                                  (long ConsumerRecord/NULL_CHECKSUM)
-                                  (if-let [k (:key m)]
-                                    (count k)
-                                    0)
-                                  (if-let [v (:value m)]
-                                    (count v)
-                                    0)
+                                  (int
+                                    (if-let [k (:key m)]
+                                      (count k)
+                                      0))
+                                  (int
+                                    (if-let [v (:value m)]
+                                      (count v)
+                                      0))
                                   (:key m)
-                                  (:value m))]
+                                  (:value m)
+                                  (RecordHeaders.)
+                                  (Optional/empty))]
       (set-headers record (:headers m))
       (assoc m :input-record record))))
 
@@ -79,13 +87,12 @@
   [messages topic-config]
   (fn [driver]
     (let [fetch (fn [[k t]]
-                  {:topic k
-                   :output (loop [collected []]
-                             (if-let [o (.readOutput driver (:topic-name t)
-                                                     byte-array-deserializer
-                                                     byte-array-deserializer)]
-                               (recur (conj collected o))
-                               collected))})
+                  (let [topic-name (:topic-name t)]
+                    {:topic  k
+                     :output (loop [collected []]
+                               (if-let [{:keys [key value]} (smock/consume driver (assoc byte-array-serde :topic-name topic-name))]
+                                 (recur (conj collected (ProducerRecord. topic-name key value)))
+                                 collected))}))
           topic-batches (->> topic-config
                              (map fetch)
                              (remove #(empty? (:output %)))
@@ -161,13 +168,19 @@
     {:messages messages
      :process process}))
 
+(def identity-serializer (jfn/new-serializer {:serialize (fn [_ _ data] data)}))
+
 (deftransport :mock
   [{:keys [driver topics]}]
   (let [serdes        (serde-map topics)
         test-consumer (mock-consumer driver topics (get serdes :deserializers))
         record-fn     (fn [input-record]
                         (try
-                          (.pipeInput driver input-record)
+                          (let [input-topic (.createInputTopic driver
+                                                               (.topic input-record)
+                                                               identity-serializer ;; already serialized in mock-producer
+                                                               identity-serializer)]
+                            (.pipeInput input-topic (.key input-record) (.value input-record)))
                           (catch Exception e
                             (let [trace (with-out-str
                                           (stacktrace/print-cause-trace e))]
