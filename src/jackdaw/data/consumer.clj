@@ -6,7 +6,8 @@
 
 (import '[org.apache.kafka.clients.consumer
           ConsumerRecord OffsetAndTimestamp]
-        'org.apache.kafka.common.header.Headers)
+        'org.apache.kafka.common.header.Headers
+        'org.apache.kafka.common.record.TimestampType)
 
 (set! *warn-on-reflection* true)
 
