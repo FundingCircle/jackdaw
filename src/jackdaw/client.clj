@@ -155,11 +155,11 @@
   metadata about the partitions assigned to the given consumer or
   producer."
   [producer-or-consumer {:keys [^String topic-name]}]
-  (->> (cond (instance? KafkaConsumer producer-or-consumer)
-             (.partitionsFor ^KafkaConsumer producer-or-consumer topic-name)
+  (->> (cond (instance? Consumer producer-or-consumer)
+             (.partitionsFor ^Consumer producer-or-consumer topic-name)
 
-             (instance? KafkaProducer producer-or-consumer)
-             (.partitionsFor ^KafkaProducer producer-or-consumer topic-name)
+             (instance? Producer producer-or-consumer)
+             (.partitionsFor ^Producer producer-or-consumer topic-name)
 
              :else (throw (ex-info "Got non producer/consumer!"
                                    {:inst producer-or-consumer

@@ -1,5 +1,9 @@
 # Changelog
 
+### [0.9.6] - [2022-06-01]
+
+* Fixed Type checking against concrete class instead of interface
+
 ### [0.9.5] - [2022-05-26]
 
 * Move away from deprecated class ConsumerRecordFactory (to prepare migration to Kafka Streams 3.2.0)
