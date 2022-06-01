@@ -1,7 +1,6 @@
 (ns jackdaw.test.commands.write
   (:require
    [manifold.stream :as s]
-   [clojure.tools.logging :as log]
    [jackdaw.client.partitioning :as partitioning]))
 
 (set! *warn-on-reflection* true)
