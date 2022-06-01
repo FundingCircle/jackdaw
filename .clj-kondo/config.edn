@@ -1,0 +1,2 @@
+{:linters {:unused-binding { ;; ignore unused :as binding.
+                            :exclude-destructured-as true}}}
