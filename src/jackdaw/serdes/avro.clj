@@ -91,10 +91,10 @@
      (when schema-str
        (.parse (Schema$Parser.) ^String schema-str)))))
 
-(defn- ^String mangle [^String n]
+(defn- mangle ^String [^String n]
   (str/replace n #"-" "_"))
 
-(defn- ^String unmangle [^String n]
+(defn- unmangle ^String [^String n]
   (str/replace n #"_" "-"))
 
 (defn- dispatch-on-type-fields

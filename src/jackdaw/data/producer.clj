@@ -13,25 +13,25 @@
 
 ;;; Producer record
 
-(defn ^ProducerRecord ->ProducerRecord
+(defn ->ProducerRecord
   "Given unrolled ctor-style arguments creates a Kafka `ProducerRecord`."
-  ([{:keys [topic-name]} value]
+  (^ProducerRecord [{:keys [topic-name]} value]
    (ProducerRecord. ^String topic-name value))
-  ([{:keys [topic-name]} key value]
+  (^ProducerRecord [{:keys [topic-name]} key value]
    (ProducerRecord. ^String topic-name key value))
-  ([{:keys [topic-name]} partition key value]
+  (^ProducerRecord [{:keys [topic-name]} partition key value]
    (let [partition-or-nil (if partition (int partition))]
      (ProducerRecord. ^String topic-name
                       ^Integer partition-or-nil
                       key value)))
-  ([{:keys [topic-name]} partition timestamp key value]
+  (^ProducerRecord [{:keys [topic-name]} partition timestamp key value]
    (let [partition-or-nil (if partition (int partition))
          timestamp-or-nil (if timestamp (long timestamp))]
      (ProducerRecord. ^String topic-name
                       ^Integer partition-or-nil
                       ^Long timestamp-or-nil
                       key value)))
-  ([{:keys [topic-name]} partition timestamp key value headers]
+  (^ProducerRecord [{:keys [topic-name]} partition timestamp key value headers]
    (let [partition-or-nil (if partition (int partition))
          timestamp-or-nil (if timestamp (long timestamp))]
      (ProducerRecord. ^String topic-name

@@ -26,16 +26,16 @@
 
 ;;;; Producer
 
-(defn ^KafkaProducer producer
+(defn producer
   "Return a producer with the supplied properties and optional Serdes."
-  ([config]
+  (^KafkaProducer [config]
    (KafkaProducer. ^java.util.Properties (jd/map->Properties config)))
-  ([config {:keys [^Serde key-serde ^Serde value-serde]}]
+  (^KafkaProducer [config {:keys [^Serde key-serde ^Serde value-serde]}]
    (KafkaProducer. ^java.util.Properties (jd/map->Properties config)
                    (.serializer key-serde)
                    (.serializer value-serde))))
 
-(defn ^Callback callback
+(defn callback
   "Return a kafka `Callback` function out of a clojure `fn`.
 
   The fn must be of 2-arity, being `[record-metadata?, ex?]` where the
@@ -44,7 +44,7 @@
   the record.
 
   Callbacks are `void`, so the return value is ignored."
-  [on-completion]
+  ^Callback [on-completion]
   (reify Callback
     (onCompletion [this record-meta exception]
       (on-completion record-meta exception))))
@@ -89,11 +89,11 @@
 
 ;;;; Consumer
 
-(defn ^KafkaConsumer consumer
+(defn consumer
   "Return a consumer with the supplied properties and optional Serdes."
-  ([config]
+  (^KafkaConsumer [config]
    (KafkaConsumer. ^java.util.Properties (jd/map->Properties config)))
-  ([config {:keys [^Serde key-serde ^Serde value-serde] :as t}]
+  (^KafkaConsumer [config {:keys [^Serde key-serde ^Serde value-serde] :as t}]
 
    (when-not (or key-serde
                  (get config "key.deserializer"))
@@ -134,7 +134,7 @@
                                 topic-configs))
   consumer)
 
-(defn ^KafkaConsumer subscribed-consumer
+(defn subscribed-consumer
   "Given a broker configuration and topics, returns a consumer that is
   subscribed to all of the given topic descriptors.
 
@@ -142,7 +142,7 @@
   single pair of key and value serde instances. The serdes of the
   first requested topic are used, and all other topics are expected to
   be able to use same serdes."
-  [config topic-configs]
+  ^KafkaConsumer [config topic-configs]
   (when-not (sequential? topic-configs)
     (throw (ex-info "subscribed-consumer takes a seq of topics!"
                     {:topic-configs topic-configs})))

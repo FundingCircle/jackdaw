@@ -84,15 +84,15 @@
                                (.key ^Header header)
                                (.value ^Header header))) {} (.headers consumer-record))}))
 
-(defn ^ProducerRecord mk-producer-record
+(defn mk-producer-record
   "Creates a kafka ProducerRecord for use with `send!`."
-  ([{:keys [topic-name]} value]
+  (^ProducerRecord [{:keys [topic-name]} value]
    (ProducerRecord. ^String topic-name value))
-  ([{:keys [topic-name]} key value]
+  (^ProducerRecord [{:keys [topic-name]} key value]
    (ProducerRecord. ^String topic-name key value))
-  ([{:keys [topic-name]} partition key value]
+  (^ProducerRecord [{:keys [topic-name]} partition key value]
    (ProducerRecord. ^String topic-name ^Integer (int partition) key value))
-  ([{:keys [topic-name]} partition timestamp key value]
+  (^ProducerRecord [{:keys [topic-name]} partition timestamp key value]
    (ProducerRecord. ^String topic-name ^Integer (int partition) ^Long timestamp key value)))
 
 (defn consumer

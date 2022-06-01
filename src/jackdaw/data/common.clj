@@ -40,9 +40,9 @@
 
 ;;; Topic partition tuples
 
-(defn ^TopicPartition ->TopicPartition
+(defn ->TopicPartition
   "Given unrolled ctor-style arguments, create a Kafka `TopicPartition`."
-  [{:keys [:topic-name]} partition]
+  ^TopicPartition [{:keys [:topic-name]} partition]
   (TopicPartition. topic-name (int partition)))
 
 (defn map->TopicPartition
