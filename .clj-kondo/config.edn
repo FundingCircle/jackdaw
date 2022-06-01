@@ -1,4 +1,6 @@
 {:linters {:unused-binding { ;; ignore unused :as binding.
                             :exclude-destructured-as true}}
 
- :lint-as {jackdaw.data/defn->data clojure.core/defn}}
+ :lint-as {jackdaw.data/defn->data clojure.core/defn
+           jackdaw.test.transports/deftransport clojure.core/defn
+           manifold.deferred/loop clojure.core/let}}
