@@ -201,7 +201,7 @@
 
                          :else (do
                                  (.close ^Producer producer)
-                                 (log/infof "stopped kafka producer: "
+                                 (log/infof "stopped kafka producer: %s"
                                             (select-keys kafka-config ["bootstrap.servers" "group.id"])))))))]
 
      {:producer  producer
