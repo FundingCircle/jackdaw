@@ -169,10 +169,8 @@ workflows:
   version: 2
   build_and_test:
     jobs:
+      - lint
       - checkout_code
-      - lint:
-          requires:
-            - checkout_code
       - deps:
           requires:
             - checkout_code
