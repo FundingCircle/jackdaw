@@ -2,8 +2,8 @@
   "Helper function for creating serdes."
   (:require [clojure.java.io :as io]
             [clojure.spec.alpha :as s]
-            [jackdaw.serdes.avro.confluent :as c-avro]
-            [jackdaw.serdes.json-schema.confluent :as c-json]
+            [jackdaw.serdes.avro.confluent]
+            [jackdaw.serdes.json-schema.confluent]
             [jackdaw.serdes.edn]
             [jackdaw.serdes.json]
             [jackdaw.serdes]

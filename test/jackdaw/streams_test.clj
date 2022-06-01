@@ -4,7 +4,6 @@
             [clojure.test :refer :all]
             [jackdaw.serdes.edn :as jse]
             [jackdaw.streams :as k]
-            [jackdaw.streams.configurable :as cfg]
             [jackdaw.streams.interop :as interop]
             [jackdaw.streams.lambdas :as lambdas :refer [key-value]]
             [jackdaw.streams.lambdas.specs]

@@ -3,7 +3,6 @@
             [clj-uuid :as uuid]
             [clojure.data :refer [diff]]
             [clojure.data.json :as json]
-            [clojure.pprint :refer [pprint]]
             [jackdaw.serdes.avro :as avro]
             [jackdaw.serdes.avro.schema-registry :as reg])
   (:import [java.nio ByteBuffer]

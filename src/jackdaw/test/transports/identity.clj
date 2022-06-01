@@ -1,8 +1,7 @@
 (ns jackdaw.test.transports.identity
   (:require
-   [clojure.tools.logging :as log]
    [manifold.stream :as s]
-   [jackdaw.test.transports :as t :refer [deftransport]]))
+   [jackdaw.test.transports :refer [deftransport]]))
 
 (set! *warn-on-reflection* true)
 

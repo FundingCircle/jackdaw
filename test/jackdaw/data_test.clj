@@ -1,7 +1,5 @@
 (ns jackdaw.data-test
   (:require [clojure.test :refer :all]
-            [jackdaw.test.fixtures :as fix]
-            [jackdaw.test.serde :as serde]
             [jackdaw.data :as data])
   (:import org.apache.kafka.clients.producer.ProducerRecord
            [org.apache.kafka.common.header

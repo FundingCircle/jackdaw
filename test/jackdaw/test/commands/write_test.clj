@@ -4,7 +4,6 @@
    [jackdaw.test.transports :as trns]
    [jackdaw.test.transports.kafka]
    [jackdaw.test.serde :as serde]
-   [jackdaw.test :refer [test-machine]]
    [clojure.test :refer :all])
   (:import
     [clojure.lang ExceptionInfo]))

@@ -1,6 +1,5 @@
 (ns jackdaw.test.fixtures-test
   (:require
-   [clojure.java.io :as io]
    [clojure.test :refer :all]
    [jackdaw.test.fixtures :refer :all])
   (:import
