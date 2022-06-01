@@ -8,7 +8,7 @@
    [jackdaw.test :as jd.test]
    [jackdaw.test.fixtures :as fix]
    [jackdaw.test.serde :as serde]
-   [jackdaw.test.journal :refer [with-journal watch-for]]
+   [jackdaw.test.journal :refer [watch-for]]
    [jackdaw.test.transports :as trns]
    [jackdaw.test.transports.rest-proxy :as proxy]
    [manifold.stream :as s]

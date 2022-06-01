@@ -12,7 +12,7 @@
                                                peek print! process! reduce select-key source-topics streams-builder*
                                                suppress through to! to-kstream transform transform-values
                                                windowed-by-session windowed-by-time]]
-            [jackdaw.streams.configurable :refer [config IConfigurable]]))
+            [jackdaw.streams.configurable :refer [IConfigurable]]))
 
 (set! *warn-on-reflection* true)
 

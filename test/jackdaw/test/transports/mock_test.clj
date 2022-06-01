@@ -3,7 +3,7 @@
    [clojure.test :refer [deftest is testing]]
    [clojure.tools.logging :as log]
    [jackdaw.streams :as k]
-   [jackdaw.test.journal :refer [with-journal watch-for]]
+   [jackdaw.test.journal :refer [watch-for]]
    [jackdaw.test :as jd.test]
    [jackdaw.test.transports :as trns]
    [jackdaw.test.serde :as serde]

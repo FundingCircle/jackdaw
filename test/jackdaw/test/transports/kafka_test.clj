@@ -5,7 +5,7 @@
    [jackdaw.streams :as k]
    [jackdaw.test :as jd.test]
    [jackdaw.test.fixtures :as fix]
-   [jackdaw.test.journal :refer [with-journal watch-for]]
+   [jackdaw.test.journal :refer [watch-for]]
    [jackdaw.test.serde :as serde]
    [jackdaw.test.transports.kafka]
    [manifold.stream :as s]))
