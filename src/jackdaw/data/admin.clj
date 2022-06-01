@@ -16,7 +16,6 @@
     (ConfigEntry. k (:value v))))
 
 (defn->data ConfigEntry->data
-  ""
   [^ConfigEntry e]
   {:name (.name e)
    :value (.value e)
@@ -27,13 +26,11 @@
 ;;; Config
 
 (defn map->Config
-  ""
   ^Config [m]
   (Config.
    (map (partial apply ->ConfigEntry) m)))
 
 (defn->data Config->data
-  ""
   [^Config c]
   (into {}
         (comp (map ConfigEntry->data)
@@ -44,7 +41,6 @@
 ;;; TopicDescription
 
 (defn->data TopicDescription->data
-  ""
   [^TopicDescription td]
   {:is-internal? (.isInternal td)
    :partition-info (map datafy (.partitions td))})
@@ -52,7 +48,6 @@
 ;;; NewTopic
 
 (defn map->NewTopic
-  ""
   [{:keys [:topic-name
            :partition-count
            :replication-factor
@@ -71,7 +66,6 @@
 ;;;; Result types
 
 (defn->data DescribeClusterResult->data
-  ""
   [^DescribeClusterResult dcr]
   {:cluster-id (-> dcr .clusterId .get)
    :controller (-> dcr .controller .get datafy)

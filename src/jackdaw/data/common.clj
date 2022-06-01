@@ -10,7 +10,6 @@
 ;;; Node
 
 (defn->data Node->data
-  ""
   [^Node node]
   {:host (.host node)
    :port (.port node)
@@ -31,7 +30,6 @@
 ;;; TopicPartitionInfo
 
 (defn->data TopicPartitionInfo->data
-  ""
   [^TopicPartitionInfo tpi]
   {:isr (mapv datafy (.isr tpi))
    :leader (datafy (.leader tpi))
@@ -59,7 +57,6 @@
    :partition (.partition tp)})
 
 (defn as-TopicPartition
-  ""
   ^TopicPartition [o]
   (cond (instance? TopicPartition o)
         o

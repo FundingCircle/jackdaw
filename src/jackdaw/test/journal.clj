@@ -1,5 +1,4 @@
 (ns jackdaw.test.journal
-  ""
   (:require
     [clojure.set :refer [subset?]]
     [clojure.tools.logging :as log]
@@ -56,9 +55,9 @@
     (get m topic)))
 
 (defn journal-result
-  [machine record]
   "Journals the `record` in the appropriate place in the supplied test
    machine's `:journal`"
+  [machine record]
   (let [journal (:journal machine)]
     (if-let [err (agent-error journal)]
       (throw err)
@@ -122,27 +121,30 @@
   [journal topic-name ks value]
   (messages-by-kv-fn journal topic-name ks #(= value %)))
 
-(defn by-key [topic-name ks value]
+(defn by-key
   "Returns the first message in the topic where attribute 'ks' is equal to 'value'. Can be
   combined with the :watch command to assert that a message has been published:
 
   [:watch (j/by-key :result-topic [:object :color] \"red\")]"
+  [topic-name ks value]
   (fn [journal]
     (first (messages-by-kv journal topic-name ks value))))
 
-(defn by-keys [topic-name ks values]
+(defn by-keys
   "Returns all of the messages in the topic where attribute 'ks' is equal to one of the values.
    Can be combined with the :watch command to assert that messages have been published:
 
   [:watch (j/by-key :result-topic [:object :color] #{\"red\" \"green\" \"blue\"})]"
+  [topic-name ks values]
   (fn [journal]
     (messages-by-kv-fn journal topic-name ks (set values))))
 
-(defn by-id [topic-name value]
+(defn by-id
   "Returns all of the messages in the topic with an id of `value`. Can be combined with the
   :watch command to assert that a message with the supplied id has been published:
 
   [:watch (j/by-id :result-topic 123)]"
+  [topic-name value]
   (by-key topic-name [:id] value))
 
 (defn all-keys-present

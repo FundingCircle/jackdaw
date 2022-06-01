@@ -34,7 +34,6 @@
       (is (topic-exists? client topic-foo)))))
 
 (defn test-resetter
-  ""
   {:style/indent 1}
   [{:keys [app-config reset-params reset-fn]} assertion-fn]
   (let [reset-args (atom [])

@@ -1,5 +1,4 @@
 (ns jackdaw.test.commands
-  ""
   (:require
    [clojure.spec.alpha :as s]
    [jackdaw.test.commands.base :as base]

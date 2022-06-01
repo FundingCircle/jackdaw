@@ -1,5 +1,4 @@
 (ns jackdaw.test.fixtures
-  ""
   (:require
    [aleph.http :as http]
    [clojure.java.io :as io]
