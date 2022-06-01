@@ -5,6 +5,7 @@
    [clojure.data.json :as json]
    [clojure.tools.logging :as log]
    [clojure.stacktrace :as stacktrace]
+   [clojure.string :as str]
    [jackdaw.test.journal :as j]
    [jackdaw.test.transports :as t :refer [deftransport]]
    [jackdaw.test.serde :refer [apply-deserializers apply-serializers serde-map]]
@@ -85,7 +86,7 @@
                              (json/read-str (:body %)
                                             :key-fn (comp keyword
                                                           (fn [x]
-                                                            (clojure.string/replace x "_" "-"))))))
+                                                            (str/replace x "_" "-"))))))
       #(if-not (ok? (:status %))
          (assoc % :error :proxy-error)
          %))))
