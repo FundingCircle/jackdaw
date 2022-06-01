@@ -12,9 +12,7 @@
    [jackdaw.test.transports :as trns]
    [jackdaw.test.transports.rest-proxy :as proxy]
    [manifold.stream :as s]
-   [manifold.deferred :as d])
-  (:import
-   (java.util Properties)))
+   [manifold.deferred :as d]))
 
 (set! *warn-on-reflection* false)
 

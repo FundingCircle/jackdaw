@@ -3,9 +3,7 @@
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:require [clojure.data.fressian :as fressian]
             [jackdaw.serdes.fn :as jsfn])
-  (:import org.apache.kafka.common.serialization.Serde
-           org.apache.kafka.common.serialization.Serdes
-           [java.io ByteArrayOutputStream Closeable]
+  (:import java.io.ByteArrayOutputStream
            org.fressian.FressianWriter)
   (:gen-class
    :implements [org.apache.kafka.common.serialization.Serde]

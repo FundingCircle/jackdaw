@@ -8,12 +8,8 @@
             Collection]
            [java.util.regex
             Pattern]
-           [org.apache.kafka.common.serialization
-            Serde]
            [java.time
             Duration]
-           [org.apache.kafka.streams
-            KafkaStreams]
            [org.apache.kafka.streams
             StreamsBuilder]
            [org.apache.kafka.streams.kstream
@@ -22,11 +18,8 @@
             KeyValueMapper Materialized Merger Predicate Printed Produced
             Reducer SessionWindowedKStream SessionWindows
             Suppressed Suppressed$BufferConfig TimeWindowedKStream ValueJoiner
-            ValueMapper ValueMapperWithKey ValueTransformerSupplier Windows]
-           [org.apache.kafka.streams.processor
-            StreamPartitioner]
-           [org.apache.kafka.streams.state
-            KeyValueStore Stores]
+            ValueMapper ValueTransformerSupplier Windows]
+           [org.apache.kafka.streams.state Stores]
            (org.apache.kafka.streams.processor.api
             ProcessorSupplier)))
 

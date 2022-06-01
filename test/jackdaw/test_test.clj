@@ -7,10 +7,7 @@
    [jackdaw.test.fixtures :as fix]
    [jackdaw.test.serde :as serde]
    [jackdaw.test.transports :as trns]
-   [jackdaw.test.middleware :refer [with-status]])
-  (:import
-   (java.util Properties)
-   (org.apache.kafka.streams TopologyTestDriver)))
+   [jackdaw.test.middleware :refer [with-status]]))
 
 (set! *warn-on-reflection* false)
 

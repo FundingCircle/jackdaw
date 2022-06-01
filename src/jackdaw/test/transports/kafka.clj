@@ -14,7 +14,6 @@
   (:import
    org.apache.kafka.common.header.Header
    org.apache.kafka.clients.consumer.Consumer
-   org.apache.kafka.streams.KafkaStreams$StateListener
    org.apache.kafka.clients.consumer.ConsumerRecord
    org.apache.kafka.clients.producer.Producer
    org.apache.kafka.clients.producer.ProducerRecord))

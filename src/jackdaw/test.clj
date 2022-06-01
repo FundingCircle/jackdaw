@@ -33,7 +33,6 @@
    [jackdaw.test.journal :refer [with-journal]]
    [jackdaw.test.middleware :refer [with-timing with-status with-journal-snapshots]])
   (:import
-   (java.io Closeable)
    (java.util Properties)
    (org.apache.kafka.streams Topology TopologyTestDriver StreamsBuilder)))
 

@@ -68,12 +68,12 @@
             KafkaAvroSerializer KafkaAvroDeserializer]
            java.lang.CharSequence
            java.nio.ByteBuffer
-           [java.io ByteArrayOutputStream ByteArrayInputStream]
+           [java.io ByteArrayOutputStream]
            [java.util Collection Map UUID]
            [org.apache.avro
             AvroTypeException Schema$Parser Schema$ArraySchema Schema Schema$Field]
            [org.apache.avro.io
-            EncoderFactory DecoderFactory JsonEncoder]
+            EncoderFactory DecoderFactory]
            [org.apache.avro.generic
             GenericDatumWriter GenericDatumReader
             GenericContainer GenericData$Array GenericData$EnumSymbol

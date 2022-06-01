@@ -3,8 +3,7 @@
             [jackdaw.test.fixtures :as fix]
             [jackdaw.test.serde :as serde]
             [jackdaw.data :as data])
-  (:import [org.apache.kafka.clients.producer
-            ProducerRecord RecordMetadata]
+  (:import org.apache.kafka.clients.producer.ProducerRecord
            [org.apache.kafka.common.header
             Headers Header]))
 

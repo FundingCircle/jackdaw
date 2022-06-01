@@ -1,14 +1,11 @@
 (ns jackdaw.test.serde
   (:require
-   [clojure.tools.logging :as log]
    [jackdaw.serdes.edn :as edn-serde]
    [jackdaw.serdes.json :as json-serde])
   (:import
-   (org.apache.kafka.clients.consumer ConsumerRecord)
-   (org.apache.kafka.common.serialization Deserializer Serdes Serializer
+   (org.apache.kafka.common.serialization Serdes
                                           ByteArraySerializer
-                                          ByteArrayDeserializer)
-   (org.apache.kafka.common.errors SerializationException)))
+                                          ByteArrayDeserializer)))
 
 
 (set! *warn-on-reflection* false)

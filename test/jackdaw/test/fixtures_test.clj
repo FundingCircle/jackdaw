@@ -4,7 +4,7 @@
    [clojure.test :refer :all]
    [jackdaw.test.fixtures :refer :all])
   (:import
-   (org.apache.kafka.clients.admin AdminClient NewTopic)))
+   (org.apache.kafka.clients.admin AdminClient)))
 
 (set! *warn-on-reflection* false)
 

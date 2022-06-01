@@ -6,7 +6,6 @@
    [clojure.tools.logging :as log]
    [clojure.reflect :refer [resolve-class]]
    [jackdaw.streams :as k]
-   [jackdaw.streams.interop :refer [streams-builder]]
    [jackdaw.test.transports.kafka :as kt]
    [jackdaw.test.serde :refer [byte-array-serializer byte-array-deserializer]]
    [manifold.deferred :as d]

@@ -2,9 +2,7 @@
   "Implements an EDN SerDes (Serializer/Deserializer)."
   (:require [clojure.edn]
             [jackdaw.serdes.fn :as jsfn])
-  (:import java.nio.charset.StandardCharsets
-           org.apache.kafka.common.serialization.Serde
-           org.apache.kafka.common.serialization.Serdes)
+  (:import java.nio.charset.StandardCharsets)
   (:gen-class
    :implements [org.apache.kafka.common.serialization.Serde]
    :prefix "EdnSerde-"

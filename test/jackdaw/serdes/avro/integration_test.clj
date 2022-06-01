@@ -9,9 +9,7 @@
             [jackdaw.serdes.avro :as avro]
             [jackdaw.serdes.avro.schema-registry :as reg]
             [jackdaw.test.fixtures :as fix])
-  (:import [org.apache.avro Schema$Parser]
-           [org.apache.avro.generic GenericData$Record]
-           [org.apache.kafka.common.serialization Serde Serdes]))
+  (:import [org.apache.kafka.common.serialization Serde Serdes]))
 
 (set! *warn-on-reflection* false)
 

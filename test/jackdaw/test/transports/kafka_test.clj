@@ -8,9 +8,7 @@
    [jackdaw.test.journal :refer [with-journal watch-for]]
    [jackdaw.test.serde :as serde]
    [jackdaw.test.transports.kafka]
-   [manifold.stream :as s])
-  (:import
-   (java.util Properties)))
+   [manifold.stream :as s]))
 
 (set! *warn-on-reflection* false)
 
