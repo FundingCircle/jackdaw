@@ -35,15 +35,15 @@
 
 (deftest mock-schema-registry
   (testing "schema can be serialized by registry client"
-    (let [serde ^Serde (avro/serde +type-registry+ +mock-schema-registry+ +topic-config+)]
-      (let [msg {:customer-id (uuid/v4)
-                 :address     {:value    "foo"
-                               :key-path "foo.bar.baz"}}
-            serialized (-> (.serializer serde)
-                           (.serialize "foo" msg))
-            deserialized (-> (.deserializer serde)
-                             (.deserialize "foo" serialized))]
-        (is (= deserialized msg))))))
+    (let [serde ^Serde (avro/serde +type-registry+ +mock-schema-registry+ +topic-config+)
+          msg {:customer-id (uuid/v4)
+               :address     {:value    "foo"
+                             :key-path "foo.bar.baz"}}
+          serialized (-> (.serializer serde)
+                         (.serialize "foo" msg))
+          deserialized (-> (.deserializer serde)
+                           (.deserialize "foo" serialized))]
+      (is (= deserialized msg)))))
 
 (deftest ^:integration real-schema-registry
   (fix/with-fixtures [(fix/service-ready? {:http-url +real-schema-registry-url+
