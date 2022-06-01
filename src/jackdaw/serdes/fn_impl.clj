@@ -21,7 +21,7 @@
       (configure this configs key?)))
   (serialize [{serialize :serialize :as this} topic data]
     (assert serialize)
-    (when data
+    (when (some? data)
       (serialize this topic data))))
 
 (defrecord FnDeserializer [close configure deserialize]
@@ -33,5 +33,5 @@
     (when configure
       (configure this configs key?)))
   (deserialize [{deserialize :deserialize :as this} topic data]
-    (when data
+    (when (some? data)
       (deserialize this topic data))))

@@ -101,6 +101,12 @@
 
 ;; IKStreamBase
 
+(s/fdef k/join
+        :args (s/cat :kstream-or-ktable ::kstream-or-ktable
+                     :ktable ktable?
+                     :value-joiner-fn ifn?)
+        :ret ::kstream-or-ktable)
+
 (s/fdef k/left-join
         :args (s/cat :kstream-or-ktable ::kstream-or-ktable
                      :ktable ktable?
@@ -228,7 +234,19 @@
                      :state-store-names (s/? (s/coll-of string?)))
         :ret kstream?)
 
+(s/fdef k/flat-transform
+        :args (s/cat :kstream kstream?
+                     :transformer-supplier-fn ifn?
+                     :state-store-names (s/? (s/coll-of string?)))
+        :ret kstream?)
+
 (s/fdef k/transform-values
+        :args (s/cat :kstream kstream?
+                     :value-transformer-supplier-fn ifn?
+                     :state-store-names (s/? (s/coll-of string?)))
+        :ret kstream?)
+
+(s/fdef k/flat-transform-values
         :args (s/cat :kstream kstream?
                      :value-transformer-supplier-fn ifn?
                      :state-store-names (s/? (s/coll-of string?)))
@@ -253,12 +271,6 @@
         :ret kstream?)
 
 ;; IKTable
-
-(s/fdef k/join
-        :args (s/cat :ktable ktable?
-                     :other-ktable ktable?
-                     :value-joiner-fn ifn?)
-        :ret ktable?)
 
 (s/fdef k/outer-join
         :args (s/cat :ktable ktable?

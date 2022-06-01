@@ -71,7 +71,7 @@
            [java.io ByteArrayOutputStream ByteArrayInputStream]
            [java.util Collection Map UUID]
            [org.apache.avro
-            Schema$Parser Schema$ArraySchema Schema Schema$Field]
+            AvroTypeException Schema$Parser Schema$ArraySchema Schema Schema$Field]
            [org.apache.avro.io
             EncoderFactory DecoderFactory JsonEncoder]
            [org.apache.avro.generic
@@ -149,7 +149,8 @@
 (defn validate-clj! [this x path expected-type]
   (when-not (match-clj? this x)
     (throw (ex-info (serialization-error-msg x expected-type)
-                    {:path path, :data x}))))
+                    {:path path, :data x}
+                    (AvroTypeException. "Type Error")))))
 
 ;;;; Primitive Types
 
@@ -428,7 +429,8 @@
   (clj->avro [_ clj-map path]
     (when-not (map? clj-map)
       (throw (ex-info (serialization-error-msg clj-map "record")
-                      {:path path, :clj-data clj-map})))
+                      {:path path, :clj-data clj-map}
+                      (AvroTypeException. "Type Error"))))
 
     (let [record-builder (GenericRecordBuilder. schema)]
       (try
@@ -485,7 +487,8 @@
                                                     (map #(.getType ^Schema %))
                                                     (str/join ", ")
                                                     (format "union [%s]")))
-                      {:path path, :clj-data clj-data})))))
+                      {:path path, :clj-data clj-data}
+                      (AvroTypeException. "Type Error"))))))
 
 (defn ->UnionType
   "Wrapper by which to construct a `UnionType` which handles the
@@ -505,14 +508,17 @@
   {"schema.registry.url" registry-url})
 
 (defn- serializer [schema->coercion serde-config]
-  (let [{:keys [registry-client registry-url avro-schema read-only? key?]} serde-config
-        base-serializer (KafkaAvroSerializer. registry-client)
+  (let [{:keys [registry-client registry-url avro-schema read-only? key?
+                serializer-properties]} serde-config
+        serializer-config (-> (base-config registry-url)
+                              (merge serializer-properties))
+        base-serializer (KafkaAvroSerializer. registry-client serializer-config)
         ;; This is invariant across subject schema changes, shockingly.
         coercion-type (schema->coercion avro-schema)
         methods {:close     (fn [_]
                               (.close base-serializer))
-                 :configure (fn [_ base-config key?]
-                              (.configure base-serializer base-config key?))
+                 :configure (fn [_ config key?]
+                              (.configure base-serializer config key?))
                  :serialize (fn [_ topic data]
                               (when read-only?
                                 (throw (ex-info "Cannot serialize from a read-only serde"
@@ -520,26 +526,33 @@
                               (try
                                 (.serialize base-serializer topic (clj->avro coercion-type data []))
                                 (catch clojure.lang.ExceptionInfo e
-                                  (let [data (-> e
-                                                 ex-data
-                                                 (assoc :topic topic :clj-data data))]
-                                    (throw (ex-info (.getMessage e) data))))))}
+                                  (let [exception-data    (-> e
+                                                              ex-data
+                                                              (assoc :topic topic :clj-data data))
+                                        path              (:path exception-data)
+                                        exception-message (str (merge {:message (.getMessage e)
+                                                                       :topic   (:topic exception-data)
+                                                                       :path    path}
+                                                                      (when (instance? org.apache.avro.AvroTypeException (ex-cause e))
+                                                                        {:data (get-in data path)})))]
+                                    (throw (ex-info exception-message exception-data))))))}
         clj-serializer (fn/new-serializer methods)]
-    (.configure ^Serializer clj-serializer (base-config registry-url) key?)
+    (.configure ^Serializer clj-serializer serializer-config key?)
     clj-serializer))
 
 (defn- deserializer [schema->coercion serde-config]
   (let [{:keys [registry-client registry-url avro-schema key?
                 deserializer-properties]} serde-config
-        base-deserializer (KafkaAvroDeserializer. registry-client (let [min-props {"schema.registry.url" registry-url}]
-                                                                    (merge min-props deserializer-properties)))
+        deserializer-config (-> (base-config registry-url)
+                                (merge deserializer-properties))
+        base-deserializer (KafkaAvroDeserializer. registry-client deserializer-config)
         methods {:close       (fn [_]
                                 (.close base-deserializer))
-                 :configure   (fn [_ base-config key?]
-                                (.configure base-deserializer base-config key?))
+                 :configure   (fn [_ config key?]
+                                (.configure base-deserializer config key?))
                  :deserialize (fn [_ topic raw-data]
                                 (try
-                                  (let [avro-data (if (get deserializer-properties "specific.avro.reader")
+                                  (let [avro-data (if (get deserializer-config "specific.avro.reader")
                                                     (.deserialize base-deserializer ^String topic #^bytes raw-data ^Schema avro-schema)
                                                     (.deserialize base-deserializer ^String topic #^bytes raw-data))]
                                     ;; Note that `.deserialize` will return EITHER a Java Object, or
@@ -560,7 +573,7 @@
                                       (log/error e (str msg " for " topic))
                                       (throw (ex-info msg {:topic topic} e))))))}
         clj-deserializer (fn/new-deserializer methods)]
-    (.configure ^Deserializer clj-deserializer (base-config registry-url) key?)
+    (.configure ^Deserializer clj-deserializer deserializer-config key?)
     clj-deserializer))
 
 ;; Public API
@@ -674,6 +687,7 @@
    {:keys [avro/schema
            avro/coercion-cache
            key?
+           serializer-properties
            deserializer-properties
            read-only?]
     :as   topic-config}]
@@ -702,6 +716,6 @@
                         :coercion-cache coercion-cache}
 
         ;; The final serdes based on the (cached) coercion stack.
-        avro-serializer (serializer (schema->coercion coercion-stack) config)
+        avro-serializer (serializer (schema->coercion coercion-stack) (assoc config :serializer-properties serializer-properties))
         avro-deserializer (deserializer (schema->coercion coercion-stack) (assoc config :deserializer-properties deserializer-properties))]
     (Serdes/serdeFrom avro-serializer avro-deserializer)))

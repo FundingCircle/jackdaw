@@ -16,6 +16,7 @@ You can find all the documentation on [cljdoc](https://cljdoc.org/d/fundingcircl
 - [Pipe](https://github.com/FundingCircle/jackdaw/tree/master/examples/pipe)
 - [Word Count](https://github.com/FundingCircle/jackdaw/tree/master/examples/word-count)
 - [Simple Ledger](https://github.com/FundingCircle/jackdaw/tree/master/examples/simple-ledger)
+- [Roll Dice](https://github.com/FundingCircle/jackdaw/tree/master/examples/rolldice)
 
 ## Contributing
 
@@ -38,7 +39,7 @@ Anyone with the appropriate credentials can "cut a release" of jackdaw using the
  5. In the "describe this release" field, enter the contents of the Changelog and add a credit to the contributors of the release
  6. When happy, use the "Publish Release" button to publish the release in github which creates a corresponding git tag
  7. Once the tag is seen by circleci, a deployment build is triggered which builds the project and deploys a release to clojars
- 
+
 Steps 2 to 6 is essentially `git tag $version -m "$title\n\n$description" && git push --tags`
 
 
