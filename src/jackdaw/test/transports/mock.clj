@@ -155,8 +155,7 @@
                                                                :offset (.offset input-record)})
                                                  (d/recur (s/take! messages)))
 
-                        :else (do
-                                (log/infof "stopped mock producer: %s" {:driver driver}))))))]
+                        :else (log/infof "stopped mock producer: %s" {:driver driver})))))]
 
     {:messages messages
      :process process}))
