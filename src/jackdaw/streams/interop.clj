@@ -24,7 +24,7 @@
             KeyValueMapper Materialized Merger Predicate Printed Produced
             Reducer SessionWindowedKStream SessionWindows
             Suppressed Suppressed$BufferConfig TimeWindowedKStream ValueJoiner
-            ValueMapper ValueTransformerSupplier Windows]
+            ValueMapper ValueTransformerSupplier Windows ForeachAction TransformerSupplier]
            [org.apache.kafka.streams.state Stores]
            (org.apache.kafka.streams.processor.api
             ProcessorSupplier)))
