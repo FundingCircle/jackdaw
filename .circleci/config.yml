@@ -100,6 +100,14 @@ jobs:
           key: v1-jackdaw-repo-{{ .Branch }}-{{ .Revision }}
           paths:
             - .
+  lint:
+    executor: machine
+    working_directory: /home/circleci/jackdaw
+    steps:
+      - checkout
+      - run: ls -la
+      - run: docker run --volume `pwd`:/project --rm --workdir /project cljkondo/clj-kondo sh -c 'clj-kondo --lint src test'
+
   deps:
     <<: *build_config
     steps:
@@ -111,6 +119,8 @@ jobs:
           key: *mvn_cache_key
           paths:
             - /home/circleci/.m2
+
+
   test:
     <<: *test_config
     steps:
@@ -160,6 +170,9 @@ workflows:
   build_and_test:
     jobs:
       - checkout_code
+      - lint:
+          requires:
+            - checkout_code
       - deps:
           requires:
             - checkout_code
