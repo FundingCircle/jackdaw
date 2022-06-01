@@ -173,17 +173,17 @@
                                                     (assoc :group-config {:auto.offset.reset "earliest"
                                                                           :fetch.min.bytes 100
                                                                           :consumer.fetch.timeout.ms 200})))
-                       (proxy/with-consumer))]
-        (let [[url options] (first @http-reqs)]
-          (is (= "http://localhost:8082/consumers/test-group-config" url))
-          (is (= {"Accept" "application/vnd.kafka.v2+json"
-                  "Content-Type" "application/vnd.kafka.v2+json"}
-                 (:headers options)))
-          (is (= {"auto.offset.reset" "earliest"
-                  "fetch.min.bytes" 100
-                  "consumer.fetch.timeout.ms" 200}
-                 (-> (:body options)
-                     (json/read-str)
-                     (select-keys ["auto.offset.reset"
-                                   "fetch.min.bytes"
-                                   "consumer.fetch.timeout.ms"])))))))))
+                       (proxy/with-consumer))
+            [url options] (first @http-reqs)]
+        (is (= "http://localhost:8082/consumers/test-group-config" url))
+        (is (= {"Accept" "application/vnd.kafka.v2+json"
+                "Content-Type" "application/vnd.kafka.v2+json"}
+               (:headers options)))
+        (is (= {"auto.offset.reset" "earliest"
+                "fetch.min.bytes" 100
+                "consumer.fetch.timeout.ms" 200}
+               (-> (:body options)
+                   (json/read-str)
+                   (select-keys ["auto.offset.reset"
+                                 "fetch.min.bytes"
+                                 "consumer.fetch.timeout.ms"]))))))))
