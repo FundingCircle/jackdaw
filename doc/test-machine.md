@@ -31,32 +31,42 @@ to these services in a shared environment like uat/staging.
 (ns my.app-test
   (:require
     [my.app :as app]
-    [jackdaw.test :as j.t]
+    [jackdaw.serdes :refer [string-serde edn-serde]]
+    [jackdaw.serdes.json :as jsj]
+    [jackdaw.test :refer [test-machine]]
     [jackdaw.test.transports :as trns]))
 
 (def local-kafka-config
   {"bootstrap.servers" "localhost:9092"
    "group.id" "my-app"})
 
+(def remote-kafka-config
+  {:bootstrap-uri "my-real-rest-proxy-url"
+   :group-id "my-app"})
+
 (def topic-config
   {:foo {:topic-name "foo"
          :key-serde (string-serde)
-         :value-serde (json-serde)}
+         :value-serde (jsj/serde)
+         :partition-count 1
+         :replication-factor 1}
    :bar {:topic-name "foo"
          :key-serde (string-serde)
-         :value-serde (edn-serde)}})
+         :value-serde (edn-serde)
+         :partition-count 1
+         :replication-factor 1}})
 
 (defn local-machine []
   (let [t (trns/transport {:type :kafka
                            :config local-kafka-config
                            :topics topic-config})]
-    (j.t/test-machine {:transport t})))
+    (test-machine t)))
 
-(def remote-machine []
+(defn remote-machine []
   (let [t (trns/transport {:type :confluent-rest-proxy
                            :config remote-kafka-config
                            :topics topic-config})]
-   (j.t/test-machine t)))
+   (test-machine t)))
 ```
 
 ### Serialization/Deserialization
@@ -105,10 +115,11 @@ specific arguments. Currently the following commands are the supported.
                                  function of a single argument. This function will
                                  be passed the entire test machine state.
 ```
+For more details see the functions in the [jackdaw.test.commands](https://cljdoc.org/d/fundingcircle/jackdaw/CURRENT/api/jackdaw.test.commands) namespace.
 
 ### Test Results
 
-The return value from `run-test` is a map with just two keys
+A `test-machine` is used in conjunction with `run-test`, which runs a sequence of test commands against the test-machine. The first parameter to `run-test` is a test-machine and the second is a list of commands to execute. The return value from `run-test` is a map with just two keys
 
 ```clojure
 :results   A sequence of execution results. One for each command attempted
@@ -124,7 +135,7 @@ in the order that they were observed.
 
 A selection of fixtures are provided to help setting up required topics and
 to start the applications, and external systems under test. For more details
-see the functions in the jackdaw.test.fixtures namespace.
+see the functions in the [jackdaw.test.fixtures](https://cljdoc.org/d/fundingcircle/jackdaw/CURRENT/api/jackdaw.test.fixtures) namespace.
 
 ### Wrapping up
 
@@ -135,11 +146,43 @@ better that you write this macro yourself so that you can tailor it to your own
 requirements.
 
 ```clojure
-(defn with-test-machine [f {:keys [transport}]}]
-  (fix/with-fixtures [(fix/topic-fixture kafka-config input-topics)
-                      (fix/topic-fixture kafka-config output-topics)
-                      (fix/service-ready {:http-url "http://localhost:8082"
-                                          :http-timeout 5000})]
-    (with-open [machine (test-machine {:transport transport})]
+(ns my.app-test
+  (:require
+    [my.app :as app]
+    [jackdaw.serdes :refer [string-serde]]
+    [jackdaw.test :refer [test-machine]]
+    [jackdaw.test.fixtures :refer [with-fixtures topic-fixture service-ready?]])
+  (:import
+    (org.apache.kafka.streams TopologyTestDriver)))
+
+(def kafka-config
+  {"bootstrap.servers" "localhost:9092"
+   "group.id" "my-app"})
+
+(def input-topic-config
+  {:foo {:topic-name "foo"
+         :key-serde (string-serde)
+         :value-serde (string-serde)
+         :partition-count 1
+         :replication-factor 1})
+
+(def output-topic-config
+  {:foo {:topic-name "bar"
+         :key-serde (string-serde)
+         :value-serde (string-serde)
+         :partition-count 1
+         :replication-factor 1})
+
+(defn with-test-machine
+  "Creates a test-machine using the supplied `transport` and then
+   passes it to the supplied `f`."
+  [f transport]
+  (with-fixtures [(topic-fixture kafka-config input-topic-config)
+                  (topic-fixture kafka-config output-topic-config)
+                  (service-ready? {:http-url "http://localhost:8082"
+                                   :timeout 5000})]
+    (with-open [machine (test-machine transport)]
       (f machine))))
 ```
+
+The `topic-fixture` function creates all the topics named in the supplied `topic-config` before running tests. You have to import `TopologyTestDriver` for `test-machine` to work, which requires you to bring in the `org.apache.kafka/kafka-streams-test-utils` library as a dependency, using a version within `2.0.0` - `2.3.0`. The `topic-fixture` expects the `topic-config` to contain `:partition-count` and `:replication-factor` to be present, besides the `topic-name` and key-value serdes.

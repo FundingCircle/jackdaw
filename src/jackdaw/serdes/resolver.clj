@@ -3,6 +3,7 @@
   (:require [clojure.java.io :as io]
             [clojure.spec.alpha :as s]
             [jackdaw.serdes.avro.confluent :as c-avro]
+            [jackdaw.serdes.json-schema.confluent :as c-json]
             [jackdaw.serdes.edn]
             [jackdaw.serdes.json]
             [jackdaw.serdes]
@@ -43,12 +44,15 @@
   type-registry - A mapping per jackdaw.serdes.avro/+base-schema-type-registry+>
   read-only - Specifies that you will not be using the resulting serializer,
               and does not require a schema or schema-filename
+  serializer-properties - Properties to be used when creating the serializer
+  deserializer-properties - Properties to be used when creating the deserializer
 
   These are only needed for the Confluent Avro serde, and even then
   only the schema registry URL is required."
 
   [& options]
-  (let [{:keys [type-registry schema-registry-url schema-registry-client]}
+  (let [{:keys [type-registry schema-registry-url schema-registry-client
+                serializer-properties deserializer-properties]}
         (apply hash-map options)]
 
     (fn [{:keys [serde-keyword schema schema-filename key? read-only?] :as serde-config}]
@@ -61,11 +65,18 @@
                      :else           nil)
             serde-fn (find-serde-var serde-config)]
         (case serde-keyword
+          :jackdaw.serdes.json-schema.confluent/serde
+          (serde-fn schema-registry-url schema key? {:schema-registry-client schema-registry-client
+                                                     :read-only? read-only?
+                                                     :serializer-properties serializer-properties
+                                                     :deserializer-properties deserializer-properties})
           :jackdaw.serdes.avro.confluent/serde
           (if-not (s/valid? :jackdaw.serde/confluent-avro-serde serde-config)
             (throw (ex-info "Invalid serde config."
                             (s/explain-data :jackdaw.serde/confluent-avro-serde serde-config)))
             (serde-fn schema-registry-url schema key? {:type-registry type-registry
                                                        :schema-registry-client schema-registry-client
-                                                       :read-only? read-only?}))
+                                                       :read-only? read-only?
+                                                       :serializer-properties serializer-properties
+                                                       :deserializer-properties deserializer-properties}))
           (serde-fn))))))
