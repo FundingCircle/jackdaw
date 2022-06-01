@@ -2,7 +2,7 @@
   (:require
    [jackdaw.test.commands.base :as cmd]
    [clojure.pprint :as pprint]
-   [clojure.test :refer :all]))
+   [clojure.test :refer [deftest is testing]]))
 
 (set! *warn-on-reflection* false)
 

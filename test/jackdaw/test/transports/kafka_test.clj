@@ -1,7 +1,7 @@
 (ns jackdaw.test.transports.kafka-test
   (:require
    [clojure.tools.logging :as log]
-   [clojure.test :refer :all]
+   [clojure.test :refer [deftest is testing]]
    [jackdaw.streams :as k]
    [jackdaw.test :as jd.test]
    [jackdaw.test.fixtures :as fix]

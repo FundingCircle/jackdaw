@@ -1,2 +1,4 @@
 {:linters {:unused-binding { ;; ignore unused :as binding.
-                            :exclude-destructured-as true}}}
+                            :exclude-destructured-as true}}
+
+ :lint-as {jackdaw.data/defn->data clojure.core/defn}}

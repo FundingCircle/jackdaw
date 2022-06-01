@@ -7,7 +7,7 @@
    [clojure.stacktrace :as stacktrace]
    [jackdaw.test.journal :as j]
    [jackdaw.test.transports :as t :refer [deftransport]]
-   [jackdaw.test.serde :refer :all]
+   [jackdaw.test.serde :refer [apply-deserializers apply-serializers serde-map]]
    [manifold.stream :as s]
    [manifold.deferred :as d])
   (:import

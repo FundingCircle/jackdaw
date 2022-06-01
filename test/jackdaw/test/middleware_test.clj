@@ -1,6 +1,6 @@
 (ns jackdaw.test.middleware-test
   (:require
-   [clojure.test :refer :all]
+   [clojure.test :refer [deftest is testing]]
    [clojure.tools.logging :as log]
    [jackdaw.test.middleware :as middle]
    [jackdaw.test.transports :as trns]

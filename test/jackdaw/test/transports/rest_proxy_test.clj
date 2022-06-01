@@ -2,7 +2,7 @@
   (:require
    [byte-streams :as bs]
    [clojure.tools.logging :as log]
-   [clojure.test :refer :all]
+   [clojure.test :refer [deftest is testing]]
    [clojure.data.json :as json]
    [jackdaw.streams :as k]
    [jackdaw.test :as jd.test]

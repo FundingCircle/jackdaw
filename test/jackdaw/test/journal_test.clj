@@ -1,6 +1,6 @@
 (ns jackdaw.test.journal-test
   (:require
-    [clojure.test :refer :all]
+    [clojure.test :refer [deftest is testing]]
     [jackdaw.test.journal :as jrnl]))
 
 (set! *warn-on-reflection* false)

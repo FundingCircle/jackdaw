@@ -1,6 +1,6 @@
 (ns jackdaw.test.transports.mock-test
   (:require
-   [clojure.test :refer :all]
+   [clojure.test :refer [deftest is testing]]
    [clojure.tools.logging :as log]
    [jackdaw.streams :as k]
    [jackdaw.test.journal :refer [with-journal watch-for]]

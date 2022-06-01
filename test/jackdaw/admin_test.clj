@@ -1,6 +1,6 @@
 (ns jackdaw.admin-test
   (:require
-   [clojure.test :refer :all]
+   [clojure.test :refer [deftest is testing]]
    [jackdaw.admin :as admin]
    [jackdaw.data :as data]
    [manifold.deferred :as d])

@@ -1,5 +1,5 @@
 (ns jackdaw.specs-test
-  (:require [jackdaw.specs :refer :all]
+  (:require [jackdaw.specs :refer [exactly-one-true?]]
             [clojure.test :refer [deftest are]]))
 
 (deftest exactly-one-true?-test

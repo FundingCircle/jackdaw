@@ -1,6 +1,6 @@
 (ns jackdaw.test-test
   (:require
-   [clojure.test :refer :all]
+   [clojure.test :refer [deftest is testing]]
    [jackdaw.streams :as k]
    [jackdaw.test :as jd.test]
    [jackdaw.test.commands :as cmd]

@@ -1,7 +1,7 @@
 (ns jackdaw.test.fixtures-test
   (:require
-   [clojure.test :refer :all]
-   [jackdaw.test.fixtures :refer :all])
+   [clojure.test :refer [deftest is]]
+   [jackdaw.test.fixtures :refer [list-topics reset-application-fixture topic-fixture with-fixtures]])
   (:import
    (org.apache.kafka.clients.admin AdminClient)))
 

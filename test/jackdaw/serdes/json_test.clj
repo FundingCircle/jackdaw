@@ -1,7 +1,7 @@
 (ns jackdaw.serdes.json-test
   (:require [clojure.data.json :as json]
             [clojure.java.io :as io]
-            [clojure.test :refer :all]
+            [clojure.test :refer [deftest is testing]]
             [clojure.test.check.clojure-test :as ct :refer [defspec]]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]

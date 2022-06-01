@@ -4,7 +4,7 @@
    [jackdaw.test.transports :as trns]
    [jackdaw.test.transports.kafka]
    [jackdaw.test.serde :as serde]
-   [clojure.test :refer :all])
+   [clojure.test :refer [deftest is testing]])
   (:import
     [clojure.lang ExceptionInfo]))
 

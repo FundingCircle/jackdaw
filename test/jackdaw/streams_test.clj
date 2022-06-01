@@ -1,7 +1,7 @@
 (ns jackdaw.streams-test
   "Tests of the kafka streams wrapper."
   (:require [clojure.spec.test.alpha :as stest]
-            [clojure.test :refer :all]
+            [clojure.test :refer [deftest is testing]]
             [jackdaw.serdes.edn :as jse]
             [jackdaw.streams :as k]
             [jackdaw.streams.interop :as interop]

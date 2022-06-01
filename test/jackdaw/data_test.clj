@@ -1,5 +1,5 @@
 (ns jackdaw.data-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [are deftest]]
             [jackdaw.data :as data])
   (:import org.apache.kafka.clients.producer.ProducerRecord
            [org.apache.kafka.common.header

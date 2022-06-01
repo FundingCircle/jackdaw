@@ -1,5 +1,5 @@
 (ns jackdaw.client-test
-  (:require [clojure.test :refer :all]
+  (:require [clojure.test :refer [are deftest is testing]]
             [jackdaw.admin :as admin]
             [jackdaw.client :as client]
             [jackdaw.test.fixtures :as fix]
