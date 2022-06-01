@@ -20,20 +20,20 @@
   (^ProducerRecord [{:keys [topic-name]} key value]
    (ProducerRecord. ^String topic-name key value))
   (^ProducerRecord [{:keys [topic-name]} partition key value]
-   (let [partition-or-nil (if partition (int partition))]
+   (let [partition-or-nil (when partition (int partition))]
      (ProducerRecord. ^String topic-name
                       ^Integer partition-or-nil
                       key value)))
   (^ProducerRecord [{:keys [topic-name]} partition timestamp key value]
-   (let [partition-or-nil (if partition (int partition))
-         timestamp-or-nil (if timestamp (long timestamp))]
+   (let [partition-or-nil (when partition (int partition))
+         timestamp-or-nil (when timestamp (long timestamp))]
      (ProducerRecord. ^String topic-name
                       ^Integer partition-or-nil
                       ^Long timestamp-or-nil
                       key value)))
   (^ProducerRecord [{:keys [topic-name]} partition timestamp key value headers]
-   (let [partition-or-nil (if partition (int partition))
-         timestamp-or-nil (if timestamp (long timestamp))]
+   (let [partition-or-nil (when partition (int partition))
+         timestamp-or-nil (when timestamp (long timestamp))]
      (ProducerRecord. ^String topic-name
                       ^Integer partition-or-nil
                       ^Long timestamp-or-nil
@@ -87,8 +87,8 @@
                     offset 0 ;; Force absolute offset
                     timestamp
                     nil ;; No checksum, it's deprecated
-                    ^Integer (if key-size (int key-size))
-                    ^Integer (if value-size (int value-size))))
+                    ^Integer (when key-size (int key-size))
+                    ^Integer (when value-size (int value-size))))
   ([{:keys [:topic-name] :as t} partition base-offset relative-offset timestamp
     key-size value-size]
    (RecordMetadata. (->TopicPartition t partition)
@@ -96,8 +96,8 @@
                     relative-offset ;; Full offset control
                     timestamp
                     nil ;; No checksum, it's depreciated
-                    ^Integer (if key-size (int key-size))
-                    ^Integer (if value-size (int value-size))))
+                    ^Integer (when key-size (int key-size))
+                    ^Integer (when value-size (int value-size))))
   ([{:keys [:topic-name] :as t} partition base-offset relative-offset timestamp checksum
     key-size value-size]
    (RecordMetadata. (->TopicPartition t partition)
@@ -105,8 +105,8 @@
                     relative-offset ;; Full offset control
                     timestamp
                     checksum ;; Have fun I guess
-                    ^Integer (if key-size (int key-size))
-                    ^Integer (if value-size (int value-size)))))
+                    ^Integer (when key-size (int key-size))
+                    ^Integer (when value-size (int value-size)))))
 
 (defn map->RecordMetadata
   "Given a `::record-metdata`, build an equivalent `RecordMetadata`.
