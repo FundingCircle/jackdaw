@@ -167,7 +167,7 @@
 (deftest test-rest-proxy-group-config
   (let [http-reqs (atom [])]
     (binding [proxy/*http-client* {:post (mock-http-client http-reqs)}]
-      (let [client (-> (proxy/rest-proxy-client (-> (rest-proxy-config "test-group-config")
+      (let [_client (-> (proxy/rest-proxy-client (-> (rest-proxy-config "test-group-config")
                                                     (assoc :group-config {:auto.offset.reset "earliest"
                                                                           :fetch.min.bytes 100
                                                                           :consumer.fetch.timeout.ms 200})))

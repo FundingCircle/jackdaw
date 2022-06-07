@@ -16,12 +16,9 @@
 (defn with-identity-transport
   [{:keys [test-id transport]} f]
   (with-open [machine (jd.test/test-machine (transport))]
-    (when test-id
-      (log/info "begin" test-id))
-
-    (let [result (f machine)]
-      (when test-id
-        (log/info "end" test-id)))))
+    (when test-id (log/info "begin" test-id))
+    (f machine)
+    (when test-id (log/info "end" test-id))))
 
 
 (deftest test-with-status
