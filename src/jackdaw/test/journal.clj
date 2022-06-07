@@ -23,7 +23,7 @@
                             (remove-watch journal id)
                             (deliver p {:result :found
                                         :info result})))]
-    (add-watch journal id (fn [k r old new]
+    (add-watch journal id (fn [_k _r _old new]
                             (check-condition new)))
     ;; don't rely on watcher to 'check-condition'
     ;; in case journal is already in a final, good state

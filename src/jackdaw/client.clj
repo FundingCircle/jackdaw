@@ -46,7 +46,7 @@
   Callbacks are `void`, so the return value is ignored."
   ^Callback [on-completion]
   (reify Callback
-    (onCompletion [this record-meta exception]
+    (onCompletion [_this record-meta exception]
       (on-completion record-meta exception))))
 
 (defn send!

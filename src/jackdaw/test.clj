@@ -76,7 +76,7 @@
                         consumer
                         producer]
   java.io.Closeable
-  (close [this]
+  (close [_this]
     (doseq [hook exit-hooks]
       (hook))
     (log/info "destroyed test machine")))

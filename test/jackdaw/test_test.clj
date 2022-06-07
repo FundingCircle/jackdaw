@@ -57,7 +57,7 @@
 
 (deftest test-run-test
   (testing "the run test machinery"
-    (let [m {:executor (-> (fn [m c]
+    (let [m {:executor (-> (fn [_machine c]
                              (let [[cmd & params] c]
                                (apply ({:min (fn [v] {:result {:result (apply min v)}})
                                         :max (fn [v] {:result {:result (apply max v)}})
@@ -70,7 +70,7 @@
              :journal (atom {})}]
 
       (testing "works properly"
-        (let [{:keys [results journal]}
+        (let [{:keys [results]}
               (jd.test/run-test m [[:min [1 2 3]]
                                    [:max [1 2 3]]
                                    [:is-1 1]])]
@@ -88,7 +88,7 @@
 
       (testing "execution stops on an unknown command"
         (is (thrown? NullPointerException
-             (let [{:keys [results journal]}
+             (let [{:keys [results]}
                    (jd.test/run-test m [[:min [1 2 3]]
                                         [:foo 2]
                                         [:max [1 2 3]]])]
@@ -216,17 +216,17 @@
   [in out]
   (fn [builder]
     (let [in (-> (k/kstream builder in)
-                 (k/map (fn [[k v]]
+                 (k/map (fn [_record]
                           (throw (ex-info "bad topology" {})))))]
       (k/to in out)
       builder)))
 
 (defn bad-key-fn
-  [msg]
+  [_msg]
   (throw (ex-info "bad-key-fn" {})))
 
 (defn bad-watch-fn
-  [journal]
+  [_journal]
   (throw (ex-info "bad-watch-fn" {})))
 
 (deftest test-machine-happy-path

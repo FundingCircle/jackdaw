@@ -26,8 +26,7 @@
 
 (deftest reverse-json-roundtrip-test
   (testing "JSON bytes are the same after deserialization and serialization."
-    (let [s (slurp (io/resource "resources/pass1.json"))
-          b (.serialize (jsj/serializer) nil {:foo_bar "baz"})]
+    (let [b (.serialize (jsj/serializer) nil {:foo_bar "baz"})]
       (is (= (into [] b)
              (into [] (->> (.deserialize (jsj/deserializer) nil b)
                            (.serialize (jsj/serializer) nil))))))))

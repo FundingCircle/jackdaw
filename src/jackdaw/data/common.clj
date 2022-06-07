@@ -44,12 +44,10 @@
   (TopicPartition. topic-name (int partition)))
 
 (defn map->TopicPartition
-  "Given a `::topic-parititon`, build an equivalent `TopicPartition`.
+  "Given a `topic-partition`, build an equivalent `TopicPartition`.
 
   Inverts `(datafy ^TopicPartition tp)`."
-  [{:keys [topic-name
-           partition]
-    :as m}]
+  [{:keys [partition] :as m}]
   (->TopicPartition m partition))
 
 (defn->data TopicPartition->data [^TopicPartition tp]

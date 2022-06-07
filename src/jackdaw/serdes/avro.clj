@@ -198,7 +198,7 @@
   (try
     (and (number? x)
          (coercion-fn (bigint x)))
-    (catch RuntimeException e
+    (catch RuntimeException _e
       false)))
 
 (defrecord DoubleType []
@@ -260,12 +260,14 @@
 
 (defrecord SchemalessType []
   SchemaCoercion
-  (match-clj? [_ x]
+  (match-clj? [_schema-type _clj-data]
     true)
-  (match-avro? [_ x]
+  (match-avro? [_schema-type _avro-data]
     true)
-  (avro->clj [_ x] x)
-  (clj->avro [_ x path] x))
+  (avro->clj [_schema-type avro-data]
+    avro-data)
+  (clj->avro [_schema-type clj-data _path]
+    clj-data))
 
 ;; UUID :disapprove:
 
@@ -278,7 +280,7 @@
   (avro->clj [_ uuid-utf8]
     (try
       (UUID/fromString (str uuid-utf8))
-      (catch Exception e
+      (catch Exception _e
         (str uuid-utf8))))
   (clj->avro [this uuid path]
     (validate-clj! this uuid path "uuid")
@@ -639,17 +641,14 @@
         (get @coercion-cache avro-schema)))))
 
 (defn- coercion-type
-  [avro-schema {:keys [type-registry
-                       coercion-cache] :as coercion-stack}]
+  [avro-schema coercion-stack]
   ((schema->coercion coercion-stack) avro-schema))
 
 (defn as-json
   "Returns the json representation of the supplied `edn+avro`
 
    `edn+avro` is an avro object represented as an edn object (compatible with the jackdaw avro serde)"
-  [{:keys [type-registry
-           avro-schema
-           coercion-cache] :as coercion-stack} edn+avro]
+  [{:keys [avro-schema] :as coercion-stack} edn+avro]
   (let [schema (parse-schema-str avro-schema)
         record (clj->avro (coercion-type schema coercion-stack) edn+avro [])
         out-stream (ByteArrayOutputStream.)
@@ -665,9 +664,7 @@
   "Returns the edn representation of the supplied `json+avro`
 
    `json+avro` is an avro object represented as a json string"
-  [{:keys [type-registry
-           coercion-cache
-           avro-schema] :as coercion-stack} json+avro]
+  [{:keys [avro-schema] :as coercion-stack} json+avro]
   (let [schema (parse-schema-str avro-schema)
         decoder (.jsonDecoder ^DecoderFactory (DecoderFactory.)
                               ^Schema schema

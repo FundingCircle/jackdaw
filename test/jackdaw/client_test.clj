@@ -86,7 +86,7 @@
   (testing "producer callbacks"
     (testing "success"
       (let [result (promise)
-            cb (client/callback (fn [meta ex]
+            cb (client/callback (fn [_meta ex]
                                   (if ex
                                     (deliver result ex)
                                     (deliver result :ok))))]
@@ -96,7 +96,7 @@
 
     (testing "failure"
       (let [result (promise)
-            cb (client/callback (fn [meta ex]
+            cb (client/callback (fn [_meta ex]
                                   (if ex
                                     (deliver result ex)
                                     (deliver result :ok))))
@@ -117,7 +117,7 @@
         (testing "send with callback"
           (let [msg (data/->ProducerRecord {:topic-name "foo"} "1" "one")
                 on-callback (promise)
-                result (client/send! producer msg (fn [meta ex]
+                result (client/send! producer msg (fn [_meta ex]
                                                     (if ex
                                                       (deliver on-callback ex)
                                                       (deliver on-callback :ok))))]
@@ -195,47 +195,44 @@
 
 (deftest ^:integration partitions-for-test
   (fix/with-fixtures [(fix/topic-fixture (broker-config) test-topics 1000)]
-    (let [key-serde (:key-serde high-partition-topic)
-          value-serde (:value-serde high-partition-topic)]
-
-      (testing "partition info"
-        (with-consumer (-> (client/consumer (consumer-config "partition-test"))
-                           (client/subscribe [bar-topic]))
+    (testing "partition info"
+      (with-consumer (-> (client/consumer (consumer-config "partition-test"))
+                          (client/subscribe [bar-topic]))
           (fn [consumer]
             (let [[pinfo] (-> (client/partitions-for consumer bar-topic)
                               (data/datafy))]
               (is (response-ok? :partitions-for pinfo))))))
 
-      (testing "single-partition consumer"
-        (with-consumer (-> (client/consumer (consumer-config "partition-test"))
-                           (client/subscribe [bar-topic]))
+    (testing "single-partition consumer"
+      (with-consumer (-> (client/consumer (consumer-config "partition-test"))
+                         (client/subscribe [bar-topic]))
           (fn [consumer]
             (is (= 1 (client/num-partitions consumer bar-topic))))))
 
-      (testing "multi-partition consumer"
-        (with-consumer (-> (client/consumer (consumer-config "partition-test"))
-                           (client/subscribe [high-partition-topic]))
+    (testing "multi-partition consumer"
+      (with-consumer (-> (client/consumer (consumer-config "partition-test"))
+                         (client/subscribe [high-partition-topic]))
           (fn [consumer]
             (is (= 15 (client/num-partitions consumer high-partition-topic))))))
 
-      (testing "single-partition producer"
-        (with-producer (client/producer (producer-config))
+    (testing "single-partition producer"
+      (with-producer (client/producer (producer-config))
           (fn [producer]
             (is (= 1 (client/num-partitions producer bar-topic))))))
 
-      (testing "multi-partition producer"
-        (with-producer (client/producer (producer-config))
+    (testing "multi-partition producer"
+      (with-producer (client/producer (producer-config))
           (fn [producer]
-            (is (= 15 (client/num-partitions producer high-partition-topic)))))))))
+            (is (= 15 (client/num-partitions producer high-partition-topic))))))))
 
 (defn mock-consumer
   "Returns a consumer that will return the supplied items (as ConsumerRecords)
    in response to successive calls of the `poll` method"
   [queue]
   (reify Consumer
-    (^ConsumerRecords poll [this ^long ms]
+    (^ConsumerRecords poll [_this ^long ms]
       (.poll queue ms TimeUnit/MILLISECONDS))
-    (^ConsumerRecords poll [this ^Duration duration]
+    (^ConsumerRecords poll [_this ^Duration duration]
      (.poll queue (.toMillis duration) TimeUnit/MILLISECONDS))))
 
 (defn poll-result [topic data]
@@ -251,27 +248,24 @@
         consumer (mock-consumer q)]
     (.put q (poll-result "test-topic" [[1 1] [2 2]]))
     (let [results (client/poll consumer 1000)]
-      (are [k v] (first results)
+      (are [_k _v] (first results)
            :topic "test-topic"
            :key 1
            :value 1)
-      (are [k v] (second results)
+      (are [_k _v] (second results)
            :topic "test-topic"
            :key 2
            :value 2))))
 
 (deftest ^:integration position-all-test
   (fix/with-fixtures [(fix/topic-fixture (broker-config) test-topics 1000)]
-    (let [key-serde (:key-serde high-partition-topic)
-          value-serde (:value-serde high-partition-topic)]
-
-      (with-consumer (-> (client/consumer (consumer-config "partition-test"))
-                         (client/subscribe [bar-topic]))
+    (with-consumer (-> (client/consumer (consumer-config "partition-test"))
+                       (client/subscribe [bar-topic]))
         (fn [consumer]
           ;; without an initial `poll`, there is no position info
           (client/poll consumer 0)
           (is (= {{:topic-name "bar" :partition 0} 0}
-                 (client/position-all consumer))))))))
+                 (client/position-all consumer)))))))
 
 (defn with-topic-data
   "Helper for creating a randomly named topic and seeding it with data

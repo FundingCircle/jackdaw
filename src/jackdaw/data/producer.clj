@@ -82,14 +82,14 @@
   required. The third arity allows a user to provide a checksum. This
   arity may be removed in the future pending further breaking changes
   to the Kafka APIs."
-  ([{:keys [:topic-name] :as t} partition offset timestamp key-size value-size]
+  ([t partition offset timestamp key-size value-size]
    (RecordMetadata. (->TopicPartition t partition)
                     offset 0 ;; Force absolute offset
                     timestamp
                     nil ;; No checksum, it's deprecated
                     ^Integer (when key-size (int key-size))
                     ^Integer (when value-size (int value-size))))
-  ([{:keys [:topic-name] :as t} partition base-offset relative-offset timestamp
+  ([t partition base-offset relative-offset timestamp
     key-size value-size]
    (RecordMetadata. (->TopicPartition t partition)
                     base-offset
@@ -98,7 +98,7 @@
                     nil ;; No checksum, it's depreciated
                     ^Integer (when key-size (int key-size))
                     ^Integer (when value-size (int value-size))))
-  ([{:keys [:topic-name] :as t} partition base-offset relative-offset timestamp checksum
+  ([t partition base-offset relative-offset timestamp checksum
     key-size value-size]
    (RecordMetadata. (->TopicPartition t partition)
                     base-offset

@@ -80,7 +80,7 @@
                               (.write *err* "helpful error message\n")
                               (.write *out* "essential application info\n")
                               1)}
-    (fn [{:keys [resetter reset-args error-data]}]
+    (fn [{:keys [resetter error-data]}]
       (is (instance? kafka.tools.StreamsResetter resetter))
       (is (= 1 (:status error-data)))
       (is (= "helpful error message\n" (:err error-data)))

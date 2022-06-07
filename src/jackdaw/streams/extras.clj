@@ -46,15 +46,15 @@
 
       (^void onBatchRestored [_
                               ^TopicPartition topicPartition
-                              ^String storeName
-                              ^long batchEndOffset
-                              ^long numRestored]
+                              ^String _storeName
+                              ^long _batchEndOffset
+                              ^long _numRestored]
        (log/warnf "Restored a batch from (%s.%d)"
                   (.topic topicPartition) (.partition topicPartition)))
       (^void onRestoreEnd [_
                            ^TopicPartition topicPartition
                            ^String storeName
-                           ^long totalRestored]
+                           ^long _totalRestored]
        (let [start-date  (get @restore-tracker storeName)
              elapsed-sec (.getSeconds (Duration/between start-date
                                                         (Instant/now)))]

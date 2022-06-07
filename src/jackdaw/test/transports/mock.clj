@@ -109,7 +109,7 @@
         poll      (poller messages topic-config)]
 
     {:process (d/loop [cont? @continue?]
-                (d/chain cont? (fn [d]
+                (d/chain cont? (fn [_d]
                                  (when-not (realized? started?)
                                    (log/info "started mock consumer: %s" {:driver driver})
                                    (deliver started? true))

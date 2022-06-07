@@ -13,9 +13,9 @@
 (extend MockAdminClient
   admin/Client
   (-> admin/client-impl
-      (merge {:alter-topics* (fn [this topics]
+      (merge {:alter-topics* (fn [_this topics]
                                (d/future [:altered topics]))
-              :describe-configs* (fn [this configs]
+              :describe-configs* (fn [_this configs]
                                    (d/future
                                      (into {} (map #(vector % {"some-key" "some-value"}) configs))))})))
 
@@ -45,12 +45,11 @@
 (def test-cluster (take 3 (node-seq 0 "test-host")))
 
 (defn with-mock-admin-client [cluster f]
-  (let [effects (atom [])
-        client (MockAdminClient. cluster (first cluster))]
+  (let [client (MockAdminClient. cluster (first cluster))]
     (f client)))
 
 (deftest test-new-topic
-  (doseq [[k info] test-topics]
+  (doseq [[_k info] test-topics]
     (let [t (data/map->NewTopic info)
           msg (format "cannot create topic from %s" t)]
       (is (instance? org.apache.kafka.clients.admin.NewTopic t) msg))))
@@ -73,7 +72,7 @@
   (with-mock-admin-client test-cluster
     (fn [client]
       (admin/create-topics! client (vals test-topics))
-      (doseq [[k info] test-topics]
+      (doseq [[_k info] test-topics]
         (is (admin/topic-exists? client info))))))
 
 (deftest test-retry-exists?
@@ -99,7 +98,7 @@
   (with-mock-admin-client test-cluster
     (fn [client]
       (admin/create-topics! client (vals test-topics))
-      (doseq [[topic-name topic-info] (admin/describe-topics client)]
+      (doseq [[_topic-name topic-info] (admin/describe-topics client)]
         (is (set= [:is-internal? :partition-info]
                   (keys topic-info)))))))
 

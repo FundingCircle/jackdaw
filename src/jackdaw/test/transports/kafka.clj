@@ -116,7 +116,7 @@
     {:process (d/loop [consumer (subscription kafka-config
                                               (vals topic-metadata))]
                 (d/chain (d/future consumer)
-                         (fn [c]
+                         (fn [_c]
                            (when-not (realized? started?)
                              (deliver started? true)
                              (log/infof "started kafka consumer: %s"
@@ -174,7 +174,7 @@
 (defn producer
   "Creates an asynchronous kafka producer to be used by a test-machine for for
    injecting test messages"
-  ([kafka-config topic-config serializers]
+  ([kafka-config _topic-config serializers]
    (let [producer       (kafka/producer kafka-config byte-array-serde)
          messages       (s/stream 1 (map (fn [x]
                                            (try

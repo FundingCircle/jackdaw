@@ -74,7 +74,7 @@
 (deftest test-driver-closed-after-use
   (let [driver-closed? (atom false)
         driver (reify java.io.Closeable
-                 (close [this]
+                 (close [_this]
                    (reset! driver-closed? true)))
         transport (trns/transport {:type :mock
                                    :driver driver
@@ -90,7 +90,6 @@
       (let [msg {:id 1 :payload "foo"}
             topic test-in
             messages (get-in t [:producer :messages])
-            serdes (get-in t [:serdes])
             ack (promise)
             msg-key (:id msg)]
 
@@ -112,7 +111,6 @@
       (let [msg {:id 1 :payload "foo"}
             topic test-in
             messages (get-in t [:producer :messages])
-            serdes (get-in t [:serdes])
             ack (promise)
             msg-key (:id msg)]
 

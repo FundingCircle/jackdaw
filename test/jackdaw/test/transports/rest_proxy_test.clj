@@ -101,7 +101,6 @@
       (let [msg {:id 1 :payload "foo"}
             topic test-in
             messages (get-in t [:producer :messages])
-            serdes (get-in t [:serdes])
             ack (promise)
             msg-key (:id msg)]
 
@@ -127,7 +126,6 @@
       (let [msg {:id 2 :payload "foo"}
             topic test-in
             messages (get-in t [:producer :messages])
-            serdes (get-in t [:serdes])
             ack (promise)
             msg-key (:id msg)]
 

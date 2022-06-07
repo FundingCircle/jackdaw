@@ -90,7 +90,7 @@
   "Returns a map of topics to the corresponding deserializer"
   [topic-config]
   (->> topic-config
-       (map (fn [[k v]]
+       (map (fn [[_k v]]
               [(:topic-name v)
                (deserializer v)]))
        (into {})))
@@ -99,7 +99,7 @@
   "Returns a map of topic to the corresponding serializer"
   [topic-config]
   (->> topic-config
-       (map (fn [[k v]]
+       (map (fn [[_k v]]
               [(:topic-name v)
                (serializer v)]))
        (into {})))

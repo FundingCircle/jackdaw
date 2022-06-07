@@ -81,8 +81,7 @@
   {:offset (.offset ots)
    :timestamp (.timestamp ots)})
 
-(defn map->OffsetAndTimestamp
-  [{:keys [offset timestamp] :as m}]
+(defn map->OffsetAndTimestamp [m]
   (->OffsetAndTimestamp m))
 
 (defn as-OffsetAndTimestamp

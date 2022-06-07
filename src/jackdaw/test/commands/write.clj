@@ -5,7 +5,7 @@
 
 (set! *warn-on-reflection* true)
 
-(defn default-partition-fn [topic-map topic-name k v partition-count]
+(defn default-partition-fn [topic-map _topic-name k _v partition-count]
   (int (partitioning/default-partition topic-map k nil partition-count)))
 
 (defn create-message [topic-map message opts]

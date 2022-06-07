@@ -114,7 +114,6 @@
                 :partition-count 5
                 :key-serde :long
                 :value-serde :json})
-        opts {}
         msg {:id 1 :a 2 :b 3 :payload "yolo"}]
 
     (testing "partition must be >= 0"

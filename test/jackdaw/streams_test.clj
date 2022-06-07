@@ -146,7 +146,7 @@
           driver (mock/build-driver (fn [builder]
                                       (-> builder
                                           (k/kstream topic-a)
-                                          (k/filter (fn [[k v]] (> v 1)))
+                                          (k/filter (fn [[_k v]] (> v 1)))
                                           (k/to topic-b))))
           publish (partial mock/publish driver topic-a)]
 
@@ -161,7 +161,7 @@
           driver (mock/build-driver (fn [builder]
                                       (-> builder
                                           (k/kstream topic-a)
-                                          (k/filter-not (fn [[k v]] (> v 1)))
+                                          (k/filter-not (fn [[_k v]] (> v 1)))
                                           (k/to topic-b))))
           publish (partial mock/publish driver topic-a)]
 
@@ -261,7 +261,7 @@
           driver (mock/build-driver (fn [builder]
                                       (let [[pos-stream neg-stream] (-> builder
                                                                         (k/kstream topic-a)
-                                                                        (k/branch [(fn [[k v]]
+                                                                        (k/branch [(fn [[_k v]]
                                                                                      (<= 0 v))
                                                                                    (constantly true)]))]
                                         (k/to pos-stream topic-pos)
@@ -397,7 +397,7 @@
           records (atom [])
           driver (mock/build-driver (fn [builder]
                                       (-> (k/kstream builder topic-a)
-                                          (k/process! (fn [ctx k v]
+                                          (k/process! (fn [_ctx _k v]
                                                         (swap! records conj v))
                                                       []))))
           publish-a (partial mock/publish driver topic-a)]
@@ -411,7 +411,7 @@
           driver (mock/build-driver (fn [builder]
                                       (-> builder
                                           (k/kstream topic-a)
-                                          (k/select-key (fn [[k v]]
+                                          (k/select-key (fn [[k _v]]
                                                           (inc k)))
                                           (k/to topic-b))))
           publish (partial mock/publish driver topic-a)]
@@ -564,7 +564,7 @@
 
       (with-open [driver (mock/build-driver (fn [builder]
                                               (-> (k/ktable builder topic-a)
-                                                  (k/filter (fn [[k v]]
+                                                  (k/filter (fn [[_k v]]
                                                               (not (zero? v))))
                                                   (k/to-kstream)
                                                   (k/to topic-b))))]
@@ -584,7 +584,7 @@
 
       (with-open [driver (mock/build-driver (fn [builder]
                                               (-> (k/ktable builder topic-a)
-                                                  (k/filter-not (fn [[k v]]
+                                                  (k/filter-not (fn [[_k v]]
                                                                   (not (zero? v))))
                                                   (k/to-kstream)
                                                   (k/to topic-b))))]
@@ -911,7 +911,7 @@
           driver (mock/build-driver (fn [builder]
                                       (-> builder
                                           (k/kstream topic-a)
-                                          (k/group-by (fn [[k v]] (long (/ k 10))) topic-a)
+                                          (k/group-by (fn [[k _v]] (long (/ k 10))) topic-a)
                                           (k/reduce + topic-a)
                                           (k/to-kstream)
                                           (k/to topic-b))))
@@ -933,7 +933,7 @@
           driver (mock/build-driver (fn [builder]
                                       (-> builder
                                           (k/kstream topic-a)
-                                          (k/group-by (fn [[k v]] (long (/ k 10))) topic-a)
+                                          (k/group-by (fn [[k _v]] (long (/ k 10))) topic-a)
                                           (k/reduce +)
                                           (k/to-kstream)
                                           (k/to topic-b))))
@@ -955,9 +955,9 @@
           driver (mock/build-driver (fn [builder]
                                       (-> builder
                                           (k/kstream topic-a)
-                                          (k/group-by (fn [[k v]] (long (/ k 10))) topic-a)
+                                          (k/group-by (fn [[k _v]] (long (/ k 10))) topic-a)
                                           (k/aggregate (constantly -10)
-                                                       (fn [acc [k v]] (+ acc v))
+                                                       (fn [acc [_k v]] (+ acc v))
                                                        topic-a)
                                           (k/to-kstream)
                                           (k/to topic-b))))
@@ -1006,9 +1006,9 @@
           driver (mock/build-driver (fn [builder]
                                       (-> builder
                                           (k/kstream topic-a)
-                                          (k/group-by (fn [[k v]] (long (/ k 10))) topic-a)
+                                          (k/group-by (fn [[k _v]] (long (/ k 10))) topic-a)
                                           (k/aggregate (constantly -10)
-                                                       (fn [acc [k v]] (+ acc v)))
+                                                       (fn [acc [_k v]] (+ acc v)))
                                           (k/to-kstream)
                                           (k/to topic-b))))
           publish (partial mock/publish driver topic-a)]
@@ -1032,7 +1032,7 @@
                                         (-> in
                                             (k/group-by-key)
                                             (k/aggregate (constantly [])
-                                                         (fn [acc [k v]]
+                                                         (fn [acc [_k v]]
                                                            (concat [(last acc)]
                                                                    [v]))
                                                          (assoc topic-in
@@ -1059,7 +1059,7 @@
           driver (mock/build-driver (fn [builder]
                                       (-> builder
                                           (k/kstream topic-a)
-                                          (k/group-by (fn [[k v]] (long (/ k 10))) topic-a)
+                                          (k/group-by (fn [[k _v]] (long (/ k 10))) topic-a)
                                           (k/window-by-time (TimeWindows/of 1000))
                                           (k/reduce + topic-a)
                                           (k/to-kstream)
@@ -1107,7 +1107,7 @@
           driver (mock/build-driver (fn [builder]
                                       (-> builder
                                           (k/kstream topic-a)
-                                          (k/group-by (fn [[k v]] (long (/ k 10))) topic-a)
+                                          (k/group-by (fn [[k _v]] (long (/ k 10))) topic-a)
                                           (k/window-by-session (SessionWindows/with 1000))
                                           (k/reduce + topic-a)
                                           (k/to-kstream)
@@ -1137,10 +1137,10 @@
                                           (k/group-by-key)
                                           (k/window-by-session (SessionWindows/with 1000))
                                           (k/aggregate (constantly 0)
-                                                       (fn [agg [k v]]
+                                                       (fn [agg [_k v]]
                                                          (+ agg v))
                                                        ;; Merger
-                                                       (fn [k agg1 agg2]
+                                                       (fn [_k agg1 agg2]
                                                          (+ agg1 agg2))
                                                        topic-a)
                                           (k/to-kstream)
@@ -1175,8 +1175,8 @@
                                                                 [(long (/ k 10)) v])
                                                               topic-a)
                                                   (k/aggregate (constantly 0)
-                                                               (fn [acc [k v]] (+ acc v))
-                                                               (fn [acc [k v]] (- acc v))
+                                                               (fn [acc [_k v]] (+ acc v))
+                                                               (fn [acc [_k v]] (- acc v))
                                                                topic-b)
                                                   (k/to-kstream)
                                                   (k/to topic-b))))]
@@ -1232,8 +1232,8 @@
                                                                 [(long (/ k 10)) v])
                                                               topic-a)
                                                   (k/aggregate (constantly 0)
-                                                               (fn [acc [k v]] (+ acc v))
-                                                               (fn [acc [k v]] (- acc v)))
+                                                               (fn [acc [_k v]] (+ acc v))
+                                                               (fn [acc [_k v]] (- acc v)))
                                                   (k/to-kstream)
                                                   (k/to topic-b))))]
         (let [publish (partial mock/publish driver topic-a)]
@@ -1336,7 +1336,7 @@
                                                     k-table (k/global-ktable builder topic-b)]
                                                 (-> k-stream
                                                     (k/join-global k-table
-                                                                   (fn [[k v]]
+                                                                   (fn [[k _v]]
                                                                      k)
                                                                    +)
                                                     (k/to topic-c)))))]
@@ -1359,7 +1359,7 @@
                                                     k-table (k/global-ktable builder topic-b)]
                                                 (-> k-stream
                                                     (k/left-join-global k-table
-                                                                        (fn [[k v]]
+                                                                        (fn [[k _v]]
                                                                           k)
                                                                         safe-add)
                                                     (k/to topic-c)))))]
@@ -1392,7 +1392,7 @@
           
           (publisher 100 {:val 10})
 
-          (let [[[k v]] (mock/get-keyvals driver output-t)]
+          (let [[[_k v]] (mock/get-keyvals driver output-t)]
             (is (= 11 (:new-val v)))
             (is (= "input-topic" (:topic v)))))))))
 
