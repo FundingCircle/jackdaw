@@ -1,5 +1,9 @@
 # Changelog
 
+### Unreleased
+
+- Add clj-kondo and fix all lint warnings and errors  [#323](https://github.com/FundingCircle/jackdaw/pull/323)
+
 ### [0.9.5] - [2022-05-26]
 
 * Move away from deprecated class ConsumerRecordFactory (to prepare migration to Kafka Streams 3.2.0)
