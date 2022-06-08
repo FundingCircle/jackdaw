@@ -308,6 +308,8 @@
                                        (clj->avro element-coercion x (conj path i)))
                                      clj-seq))))
 
+
+#_{:clj-kondo/ignore [:redefined-var]}
 (defn ->ArrayType
   "Wrapper by which to construct a `ArrayType` which handles the
   structural recursion of building the handler stack so that the
@@ -341,6 +343,7 @@
          (mangle)
          (GenericData$EnumSymbol. schema))))
 
+#_{:clj-kondo/ignore [:redefined-var]}
 (defn ->EnumType [_schema->coercion ^Schema schema]
   (EnumType. schema))
 
@@ -382,6 +385,8 @@
                  [k (clj->avro value-coercion v (conj path k))]))
           clj-map)))
 
+
+#_{:clj-kondo/ignore [:redefined-var]}
 (defn ->MapType
   "Wrapper by which to construct a `MapType` which handles the
   structural recursion of building the handler stack so that the
@@ -454,6 +459,7 @@
           (throw (ex-info (str (.getMessage e))
                           {:path path, :clj-data clj-map} e)))))))
 
+#_{:clj-kondo/ignore [:redefined-var]}
 (defn ->RecordType
   "Wrapper by which to construct a `RecordType` which handles the
   structural recursion of building the handler stack so that the
@@ -492,6 +498,7 @@
                       {:path path, :clj-data clj-data}
                       (AvroTypeException. "Type Error"))))))
 
+#_{:clj-kondo/ignore [:redefined-var]}
 (defn ->UnionType
   "Wrapper by which to construct a `UnionType` which handles the
   structural recursion of building the handler stack so that the
