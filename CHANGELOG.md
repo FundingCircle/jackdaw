@@ -2,7 +2,7 @@
 
 ### Unreleased
 
-- Add clj-kondo and fix all lint warnings and errors  [#323](https://github.com/FundingCircle/jackdaw/pull/323)
+- Add clj-kondo and fix all lint warnings and errors [#323](https://github.com/FundingCircle/jackdaw/pull/323)
 
 ### [0.9.5] - [2022-05-26]
 
