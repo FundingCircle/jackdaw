@@ -42,19 +42,6 @@
     (-> (.createTopics client required)
         (.all))))
 
-(defn- delete-topics
-  [client topic-config]
-  (let [deletable (->> topic-config
-                       (filter (fn [[_k v]]
-                                 (.contains (-> (list-topics client)
-                                                .names
-                                                .get)
-                                            (:topic-name v))))
-                       (map (fn [[_k v]]
-                              (:topic-name v))))]
-    (-> (.deleteTopics client deletable)
-        (.all))))
-
 (defn topic-fixture
   "Returns a fixture function that creates all the topics named in the supplied
    topic config before running a test function."
