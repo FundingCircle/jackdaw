@@ -2,17 +2,9 @@
   "Clojure wrapper to kafka streams."
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:refer-clojure :exclude [count map reduce group-by merge filter peek])
-  (:require [jackdaw.streams.protocols :refer [IGlobalKTable IKGroupedBase IKGroupedStream IKGroupedTable IKStream
-                                               IKStreamBase IKTable ISessionWindowedKStream IStreamsBuilder
-                                               ITimeWindowedKStream aggregate branch count filter filter-not flat-map
-                                               flat-map-values for-each! global-ktable global-ktable* group-by
-                                               group-by-key join join-global join-windowed kgroupedtable* kstream
-                                               kstream* kstreams ktable ktable* left-join left-join-global
-                                               left-join-windowed map map-values merge outer-join outer-join-windowed
-                                               peek print! process! reduce select-key source-topics streams-builder*
-                                               suppress through to! to-kstream transform transform-values
-                                               windowed-by-session windowed-by-time]]
-            [jackdaw.streams.configurable :refer [IConfigurable]]))
+  #_{:clj-kondo/ignore [:refer-all]}
+  (:require [jackdaw.streams.protocols :refer :all]
+            [jackdaw.streams.configurable :refer :all]))
 
 (set! *warn-on-reflection* true)
 
