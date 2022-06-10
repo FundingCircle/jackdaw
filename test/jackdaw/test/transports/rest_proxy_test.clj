@@ -2,19 +2,17 @@
   (:require
    [byte-streams :as bs]
    [clojure.tools.logging :as log]
-   [clojure.test :refer :all]
+   [clojure.test :refer [deftest is testing]]
    [clojure.data.json :as json]
    [jackdaw.streams :as k]
    [jackdaw.test :as jd.test]
    [jackdaw.test.fixtures :as fix]
    [jackdaw.test.serde :as serde]
-   [jackdaw.test.journal :refer [with-journal watch-for]]
+   [jackdaw.test.journal :refer [watch-for]]
    [jackdaw.test.transports :as trns]
    [jackdaw.test.transports.rest-proxy :as proxy]
    [manifold.stream :as s]
-   [manifold.deferred :as d])
-  (:import
-   (java.util Properties)))
+   [manifold.deferred :as d]))
 
 (set! *warn-on-reflection* false)
 
@@ -103,7 +101,6 @@
       (let [msg {:id 1 :payload "foo"}
             topic test-in
             messages (get-in t [:producer :messages])
-            serdes (get-in t [:serdes])
             ack (promise)
             msg-key (:id msg)]
 
@@ -129,7 +126,6 @@
       (let [msg {:id 2 :payload "foo"}
             topic test-in
             messages (get-in t [:producer :messages])
-            serdes (get-in t [:serdes])
             ack (promise)
             msg-key (:id msg)]
 
@@ -171,21 +167,21 @@
 (deftest test-rest-proxy-group-config
   (let [http-reqs (atom [])]
     (binding [proxy/*http-client* {:post (mock-http-client http-reqs)}]
-      (let [client (-> (proxy/rest-proxy-client (-> (rest-proxy-config "test-group-config")
+      (let [_client (-> (proxy/rest-proxy-client (-> (rest-proxy-config "test-group-config")
                                                     (assoc :group-config {:auto.offset.reset "earliest"
                                                                           :fetch.min.bytes 100
                                                                           :consumer.fetch.timeout.ms 200})))
-                       (proxy/with-consumer))]
-        (let [[url options] (first @http-reqs)]
-          (is (= "http://localhost:8082/consumers/test-group-config" url))
-          (is (= {"Accept" "application/vnd.kafka.v2+json"
-                  "Content-Type" "application/vnd.kafka.v2+json"}
-                 (:headers options)))
-          (is (= {"auto.offset.reset" "earliest"
-                  "fetch.min.bytes" 100
-                  "consumer.fetch.timeout.ms" 200}
-                 (-> (:body options)
-                     (json/read-str)
-                     (select-keys ["auto.offset.reset"
-                                   "fetch.min.bytes"
-                                   "consumer.fetch.timeout.ms"])))))))))
+                       (proxy/with-consumer))
+            [url options] (first @http-reqs)]
+        (is (= "http://localhost:8082/consumers/test-group-config" url))
+        (is (= {"Accept" "application/vnd.kafka.v2+json"
+                "Content-Type" "application/vnd.kafka.v2+json"}
+               (:headers options)))
+        (is (= {"auto.offset.reset" "earliest"
+                "fetch.min.bytes" 100
+                "consumer.fetch.timeout.ms" 200}
+               (-> (:body options)
+                   (json/read-str)
+                   (select-keys ["auto.offset.reset"
+                                 "fetch.min.bytes"
+                                 "consumer.fetch.timeout.ms"]))))))))

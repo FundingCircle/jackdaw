@@ -1,9 +1,9 @@
 (ns jackdaw.test.transports.mock-test
   (:require
-   [clojure.test :refer :all]
+   [clojure.test :refer [deftest is testing]]
    [clojure.tools.logging :as log]
    [jackdaw.streams :as k]
-   [jackdaw.test.journal :refer [with-journal watch-for]]
+   [jackdaw.test.journal :refer [watch-for]]
    [jackdaw.test :as jd.test]
    [jackdaw.test.transports :as trns]
    [jackdaw.test.serde :as serde]
@@ -74,12 +74,12 @@
 (deftest test-driver-closed-after-use
   (let [driver-closed? (atom false)
         driver (reify java.io.Closeable
-                 (close [this]
+                 (close [_this]
                    (reset! driver-closed? true)))
         transport (trns/transport {:type :mock
                                    :driver driver
                                    :topics {}})]
-    (with-open [machine (jd.test/test-machine transport)]
+    (with-open [_machine (jd.test/test-machine transport)]
       (is (not @driver-closed?)))
 
     (is @driver-closed?)))
@@ -90,7 +90,6 @@
       (let [msg {:id 1 :payload "foo"}
             topic test-in
             messages (get-in t [:producer :messages])
-            serdes (get-in t [:serdes])
             ack (promise)
             msg-key (:id msg)]
 
@@ -112,7 +111,6 @@
       (let [msg {:id 1 :payload "foo"}
             topic test-in
             messages (get-in t [:producer :messages])
-            serdes (get-in t [:serdes])
             ack (promise)
             msg-key (:id msg)]
 

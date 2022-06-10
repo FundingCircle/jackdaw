@@ -6,15 +6,16 @@
 
 (import '[org.apache.kafka.clients.consumer
           ConsumerRecord OffsetAndTimestamp]
-        'org.apache.kafka.common.header.Headers)
+        'org.apache.kafka.common.header.Headers
+        'org.apache.kafka.common.record.TimestampType)
 
 (set! *warn-on-reflection* true)
 
-(defn ^ConsumerRecord ->ConsumerRecord
+(defn ->ConsumerRecord
   "Given unrolled ctor-style arguments create a Kafka `ConsumerRecord`.
 
   Convenient for testing the consumer API and its helpers."
-  [{:keys [:topic-name]} partition offset ts ts-type
+  ^ConsumerRecord [{:keys [:topic-name]} partition offset ts ts-type
    key-size value-size key value ^Headers headers]
   (ConsumerRecord. topic-name
                    (int partition)
@@ -72,16 +73,15 @@
 
 ;;; OffsetAndTimestamp tuples
 
-(defn ^OffsetAndTimestamp ->OffsetAndTimestamp
-  [{:keys [offset timestamp]}]
+(defn ->OffsetAndTimestamp
+  ^OffsetAndTimestamp [{:keys [offset timestamp]}]
   (OffsetAndTimestamp. offset (long timestamp)))
 
 (defn->data OffsetAndTimestamp->data [^OffsetAndTimestamp ots]
   {:offset (.offset ots)
    :timestamp (.timestamp ots)})
 
-(defn map->OffsetAndTimestamp
-  [{:keys [offset timestamp] :as m}]
+(defn map->OffsetAndTimestamp [m]
   (->OffsetAndTimestamp m))
 
 (defn as-OffsetAndTimestamp

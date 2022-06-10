@@ -34,7 +34,8 @@
              (datafy [o] o)))))
 
 ;;; Just vendor this - not worth the footwork to import the "real" one
-
+;; Ignore clj-kondo's warning: Unresolved namespace clojure.core.protocols. Are you missing a require?
+#_{:clj-kondo/ignore [:unresolved-namespace]}
 (defn datafy
   "Attempts to return x as data.
 

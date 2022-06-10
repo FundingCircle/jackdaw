@@ -9,9 +9,7 @@
             [jackdaw.serdes.avro :as avro]
             [jackdaw.serdes.avro.schema-registry :as reg]
             [jackdaw.test.fixtures :as fix])
-  (:import [org.apache.avro Schema$Parser]
-           [org.apache.avro.generic GenericData$Record]
-           [org.apache.kafka.common.serialization Serde Serdes]))
+  (:import [org.apache.kafka.common.serialization Serde Serdes]))
 
 (set! *warn-on-reflection* false)
 
@@ -37,29 +35,29 @@
 
 (deftest mock-schema-registry
   (testing "schema can be serialized by registry client"
-    (let [serde ^Serde (avro/serde +type-registry+ +mock-schema-registry+ +topic-config+)]
-      (let [msg {:customer-id (uuid/v4)
-                 :address     {:value    "foo"
-                               :key-path "foo.bar.baz"}}]
-        (let [serialized (-> (.serializer serde)
-                             (.serialize "foo" msg))
-              deserialized (-> (.deserializer serde)
-                               (.deserialize "foo" serialized))]
-          (is (= deserialized msg)))))))
+    (let [serde ^Serde (avro/serde +type-registry+ +mock-schema-registry+ +topic-config+)
+          msg {:customer-id (uuid/v4)
+               :address     {:value    "foo"
+                             :key-path "foo.bar.baz"}}
+          serialized (-> (.serializer serde)
+                         (.serialize "foo" msg))
+          deserialized (-> (.deserializer serde)
+                           (.deserialize "foo" serialized))]
+      (is (= deserialized msg)))))
 
 (deftest ^:integration real-schema-registry
   (fix/with-fixtures [(fix/service-ready? {:http-url +real-schema-registry-url+
                                            :http-timeout 5000})]
     (testing "schema registry set in config"
-      (let [serde ^Serde (avro/serde +type-registry+ +real-schema-registry+ +topic-config+)]
-        (let [msg {:customer-id (uuid/v4)
-                   :address     {:value    "foo"
-                                 :key-path "foo.bar.baz"}}]
-          (let [serialized (-> (.serializer serde)
-                               (.serialize "foo" msg))
-                deserialized (-> (.deserializer serde)
-                                 (.deserialize "foo" serialized))]
-            (is (= deserialized msg))))))))
+      (let [serde ^Serde (avro/serde +type-registry+ +real-schema-registry+ +topic-config+)
+            msg {:customer-id (uuid/v4)
+                 :address     {:value    "foo"
+                               :key-path "foo.bar.baz"}}
+            serialized (-> (.serializer serde)
+                           (.serialize "foo" msg))
+            deserialized (-> (.deserializer serde)
+                             (.deserialize "foo" serialized))]
+        (is (= deserialized msg))))))
 
 ;;;; Client integration tests against real Kafka through a real topic
 

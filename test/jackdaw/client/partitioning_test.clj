@@ -1,6 +1,6 @@
-(ns jackdaw.client-test
+(ns jackdaw.client.partitioning-test
   (:require
-   [clojure.test :refer :all]
+   [clojure.test :refer [deftest is testing]]
    [jackdaw.client :as client]
    [jackdaw.client.partitioning :as part]))
 

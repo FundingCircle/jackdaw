@@ -5,9 +5,10 @@
    [clojure.data.json :as json]
    [clojure.tools.logging :as log]
    [clojure.stacktrace :as stacktrace]
+   [clojure.string :as str]
    [jackdaw.test.journal :as j]
    [jackdaw.test.transports :as t :refer [deftransport]]
-   [jackdaw.test.serde :refer :all]
+   [jackdaw.test.serde :refer [apply-deserializers apply-serializers serde-map]]
    [manifold.stream :as s]
    [manifold.deferred :as d])
   (:import
@@ -85,7 +86,7 @@
                              (json/read-str (:body %)
                                             :key-fn (comp keyword
                                                           (fn [x]
-                                                            (clojure.string/replace x "_" "-"))))))
+                                                            (str/replace x "_" "-"))))))
       #(if-not (ok? (:status %))
          (assoc % :error :proxy-error)
          %))))
@@ -163,13 +164,11 @@
              (assoc client :base-uri base-uri, :instance-id instance-id))))))))
 
 (defn with-subscription
-  [{:keys [base-uri group-id instance-id] :as client} topic-metadata]
+  [{:keys [base-uri] :as client} topic-metadata]
   (let [url (format "%s/subscription" base-uri)
         topics (map :topic-name (vals topic-metadata))
         headers {"Accept" (content-types :json)
-                 "Content-Type" (content-types :json)}
-        body {:topics topics}]
-
+                 "Content-Type" (content-types :json)}]
     (d/chain (handle-proxy-request (:post *http-client*) url headers {:topics topics})
       (fn [response]
         (if (:error response)
@@ -181,7 +180,7 @@
   "Returns a function that takes a consumer and puts any messages retrieved
    by polling it onto the supplied `messages` channel"
   [consumer]
-  (let [{:keys [base-uri group-id instance-id]} consumer
+  (let [{:keys [base-uri]} consumer
         url (format "%s/records" base-uri)
         headers {"Accept" (content-types :byte-array)}
         body nil]
@@ -236,7 +235,7 @@
                                           (s/close! messages)
                                           (destroy-consumer client)
                                           (log/infof "stopped rest-proxy consumer: %s" (proxy-client-info client))))
-                        (d/chain client (fn [client]
+                        (d/chain client (fn [_client]
                                           (s/put-all! messages msgs)
                                           (log/infof "collected %s messages from kafka" (count msgs))
                                           (Thread/sleep 500)
@@ -270,7 +269,7 @@
 (defn rest-proxy-producer
   "Creates an asynchronous kafka producer to be used by a test-machine for for
    injecting test messages"
-  ([config topics serializers]
+  ([config _topics serializers]
    (let [producer       (rest-proxy-client config)
          messages       (s/stream 1 (map (fn [x]
                                            (try

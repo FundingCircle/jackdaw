@@ -2,8 +2,9 @@
   "Clojure wrapper to kafka streams."
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:refer-clojure :exclude [count map reduce group-by merge filter peek])
+  #_{:clj-kondo/ignore [:refer-all]}
   (:require [jackdaw.streams.protocols :refer :all]
-            [jackdaw.streams.configurable :refer [config IConfigurable]]))
+            [jackdaw.streams.configurable :refer :all]))
 
 (set! *warn-on-reflection* true)
 

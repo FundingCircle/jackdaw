@@ -34,7 +34,8 @@
   in `jackdaw.client` but backed by the partitioning machinery."
   {:license
    "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
-  (:require [jackdaw.client :as jc]
+  (:require [clojure.string :as str]
+            [jackdaw.client :as jc]
             [jackdaw.data :as jd])
   (:import org.apache.kafka.clients.producer.Producer
            org.apache.kafka.common.serialization.Serde
@@ -49,9 +50,9 @@
   [{:keys [record-key] :as t}]
   (let [record-key (as-> record-key %
                      (-> %
-                         (clojure.string/replace  "$." "")
-                         (clojure.string/replace  "_" "-")
-                         (clojure.string/split  #"\."))
+                         (str/replace  "$." "")
+                         (str/replace  "_" "-")
+                         (str/split  #"\."))
                      (mapv keyword %))]
     (assoc t ::key-fn #(get-in % record-key))))
 
@@ -63,7 +64,7 @@
 
 (defn default-partition
   "The kafka default partitioner. As a `::partition-fn`"
-  [{:keys [topic-name key-serde]} key value partitions]
+  [{:keys [topic-name key-serde]} key _value partitions]
   (let [key-bytes (.serialize (.serializer ^Serde key-serde) topic-name key)]
     (default-partitioner* key-bytes partitions)))
 
@@ -91,11 +92,11 @@
        (partition-fn t key value %)
        (->ProducerRecord producer t % key value))
      (jd/->ProducerRecord t key value)))
-  ([^Producer producer topic partition key value]
+  ([^Producer _producer topic partition key value]
    (jd/->ProducerRecord topic (int partition) key value))
-  ([^Producer producer topic partition timestamp key value]
+  ([^Producer _producer topic partition timestamp key value]
    (jd/->ProducerRecord topic partition  timestamp key value))
-  ([^Producer producer topic partition timestamp key value headers]
+  ([^Producer _producer topic partition timestamp key value headers]
    (jd/->ProducerRecord topic partition timestamp key value headers)))
 
 (defn produce!
@@ -107,15 +108,15 @@
   ([producer topic value]
    (jc/send! producer
              (->ProducerRecord producer topic value)))
-  ([producer topic key value]
+  ([producer topic _key value]
    (jc/send! producer
              (->ProducerRecord producer topic value)))
-  ([producer topic partition key value]
+  ([producer topic partition _key value]
    (jc/send! producer
              (->ProducerRecord producer topic partition topic value)))
-  ([producer topic partition timestamp key value]
+  ([producer topic partition timestamp _key value]
    (jc/send! producer
              (->ProducerRecord producer topic partition timestamp topic value)))
-  ([producer topic partition timestamp key value headers]
+  ([producer topic partition timestamp _key value headers]
    (jc/send! producer
              (->ProducerRecord producer topic partition timestamp topic value headers))))

@@ -1,10 +1,9 @@
 (ns jackdaw.test.fixtures-test
   (:require
-   [clojure.java.io :as io]
-   [clojure.test :refer :all]
-   [jackdaw.test.fixtures :refer :all])
+   [clojure.test :refer [deftest is]]
+   [jackdaw.test.fixtures :refer [list-topics reset-application-fixture topic-fixture with-fixtures]])
   (:import
-   (org.apache.kafka.clients.admin AdminClient NewTopic)))
+   (org.apache.kafka.clients.admin AdminClient)))
 
 (set! *warn-on-reflection* false)
 
@@ -35,7 +34,6 @@
       (is (topic-exists? client topic-foo)))))
 
 (defn test-resetter
-  ""
   {:style/indent 1}
   [{:keys [app-config reset-params reset-fn]} assertion-fn]
   (let [reset-args (atom [])
@@ -82,7 +80,7 @@
                               (.write *err* "helpful error message\n")
                               (.write *out* "essential application info\n")
                               1)}
-    (fn [{:keys [resetter reset-args error-data]}]
+    (fn [{:keys [resetter error-data]}]
       (is (instance? kafka.tools.StreamsResetter resetter))
       (is (= 1 (:status error-data)))
       (is (= "helpful error message\n" (:err error-data)))

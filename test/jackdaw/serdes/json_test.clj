@@ -1,7 +1,7 @@
 (ns jackdaw.serdes.json-test
   (:require [clojure.data.json :as json]
             [clojure.java.io :as io]
-            [clojure.test :refer :all]
+            [clojure.test :refer [deftest is testing]]
             [clojure.test.check.clojure-test :as ct :refer [defspec]]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
@@ -26,8 +26,7 @@
 
 (deftest reverse-json-roundtrip-test
   (testing "JSON bytes are the same after deserialization and serialization."
-    (let [s (slurp (io/resource "resources/pass1.json"))
-          b (.serialize (jsj/serializer) nil {:foo_bar "baz"})]
+    (let [b (.serialize (jsj/serializer) nil {:foo_bar "baz"})]
       (is (= (into [] b)
              (into [] (->> (.deserialize (jsj/deserializer) nil b)
                            (.serialize (jsj/serializer) nil))))))))

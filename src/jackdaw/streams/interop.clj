@@ -2,18 +2,15 @@
   "Clojure wrapper to kafka streams."
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:refer-clojure :exclude [count map reduce group-by merge filter peek])
+  #_{:clj-kondo/ignore [:refer-all]}
   (:require [jackdaw.streams.protocols :refer :all]
             [jackdaw.streams.lambdas :refer :all])
   (:import [java.util
             Collection]
            [java.util.regex
             Pattern]
-           [org.apache.kafka.common.serialization
-            Serde]
            [java.time
             Duration]
-           [org.apache.kafka.streams
-            KafkaStreams]
            [org.apache.kafka.streams
             StreamsBuilder]
            [org.apache.kafka.streams.kstream
@@ -22,11 +19,8 @@
             KeyValueMapper Materialized Merger Predicate Printed Produced
             Reducer SessionWindowedKStream SessionWindows
             Suppressed Suppressed$BufferConfig TimeWindowedKStream ValueJoiner
-            ValueMapper ValueMapperWithKey ValueTransformerSupplier Windows]
-           [org.apache.kafka.streams.processor
-            StreamPartitioner]
-           [org.apache.kafka.streams.state
-            KeyValueStore Stores]
+            ValueMapper ValueTransformerSupplier Windows ForeachAction TransformerSupplier]
+           [org.apache.kafka.streams.state Stores]
            (org.apache.kafka.streams.processor.api
             ProcessorSupplier)))
 

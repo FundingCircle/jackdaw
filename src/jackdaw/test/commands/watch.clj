@@ -1,7 +1,6 @@
 (ns jackdaw.test.commands.watch
   (:require
-   [jackdaw.test.journal :as j]
-   [clojure.tools.logging :as log]))
+   [jackdaw.test.journal :as j]))
 
 (set! *warn-on-reflection* true)
 

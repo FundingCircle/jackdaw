@@ -68,12 +68,12 @@
             KafkaAvroSerializer KafkaAvroDeserializer]
            java.lang.CharSequence
            java.nio.ByteBuffer
-           [java.io ByteArrayOutputStream ByteArrayInputStream]
+           [java.io ByteArrayOutputStream]
            [java.util Collection Map UUID]
            [org.apache.avro
             AvroTypeException Schema$Parser Schema$ArraySchema Schema Schema$Field]
            [org.apache.avro.io
-            EncoderFactory DecoderFactory JsonEncoder]
+            EncoderFactory DecoderFactory]
            [org.apache.avro.generic
             GenericDatumWriter GenericDatumReader
             GenericContainer GenericData$Array GenericData$EnumSymbol
@@ -91,10 +91,10 @@
      (when schema-str
        (.parse (Schema$Parser.) ^String schema-str)))))
 
-(defn- ^String mangle [^String n]
+(defn- mangle ^String [^String n]
   (str/replace n #"-" "_"))
 
-(defn- ^String unmangle [^String n]
+(defn- unmangle ^String [^String n]
   (str/replace n #"_" "-"))
 
 (defn- dispatch-on-type-fields
@@ -198,7 +198,7 @@
   (try
     (and (number? x)
          (coercion-fn (bigint x)))
-    (catch RuntimeException e
+    (catch RuntimeException _e
       false)))
 
 (defrecord DoubleType []
@@ -260,12 +260,14 @@
 
 (defrecord SchemalessType []
   SchemaCoercion
-  (match-clj? [_ x]
+  (match-clj? [_schema-type _clj-data]
     true)
-  (match-avro? [_ x]
+  (match-avro? [_schema-type _avro-data]
     true)
-  (avro->clj [_ x] x)
-  (clj->avro [_ x path] x))
+  (avro->clj [_schema-type avro-data]
+    avro-data)
+  (clj->avro [_schema-type clj-data _path]
+    clj-data))
 
 ;; UUID :disapprove:
 
@@ -278,7 +280,7 @@
   (avro->clj [_ uuid-utf8]
     (try
       (UUID/fromString (str uuid-utf8))
-      (catch Exception e
+      (catch Exception _e
         (str uuid-utf8))))
   (clj->avro [this uuid path]
     (validate-clj! this uuid path "uuid")
@@ -306,6 +308,8 @@
                                        (clj->avro element-coercion x (conj path i)))
                                      clj-seq))))
 
+
+#_{:clj-kondo/ignore [:redefined-var]}
 (defn ->ArrayType
   "Wrapper by which to construct a `ArrayType` which handles the
   structural recursion of building the handler stack so that the
@@ -339,6 +343,7 @@
          (mangle)
          (GenericData$EnumSymbol. schema))))
 
+#_{:clj-kondo/ignore [:redefined-var]}
 (defn ->EnumType [_schema->coercion ^Schema schema]
   (EnumType. schema))
 
@@ -380,6 +385,8 @@
                  [k (clj->avro value-coercion v (conj path k))]))
           clj-map)))
 
+
+#_{:clj-kondo/ignore [:redefined-var]}
 (defn ->MapType
   "Wrapper by which to construct a `MapType` which handles the
   structural recursion of building the handler stack so that the
@@ -452,6 +459,7 @@
           (throw (ex-info (str (.getMessage e))
                           {:path path, :clj-data clj-map} e)))))))
 
+#_{:clj-kondo/ignore [:redefined-var]}
 (defn ->RecordType
   "Wrapper by which to construct a `RecordType` which handles the
   structural recursion of building the handler stack so that the
@@ -490,6 +498,7 @@
                       {:path path, :clj-data clj-data}
                       (AvroTypeException. "Type Error"))))))
 
+#_{:clj-kondo/ignore [:redefined-var]}
 (defn ->UnionType
   "Wrapper by which to construct a `UnionType` which handles the
   structural recursion of building the handler stack so that the
@@ -639,17 +648,14 @@
         (get @coercion-cache avro-schema)))))
 
 (defn- coercion-type
-  [avro-schema {:keys [type-registry
-                       coercion-cache] :as coercion-stack}]
+  [avro-schema coercion-stack]
   ((schema->coercion coercion-stack) avro-schema))
 
 (defn as-json
   "Returns the json representation of the supplied `edn+avro`
 
    `edn+avro` is an avro object represented as an edn object (compatible with the jackdaw avro serde)"
-  [{:keys [type-registry
-           avro-schema
-           coercion-cache] :as coercion-stack} edn+avro]
+  [{:keys [avro-schema] :as coercion-stack} edn+avro]
   (let [schema (parse-schema-str avro-schema)
         record (clj->avro (coercion-type schema coercion-stack) edn+avro [])
         out-stream (ByteArrayOutputStream.)
@@ -665,9 +671,7 @@
   "Returns the edn representation of the supplied `json+avro`
 
    `json+avro` is an avro object represented as a json string"
-  [{:keys [type-registry
-           coercion-cache
-           avro-schema] :as coercion-stack} json+avro]
+  [{:keys [avro-schema] :as coercion-stack} json+avro]
   (let [schema (parse-schema-str avro-schema)
         decoder (.jsonDecoder ^DecoderFactory (DecoderFactory.)
                               ^Schema schema

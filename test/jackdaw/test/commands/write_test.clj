@@ -4,8 +4,7 @@
    [jackdaw.test.transports :as trns]
    [jackdaw.test.transports.kafka]
    [jackdaw.test.serde :as serde]
-   [jackdaw.test :refer [test-machine]]
-   [clojure.test :refer :all])
+   [clojure.test :refer [deftest is testing]])
   (:import
     [clojure.lang ExceptionInfo]))
 
@@ -115,7 +114,6 @@
                 :partition-count 5
                 :key-serde :long
                 :value-serde :json})
-        opts {}
         msg {:id 1 :a 2 :b 3 :payload "yolo"}]
 
     (testing "partition must be >= 0"

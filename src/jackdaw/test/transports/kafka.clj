@@ -14,7 +14,6 @@
   (:import
    org.apache.kafka.common.header.Header
    org.apache.kafka.clients.consumer.Consumer
-   org.apache.kafka.streams.KafkaStreams$StateListener
    org.apache.kafka.clients.consumer.ConsumerRecord
    org.apache.kafka.clients.producer.Producer
    org.apache.kafka.clients.producer.ProducerRecord))
@@ -85,15 +84,15 @@
                                (.key ^Header header)
                                (.value ^Header header))) {} (.headers consumer-record))}))
 
-(defn ^ProducerRecord mk-producer-record
+(defn mk-producer-record
   "Creates a kafka ProducerRecord for use with `send!`."
-  ([{:keys [topic-name]} value]
+  (^ProducerRecord [{:keys [topic-name]} value]
    (ProducerRecord. ^String topic-name value))
-  ([{:keys [topic-name]} key value]
+  (^ProducerRecord [{:keys [topic-name]} key value]
    (ProducerRecord. ^String topic-name key value))
-  ([{:keys [topic-name]} partition key value]
+  (^ProducerRecord [{:keys [topic-name]} partition key value]
    (ProducerRecord. ^String topic-name ^Integer (int partition) key value))
-  ([{:keys [topic-name]} partition timestamp key value]
+  (^ProducerRecord [{:keys [topic-name]} partition timestamp key value]
    (ProducerRecord. ^String topic-name ^Integer (int partition) ^Long timestamp key value)))
 
 (defn consumer
@@ -117,7 +116,7 @@
     {:process (d/loop [consumer (subscription kafka-config
                                               (vals topic-metadata))]
                 (d/chain (d/future consumer)
-                         (fn [c]
+                         (fn [_c]
                            (when-not (realized? started?)
                              (deliver started? true)
                              (log/infof "started kafka consumer: %s"
@@ -175,7 +174,7 @@
 (defn producer
   "Creates an asynchronous kafka producer to be used by a test-machine for for
    injecting test messages"
-  ([kafka-config topic-config serializers]
+  ([kafka-config _topic-config serializers]
    (let [producer       (kafka/producer kafka-config byte-array-serde)
          messages       (s/stream 1 (map (fn [x]
                                            (try
@@ -202,7 +201,7 @@
 
                          :else (do
                                  (.close ^Producer producer)
-                                 (log/infof "stopped kafka producer: "
+                                 (log/infof "stopped kafka producer: %s"
                                             (select-keys kafka-config ["bootstrap.servers" "group.id"])))))))]
 
      {:producer  producer

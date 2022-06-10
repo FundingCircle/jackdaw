@@ -1,12 +1,10 @@
 (ns jackdaw.test.fixtures
-  ""
   (:require
    [aleph.http :as http]
    [clojure.java.io :as io]
    [clojure.tools.logging :as log]
    [clojure.reflect :refer [resolve-class]]
    [jackdaw.streams :as k]
-   [jackdaw.streams.interop :refer [streams-builder]]
    [jackdaw.test.transports.kafka :as kt]
    [jackdaw.test.serde :refer [byte-array-serializer byte-array-deserializer]]
    [manifold.deferred :as d]
@@ -32,29 +30,16 @@
 
 (defn- create-topics
   "Creates "
-  [client kafka-config topic-config]
+  [client topic-config]
   (let [required (->> topic-config
-                      (filter (fn [[k v]]
+                      (filter (fn [[_k v]]
                                 (not (.contains (-> (list-topics client)
                                                     .names
                                                     .get)
                                                 (:topic-name v)))))
-                      (map (fn [[k v]]
+                      (map (fn [[_k v]]
                              (new-topic v))))]
     (-> (.createTopics client required)
-        (.all))))
-
-(defn- delete-topics
-  [client kafka-config topic-config]
-  (let [deletable (->> topic-config
-                       (filter (fn [[k v]]
-                                 (.contains (-> (list-topics client)
-                                                .names
-                                                .get)
-                                            (:topic-name v))))
-                       (map (fn [[k v]]
-                              (:topic-name v))))]
-    (-> (.deleteTopics client deletable)
         (.all))))
 
 (defn topic-fixture
@@ -66,7 +51,7 @@
   ([kafka-config topic-config timeout-ms]
    (fn [t]
      (with-open [client (AdminClient/create kafka-config)]
-       (-> (create-topics client kafka-config topic-config)
+       (-> (create-topics client topic-config)
            (.get timeout-ms java.util.concurrent.TimeUnit/MILLISECONDS))
        (log/info "topic-fixture: created topics: " (keys topic-config))
        (t)))))
@@ -113,7 +98,7 @@
 (defn- set-error
   [error]
   (reify Thread$UncaughtExceptionHandler
-    (uncaughtException [_ t e]
+    (uncaughtException [_this _thread e]
       (log/error e (.getMessage e))
       (reset! error e))))
 
@@ -220,7 +205,6 @@
    (if-not (class-exists? 'kafka.tools.StreamsResetter)
      (throw (RuntimeException. "You must add a dependency on a kafka distrib which ships the kafka.tools.StreamsResetter tool"))
      (let [rt (.newInstance (clojure.lang.RT/classForName "kafka.tools.StreamsResetter"))
-           app-id (get app-config "application.id")
            args (concat ["--application-id" (get app-config "application.id")
                          "--bootstrap-servers" (get app-config "bootstrap.servers")]
                         reset-args)

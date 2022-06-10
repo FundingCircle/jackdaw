@@ -18,7 +18,7 @@
 
 (deftype FnAggregator [aggregator-fn]
   Aggregator
-  (apply [this agg-key value aggregate]
+  (apply [_this agg-key value aggregate]
     (aggregator-fn aggregate [agg-key value])))
 
 (defn aggregator
@@ -28,7 +28,7 @@
 
 (deftype FnForeachAction [foreach-action-fn]
   ForeachAction
-  (apply [this key value]
+  (apply [_this key value]
     (foreach-action-fn [key value])
     nil))
 
@@ -39,7 +39,7 @@
 
 (deftype FnInitializer [initializer-fn]
   Initializer
-  (apply [this]
+  (apply [_this]
     (initializer-fn)))
 
 (defn initializer
@@ -49,7 +49,7 @@
 
 (deftype FnKeyValueMapper [key-value-mapper-fn]
   KeyValueMapper
-  (apply [this key value]
+  (apply [_this key value]
     (key-value (key-value-mapper-fn [key value]))))
 
 (defn key-value-mapper
@@ -59,7 +59,7 @@
 
 (deftype FnSelectKeyValueMapper [select-key-value-mapper-fn]
   KeyValueMapper
-  (apply [this key value]
+  (apply [_this key value]
     (select-key-value-mapper-fn [key value])))
 
 (defn select-key-value-mapper
@@ -70,7 +70,7 @@
 
 (deftype FnKeyValueFlatMapper [key-value-flatmapper-fn]
   KeyValueMapper
-  (apply [this key value]
+  (apply [_this key value]
     (mapv key-value (key-value-flatmapper-fn [key value]))))
 
 (defn key-value-flatmapper
@@ -83,7 +83,7 @@
 
 (deftype FnMerger [merger-fn]
   Merger
-  (apply [this agg-key aggregate1 aggregate2]
+  (apply [_this agg-key aggregate1 aggregate2]
     (merger-fn agg-key aggregate1 aggregate2)))
 
 (defn merger
@@ -93,7 +93,7 @@
 
 (deftype FnPredicate [predicate-fn]
   Predicate
-  (test [this key value]
+  (test [_this key value]
     (boolean (predicate-fn [key value]))))
 
 (defn predicate
@@ -103,7 +103,7 @@
 
 (deftype FnReducer [reducer-fn]
   Reducer
-  (apply [this value1 value2]
+  (apply [_this value1 value2]
     (reducer-fn value1 value2)))
 
 (defn reducer
@@ -113,7 +113,7 @@
 
 (deftype FnValueJoiner [value-joiner-fn]
   ValueJoiner
-  (apply [this value1 value2]
+  (apply [_this value1 value2]
     (value-joiner-fn value1 value2)))
 
 (defn value-joiner
@@ -123,7 +123,7 @@
 
 (deftype FnValueMapper [value-mapper-fn]
   ValueMapper
-  (apply [this value]
+  (apply [_this value]
     (value-mapper-fn value)))
 
 (defn value-mapper
@@ -133,7 +133,7 @@
 
 (deftype FnStreamPartitioner [stream-partitioner-fn]
   StreamPartitioner
-  (partition [this topic-name key val partition-count]
+  (partition [_this topic-name key val partition-count]
     (stream-partitioner-fn topic-name key val partition-count)))
 
 (defn stream-partitioner
@@ -157,7 +157,7 @@
 
 (deftype FnProcessorSupplier [processor-supplier-fn]
   ProcessorSupplier
-  (get [this]
+  (get [_this]
     (processor processor-supplier-fn)))
 
 (defn processor-supplier
@@ -167,7 +167,7 @@
 
 (deftype FnTransformerSupplier [transformer-supplier-fn]
   TransformerSupplier
-  (get [this]
+  (get [_this]
     (transformer-supplier-fn)))
 
 (defn transformer-supplier
@@ -177,7 +177,7 @@
 
 (deftype FnValueTransformerSupplier [value-transformer-supplier-fn]
   ValueTransformerSupplier
-  (get [this]
+  (get [_this]
     (value-transformer-supplier-fn)))
 
 (defn value-transformer-supplier
@@ -187,10 +187,10 @@
 
 (deftype FnTransformer [context xfm-fn]
   Transformer
-  (init [this transformer-context]
+  (init [_this transformer-context]
     (reset! context transformer-context))
-  (close [this])
-  (transform [this k v]
+  (close [_this])
+  (transform [_this k v]
     (xfm-fn @context k v)))
 
 (defn transformer-with-ctx
@@ -211,10 +211,10 @@
 
 (deftype FnValueTransformer [context xfm-fn]
   ValueTransformer
-  (init [this transformer-context]
+  (init [_this transformer-context]
     (reset! context transformer-context))
-  (close [this])
-  (transform [this v]
+  (close [_this])
+  (transform [_this v]
     (xfm-fn @context v)))
 
 (defn value-transformer-with-ctx

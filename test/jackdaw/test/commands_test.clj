@@ -1,6 +1,6 @@
 (ns jackdaw.test.commands-test
   (:require
-   [clojure.test :refer :all]
+   [clojure.test :refer [deftest is testing]]
    [jackdaw.test.commands :as cmd]))
 
 (set! *warn-on-reflection* false)

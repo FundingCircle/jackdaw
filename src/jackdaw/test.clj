@@ -33,7 +33,6 @@
    [jackdaw.test.journal :refer [with-journal]]
    [jackdaw.test.middleware :refer [with-timing with-status with-journal-snapshots]])
   (:import
-   (java.io Closeable)
    (java.util Properties)
    (org.apache.kafka.streams Topology TopologyTestDriver StreamsBuilder)))
 
@@ -77,7 +76,7 @@
                         consumer
                         producer]
   java.io.Closeable
-  (close [this]
+  (close [_this]
     (doseq [hook exit-hooks]
       (hook))
     (log/info "destroyed test machine")))

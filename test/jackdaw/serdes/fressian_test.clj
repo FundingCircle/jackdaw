@@ -1,6 +1,6 @@
 (ns jackdaw.serdes.fressian-test
   (:require [clojure.spec.alpha :as s]
-            [clojure.test :refer :all]
+            [clojure.test :refer [is testing]]
             [clojure.test.check.clojure-test :refer [defspec]]
             [clojure.test.check.generators :as gen]
             [clojure.test.check.properties :as prop]
@@ -38,7 +38,7 @@
 
 (def read-handlers
   (-> (merge {uri-tag (reify ReadHandler
-                        (read [_ reader tag component-count]
+                        (read [_ reader _tag _component-count]
                           (URI. (.readObject reader))))}
              fressian/clojure-read-handlers)
       fressian/associative-lookup))
