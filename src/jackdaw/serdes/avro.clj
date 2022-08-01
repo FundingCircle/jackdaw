@@ -709,8 +709,7 @@
 
   (let [config {:key?            key?
                 :registry-url    url
-                :registry-client (or client
-                                     (registry/client url 128))
+                :registry-client client
                 ;; Provide the old behavior by default, or fall through to the
                 ;; new behavior of getting the right schema when possible.
                 :read-only?      read-only?
