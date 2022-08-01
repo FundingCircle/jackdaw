@@ -101,7 +101,7 @@ jobs:
           paths:
             - .
   lint:
-    executor: machine
+    machine: true
     working_directory: /home/circleci/jackdaw
     steps:
       - checkout

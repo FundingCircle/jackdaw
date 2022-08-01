@@ -2,7 +2,10 @@
 
 ### Unreleased
 
+### [0.9.6] - [2022-08-01]
+
 - Add clj-kondo and fix all lint warnings and errors [#323](https://github.com/FundingCircle/jackdaw/pull/323)
+- Allow Kafka Schema registry library to create a client rather than do it in Jackdaw (this allows security properties to be recognised) [#330](https://github.com/FundingCircle/jackdaw/pull/330)
 
 ### [0.9.5] - [2022-05-26]
 

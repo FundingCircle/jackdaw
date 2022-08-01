@@ -5,7 +5,8 @@
 
   :url "https://github.com/FundingCircle/jackdaw/"
 
-  :repositories [["confluent" {:url "https://packages.confluent.io/maven/"}]]
+  :repositories [["confluent" {:url "https://packages.confluent.io/maven/"}
+                  "mulesoft" {:url "https://repository.mulesoft.org/nexus/content/repositories/public/"}]]
 
   :dependencies [[aleph "0.4.6"]
                  [danlentz/clj-uuid "0.1.9"

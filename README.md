@@ -48,3 +48,4 @@ Steps 2 to 6 is essentially `git tag $version -m "$title\n\n$description" && git
 Copyright © 2017 Funding Circle
 
 Distributed under the BSD 3-Clause License.
+ 
