@@ -5,8 +5,8 @@
 
   :url "https://github.com/FundingCircle/jackdaw/"
 
-  :repositories [["confluent" {:url "https://packages.confluent.io/maven/"}
-                  "mulesoft" {:url "https://repository.mulesoft.org/nexus/content/repositories/public/"}]]
+  :repositories [["confluent" {:url "https://packages.confluent.io/maven/"}]
+                 ["mulesoft" {:url "https://repository.mulesoft.org/nexus/content/repositories/public/"}]]
 
   :dependencies [[aleph "0.4.6"]
                  [danlentz/clj-uuid "0.1.9"
@@ -71,8 +71,7 @@
               :license {:name "BSD 3-clause"
                         :url "http://opensource.org/licenses/BSD-3-Clause"}
               :repositories
-              [["confluent"
-                "https://packages.confluent.io/maven/"]]
+              [["confluent" "https://packages.confluent.io/maven/"]]
 
               :deploy-repositories
               [["clojars" {:url "https://clojars.org/repo/"
