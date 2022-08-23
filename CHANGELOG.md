@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+- Add `divert` stream operation
+
 ### [0.9.6] - [2022-08-01]
 
 - Add clj-kondo and fix all lint warnings and errors [#323](https://github.com/FundingCircle/jackdaw/pull/323)
