@@ -1,6 +1,7 @@
 # Changelog
 
 ### Unreleased
+- Fix inability to materialize without supplying a topic name
 
 ### [0.9.6] - [2022-08-01]
 
