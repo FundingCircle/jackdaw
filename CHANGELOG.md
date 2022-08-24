@@ -1,6 +1,7 @@
 # Changelog
 
 ### Unreleased
+- use version of confluent platform that supports Kafka 2.8.0
 
 ### [0.9.6] - [2022-08-01]
 

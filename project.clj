@@ -15,10 +15,10 @@
                  ;; Confluent does paired releases with Kafka, this should tie
                  ;; off with the kafka version.
                  ;; See https://docs.confluent.io/current/release-notes.html
-                 [io.confluent/kafka-schema-registry-client "6.1.1"
+                 [io.confluent/kafka-schema-registry-client "6.2.6"
                   :exclusions [com.fasterxml.jackson.core/jackson-databind]]
-                 [io.confluent/kafka-avro-serializer "6.1.1"]
-                 [io.confluent/kafka-json-schema-serializer "6.1.1"]
+                 [io.confluent/kafka-avro-serializer "6.2.6"]
+                 [io.confluent/kafka-json-schema-serializer "6.2.6"]
                  [org.apache.kafka/kafka-clients "2.8.0"]
                  [org.apache.kafka/kafka-streams "2.8.0"]
                  [org.apache.kafka/kafka-streams-test-utils "2.8.0"]
