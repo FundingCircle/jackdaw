@@ -42,7 +42,6 @@ Anyone with the appropriate credentials can "cut a release" of jackdaw using the
 
 Steps 2 to 6 is essentially `git tag $version -m "$title\n\n$description" && git push --tags`
 
-
 ## License
 
 Copyright © 2017 Funding Circle

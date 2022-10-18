@@ -2,6 +2,9 @@
 
 ### Unreleased
 
+### [0.9.8] - [2022-10-18]
+
+- Trivial release to fix release tagging issue
 
 ### [0.9.7] - [2022-10-17]
 
