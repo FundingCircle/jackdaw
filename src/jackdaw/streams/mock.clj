@@ -10,7 +10,7 @@
            org.apache.kafka.common.header.internals.RecordHeaders
            [org.apache.kafka.common.serialization Serde Serdes]
            (org.apache.kafka.streams.test TestRecord)
-           (java.util UUID List)))
+           (java.util UUID Arrays)))
 
 (set! *warn-on-reflection* false)
 
@@ -48,7 +48,7 @@
        (.pipeInput test-input-topic (TestRecord. k v)))
       ([time-ms k v]
        (let [record (TestRecord. k v (RecordHeaders.) ^Long time-ms)]
-         (.pipeRecordList test-input-topic (List/of record)))))))
+         (.pipeRecordList test-input-topic (Arrays/asList (to-array [record]))))))))
 
 (defn publish
   ([test-driver topic-config k v]
