@@ -108,8 +108,7 @@
   [kstream]
   (p/print! kstream))
 
-(defn ^{:deprecated "2.6.0"
-        :superseded-by "repartition"}
+(defn ^{:deprecated "2.6.0"}
   through
   "Materializes a stream to a topic, and returns a new KStream that will
   consume messages from the topic."
@@ -133,8 +132,7 @@
 
 ;; IKStream
 
-(defn ^{:deprecated "2.8.0"
-        :superseded-by "split"}
+(defn ^{:deprecated "2.8.0"}
   branch
   "Returns a list of KStreams, one for each of the `predicate-fns`
   provided."
