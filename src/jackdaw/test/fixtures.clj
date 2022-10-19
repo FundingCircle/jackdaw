@@ -19,7 +19,7 @@
 
 (defn- new-topic
   [t]
-  (doto (NewTopic. (:topic-name t)
+  (doto (NewTopic. ^String (:topic-name t)
                    (int (:partition-count t))
                    (short (:replication-factor t)))
     (.configs (:config t))))

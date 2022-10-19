@@ -441,7 +441,7 @@
                       {:path path, :clj-data clj-map}
                       (AvroTypeException. "Type Error"))))
 
-    (let [record-builder (GenericRecordBuilder. schema)]
+    (let [record-builder (GenericRecordBuilder. ^Schema schema)]
       (try
         (doseq [[k v] clj-map]
           (let [new-k (mangle (name k))
