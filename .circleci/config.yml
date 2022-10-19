@@ -100,6 +100,17 @@ jobs:
           key: v1-jackdaw-repo-{{ .Branch }}-{{ .Revision }}
           paths:
             - .
+
+  outdated_deps:
+    docker:
+      - image: clojure:temurin-18-tools-deps-focal
+    steps:
+      - *restore_repo
+      - checkout
+      - run: | 
+          clojure -Ttools install com.github.liquidz/antq '{:git/tag "1.7.798"}' :as antq
+          clojure -Tantq outdated || true
+
   lint:
     machine: true
     working_directory: /home/circleci/jackdaw
@@ -170,6 +181,7 @@ workflows:
   build_and_test:
     jobs:
       - lint
+      - outdated_deps
       - checkout_code
       - deps:
           requires:
