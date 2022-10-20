@@ -12,6 +12,7 @@
                                serde-map
                                byte-array-serde]])
   (:import
+   java.time.Duration
    org.apache.kafka.common.header.Header
    org.apache.kafka.clients.consumer.Consumer
    org.apache.kafka.clients.consumer.ConsumerRecord
@@ -30,7 +31,7 @@
 
 (defn load-assignments
   [consumer]
-  (.poll ^Consumer consumer 0)
+  (.poll ^Consumer consumer (Duration/ofMillis 0))
   (.assignment ^Consumer consumer))
 
 (defn seek-to-end
@@ -50,7 +51,7 @@
   [messages]
   (fn [consumer]
     (try
-      (let [m (.poll ^Consumer consumer 1000)]
+      (let [m (.poll ^Consumer consumer (Duration/ofMillis 1000))]
         (when m
           (s/put-all! messages m)))
       (catch Throwable e

@@ -6,7 +6,8 @@
             [jackdaw.serdes :as js]
             [jackdaw.streams :as j]
             [jackdaw.streams.describe :as jsd])
-  (:import [clojure.lang ILookup Associative]))
+  (:import [clojure.lang ILookup Associative]
+           (org.apache.kafka.streams StreamsBuilder)))
 
 
 ;;; ------------------------------------------------------------
@@ -119,7 +120,7 @@
   "Takes a topology and streams config and walks the topology to find
   all the user-defined topics."
   [topology streams-config]
-  (->> (jsd/describe-topology (.build (j/streams-builder* topology))
+  (->> (jsd/describe-topology (.build ^StreamsBuilder (j/streams-builder* topology))
                               streams-config)
        (map :nodes)
        (reduce concat)

@@ -108,20 +108,32 @@
   [kstream]
   (p/print! kstream))
 
-(defn through
+(defn ^{:deprecated "2.6.0"}
+  through
   "Materializes a stream to a topic, and returns a new KStream that will
   consume messages from the topic."
   [kstream topic-config]
   (p/through kstream topic-config))
 
-(defn to
+(defn ^{:deprecated "Jackdaw 0.9.6"
+        :superseded-by "to!"}
+  to
+  "Please use `to!` which is part of the Kafka Stream API.
+  `to` is an incorrect name that was introduced by Jackdaw.
+
+  Materializes a stream to a topic."
+  [kstream topic-config]
+  (p/to! kstream topic-config))
+
+(defn to!
   "Materializes a stream to a topic."
   [kstream topic-config]
   (p/to! kstream topic-config))
 
 ;; IKStream
 
-(defn branch
+(defn ^{:deprecated "2.8.0"}
+  branch
   "Returns a list of KStreams, one for each of the `predicate-fns`
   provided."
   [kstream predicate-fns]

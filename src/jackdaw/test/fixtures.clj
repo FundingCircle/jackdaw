@@ -19,7 +19,7 @@
 
 (defn- new-topic
   [t]
-  (doto (NewTopic. (:topic-name t)
+  (doto (NewTopic. ^String (:topic-name t)
                    (int (:partition-count t))
                    (short (:replication-factor t)))
     (.configs (:config t))))
@@ -204,7 +204,10 @@
    (fn [t]
    (if-not (class-exists? 'kafka.tools.StreamsResetter)
      (throw (RuntimeException. "You must add a dependency on a kafka distrib which ships the kafka.tools.StreamsResetter tool"))
-     (let [rt (.newInstance (clojure.lang.RT/classForName "kafka.tools.StreamsResetter"))
+     (let [rt (-> "kafka.tools.StreamsResetter"
+                   (clojure.lang.RT/classForName)
+                   (.getDeclaredConstructor (into-array Class []))
+                   (.newInstance (into-array [])))
            args (concat ["--application-id" (get app-config "application.id")
                          "--bootstrap-servers" (get app-config "bootstrap.servers")]
                         reset-args)

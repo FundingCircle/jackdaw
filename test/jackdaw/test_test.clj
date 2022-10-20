@@ -117,7 +117,8 @@
       (with-open [t (jd.test/test-machine (kafka-transport))]
         (let [write (cmd/write! "foo" {:id "msg1" :payload "yolo"})
               watch (cmd/watch (by-id "foo" "msg1")
-                               {:info "failed to find foo with id=msg1"})
+                               {:info "failed to find foo with id=msg1"
+                                :timeout 10000})
               {:keys [results journal]} (jd.test/run-test t [write watch])
               [write-result watch-result] results]
 
@@ -143,7 +144,8 @@
                                                                     {"MESSAGE.DATE" (.getBytes "1970-01-01")
                                                                      "MESSAGE.VERSION" (.getBytes "1.0.1")}})
               watch (cmd/watch (by-id "foo" "msg1")
-                               {:info "failed to find foo with id=msg1"})
+                               {:info "failed to find foo with id=msg1"
+                                :timeout 10000})
               {:keys [results journal]} (jd.test/run-test t [write watch])
               [write-result watch-result] results]
 
@@ -174,11 +176,13 @@
     (with-open [t (jd.test/test-machine (kafka-transport))]
       (let [prog1 [(cmd/write! "foo" {:id "msg2" :payload "yolo"})
                    (cmd/watch (by-id "foo" "msg2")
-                              {:info "failed to find foo with id=msg2"})]
+                              {:info "failed to find foo with id=msg2"
+                               :timeout 10000})]
 
             prog2 [(cmd/write! "foo" {:id "msg3" :payload "you only live twice"})
                    (cmd/watch (by-id "foo" "msg3")
-                              {:info "failed to find foo with id=msg3"})]]
+                              {:info "failed to find foo with id=msg3"
+                               :timeout 10000})]]
 
         (testing "run test sequence and inspect results"
           (let [{:keys [results journal]} (jd.test/run-test t prog1)]
@@ -248,7 +252,7 @@
                                                                (= (get-in r [:value :id]) "2")))
                                                      (not-empty))
                                             true))
-                                        {:timeout 2000})])))
+                                        {:timeout 10000})])))
       (catch Exception e
         (reset! error-raised e)))
     (is (not @error-raised))))

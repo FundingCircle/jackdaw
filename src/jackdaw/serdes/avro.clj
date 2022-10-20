@@ -1,8 +1,8 @@
 (ns jackdaw.serdes.avro
   "DEPRECATION NOTICE:
 
-  This namespace is deprecated and will soon be removed. Please use
-  jackdaw.serdes.avro.confluent.
+  Since Jackdaw 0.6.0 this namespace is deprecated and will soon be removed.
+  Please use jackdaw.serdes.avro.confluent.
 
 
   Generating Serdes mapping Clojure <-> Avro.
@@ -58,6 +58,8 @@
   for all of Avro's fundamental types and most of its compounds.
 
   "
+  {:deprecated "0.6.0"
+   :superseded-by "jackdaw.serdes.avro.confluent"}
   (:require [clojure.tools.logging :as log]
             [clojure.core.cache :as cache]
             [clojure.data]
@@ -439,7 +441,7 @@
                       {:path path, :clj-data clj-map}
                       (AvroTypeException. "Type Error"))))
 
-    (let [record-builder (GenericRecordBuilder. schema)]
+    (let [record-builder (GenericRecordBuilder. ^Schema schema)]
       (try
         (doseq [[k v] clj-map]
           (let [new-k (mangle (name k))
