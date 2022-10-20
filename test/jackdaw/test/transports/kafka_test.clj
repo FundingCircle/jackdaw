@@ -129,7 +129,7 @@
                                                (filter (fn [m]
                                                          (= 2 (get-in m [:value :id]))))
                                                first))
-                                      1000
+                                      5000
                                       "failed to find test-out=2")
                            :info)]
 
