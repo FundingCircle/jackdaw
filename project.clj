@@ -24,6 +24,7 @@
                  [org.apache.kafka/kafka-streams-test-utils "2.8.0"]
 
                  [org.clojure/clojure "1.10.1" :scope "provided"]
+                 [org.clojure/java.data "1.0.95"]
                  [org.clojure/data.json "0.2.6"]
                  [org.clojure/data.fressian "0.2.1"]
                  [org.clojure/tools.logging "0.4.1"]

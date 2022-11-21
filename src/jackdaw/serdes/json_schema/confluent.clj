@@ -1,6 +1,7 @@
 (ns jackdaw.serdes.json-schema.confluent
   "Implements a Confluent JSON SCHEMA REGISTRY SerDes (Serializer/Deserializer)."
-  (:require [clojure.walk :as walk]
+  (:require [clojure.java.data :as j]
+            [clojure.walk :as walk]
             [jackdaw.serdes.fn :as jsfn]
             [jsonista.core :as jsonista])
   (:import org.apache.kafka.common.serialization.Serdes
@@ -84,8 +85,7 @@
                                     ;; Clojurify deserialized data
                                     (cond
                                       (instance? java.util.LinkedHashMap json-data)
-                                      (->> json-data
-                                           (into {})
+                                      (->> (j/from-java-deep json-data {})
                                            walk/keywordize-keys)
                                       ;; There might be a more efficient way for this converison
                                       (instance? com.fasterxml.jackson.databind.node.ArrayNode json-data)
