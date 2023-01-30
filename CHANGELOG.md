@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+### [0.9.9] - [2023-01-30]
+
 - Fix JSON_SR serde to correctly "Clojurize" deeply nested maps
 
 ### [0.9.8] - [2022-10-18]
