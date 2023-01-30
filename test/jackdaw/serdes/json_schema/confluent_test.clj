@@ -169,14 +169,31 @@
                                          "minItems" 2}}}
           serde (->serde (json/write-str schema))]
 
-      (is (= (round-trip serde "bananas" {:array ["foo" 1 {"foo" "bar"}]
+      (is (= (round-trip serde "bananas" {:array ["foo" 1 {:foo "bar"}]
                                           :bool false})
-             {:array ["foo" 1 {"foo" "bar"}]
+             {:array ["foo" 1 {:foo "bar"}]
               :bool false}))
 
       (is (thrown-with-msg? clojure.lang.ExceptionInfo
                             #"Error serializing JSON message"
                             (round-trip serde "bananas" {:array ["foo"]}))))))
+
+(deftest nested-object-type-test
+  (testing "Nested Object type"
+    (let [schema {"type" "object"
+                  "additionalProperties" false
+                  "properties" {"nested"
+                                {"type" "object"
+                                 "additionalProperties" false
+                                 "properties" {"foo" {"type" "string"}}}}}
+          serde (->serde (json/write-str schema))]
+
+      (is (= (round-trip serde "bananas" {:nested {:foo "bar"}})
+             {:nested {:foo "bar"}}))
+
+      (is (thrown-with-msg? clojure.lang.ExceptionInfo
+                            #"Error serializing JSON message"
+                            (round-trip serde "bananas" {:object {:foo 1}}))))))
 
 (deftest schemaless-test
   (testing "a nil schema with disabled validation"
