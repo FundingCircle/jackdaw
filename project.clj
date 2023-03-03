@@ -8,17 +8,17 @@
   :repositories [["confluent" {:url "https://packages.confluent.io/maven/"}]
                  ["mulesoft" {:url "https://repository.mulesoft.org/nexus/content/repositories/public/"}]]
 
-  :dependencies [[aleph "0.4.7"]
+  :dependencies [[aleph "0.6.1"]
                  [danlentz/clj-uuid "0.1.9"
                   :exclusions [primitive-math]]
 
                  ;; Confluent does paired releases with Kafka, this should tie
                  ;; off with the kafka version.
                  ;; See https://docs.confluent.io/current/release-notes.html
-                 [io.confluent/kafka-schema-registry-client "7.1.1"
+                 [io.confluent/kafka-schema-registry-client "7.3.2"
                   :exclusions [com.fasterxml.jackson.core/jackson-databind]]
-                 [io.confluent/kafka-avro-serializer "7.1.1"]
-                 [io.confluent/kafka-json-schema-serializer "7.1.1"]
+                 [io.confluent/kafka-avro-serializer "7.3.2"]
+                 [io.confluent/kafka-json-schema-serializer "7.3.2"]
                  [org.apache.kafka/kafka-clients "3.2.0"]
                  [org.apache.kafka/kafka-streams "3.2.0"]
                  [org.apache.kafka/kafka-streams-test-utils "3.2.0"]
@@ -29,22 +29,7 @@
                  [org.clojure/data.fressian "1.0.0"]
                  [org.clojure/tools.logging "1.2.4"]
                  [org.clojure/core.cache "1.0.225"]
-                 [metosin/jsonista "0.3.5"]
-
-                 ;; Use specific netty version to avoid critical CVE
-                 ;; pulled by Aleph v0.4.6 (last stable version)
-                 [io.netty/netty-transport "4.1.77.Final"]
-                 [io.netty/netty-transport-native-epoll "4.1.77.Final"]
-                 [io.netty/netty-codec "4.1.77.Final"]
-                 [io.netty/netty-codec-http "4.1.77.Final"]
-                 [io.netty/netty-handler "4.1.77.Final"]
-                 [io.netty/netty-handler-proxy "4.1.77.Final"]
-                 [io.netty/netty-resolver "4.1.77.Final"]
-                 [io.netty/netty-resolver-dns "4.1.77.Final"]
-
-                 ;; Use specific commons-compress version to avoid
-                 ;; CVE-2021-36090 pulled by avro 1.9.2
-                 [org.apache.commons/commons-compress "1.21"]]
+                 [metosin/jsonista "0.3.7"]]
 
   :aliases {"kaocha" ["run" "-m" "kaocha.runner"]}
   :aot [jackdaw.serdes.edn2 jackdaw.serdes.fressian jackdaw.serdes.fn-impl]
@@ -92,9 +77,9 @@
                              [org.apache.kafka/kafka-clients "3.2.0" :classifier "test"]
                              [org.clojure/test.check "1.1.1"]
                              [org.apache.kafka/kafka_2.13 "3.2.0"]
-                             [lambdaisland/kaocha "1.66.1034"]
-                             [lambdaisland/kaocha-cloverage "1.0.75"]
-                             [lambdaisland/kaocha-junit-xml "0.0.76"]]}
+                             [lambdaisland/kaocha "1.80.1274"]
+                             [lambdaisland/kaocha-cloverage "1.1.89"]
+                             [lambdaisland/kaocha-junit-xml "1.17.101"]]}
 
              ;; This is not in fact what lein defines repl to be
              :repl
