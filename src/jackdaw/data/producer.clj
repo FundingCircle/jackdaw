@@ -76,17 +76,11 @@
   previous abstraction that there's a \"offset\" field which is
   absolute, an additional arity is provided which lets the user
   construct a record with a base offset and a relative offset of 0 so
-  that the metadata's apparent offset is predictable.
-
-  Note that as the checksum is deprecated, by default it is not
-  required. The third arity allows a user to provide a checksum. This
-  arity may be removed in the future pending further breaking changes
-  to the Kafka APIs."
+  that the metadata's apparent offset is predictable."
   ([t partition offset timestamp key-size value-size]
    (RecordMetadata. (->TopicPartition t partition)
                     offset 0 ;; Force absolute offset
                     timestamp
-                    nil ;; No checksum, it's deprecated
                     ^Integer (when key-size (int key-size))
                     ^Integer (when value-size (int value-size))))
   ([t partition base-offset relative-offset timestamp
@@ -95,16 +89,6 @@
                     base-offset
                     relative-offset ;; Full offset control
                     timestamp
-                    nil ;; No checksum, it's depreciated
-                    ^Integer (when key-size (int key-size))
-                    ^Integer (when value-size (int value-size))))
-  ([t partition base-offset relative-offset timestamp checksum
-    key-size value-size]
-   (RecordMetadata. (->TopicPartition t partition)
-                    base-offset
-                    relative-offset ;; Full offset control
-                    timestamp
-                    checksum ;; Have fun I guess
                     ^Integer (when key-size (int key-size))
                     ^Integer (when value-size (int value-size)))))
 
@@ -124,12 +108,6 @@
   {:topic-name (.topic rm)
    :partition (.partition rm)
    :timestamp (.timestamp rm)
-
-   ;; As of Kafka 0.11.0 the checksum is deprecated. It is no longer
-   ;; part of Kafka wire protocol, while the brokers may use
-   ;; checksuming at reset to ensure message integrity.
-
-   ;; :jackdaw.sent-record/checksum (.checksum rm)
    :offset (.offset rm)
    :serialized-key-size (.serializedKeySize rm)
    :serialized-value-size (.serializedValueSize rm)})

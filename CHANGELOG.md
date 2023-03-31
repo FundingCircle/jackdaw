@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+- Make compatible with Kafka 3.4
+
 ### [0.9.9] - [2023-01-30]
 
 - Fix JSON_SR serde to correctly "Clojurize" deeply nested maps
