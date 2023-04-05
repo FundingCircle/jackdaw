@@ -173,13 +173,13 @@
   [{:keys [driver topics]}]
   (let [serdes        (serde-map topics)
         test-consumer (mock-consumer driver topics (get serdes :deserializers))
-        record-fn     (fn [input-record]
+        record-fn     (fn [^ConsumerRecord input-record]
                         (try
                           (let [input-topic (.createInputTopic driver
                                                                (.topic input-record)
                                                                identity-serializer ;; already serialized in mock-producer
                                                                identity-serializer)]
-                            (.pipeInput input-topic (.key input-record) (.value input-record)))
+                            (.pipeInput input-topic (.key input-record) (.value input-record) (.timestamp input-record)))
                           (catch Exception e
                             (let [trace (with-out-str
                                           (stacktrace/print-cause-trace e))]
