@@ -8,7 +8,7 @@
   {:stop (constantly true)
 
    :sleep (fn [_machine [sleep-ms]]
-            (Thread/sleep sleep-ms))
+            (Thread/sleep ^long sleep-ms))
 
    :println (fn [_machine params]
               (println (apply str params)))
