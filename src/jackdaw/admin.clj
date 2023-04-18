@@ -11,7 +11,8 @@
    [manifold.deferred :as d])
   (:import [java.util Properties]
            [org.apache.kafka.clients.admin AdminClient
-            DescribeTopicsOptions DescribeClusterOptions DescribeConfigsOptions]))
+            DescribeTopicsOptions DescribeClusterOptions DescribeConfigsOptions]
+           [org.apache.kafka.common TopicCollection]))
 
 (set! *warn-on-reflection* true)
 
@@ -33,10 +34,10 @@
                       @(.all (.createTopics ^AdminClient this topics))))
    :delete-topics*  (fn [this topics]
                       (d/future
-                        @(.all (.deleteTopics ^AdminClient this topics))))
+                        @(.all (.deleteTopics ^AdminClient this ^TopicCollection topics))))
    :describe-topics* (fn [this topics]
                        (d/future
-                         @(.all (.describeTopics ^AdminClient this topics (DescribeTopicsOptions.)))))
+                         @(.all (.describeTopics ^AdminClient this ^TopicCollection topics (DescribeTopicsOptions.)))))
    :describe-configs* (fn [this configs]
                         (d/future
                           @(.all (.describeConfigs ^AdminClient this configs (DescribeConfigsOptions.)))))
@@ -95,7 +96,7 @@
         false
 
         :else
-        (do (Thread/sleep wait-ms)
+        (do (Thread/sleep ^long wait-ms)
             (recur client topic (dec num-retries) wait-ms))))
 
 (defn create-topics!

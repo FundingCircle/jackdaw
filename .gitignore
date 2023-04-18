@@ -17,3 +17,5 @@ pom.xml.asc
 .cpcache
 .nrepl-port
 /examples/*/target
+.clj-kondo/
+.lsp/
