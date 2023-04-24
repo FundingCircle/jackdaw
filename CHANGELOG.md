@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+- v0.9.10 introduced some reflection warnings. Whilst harmless seeing `.deleteTopics` appear in your logs at app startup is a little unsettling.
+
 ### [0.9.10] - [2023-04-03]
 - Kafka 3.x series compatibility. Specifically 3.3.2 with this release (including native support for Arm macs) (https://github.com/FundingCircle/jackdaw/pull/353,  https://github.com/FundingCircle/jackdaw/pull/355)
 
