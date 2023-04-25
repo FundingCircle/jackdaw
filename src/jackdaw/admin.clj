@@ -9,7 +9,7 @@
   (:require
    [jackdaw.data :as jd]
    [manifold.deferred :as d])
-  (:import [java.util Properties]
+  (:import [java.util Collection Properties]
            [org.apache.kafka.clients.admin AdminClient
             DescribeTopicsOptions DescribeClusterOptions DescribeConfigsOptions]))
 
@@ -30,13 +30,13 @@
                       @(.all (.alterConfigs ^AdminClient this topics))))
    :create-topics* (fn [this topics]
                     (d/future
-                      @(.all (.createTopics ^AdminClient this topics))))
+                      @(.all (.createTopics ^AdminClient this ^Collection topics))))
    :delete-topics*  (fn [this topics]
                       (d/future
-                        @(.all (.deleteTopics ^AdminClient this topics))))
+                        @(.all (.deleteTopics ^AdminClient this ^Collection topics))))
    :describe-topics* (fn [this topics]
                        (d/future
-                         @(.all (.describeTopics ^AdminClient this topics (DescribeTopicsOptions.)))))
+                         @(.all (.describeTopics ^AdminClient this ^Collection topics (DescribeTopicsOptions.)))))
    :describe-configs* (fn [this configs]
                         (d/future
                           @(.all (.describeConfigs ^AdminClient this configs (DescribeConfigsOptions.)))))
@@ -95,7 +95,7 @@
         false
 
         :else
-        (do (Thread/sleep wait-ms)
+        (do (Thread/sleep ^long wait-ms)
             (recur client topic (dec num-retries) wait-ms))))
 
 (defn create-topics!
