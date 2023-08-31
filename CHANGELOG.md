@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+- Update Kafka to 3.4.0 (confluent 7.4.0)
+
 ### [0.9.11] - [2023-04-25]
 - v0.9.10 introduced some reflection warnings. Whilst harmless seeing `.deleteTopics` appear in your logs at app startup is a little unsettling. [#358](https://github.com/FundingCircle/jackdaw/pull/358)
 - fix to re-introduce correct handling of timestamped consumer records. Broke test asserting windowed results. [#356](https://github.com/FundingCircle/jackdaw/pull/356)
