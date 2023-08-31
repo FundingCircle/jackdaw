@@ -15,13 +15,13 @@
                  ;; Confluent does paired releases with Kafka, this should tie
                  ;; off with the kafka version.
                  ;; See https://docs.confluent.io/current/release-notes.html
-                 [io.confluent/kafka-schema-registry-client "7.3.2"
+                 [io.confluent/kafka-schema-registry-client "7.4.0"
                   :exclusions [com.fasterxml.jackson.core/jackson-databind]]
-                 [io.confluent/kafka-avro-serializer "7.3.2"]
-                 [io.confluent/kafka-json-schema-serializer "7.3.2"]
-                 [org.apache.kafka/kafka-clients "3.3.2"]
-                 [org.apache.kafka/kafka-streams "3.3.2"]
-                 [org.apache.kafka/kafka-streams-test-utils "3.3.2"]
+                 [io.confluent/kafka-avro-serializer "7.4.0"]
+                 [io.confluent/kafka-json-schema-serializer "7.4.0"]
+                 [org.apache.kafka/kafka-clients "3.4.1"]
+                 [org.apache.kafka/kafka-streams "3.4.1"]
+                 [org.apache.kafka/kafka-streams-test-utils "3.4.1"]
 
                  [org.clojure/clojure "1.11.1" :scope "provided"]
                  [org.clojure/java.data "1.0.95"]
@@ -73,10 +73,10 @@
               :resource-paths ["test/resources"]
               :injections [(require 'io.aviso.logging.setup)]
               :dependencies [[io.aviso/logging "1.0"]
-                             [org.apache.kafka/kafka-streams-test-utils "3.3.2"]
-                             [org.apache.kafka/kafka-clients "3.3.2" :classifier "test"]
+                             [org.apache.kafka/kafka-streams-test-utils "3.4.1"]
+                             [org.apache.kafka/kafka-clients "3.4.1" :classifier "test"]
                              [org.clojure/test.check "1.1.1"]
-                             [org.apache.kafka/kafka_2.13 "3.3.2"]
+                             [org.apache.kafka/kafka_2.13 "3.4.1"]
                              [lambdaisland/kaocha "1.80.1274"]
                              [lambdaisland/kaocha-cloverage "1.1.89"]
                              [lambdaisland/kaocha-junit-xml "1.17.101"]]}
