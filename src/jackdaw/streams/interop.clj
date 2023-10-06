@@ -44,6 +44,14 @@
     key-serde (.withKeySerde key-serde)
     value-serde (.withValueSerde value-serde)))
 
+(defn ->joined
+  "Builds a Joined object that represents optional params that can be
+  passed to join and left-join operations."
+  ([key-serde value-serde other-value-serde]
+   (Joined/with key-serde value-serde other-value-serde))
+  ([key-serde value-serde other-value-serde joined-name]
+   (Joined/with key-serde value-serde other-value-serde joined-name)))
+
 (defn suppress-config->suppressed
   [{:keys [max-records max-bytes until-time-limit-ms]}]
   (let [config (cond
@@ -139,7 +147,7 @@
                      key-serde
                      value-serde))
     builder)
-  
+
   (streams-builder*
     [_]
     streams-builder))
@@ -159,6 +167,16 @@
             ^ValueJoiner (value-joiner value-joiner-fn))
      streams-builder))
 
+  (join
+    [_ ktable value-joiner-fn
+     {key-serde :key-serde this-value-serde :value-serde name :name}
+     {other-value-serde :value-serde}]
+    (clj-kstream
+     (.join ^KStream kstream
+            ^KTable (ktable* ktable)
+            ^ValueJoiner (value-joiner value-joiner-fn)
+            ^Joined (->joined key-serde this-value-serde other-value-serde name))))
+
   (left-join
     [_ ktable value-joiner-fn]
     (clj-kstream
@@ -169,13 +187,13 @@
 
   (left-join
     [_ ktable value-joiner-fn
-     {key-serde :key-serde this-value-serde :value-serde}
+     {key-serde :key-serde this-value-serde :value-serde joined-name :name}
      {other-value-serde :value-serde}]
     (clj-kstream
      (.leftJoin kstream
                 ^KTable (ktable* ktable)
                 ^ValueJoiner (value-joiner value-joiner-fn)
-                (Joined/with key-serde this-value-serde other-value-serde))
+                ^Joined (->joined key-serde this-value-serde other-value-serde joined-name))
      streams-builder))
 
   (peek
@@ -341,9 +359,9 @@
   (merge
     [_ other-kstream]
     (clj-kstream
-      (.merge kstream
-              ^KStream (kstream* other-kstream))
-      streams-builder))
+     (.merge kstream
+             ^KStream (kstream* other-kstream))
+     streams-builder))
 
   (outer-join-windowed
     [_ other-kstream value-joiner-fn windows]
@@ -472,11 +490,11 @@
   (join
     [_ other-ktable foreign-key-extractor-fn value-joiner-fn]
     (clj-ktable
-      (.join ^KTable ktable
-             ^KTable (ktable* other-ktable)
-             ^Function (foreign-key-extractor foreign-key-extractor-fn)
-             ^ValueJoiner (value-joiner value-joiner-fn))
-      streams-builder))
+     (.join ^KTable ktable
+            ^KTable (ktable* other-ktable)
+            ^Function (foreign-key-extractor foreign-key-extractor-fn)
+            ^ValueJoiner (value-joiner value-joiner-fn))
+     streams-builder))
 
   (left-join
     [_ other-ktable value-joiner-fn]
@@ -532,8 +550,8 @@
   (suppress
     [_ suppress-config]
     (clj-ktable
-       (.suppress ^KTable ktable (suppress-config->suppressed suppress-config))
-       streams-builder))
+     (.suppress ^KTable ktable (suppress-config->suppressed suppress-config))
+     streams-builder))
 
   (to-kstream
     [_]
