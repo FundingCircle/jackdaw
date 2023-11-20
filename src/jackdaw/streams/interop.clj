@@ -7,6 +7,8 @@
             [jackdaw.streams.lambdas :refer :all])
   (:import [java.util
             Collection]
+           [java.util.function
+            Function]
            [java.util.regex
             Pattern]
            [java.time
@@ -20,9 +22,9 @@
             Reducer SessionWindowedKStream SessionWindows
             Suppressed Suppressed$BufferConfig TimeWindowedKStream ValueJoiner
             ValueMapper ValueTransformerSupplier Windows ForeachAction TransformerSupplier]
-           [org.apache.kafka.streams.state Stores]
-           (org.apache.kafka.streams.processor.api
-            ProcessorSupplier)))
+           [org.apache.kafka.streams.processor.api
+            ProcessorSupplier]
+           [org.apache.kafka.streams.state Stores]))
 
 (set! *warn-on-reflection* true)
 
@@ -406,6 +408,14 @@
      (.join ^KTable ktable
             ^KTable (ktable* other-ktable)
             ^ValueJoiner (value-joiner value-joiner-fn))))
+
+  (join
+    [_ other-ktable foreign-key-extractor-fn value-joiner-fn]
+    (clj-ktable
+      (.join ^KTable ktable
+             ^KTable (ktable* other-ktable)
+             ^Function (foreign-key-extractor foreign-key-extractor-fn)
+             ^ValueJoiner (value-joiner value-joiner-fn))))
 
   (left-join
     [_ other-ktable value-joiner-fn]

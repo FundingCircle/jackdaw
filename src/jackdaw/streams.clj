@@ -61,9 +61,11 @@
 
 (defn join
   "Combines the values of the KStream-or-KTable and the KTable that
-  share the same key using an inner join."
-  [kstream-or-ktable ktable value-joiner-fn]
-  (p/join kstream-or-ktable ktable value-joiner-fn))
+  share the same key or a foreign key using an inner join."
+  ([kstream-or-ktable ktable value-joiner-fn]
+   (p/join kstream-or-ktable ktable value-joiner-fn))
+  ([kstream-or-ktable ktable foreign-key-extractor-fn value-joiner-fn]
+   (p/join kstream-or-ktable ktable foreign-key-extractor-fn value-joiner-fn)))
 
 (defn left-join
   "Creates a KStream from the result of calling `value-joiner-fn` with

@@ -1,0 +1,24 @@
+{:paths
+ ["src" "resources"]
+
+ :deps
+ {aleph/aleph {:mvn/version "0.6.1"}
+  danlentz/clj-uuid {:mvn/version "0.1.9"}
+  io.confluent/kafka-schema-registry-client {:mvn/version "7.3.2"
+                                            :exclusions [com.fasterxml.jackson.core/jackson-databind]}
+  io.confluent/kafka-avro-serializer {:mvn/version "7.3.2"}
+  io.confluent/kafka-json-schema-serializer {:mvn/version "7.3.2"}
+  org.apache.kafka/kafka-clients {:mvn/version "3.3.2"}
+  org.apache.kafka/kafka-streams {:mvn/version "3.3.2"}
+  org.apache.kafka/kafka-streams-test-utils {:mvn/version "3.3.2"}
+  org.clojure/java.data {:mvn/version "1.0.95"}
+  org.clojure/data.json {:mvn/version "2.4.0"}
+  org.clojure/data.fressian {:mvn/version "1.0.0"}
+  org.clojure/tools.logging {:mvn/version "1.2.4"}
+  org.clojure/core.cache {:mvn/version "1.0.225"}
+  metosin/jsonista {:mvn/version "0.3.7"}}
+
+ :mvn/repos
+ {"confluent" {:url "https://packages.confluent.io/maven/"}
+  "mulesoft" {:url "https://repository.mulesoft.org/nexus/content/repositories/public/"}}}
+
