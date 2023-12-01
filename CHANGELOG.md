@@ -1,9 +1,9 @@
 # Changelog
 
-### Unreleased
-
 ### [0.9.12] - [2023-11-24]
 - Support for Foreign Key joins (Issue #364)
+
+### Unreleased
 
 ### [0.9.11] - [2023-04-25]
 - v0.9.10 introduced some reflection warnings. Whilst harmless seeing `.deleteTopics` appear in your logs at app startup is a little unsettling. [#358](https://github.com/FundingCircle/jackdaw/pull/358)
