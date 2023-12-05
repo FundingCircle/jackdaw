@@ -2,7 +2,9 @@
 
 ### Unreleased
 
-- Support for Foreign Key joins (Issue [#364])
+### [0.9.12] - [2023-12-05]
+- Support for Foreign Key joins [#365](https://github.com/FundingCircle/jackdaw/pull/365) (Issue [#364])
+- add manifold and keep aleph in dev dependencies [#360](https://github.com/FundingCircle/jackdaw/pull/360). Users of test-machine will have to add aleph to the test deps in their app.
 
 ### [0.9.11] - [2023-04-25]
 - v0.9.10 introduced some reflection warnings. Whilst harmless seeing `.deleteTopics` appear in your logs at app startup is a little unsettling. [#358](https://github.com/FundingCircle/jackdaw/pull/358)
