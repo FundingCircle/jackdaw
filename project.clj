@@ -8,7 +8,7 @@
   :repositories [["confluent" {:url "https://packages.confluent.io/maven/"}]
                  ["mulesoft" {:url "https://repository.mulesoft.org/nexus/content/repositories/public/"}]]
 
-  :dependencies [[aleph "0.6.1"]
+  :dependencies [[manifold/manifold "0.4.0"]
                  [danlentz/clj-uuid "0.1.9"
                   :exclusions [primitive-math]]
 
@@ -37,7 +37,7 @@
 
   :git-version
   {:status-to-version
-   (fn [{:keys [tag version branch ahead ahead? dirty?] :as git}]
+   (fn [{:keys [tag branch ahead? dirty?] :as git}]
      (if (and tag (not ahead?) (not dirty?))
        tag
        (let [[_ prefix patch] (re-find #"(\d+\.\d+)\.(\d+)" tag)
@@ -73,6 +73,7 @@
               :resource-paths ["test/resources"]
               :injections [(require 'io.aviso.logging.setup)]
               :dependencies [[io.aviso/logging "1.0"]
+                             [aleph/aleph "0.6.1"]
                              [org.apache.kafka/kafka-streams-test-utils "3.3.2"]
                              [org.apache.kafka/kafka-clients "3.3.2" :classifier "test"]
                              [org.clojure/test.check "1.1.1"]
