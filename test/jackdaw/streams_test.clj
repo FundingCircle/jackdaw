@@ -208,21 +208,21 @@
   ;; there is no good way to rest this until fix version 2.1.0
   ;; https://issues.apache.org/jira/browse/KAFKA-7326
   #_(testing "print!"
-     (let [std-out System/out
-           mock-out (java.io.ByteArrayOutputStream.)]
+      (let [std-out System/out
+            mock-out (java.io.ByteArrayOutputStream.)]
 
-       (try
-         (System/setOut (java.io.PrintStream. mock-out))
-         (let [topic-a (mock/topic "topic-a")
-               driver (mock/build-driver (fn [builder]
-                                           (-> builder
-                                               (k/kstream topic-a)
-                                               (k/print!))))
-               publish (partial mock/publish driver topic-a)]
-           (publish 1 1)
-           (is (= "[KSTREAM-SOURCE-0000000000]: 1, 2\n" (.toString mock-out))))
-         (finally
-           (System/setOut std-out)))))
+        (try
+          (System/setOut (java.io.PrintStream. mock-out))
+          (let [topic-a (mock/topic "topic-a")
+                driver (mock/build-driver (fn [builder]
+                                            (-> builder
+                                                (k/kstream topic-a)
+                                                (k/print!))))
+                publish (partial mock/publish driver topic-a)]
+            (publish 1 1)
+            (is (= "[KSTREAM-SOURCE-0000000000]: 1, 2\n" (.toString mock-out))))
+          (finally
+            (System/setOut std-out)))))
 
   (testing "through"
     (testing "without partitions"
@@ -424,12 +424,12 @@
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
           transformer-supplier-fn #(let [total (atom 0)]
-                                    (reify Transformer
-                                      (init [_ _])
-                                      (close [_])
-                                      (transform [_ k v]
-                                        (swap! total + v)
-                                        (key-value [(* k 2) @total]))))
+                                     (reify Transformer
+                                       (init [_ _])
+                                       (close [_])
+                                       (transform [_ k v]
+                                         (swap! total + v)
+                                         (key-value [(* k 2) @total]))))
           driver (mock/build-driver (fn [builder]
                                       (-> builder
                                           (k/kstream topic-a)
@@ -485,12 +485,12 @@
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
           transformer-supplier-fn #(let [total (atom 0)]
-                                    (reify ValueTransformer
-                                      (init [_ _])
-                                      (close [_])
-                                      (transform [_ v]
-                                        (swap! total + v)
-                                        @total)))
+                                     (reify ValueTransformer
+                                       (init [_ _])
+                                       (close [_])
+                                       (transform [_ v]
+                                         (swap! total + v)
+                                         @total)))
           driver (mock/build-driver (fn [builder]
                                       (-> builder
                                           (k/kstream topic-a)
@@ -512,16 +512,16 @@
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
           transformer-supplier-fn #(let [total (atom 0)]
-                                    (reify ValueTransformer
-                                      (init [_ _])
-                                      (close [_])
-                                      (transform [_ v]
-                                        ;; returns value + 100,
-                                        ;; then value + 200
-                                        (map (fn [x]
-                                               (swap! total + v)
-                                               (+ @total x))
-                                             [100 200]))))
+                                     (reify ValueTransformer
+                                       (init [_ _])
+                                       (close [_])
+                                       (transform [_ v]
+                                         ;; returns value + 100,
+                                         ;; then value + 200
+                                         (map (fn [x]
+                                                (swap! total + v)
+                                                (+ @total x))
+                                              [100 200]))))
           driver (mock/build-driver (fn [builder]
                                       (-> builder
                                           (k/kstream topic-a)
@@ -666,6 +666,30 @@
             (is (= 2 (count keyvals)))
             (is (= [1 3] (first keyvals)))
             (is (= [1 6] (second keyvals))))))))
+
+  (testing "join: on foreign key"
+    (let [topic-a (mock/topic "table-a")
+          topic-b (mock/topic "table-b")
+          topic-c (mock/topic "topic-c")]
+
+      (with-open [driver (mock/build-driver (fn [builder]
+                                              (let [left (k/ktable builder topic-a)
+                                                    right (k/ktable builder topic-b)]
+                                                (-> (k/join left right identity +)
+                                                    (k/to-kstream)
+                                                    (k/to topic-c)))))]
+        (let [publish-left (partial mock/publish driver topic-a)
+              publish-right (partial mock/publish driver topic-b)]
+
+          (publish-left 1 1)
+          (publish-right 1 2)
+          (publish-left 2 2)
+          (publish-right 2 2)
+
+          (let [keyvals (mock/get-keyvals driver topic-c)]
+            (is (= 2 (count keyvals)))
+            (is (= [1 3] (first keyvals)))
+            (is (= [2 4] (second keyvals))))))))
 
   (testing "outer-join"
     (let [topic-a (mock/topic "table-a")
@@ -1030,7 +1054,7 @@
                                                            (concat [(last acc)]
                                                                    [v]))
                                                          (assoc topic-in
-                                                                :value-serde (jse/serde)))
+                                                           :value-serde (jse/serde)))
                                             (k/to-kstream)
                                             (k/map (fn [[k v]]
                                                      (let [[prev current] v]
@@ -1383,7 +1407,7 @@
                                         :topic (.topic ctx)})))
                                  (k/to output-t))))]
         (let [publisher (partial mock/publish driver input-t)]
-          
+
           (publisher 100 {:val 10})
 
           (let [[[_k v]] (mock/get-keyvals driver output-t)]
@@ -1398,8 +1422,8 @@
                            (fn [builder]
                              (-> builder
                                  (k/with-kv-state-store {:store-name "test-store"
-                                                       :key-serde (:key-serde input-t)
-                                                       :value-serde (jse/serde)})
+                                                         :key-serde (:key-serde input-t)
+                                                         :value-serde (jse/serde)})
                                  (k/kstream input-t)
                                  (k/transform
                                    (lambdas/transformer-with-ctx
@@ -1410,12 +1434,12 @@
                                              new-val (if-not cur-val
                                                        {:value v}
                                                        (update cur-val :value + v))]
-                                         (.put store k new-val) 
+                                         (.put store k new-val)
                                          (key-value [k new-val]))))
                                    ["test-store"])
                                  (k/to output-t))))]
         (let [publisher (partial mock/publish driver input-t)]
-          
+
           (publisher 1 1)
           (publisher 1 2)
           (publisher 1 3)

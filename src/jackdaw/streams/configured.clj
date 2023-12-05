@@ -314,6 +314,12 @@
      config
      (join ktable other-ktable value-joiner-fn)))
 
+  (join
+    [_ other-ktable foreign-key-extractor-fn value-joiner-fn]
+    (configured-kstream
+      config
+      (join ktable other-ktable foreign-key-extractor-fn value-joiner-fn)))
+
   (left-join
     [_ other-ktable value-joiner-fn]
     (configured-ktable

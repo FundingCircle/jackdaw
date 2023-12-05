@@ -42,8 +42,10 @@
   "Methods common to KStream and KTable."
   (join
     [kstream-or-ktable ktable value-joiner-fn]
+    [kstream-or-ktable ktable foreign-key-extractor-fn value-joiner-fn]
     "Combines the values of the KStream-or-KTable with the values of the
-    KTable that share the same key using an inner join.")
+    KTable that share the same key using an inner join. For foreign key
+    joins, the joining key is determined by the given foreign-key-extractor-fn.")
 
   (left-join
     [kstream-or-ktable ktable value-joiner-fn]
@@ -198,8 +200,7 @@
     "Returns the underlying KStream object."))
 
 (defprotocol IKTable
-  "A Ktable is an abstraction of a changlog stream."
-
+  "A Ktable is an abstraction of a changelog stream."
   (outer-join
     [ktable other-ktable value-joiner-fn]
     "Combines the values of two KTables that share the same key using an outer

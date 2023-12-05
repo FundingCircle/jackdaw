@@ -1,7 +1,8 @@
 (ns jackdaw.streams.lambdas
   "Wrappers for the Java 'lambda' functions."
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
-  (:import org.apache.kafka.streams.KeyValue
+  (:import java.util.function.Function
+           org.apache.kafka.streams.KeyValue
            [org.apache.kafka.streams.kstream
             Aggregator ForeachAction Initializer KeyValueMapper
             Merger Predicate Reducer Transformer TransformerSupplier
@@ -117,6 +118,16 @@
   ValueJoiner
   (apply [_this value1 value2]
     (value-joiner-fn value1 value2)))
+
+(deftype FnForeignKeyExtractor [foreign-key-extractor-fn]
+  Function
+  (apply [_this value]
+    (foreign-key-extractor-fn value)))
+
+(defn foreign-key-extractor
+  "Packages up a Clojure fn into a Java Function - hopefully, redundant as of Clojure 1.12."
+  [foreign-key-extractor-fn]
+  (FnForeignKeyExtractor. foreign-key-extractor-fn))
 
 (defn value-joiner
   "Packages up a Clojure fn in a kstream value joiner."
