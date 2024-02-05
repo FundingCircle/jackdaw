@@ -40,7 +40,7 @@
    "high-partition-topic" high-partition-topic})
 
 (defn broker-config []
-  {"bootstrap.servers" "localhost:9092"})
+  {"bootstrap.servers" "kafka:9092"})
 
 (defn producer-config []
   (-> (broker-config)

@@ -16,11 +16,11 @@
 
 (set! *warn-on-reflection* false)
 
-(def kafka-config {"bootstrap.servers" "localhost:9092"
+(def kafka-config {"bootstrap.servers" "kafka:9092"
                    "group.id" "kafka-write-test"})
 
 (def +real-rest-proxy-url+
-  "http://localhost:8082")
+  "http://kafka:8082")
 
 (defn rest-proxy-config
   [group-id]
@@ -30,7 +30,7 @@
 (defn kstream-config
   [app app-id]
   {:topology app
-   :config {"bootstrap.servers" "localhost:9092"
+   :config {"bootstrap.servers" "kafka:9092"
             "application.id" app-id}})
 
 (defn echo-stream
@@ -165,6 +165,8 @@
                :body (bs/to-input-stream (json/write-str {:instance-id "yolo"}))})))
 
 (deftest test-rest-proxy-group-config
+  (throw (Exception. "tests ran"))
+(System/exit 1)
   (let [http-reqs (atom [])]
     (binding [proxy/*http-client* {:post (mock-http-client http-reqs)}]
       (let [_client (-> (proxy/rest-proxy-client (-> (rest-proxy-config "test-group-config")
@@ -173,7 +175,7 @@
                                                                           :consumer.fetch.timeout.ms 200})))
                        (proxy/with-consumer))
             [url options] (first @http-reqs)]
-        (is (= "http://localhost:8082/consumers/test-group-config" url))
+        (is (= "http:TODORESTPROXT:8082/consumers/test-group-config" url))
         (is (= {"Accept" "application/vnd.kafka.v2+json"
                 "Content-Type" "application/vnd.kafka.v2+json"}
                (:headers options)))

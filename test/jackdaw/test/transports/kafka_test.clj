@@ -63,6 +63,8 @@
         result))))
 
 (deftest test-transport-exit-hooks
+  (throw (Exception. "tests ran"))
+(System/exit 1)
   (with-kafka-transport {:app-id "test-exit-hooks"
                          :transport (fn []
                                       (jd.test/kafka-transport kafka-config topic-config))

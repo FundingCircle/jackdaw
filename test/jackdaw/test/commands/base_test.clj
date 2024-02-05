@@ -7,6 +7,8 @@
 (set! *warn-on-reflection* false)
 
 (deftest test-base-commands
+  (throw (Exception. "tests ran"))
+(System/exit 1)
   (testing "stop"
     (is ((cmd/command-map :stop) {})))
 

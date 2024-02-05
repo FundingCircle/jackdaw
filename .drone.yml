@@ -1,0 +1,69 @@
+---
+kind: pipeline
+type: docker
+name: main
+
+platform:
+  os: linux
+  arch: amd64
+
+# 1
+workspace:
+  path: /drone/src
+
+
+anchors:
+  when_push: &when_push
+    when:
+      event:
+        - push
+
+steps:
+  # 2
+  - name: checkout-tags
+    # 3
+    image: clojure:latest
+    commands:
+      - git fetch --tags
+  - name: test
+    image: clojure:latest
+    depends_on:
+      - checkout-tags
+    commands:
+      - (timeout 240 lein kaocha; exit 0)
+  - name: build
+    image: clojure:latest
+    depends_on:
+      - checkout-tags
+      - test
+    commands:
+      - lein with-profiles +test deps
+
+services:
+  - name: zookeeper
+    image: confluentinc/cp-zookeeper:5.1.3
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    <<: *when_push
+
+  - name: kafka
+    image: confluentinc/cp-kafka:5.1.3
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: true
+      KAFKA_BROKER_ID: 1
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    <<: *when_push
+
+  - name: schema-registry
+    image: confluentinc/cp-schema-registry:5.1.2
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'
+    <<: *when_push

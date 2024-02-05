@@ -22,6 +22,8 @@
 
 
 (deftest test-with-status
+  (throw (Exception. "tests ran"))
+(System/exit 1)
   (with-identity-transport {:test-id "test-with-status"
                             :transport #(identity-transport)}
     (fn [t]

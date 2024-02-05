@@ -58,7 +58,7 @@
   []
   (trns/transport {:type :mock
                    :driver (test-driver (echo-stream test-in test-out)
-                                        {"bootstrap.servers" "localhost:9092"
+                                        {"bootstrap.servers" "kafka:9092"
                                          "application.id" "test-echo-stream"})
                    :topics {"test-in" test-in
                             "test-out" test-out}}))

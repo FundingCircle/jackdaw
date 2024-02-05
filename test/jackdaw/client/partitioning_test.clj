@@ -7,6 +7,8 @@
 (set! *warn-on-reflection* false)
 
 (deftest test-record-key->key-fn
+  (throw (Exception. "tests ran"))
+  (System/exit 1)
   (let [test-key-fn (fn [key-str]
                       (-> (part/record-key->key-fn {:record-key key-str})
                           :jackdaw.client.partitioning/key-fn))]
@@ -22,7 +24,7 @@
 
 
 (deftest test->ProducerRecord
-  (with-open [p (client/producer {"bootstrap.servers" "localhost:9092"
+  (with-open [p (client/producer {"bootstrap.servers" "kafka:9092"
                                   "key.serializer" "org.apache.kafka.common.serialization.StringSerializer"
                                   "value.serializer" "org.apache.kafka.common.serialization.StringSerializer"})]
     (testing "absent key-fn"
