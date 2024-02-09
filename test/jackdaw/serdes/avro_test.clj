@@ -46,7 +46,7 @@
                              serde-config)
          schema-registry-config
          {:avro.schema-registry/client registry-client
-          :avro.schema-registry/url    "localhost:8081"}]
+          :avro.schema-registry/url    "schema-registry:8081"}]
      (avro/serde +registry+ schema-registry-config serde-config))))
 
 (defn deserialize [serde topic x]

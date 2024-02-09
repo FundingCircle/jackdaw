@@ -14,7 +14,7 @@
    :config {}})
 
 (def kafka-config
-  {"bootstrap.servers" "localhost:9092"})
+  {"bootstrap.servers" "kafka:9092"})
 
 (def test-topics
   (let [topics {"foo" topic-foo}]
