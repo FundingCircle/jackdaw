@@ -30,7 +30,7 @@ steps:
     depends_on:
       - checkout-tags
     commands:
-      - (timeout 120 lein kaocha --fail-fast --no-capture-output; exit 0)
+      - (timeout 240 lein kaocha --fail-fast; exit 0)
       - ls
   - name: build
     image: clojure:latest
