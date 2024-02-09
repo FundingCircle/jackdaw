@@ -165,8 +165,6 @@
                :body (bs/to-input-stream (json/write-str {:instance-id "yolo"}))})))
 
 (deftest test-rest-proxy-group-config
-  (throw (Exception. "tests ran"))
-(System/exit 1)
   (let [http-reqs (atom [])]
     (binding [proxy/*http-client* {:post (mock-http-client http-reqs)}]
       (let [_client (-> (proxy/rest-proxy-client (-> (rest-proxy-config "test-group-config")

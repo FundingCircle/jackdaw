@@ -6,8 +6,6 @@
 (set! *warn-on-reflection* false)
 
 (deftest journal-access-tests
-  (throw (Exception. "tests ran"))
-(System/exit 1)
   (let [j {:topics {"foo" [{:key 1
                             :value {:id 1 :v 99}}
                            {:key 2
