@@ -174,7 +174,7 @@
                                                                           :consumer.fetch.timeout.ms 200})))
                        (proxy/with-consumer))
             [url options] (first @http-reqs)]
-        (is (= "http://kafka-rest-proxy:8082/consumers/test-group-config" url))
+        (is (= "http://kafka-rest:8082/consumers/test-group-config" url))
         (is (= {"Accept" "application/vnd.kafka.v2+json"
                 "Content-Type" "application/vnd.kafka.v2+json"}
                (:headers options)))
