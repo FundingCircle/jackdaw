@@ -27,6 +27,11 @@ steps:
       - git fetch --tags
   - name: test
     image: clojure:latest
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka
+      ZOOKEEPER_HOST: zoopkeeper
+      SCHEMA_REGISTRY_HOST: schema-registry
+      KAFKA_REST_PROXY_HOST: kafka-rest
     depends_on:
       - checkout-tags
     commands:

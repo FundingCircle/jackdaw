@@ -56,7 +56,7 @@
 
 (deftest test-reset-application-fixture
   (test-resetter {:app-config {"application.id" "yolo"
-                               "bootstrap.servers" (str (utils/bootstrap-servers) ":9092")}
+                               "bootstrap.servers" "kafka.test:9092"}
                   :reset-params ["--foo" "foo"
                                  "--bar" "bar"]
                   :reset-fn (fn [reset-args rt args]
@@ -65,7 +65,7 @@
                  (fn [{:keys [resetter reset-args error-data]}]
                    (is (instance? kafka.tools.StreamsResetter resetter))
                    (is (= ["--application-id" "yolo"
-                           "--bootstrap-servers" (str (utils/bootstrap-servers) ":9092")
+                           "--bootstrap-servers" "kafka.test:9092"
                            "--foo" "foo"
                            "--bar" "bar"]
                           reset-args))
