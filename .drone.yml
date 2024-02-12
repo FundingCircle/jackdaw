@@ -67,6 +67,12 @@ services:
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: 'zookeeper:2181'
-      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "kafka:9092"
-      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8081"
     <<: *when_push
+    name: kafka-rest
+      - image: confluentinc/cp-kafka-rest:6.1.1
+        environment:
+          KAFKA_REST_ZOOKEEPER_CONNECT: zookeeper:2181
+          KAFKA_REST_BOOTSTRAP_SERVERS: kafka:9092
+          KAFKA_REST_LISTENERS: http://0.0.0.0:8082
+          KAFKA_REST_SCHEMA_REGISTRY: http://schema-registry:8081
+          KAFKA_REST_HOST_NAME: kafka-rest

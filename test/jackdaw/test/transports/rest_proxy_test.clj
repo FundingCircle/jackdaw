@@ -20,7 +20,7 @@
                    "group.id" "kafka-write-test"})
 
 (def +real-rest-proxy-url+
-  "http://kafka:8082")
+  "http://kafka-rest:8082")
 
 (defn rest-proxy-config
   [group-id]
