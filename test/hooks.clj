@@ -5,4 +5,4 @@
   (clojure.pprint/pprint config)
   (println "testable")
   (clojure.pprint/pprint testable)
-  config)
+  testable)
