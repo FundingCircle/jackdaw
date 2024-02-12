@@ -37,6 +37,6 @@ jobs:
           fetch-tags: true
       - name: build
         run: | 
-          git config --global --add safe.directory /__w/jackdaw/jackdaw\n"
+          git config --global --add safe.directory /__w/jackdaw/jackdaw
           lein kaocha
 
