@@ -4,6 +4,7 @@
             [jackdaw.client :as client]
             [jackdaw.test.fixtures :as fix]
             [jackdaw.test.serde :as serde]
+            [jackdaw.utils :as utils]
             [jackdaw.data :as data])
   (:import [java.util.concurrent LinkedBlockingQueue TimeUnit]
            java.time.Duration
@@ -40,7 +41,7 @@
    "high-partition-topic" high-partition-topic})
 
 (defn broker-config []
-  {"bootstrap.servers" "kafka:9092"})
+  {"bootstrap.servers" (str (utils/bootstrap-servers) "9092")})
 
 (defn producer-config []
   (-> (broker-config)

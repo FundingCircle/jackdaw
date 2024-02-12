@@ -4,7 +4,8 @@
             [clojure.data :refer [diff]]
             [clojure.data.json :as json]
             [jackdaw.serdes.avro :as avro]
-            [jackdaw.serdes.avro.schema-registry :as reg])
+            [jackdaw.serdes.avro.schema-registry :as reg]
+            [jackdaw.utils :as utils])
   (:import [java.nio ByteBuffer]
            [java.util Collection]
            [org.apache.avro Schema$Parser Schema]
@@ -46,7 +47,7 @@
                              serde-config)
          schema-registry-config
          {:avro.schema-registry/client registry-client
-          :avro.schema-registry/url    "schema-registry:8081"}]
+          :avro.schema-registry/url    (str (utils/schema-registry-host) ":8081")}]
      (avro/serde +registry+ schema-registry-config serde-config))))
 
 (defn deserialize [serde topic x]

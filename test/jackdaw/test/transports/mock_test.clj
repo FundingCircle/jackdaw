@@ -7,10 +7,11 @@
    [jackdaw.test :as jd.test]
    [jackdaw.test.transports :as trns]
    [jackdaw.test.serde :as serde]
+   [jackdaw.utils :as utils]
    [manifold.stream :as s])
   (:import
-    (java.util Properties)
-    (org.apache.kafka.streams TopologyTestDriver Topology)))
+   (java.util Properties)
+   (org.apache.kafka.streams TopologyTestDriver Topology)))
 
 (set! *warn-on-reflection* false)
 
@@ -46,8 +47,8 @@
   [f app-config]
   (let [builder (k/streams-builder)
         ^Topology topology (let [builder (f builder)]
-                   (-> (k/streams-builder* builder)
-                       (.build)))
+                             (-> (k/streams-builder* builder)
+                                 (.build)))
         ^Properties props (let [props (Properties.)]
                             (doseq [[k v] app-config]
                               (.setProperty props k v))
@@ -58,7 +59,7 @@
   []
   (trns/transport {:type :mock
                    :driver (test-driver (echo-stream test-in test-out)
-                                        {"bootstrap.servers" "kafka:9092"
+                                        {"bootstrap.servers" (str (utils/bootstrap-servers) ":9092")
                                          "application.id" "test-echo-stream"})
                    :topics {"test-in" test-in
                             "test-out" test-out}}))
