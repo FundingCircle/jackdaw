@@ -46,7 +46,7 @@ jobs:
         run: | 
           git config --global --add safe.directory /__w/jackdaw/jackdaw
           lein kaocha
-          clj-kondo --lint src test
+          lein clj-kondo --lint src test
         env: 
           KAFKA_BOOTSTRAP_SERVERS: kafka
           ZOOKEEPER_HOST: zoopkeeper

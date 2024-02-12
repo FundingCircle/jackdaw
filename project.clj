@@ -33,7 +33,8 @@
 
   :aliases {"kaocha" ["run" "-m" "kaocha.runner"]}
   :aot [jackdaw.serdes.edn2 jackdaw.serdes.fressian jackdaw.serdes.fn-impl]
-  :plugins [[me.arrdem/lein-git-version "2.0.8"]]
+  :plugins [[me.arrdem/lein-git-version "2.0.8"]
+            [com.github.clj-kondo/lein-clj-kondo "0.2.5"]]
 
   :git-version
   {:status-to-version
