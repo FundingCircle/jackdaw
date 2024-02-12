@@ -106,6 +106,7 @@ jobs:
     steps:
       - checkout
       - run: ls -la
+      - run: circleci context list git FundingCircle
       - run: docker run --volume `pwd`:/project --rm --workdir /project cljkondo/clj-kondo sh -c 'clj-kondo --lint src test' || true
 
   deps:
