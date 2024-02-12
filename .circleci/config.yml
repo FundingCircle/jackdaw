@@ -67,6 +67,10 @@ references:
     working_directory: ~/jackdaw
 
 jobs:
+ use-executor:
+    executor: cli/default
+    steps:
+      - run: circleci context list git FundingCircle
   checkout_code:
     <<: *build_config
     steps:
