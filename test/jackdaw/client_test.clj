@@ -41,7 +41,7 @@
    "high-partition-topic" high-partition-topic})
 
 (defn broker-config []
-  {"bootstrap.servers" (str (utils/bootstrap-servers) "9092")})
+  {"bootstrap.servers" (str (utils/bootstrap-servers) ":9092")})
 
 (defn producer-config []
   (-> (broker-config)
