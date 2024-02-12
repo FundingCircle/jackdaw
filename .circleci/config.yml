@@ -67,10 +67,16 @@ references:
     working_directory: ~/jackdaw
 
 jobs:
-   use-executor:
-     executor: cli/default
-     steps:
-       - run: circleci context list git FundingCircle
+  use-executor:
+    use-executor: cli/default
+    steps:
+      - run: circleci context list git FundingCircle
+  use-install-command:
+    docker:
+      - image: circleci/circleci-cli:latest
+    steps:
+      - cli/install
+      - run: echo "the CLI is now installed"
   checkout_code:
     <<: *build_config
     steps:
@@ -208,3 +214,13 @@ workflows:
               only: /^\d+\.\d+\.\d+$/
             branches:
               ignore: /.*/
+
+
+orbs:
+  cli: circleci/circleci-cli
+version: 2.1
+workflows:
+  cli-orb-example:
+    jobs:
+      - use-executor
+      - use-install-command
