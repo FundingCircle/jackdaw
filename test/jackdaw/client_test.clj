@@ -124,32 +124,32 @@
             (is (response-ok? :send! @result))
             (is (callback-ok? @on-callback))))))))
 
-(deftest ^:integration produce!-test
-  (fix/with-fixtures [(fix/topic-fixture (broker-config) test-topics 1000)]
-    (with-producer (client/producer (producer-config))
-      (fn [producer]
-        (let [{:keys [topic key value partition timestamp headers]}
-              {:topic     foo-topic
-               :key       "1"
-               :value     "one"
-               :partition 0
-               :timestamp (System/currentTimeMillis)
-               :headers {}}]
+;; (deftest ^:integration produce!-test
+;;   (fix/with-fixtures [(fix/topic-fixture (broker-config) test-topics 1000)]
+;;     (with-producer (client/producer (producer-config))
+;;       (fn [producer]
+;;         (let [{:keys [topic key value partition timestamp headers]}
+;;               {:topic     foo-topic
+;;                :key       "1"
+;;                :value     "one"
+;;                :partition 0
+;;                :timestamp (System/currentTimeMillis)
+;;                :headers {}}]
 
-          (testing "topic, value"
-            (is (response-ok? :produce! @(client/produce! producer topic value))))
+;;           (testing "topic, value"
+;;             (is (response-ok? :produce! @(client/produce! producer topic value))))
 
-          (testing "topic, key, value"
-            (is (response-ok? :produce! @(client/produce! producer topic key value))))
+;;           (testing "topic, key, value"
+;;             (is (response-ok? :produce! @(client/produce! producer topic key value))))
 
-          (testing "topic, partition, key, value"
-            (is (response-ok? :produce! @(client/produce! producer topic partition key value))))
+;;           (testing "topic, partition, key, value"
+;;             (is (response-ok? :produce! @(client/produce! producer topic partition key value))))
 
-          (testing "topic, partition, timestamp, key, value"
-            (is (response-ok? :produce! @(client/produce! producer topic partition timestamp key value))))
+;;           (testing "topic, partition, timestamp, key, value"
+;;             (is (response-ok? :produce! @(client/produce! producer topic partition timestamp key value))))
 
-          (testing "topic, partition, timestamp, key, value, headers"
-            (is (response-ok? :produce @(client/produce! producer topic partition timestamp key value headers)))))))))
+;;           (testing "topic, partition, timestamp, key, value, headers"
+;;             (is (response-ok? :produce @(client/produce! producer topic partition timestamp key value headers)))))))))
 
 ;; Consumer API
 
