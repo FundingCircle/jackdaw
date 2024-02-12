@@ -46,4 +46,9 @@ jobs:
         run: | 
           git config --global --add safe.directory /__w/jackdaw/jackdaw
           lein kaocha
+        env: 
+          KAFKA_BOOTSTRAP_SERVERS: kafka
+          ZOOKEEPER_HOST: zoopkeeper
+          SCHEMA_REGISTRY_HOST: schema-registry
+          KAFKA_REST_PROXY_HOST: kafka-rest
 
