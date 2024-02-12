@@ -1,4 +1,4 @@
 #kaocha/v1
 {:plugins [:hooks]
- :kaocha.hooks/pre-load [hooks/pre-run]}
+ :kaocha.hooks/pre-run [hooks/start-load-message]}
 
