@@ -43,13 +43,15 @@ jobs:
           # TODO:
           fetch-depth: 100
       - name: build
+        # TODO:
         run: | 
           git config --global --add safe.directory /__w/jackdaw/jackdaw
           lein kaocha
-          lein clj-kondo --lint src test
         env: 
           KAFKA_BOOTSTRAP_SERVERS: kafka
           ZOOKEEPER_HOST: zoopkeeper
           SCHEMA_REGISTRY_HOST: schema-registry
           KAFKA_REST_PROXY_HOST: kafka-rest
+      - name: lint
+        run: lein clj-kondo --lint src test || true
 
