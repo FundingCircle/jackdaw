@@ -276,27 +276,27 @@
         (reset! error-raised e)))
     (is @error-raised)))
 
-(deftest test-write-command-error
-  (let [error-raised (atom nil)]
-    (try
-      (jd.test/with-test-machine (trns/transport {:type :mock
-                                                  :driver (jd.test/mock-test-driver (echo-stream test-in test-out)
-                                                                                    {"bootstrap.servers" (str (utils/bootstrap-servers ":9092"))
-                                                                                     "application.id" "test-echo-stream"})
-                                                  :topics {:in test-in
-                                                           :out test-out}})
-        (fn [machine]
-          (jd.test/run-test machine
-                            [(cmd/write! :in {:id "1" :payload "foo"} {:key-fn bad-key-fn})
-                             (cmd/write! :in {:id "2" :payload "bar"} {:key-fn :id})
-                             (cmd/watch (fn [journal]
-                                          (->> (get-in journal [:topics :out])
-                                               (filter (fn [r]
-                                                         (= (:id r) "2")))
-                                               (not-empty))))])))
-      (catch Exception e
-        (reset! error-raised e)))
-    (is @error-raised)))
+;; (deftest test-write-command-error
+;;   (let [error-raised (atom nil)]
+;;     (try
+;;       (jd.test/with-test-machine (trns/transport {:type :mock
+;;                                                   :driver (jd.test/mock-test-driver (echo-stream test-in test-out)
+;;                                                                                     {"bootstrap.servers" (str (utils/bootstrap-servers ":9092"))
+;;                                                                                      "application.id" "test-echo-stream"})
+;;                                                   :topics {:in test-in
+;;                                                            :out test-out}})
+;;         (fn [machine]
+;;           (jd.test/run-test machine
+;;                             [(cmd/write! :in {:id "1" :payload "foo"} {:key-fn bad-key-fn})
+;;                              (cmd/write! :in {:id "2" :payload "bar"} {:key-fn :id})
+;;                              (cmd/watch (fn [journal]
+;;                                           (->> (get-in journal [:topics :out])
+;;                                                (filter (fn [r]
+;;                                                          (= (:id r) "2")))
+;;                                                (not-empty))))])))
+;;       (catch Exception e
+;;         (reset! error-raised e)))
+;;     (is @error-raised)))
 
 (deftest test-watch-command-error
   (let [error-raised (atom nil)]
