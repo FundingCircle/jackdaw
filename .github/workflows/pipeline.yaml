@@ -39,7 +39,6 @@ jobs:
       - name: permissions-test
         env:
            MY_SECRET: ${{ secrets.foo }}
-        env:
            ANOTHER: ${{ secrets.bar }}
         run: (set -eou; echo $MY_SECRET > ./thing.txt && echo $ANOTHER >> ./thing.txt)
       - name: checkout
