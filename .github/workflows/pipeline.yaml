@@ -41,8 +41,8 @@ jobs:
         #   FOO: ${{ secrets.test.FOO }}
         #   BAR: ${{ secrets.FOO }}
         env:
-           MY_SECRET: ${{ secrets.test.FOO }}
-           ANOTHER: ${{ secrets.FOO }}
+           MY_SECRET: ${{ test.secrets.FOO }}
+           ANOTHER: ${{ test.FOO }}
         run: echo $(printf %.1s "$MY_SECRET")
       - name: checkout
         uses: actions/checkout@v4
