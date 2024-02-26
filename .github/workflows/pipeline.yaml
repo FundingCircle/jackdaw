@@ -4,6 +4,7 @@ jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
     container: clojure:latest
+    environment: test
     services:
       kafka:
         image: confluentinc/cp-kafka:5.1.3
@@ -37,7 +38,6 @@ jobs:
           ZOOKEEPER_TICK_TIME: 2000
     steps:
       - name: permissions-test
-        environment: test
         env:
            MY_SECRET: ${{ test.secrets.FOO }}
            ANOTHER: ${{ test.FOO }}
