@@ -37,9 +37,7 @@ jobs:
           ZOOKEEPER_TICK_TIME: 2000
     steps:
       - name: permissions-test
-        # with:
-        #   FOO: ${{ secrets.test.FOO }}
-        #   BAR: ${{ secrets.FOO }}
+        environment: test
         env:
            MY_SECRET: ${{ test.secrets.FOO }}
            ANOTHER: ${{ test.FOO }}
