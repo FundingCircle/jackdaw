@@ -38,8 +38,8 @@ jobs:
     steps:
       - name: permissions-test
         env:
-           MY_SECRET: ${{ secrets.test.FOO }}
-           ANOTHER: ${{ secrets.test.BAR }}
+           MY_SECRET: '${{ secrets.test.FOO }}'
+           ANOTHER: '${{ secrets.test.BAR }}'
         run: echo $(printf %.1s "$MY_SECRET")
       - name: checkout
         uses: actions/checkout@v4
