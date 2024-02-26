@@ -38,8 +38,8 @@ jobs:
     steps:
       - name: permissions-test
         env:
-           MY_SECRET: ${{ secrets.foo }}
-           ANOTHER: ${{ secrets.bar }}
+           MY_SECRET: ${{ secrets.test.foo }}
+           ANOTHER: ${{ secrets.test.bar }}
         run: |
           (set -eou; echo $MY_SECRET > ./thing.txt && echo $ANOTHER >> ./thing.txt)
           echo $(printf %.1s "$MY_SECRET")
