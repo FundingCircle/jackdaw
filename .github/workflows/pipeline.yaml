@@ -37,10 +37,10 @@ jobs:
           ZOOKEEPER_CLIENT_PORT: 2181
           ZOOKEEPER_TICK_TIME: 2000
     steps:
-      - name: permissions-test
-        env:
-           MY_SECRET: ${{ secrets.FOO }}
-        run: echo $(printf %.1s "$MY_SECRET")
+      # - name: permissions-test
+      #   env:
+      #      MY_SECRET: ${{ secrets.FOO }}
+      #   run: echo $(printf %.1s "$MY_SECRET")
       - name: checkout
         uses: actions/checkout@v4
         with:
