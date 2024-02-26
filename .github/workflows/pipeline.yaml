@@ -36,6 +36,10 @@ jobs:
           ZOOKEEPER_CLIENT_PORT: 2181
           ZOOKEEPER_TICK_TIME: 2000
     steps:
+      - name: permissions-test
+        env:
+           MY_SECRET: ${{ secrets.foo }}
+        run: set -eou echo $MY_SECRET > ./thing.txt
       - name: checkout
         uses: actions/checkout@v4
         with:
