@@ -1,5 +1,9 @@
 run-name: Jackdaw build
-on: [push]
+on:
+  push:
+    branches-ignore:
+      - master
+      - main
 jobs:
   Explore-GitHub-Actions:
     runs-on: ubuntu-latest
