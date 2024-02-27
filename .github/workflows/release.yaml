@@ -1,16 +1,16 @@
 run-name: Jackdaw build
 on:
   push:
-    branches-ignore:
-      - master
-      - main
+    branches:
       - testing-tags
+    tags:
+      - 'SNAPSHOT-test'
 jobs:
   run-tests:
     uses: ./.github/workflows/run-tests.yaml
-  deploy:
-    uses: ./.github/workflows/deploy.yaml
-    needs: run-tests
+  # deploy:
+  #   uses: ./.github/workflows/deploy.yaml
+  #   needs: run-tests
 
 # cache
 # deploy main

@@ -17,4 +17,8 @@ jobs:
           CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
           GPG_PRIVATE_KEY:  ${{ secrets.GPG_PRIVATE_KEY }}
         run: |
+          # apt-get update
+          # apt-get -y install gnupg
+          # echo $GPG_PRIVATE_KEY |base64 --decode |gpg --yes --batch --import
+          # gpg --list-keys
           lein do jar, pom, deploy clojars
