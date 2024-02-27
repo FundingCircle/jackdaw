@@ -11,6 +11,12 @@ jobs:
     container: clojure:latest
     environment: test
     steps:
+      - name: checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-tags: true
+          # TODO:
+          fetch-depth: 100
       - name: deploy_snapshot
         env:
           CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
