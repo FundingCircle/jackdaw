@@ -6,19 +6,11 @@ on:
       - main
 jobs:
   environment: test
-  call-workflow-2-in-local-repo:
+  run-tests:
     uses: ./.github/workflows/run-tests.yaml
-  - name: deploy_snapshot
-    env:
-      CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
-      CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
-      GPG_PRIVATE_KEY:  ${{ secrets.GPG_PRIVATE_KEY }}
-    run: |
-       apt-get update
-       apt-get -y install gnupg
-       echo $GPG_PRIVATE_KEY |base64 --decode |gpg --yes --batch --import
-       gpg --list-keys
-       lein do jar, pom, deploy clojars
+  deploy:
+    uses: ./github/workflows/deploy.yaml
+
 
 # cache
 # deploy main
