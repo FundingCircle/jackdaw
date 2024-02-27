@@ -1,11 +1,10 @@
-run-name: Jackdaw build
+run-name: Run checks
 
 on:
   workflow_call:
 
-
 jobs:
-  Explore-GitHub-Actions:
+  RunChecks:
     runs-on: ubuntu-latest
     container: clojure:latest
     services:
