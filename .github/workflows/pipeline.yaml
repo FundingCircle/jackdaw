@@ -64,5 +64,6 @@ jobs:
            apt-get update
            apt-get -y install gnupg
            echo $GPG_PRIVATE_KEY |base64 --decode |gpg --yes --batch --import
+           gpg --list-keys
            lein do jar, pom, deploy clojars
 
