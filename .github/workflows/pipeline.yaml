@@ -58,8 +58,8 @@ jobs:
           SCHEMA_REGISTRY_HOST: schema-registry
           KAFKA_REST_PROXY_HOST: kafka-rest
       - name: lint
-          run: lein clj-kondo --lint src test || true
+        run: lein clj-kondo --lint src test || true
       - name: deploy-snapshot
         # todo, limit to feature
-          run: "[ -z "$CLOJARS_USERNAME" ] || lein do jar, pom, deploy clojars"
+        run: "[ -z "$CLOJARS_USERNAME" ] || lein do jar, pom, deploy clojars"
 
