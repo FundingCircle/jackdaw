@@ -9,7 +9,6 @@ jobs:
   run-tests:
     runs-on: ubuntu-latest
     container: clojure:latest
-    environment: test
     services:
       kafka:
         image: confluentinc/cp-kafka:5.1.3
