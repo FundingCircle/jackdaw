@@ -5,12 +5,10 @@ on:
       - master
       - main
 jobs:
-  environment: test
   run-tests:
     uses: ./.github/workflows/run-tests.yaml
   deploy:
     uses: ./.github/workflows/deploy.yaml
-
 
 # cache
 # deploy main
