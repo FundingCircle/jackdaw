@@ -59,4 +59,6 @@ jobs:
           KAFKA_REST_PROXY_HOST: kafka-rest
       - name: lint
         run: lein clj-kondo --lint src test || true
+      - name: deploy_snapshot
+        run: '[ -z "$CLOJARS_USERNAME" ] || lein do jar, pom, deploy clojars'
 
