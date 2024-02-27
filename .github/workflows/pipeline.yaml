@@ -62,5 +62,6 @@ jobs:
       - name: deploy_snapshot
         env:
           CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
+          CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
         run: lein do jar, pom, deploy clojars
 
