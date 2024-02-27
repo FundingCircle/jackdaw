@@ -6,7 +6,9 @@ on:
 jobs:
   RunChecks:
     runs-on: ubuntu-latest
-    container: clojure:latest
+    container: 
+      image: clojure:latest
+      options: --user 1001
     services:
       kafka:
         image: confluentinc/cp-kafka:5.1.3
@@ -46,7 +48,6 @@ jobs:
           fetch-depth: 100
       - name: build
         run: | 
-          git config --global --add safe.directory /__w/jackdaw/jackdaw
           lein kaocha
         env: 
           KAFKA_BOOTSTRAP_SERVERS: kafka

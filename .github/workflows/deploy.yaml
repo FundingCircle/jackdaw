@@ -12,7 +12,9 @@ jobs:
   deploy:
     needs: run_checks
     runs-on: ubuntu-latest
-    container: clojure:latest
+    container: 
+      image: clojure:latest
+      options: --user 1001
     environment: test
     steps:
       - name: checkout
@@ -26,7 +28,6 @@ jobs:
           CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
         run: |
-          git config --global --add safe.directory /__w/jackdaw/jackdaw
           apt-get update
           apt-get install -y gpg 
           echo $GPG_PRIVATE_KEY |base64 --decode |gpg --yes --batch --import
