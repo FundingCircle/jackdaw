@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     container: 
       image: clojure:latest
-      options: --user 1001
+      options: --user 1001 # don't run as root
     environment: test
     steps:
       - name: checkout
