@@ -1,10 +1,8 @@
 run-name: Jackdaw build
+
 on:
   workflow_call:
-    inputs:
-      foo:
-        default: "thing"
-        type: string
+
 jobs:
   run-tests:
     runs-on: ubuntu-latest
