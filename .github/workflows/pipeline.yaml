@@ -60,5 +60,7 @@ jobs:
       - name: lint
         run: lein clj-kondo --lint src test || true
       - name: deploy_snapshot
+        env:
+          CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
         run: lein do jar, pom, deploy clojars
 
