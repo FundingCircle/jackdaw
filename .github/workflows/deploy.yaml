@@ -21,4 +21,5 @@ jobs:
           CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
           GPG_PRIVATE_KEY:  ${{ secrets.GPG_PRIVATE_KEY }}
         run: |
+          git config --global --add safe.directory /__w/jackdaw/jackdaw\n
           lein do jar, pom, deploy clojars
