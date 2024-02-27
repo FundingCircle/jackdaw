@@ -59,6 +59,8 @@ jobs:
           KAFKA_REST_PROXY_HOST: kafka-rest
       - name: lint
         run: lein clj-kondo --lint src test || true
+      - name: test
+        run: lein with-profiles +test deps
       - name: deploy_snapshot
         env:
           CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
