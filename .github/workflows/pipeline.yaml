@@ -9,6 +9,7 @@ jobs:
     uses: ./.github/workflows/run-tests.yaml
   deploy:
     uses: ./.github/workflows/deploy.yaml
+    needs: run-tests
 
 # cache
 # deploy main
