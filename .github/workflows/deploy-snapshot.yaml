@@ -5,8 +5,6 @@ on:
       - master
       - main
 jobs:
-  # runs-on: ubuntu-latest
-  # container: clojure:latest
   environment: test
   call-workflow-2-in-local-repo:
     uses: ./.github/workflows/run-tests.yaml
