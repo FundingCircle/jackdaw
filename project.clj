@@ -1,6 +1,8 @@
 (defproject fundingcircle/jackdaw "_"
   :description "A Clojure library for the Apache Kafka distributed streaming platform."
 
+  :license {:name "BSD 3-clause"  :url "http://opensource.org/licenses/BSD-3-Clause"}
+           
   :scm {:name "git" :url "https://github.com/fundingcircle/jackdaw"}
 
   :url "https://github.com/FundingCircle/jackdaw/"
