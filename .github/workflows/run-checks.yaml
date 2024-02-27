@@ -5,6 +5,7 @@ on:
 
 jobs:
   run-checks:
+    environment: test
     runs-on: ubuntu-latest
     container: clojure:latest
     services:
@@ -55,3 +56,11 @@ jobs:
           KAFKA_REST_PROXY_HOST: kafka-rest
       - name: lint
         run: lein clj-kondo --lint src test || true
+      - name: deploy_snapshot
+        env:
+          CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
+          CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
+        run: |
+          git config --global --add safe.directory /__w/jackdaw/jackdaw
+          lein do jar, pom, deploy clojars
+
