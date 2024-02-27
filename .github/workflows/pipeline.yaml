@@ -37,17 +37,13 @@ jobs:
           ZOOKEEPER_CLIENT_PORT: 2181
           ZOOKEEPER_TICK_TIME: 2000
     steps:
-      # - name: permissions-test
-      #   env:
-      #      MY_SECRET: ${{ secrets.FOO }}
-      #   run: echo $(printf %.1s "$MY_SECRET")
       - name: checkout
         uses: actions/checkout@v4
         with:
           fetch-tags: true
           # TODO:
           fetch-depth: 100
-      - name: build
+      - name: build_and_test
         # TODO:
         run: | 
           git config --global --add safe.directory /__w/jackdaw/jackdaw
@@ -59,11 +55,12 @@ jobs:
           KAFKA_REST_PROXY_HOST: kafka-rest
       - name: lint
         run: lein clj-kondo --lint src test || true
-      # - name: test
-      #   run: lein kaocha 
       - name: deploy_snapshot
         env:
           CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
           CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
-        run: lein do jar, pom, deploy clojars
+          GPG_PRIVATE_KEY:  ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+           echo $GPG_PRIVATE_KEY |base64 --decode |gpg --yes --batch --import
+           lein do jar, pom, deploy clojars
 
