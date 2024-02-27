@@ -11,16 +11,17 @@
    [jackdaw.test.journal :refer [watch-for]]
    [jackdaw.test.transports :as trns]
    [jackdaw.test.transports.rest-proxy :as proxy]
+   [jackdaw.utils :as utils]
    [manifold.stream :as s]
    [manifold.deferred :as d]))
 
 (set! *warn-on-reflection* false)
 
-(def kafka-config {"bootstrap.servers" "localhost:9092"
+(def kafka-config {"bootstrap.servers" (str (utils/bootstrap-servers) ":9092")
                    "group.id" "kafka-write-test"})
 
 (def +real-rest-proxy-url+
-  "http://localhost:8082")
+  "http://kafka-rest:8082")
 
 (defn rest-proxy-config
   [group-id]
@@ -30,7 +31,7 @@
 (defn kstream-config
   [app app-id]
   {:topology app
-   :config {"bootstrap.servers" "localhost:9092"
+   :config {"bootstrap.servers" "kafka:9092"
             "application.id" app-id}})
 
 (defn echo-stream
@@ -173,7 +174,7 @@
                                                                           :consumer.fetch.timeout.ms 200})))
                        (proxy/with-consumer))
             [url options] (first @http-reqs)]
-        (is (= "http://localhost:8082/consumers/test-group-config" url))
+        (is (= "http://kafka-rest:8082/consumers/test-group-config" url))
         (is (= {"Accept" "application/vnd.kafka.v2+json"
                 "Content-Type" "application/vnd.kafka.v2+json"}
                (:headers options)))

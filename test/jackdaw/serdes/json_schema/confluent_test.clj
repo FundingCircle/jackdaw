@@ -1,6 +1,7 @@
 (ns jackdaw.serdes.json-schema.confluent-test
   (:require [jackdaw.serdes.json-schema.confluent :as jsco]
             [jackdaw.serdes.avro.schema-registry :as reg]
+            [jackdaw.utils :as utils]
             [clojure.data.json :as json]
             [clojure.test :refer [deftest is testing] :as test]))
 
@@ -15,7 +16,7 @@
                                     {"json.fail.invalid.schema" false}
                                     :serializer-properties
                                     {"json.fail.invalid.schema" false}})))
-         schema-registry-url "localhost:8081"
+         schema-registry-url (str (utils/schema-registry-host) ":8081")
          key? false]
      (jsco/serde schema-registry-url schema-str key? serde-config))))
 
