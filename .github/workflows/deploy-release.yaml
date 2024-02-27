@@ -1,0 +1,30 @@
+run-name: Deploy release
+on:
+  push:
+    branches:
+      - main
+    tags: 
+      - '/^\d+\.\d+\.\d+$/'
+jobs:
+  runs-on: ubuntu-latest
+  container: clojure:latest
+  environment: test
+  call-workflow-2-in-local-repo:
+    uses: ./.github/workflows/run-tests.yaml
+  - name: deploy_release
+    env:
+      CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
+      CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
+      GPG_PRIVATE_KEY:  ${{ secrets.GPG_PRIVATE_KEY }}
+    run: |
+        apt-get update
+        apt-get -y install gnupg
+        echo $GPG_PRIVATE_KEY |base64 --decode |gpg --yes --batch --import
+        gpg --list-keys
+        lein do jar, pom, deploy clojars
+
+# cache
+# deploy main
+# safe dir
+# clone depth
+# avoid install gpgp
