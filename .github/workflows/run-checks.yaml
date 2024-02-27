@@ -1,10 +1,10 @@
-run-name: Run tests
+run-name: Run Checks
 
 on:
   workflow_call:
 
 jobs:
-  run-tests:
+  run-checks:
     runs-on: ubuntu-latest
     container: clojure:latest
     services:
@@ -43,10 +43,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-tags: true
-          # TODO:
           fetch-depth: 100
-      - name: build_and_test
-        # TODO:
+      - name: test
         run: | 
           git config --global --add safe.directory /__w/jackdaw/jackdaw
           lein kaocha

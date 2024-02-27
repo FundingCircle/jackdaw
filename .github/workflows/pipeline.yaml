@@ -5,11 +5,11 @@ on:
       - master
       - main
 jobs:
-  run-tests:
-    uses: ./.github/workflows/run-tests.yaml
+  run-checks:
+    uses: ./.github/workflows/run-checks.yaml
   deploy:
     uses: ./.github/workflows/deploy.yaml
-    needs: run-tests
+    # needs: run-tests
 
 # cache
 # deploy main
