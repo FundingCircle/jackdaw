@@ -1,0 +1,9 @@
+run-name: Run Build
+
+on:
+  push
+
+jobs:
+  run_checks:
+    uses: ./.github/workflows/run_checks.yaml
+    

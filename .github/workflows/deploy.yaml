@@ -1,0 +1,35 @@
+run-name: Jackdaw build
+
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+'
+      - '*publish-snapshot*'
+
+jobs:
+  run_checks:
+    uses: ./.github/workflows/run_checks.yaml
+  deploy:
+    needs: run_checks
+    runs-on: ubuntu-latest
+    container: 
+      image: clojure:latest
+    environment: clojars_deploy
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4
+      - name: deploy
+        env:
+          CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
+          CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          # https://github.com/actions/runner/issues/2033
+          git config --global --add safe.directory /__w/jackdaw/jackdaw
+          apt-get update
+          apt-get install -y gpg 
+          echo $GPG_PRIVATE_KEY |base64 --decode |gpg --yes --batch --import
+          export LEIN_GPG=/__w/jackdaw/jackdaw/.circleci/bin/gpg
+          export REAL_GPG=$(which gpg)
+          lein do jar, pom, deploy clojars
+
