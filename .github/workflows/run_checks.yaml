@@ -44,7 +44,7 @@ jobs:
       - name: checkout
         uses: actions/checkout@v4
         with:
-          # fetch-tags: true
+          fetch-tags: true
           fetch-depth: 100
       - name: build
         run: | 
