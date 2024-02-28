@@ -28,7 +28,7 @@ jobs:
           apt-get update
           apt-get install -y gpg 
           echo $GPG_PRIVATE_KEY |base64 --decode |gpg --yes --batch --import
-          export LEIN_GPG=/__w/jackdaw/jackdaw/.circleci/bin/gpg
+          export LEIN_GPG=/__w/jackdaw/jackdaw/bin/gpg
           export REAL_GPG=$(which gpg)
           lein do jar, pom, deploy clojars
 
