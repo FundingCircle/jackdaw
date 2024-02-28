@@ -19,9 +19,9 @@ jobs:
     steps:
       - name: checkout
         uses: actions/checkout@v4
-        with:
+        # with:
           # fetch-tags: true
-          fetch-depth: 100
+          # fetch-depth: 100
       - name: deploy
         env:
           CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
