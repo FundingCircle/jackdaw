@@ -24,11 +24,11 @@ jobs:
           CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
         run: |
-          git config --global --add safe.directory /__w/jackdaw/jackdaw
           apt-get update
           apt-get install -y gpg 
           echo $GPG_PRIVATE_KEY |base64 --decode |gpg --yes --batch --import
           export LEIN_GPG=/__w/jackdaw/jackdaw/bin/gpg
           export REAL_GPG=$(which gpg)
+          su - 1001
           lein do jar, pom, deploy clojars
 
