@@ -30,8 +30,12 @@ See [an example using jackdaw](https://github.com/FundingCircle/topology-grapher
 
 ## Releasing
 
-Anyone with the appropriate credentials can "cut a release" of jackdaw using the following steps.
+Anyone with the appropriate credentials can "cut a release" of jackdaw
+* Tags are protected, you will need to be a maintainer or admin to apply them
+* Clojars deployment uses a protected env, once a tag is created, the CI job to deploy will need to be reviewed by the clojars env owner
 
+
+Steps:
  1. Review the diff of master vs the latest released tag (e.g. while preparing 0.7.0, I looked at https://github.com/FundingCircle/jackdaw/compare/0.6.9...master to see what was actually merged vs what was in the Changelog). Make a PR to put a date on the version being released and if necessary ensure completeness and consistency of the Changelog
  2. Use the [Draft a new release](https://github.com/FundingCircle/jackdaw/releases/new) feature in github to prepare a release
  3. In the "tag version" field, enter the proposed version
@@ -41,6 +45,10 @@ Anyone with the appropriate credentials can "cut a release" of jackdaw using the
  7. Once the tag is seen by circleci, a deployment build is triggered which builds the project and deploys a release to clojars
 
 Steps 2 to 6 is essentially `git tag $version -m "$title\n\n$description" && git push --tags`
+
+#### Snapshot release
+
+Snapshot releases can be created by pushing a tag with the format `publish-snapshot-semver`
 
 ## License
 
