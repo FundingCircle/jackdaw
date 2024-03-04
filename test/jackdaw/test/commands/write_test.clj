@@ -4,6 +4,7 @@
    [jackdaw.test.transports :as trns]
    [jackdaw.test.transports.kafka]
    [jackdaw.test.serde :as serde]
+   [jackdaw.utils :as utils]
    [clojure.test :refer [deftest is testing]])
   (:import
     [clojure.lang ExceptionInfo]))
@@ -40,7 +41,7 @@
                    :key-serde :long
                    :value-serde :json}))
 
-(def kafka-config {"bootstrap.servers" "kafka:9092"
+(def kafka-config {"bootstrap.servers" (str (utils/bootstrap-servers) ":9092")
                    "group.id" "kafka-write-test"})
 
 (defn with-transport

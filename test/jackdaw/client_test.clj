@@ -160,7 +160,7 @@
 
 (deftest ^:integration consumer-test
   (let [config {"group.id" "jackdaw-client-test-consumer-test"
-                "bootstrap.servers" "kafka:9092"
+                "bootstrap.servers" (str (utils/bootstrap-servers) ":9092")
                 "key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
                 "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"}
         key-serde (:key-serde foo-topic)

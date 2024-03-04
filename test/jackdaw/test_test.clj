@@ -235,8 +235,7 @@
     (try
       (jd.test/with-test-machine (trns/transport {:type :mock
                                                   :driver (jd.test/mock-test-driver (echo-stream test-in test-out)
-                                                                                    {"bootstrap.servers" (str (utils/bootstrap-servers) ":9092")
-                                                                                     "application.id" "test-echo-stream"})
+                                                                                    (assoc kafka-config "application.id" "test-echo-stream"))
                                                   :topics {:in test-in
                                                            :out test-out}})
         (fn [machine]

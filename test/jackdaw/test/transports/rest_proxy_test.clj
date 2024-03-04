@@ -21,7 +21,7 @@
                    "group.id" "kafka-write-test"})
 
 (def +real-rest-proxy-url+
-  "http://kafka-rest:8082")
+  (format "http://%s:8082" (utils/kafka-rest-proxy-host)))
 
 (defn rest-proxy-config
   [group-id]
@@ -31,7 +31,7 @@
 (defn kstream-config
   [app app-id]
   {:topology app
-   :config {"bootstrap.servers" "kafka:9092"
+   :config {"bootstrap.servers" (str (utils/bootstrap-servers) ":9092")
             "application.id" app-id}})
 
 (defn echo-stream
