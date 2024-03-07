@@ -15,7 +15,7 @@
 (set! *warn-on-reflection* false)
 
 (def +real-schema-registry-url+
-  (format "http://%s:8081" (utils/schema-registry-host)))
+  (str "http://" (utils/schema-registry-address)))
 
 (def +type-registry+
   (merge avro/+base-schema-type-registry+
@@ -66,8 +66,8 @@
   "A Kafka consumer or streams config."
   (let [id (str "dev-" (java.util.UUID/randomUUID))]
     {"replication.factor" "1", "group.id" id, "application.id" id,
-     "bootstrap.servers"  (str (utils/bootstrap-servers) ":9092")
-     "zookeeper.connect"  (str (utils/zookeeper-host) ":2181")
+     "bootstrap.servers"  (utils/bootstrap-servers)
+     "zookeeper.connect"  (utils/zookeeper-address)
      "request.timeout.ms" "1000"}))
 
 ;;;; Schemas

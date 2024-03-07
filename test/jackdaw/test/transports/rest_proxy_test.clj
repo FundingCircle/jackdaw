@@ -17,11 +17,11 @@
 
 (set! *warn-on-reflection* false)
 
-(def kafka-config {"bootstrap.servers" (str (utils/bootstrap-servers) ":9092")
+(def kafka-config {"bootstrap.servers" (utils/bootstrap-servers)
                    "group.id" "kafka-write-test"})
 
 (def +real-rest-proxy-url+
-  (format "http://%s:8082" (utils/kafka-rest-proxy-host)))
+  (format "http://%s" (utils/kafka-rest-proxy-address)))
 
 (defn rest-proxy-config
   [group-id]
@@ -31,7 +31,7 @@
 (defn kstream-config
   [app app-id]
   {:topology app
-   :config {"bootstrap.servers" (str (utils/bootstrap-servers) ":9092")
+   :config {"bootstrap.servers" (utils/bootstrap-servers)
             "application.id" app-id}})
 
 (defn echo-stream
@@ -174,7 +174,7 @@
                                                                           :consumer.fetch.timeout.ms 200})))
                        (proxy/with-consumer))
             [url options] (first @http-reqs)]
-        (is (= "http://kafka-rest:8082/consumers/test-group-config" url))
+        (is (= (str "http://" (utils/kafka-rest-proxy-address) "/consumers/test-group-config") url))
         (is (= {"Accept" "application/vnd.kafka.v2+json"
                 "Content-Type" "application/vnd.kafka.v2+json"}
                (:headers options)))

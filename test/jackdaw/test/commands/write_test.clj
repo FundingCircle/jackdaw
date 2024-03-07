@@ -41,7 +41,7 @@
                    :key-serde :long
                    :value-serde :json}))
 
-(def kafka-config {"bootstrap.servers" (str (utils/bootstrap-servers) ":9092")
+(def kafka-config {"bootstrap.servers" (utils/bootstrap-servers)
                    "group.id" "kafka-write-test"})
 
 (defn with-transport

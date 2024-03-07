@@ -2,16 +2,24 @@
 
 (defn bootstrap-servers
   []
-  (or (System/getenv "KAFKA_BOOTSTRAP_SERVERS") "localhost"))
+  (str (or (System/getenv "KAFKA_BOOTSTRAP_SERVERS") "localhost")
+       ":"
+       (or (System/getenv "KAFKA_PORT") "9092")))
 
-(defn zookeeper-host
+(defn zookeeper-address
   []
-  (or (System/getenv "ZOOKEEPER_HOST") "localhost"))
+  (str (or (System/getenv "ZOOKEEPER_HOST") "localhost")
+       ":"
+       (or (System/getenv "ZOOKEEPER_PORT") "2181")))
 
-(defn schema-registry-host
+(defn schema-registry-address
   []
-  (or (System/getenv "SCHEMA_REGISTRY_HOST") "localhost"))
+  (str (or (System/getenv "SCHEMA_REGISTRY_HOST") "localhost")
+       ":"
+       (or (System/getenv "SCHEMA_REGISTRY_PORT") "8081")))
 
-(defn kafka-rest-proxy-host
+(defn kafka-rest-proxy-address
   []
-  (or (System/getenv "KAFKA_REST_PROXY_HOST") "localhost"))
+  (str (or (System/getenv "KAFKA_REST_PROXY_HOST") "localhost")
+       ":"
+       (or (System/getenv "KAFKA_REST_PROXY_PORT") "8082")))

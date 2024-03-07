@@ -15,7 +15,7 @@
    :config {}})
 
 (def kafka-config
-  {"bootstrap.servers" (str (utils/bootstrap-servers) ":9092")})
+  {"bootstrap.servers" (utils/bootstrap-servers)})
 
 (def test-topics
   (let [topics {"foo" topic-foo}]
@@ -73,7 +73,7 @@
 
 (deftest test-reset-application-fixture-failure
   (test-resetter {:app-config {"application.id" "yolo"
-                               "bootstrap.servers" (str (utils/bootstrap-servers) ":9092")}
+                               "bootstrap.servers" (utils/bootstrap-servers)}
                   :reset-params ["--foo" "foo"
                                  "--bar" "bar"]
                   :reset-fn (fn [reset-args rt args]

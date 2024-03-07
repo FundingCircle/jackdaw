@@ -59,7 +59,7 @@
   []
   (trns/transport {:type :mock
                    :driver (test-driver (echo-stream test-in test-out)
-                                        {"bootstrap.servers" (str (utils/bootstrap-servers) ":9092")
+                                        {"bootstrap.servers" (utils/bootstrap-servers)
                                          "application.id" "test-echo-stream"})
                    :topics {"test-in" test-in
                             "test-out" test-out}}))

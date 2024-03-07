@@ -16,7 +16,7 @@
                                     {"json.fail.invalid.schema" false}
                                     :serializer-properties
                                     {"json.fail.invalid.schema" false}})))
-         schema-registry-url (str (utils/schema-registry-host) ":8081")
+         schema-registry-url (utils/schema-registry-address)
          key? false]
      (jsco/serde schema-registry-url schema-str key? serde-config))))
 

@@ -41,7 +41,7 @@
    "high-partition-topic" high-partition-topic})
 
 (defn broker-config []
-  {"bootstrap.servers" (str (utils/bootstrap-servers) ":9092")})
+  {"bootstrap.servers" (utils/bootstrap-servers)})
 
 (defn producer-config []
   (-> (broker-config)
@@ -160,7 +160,7 @@
 
 (deftest ^:integration consumer-test
   (let [config {"group.id" "jackdaw-client-test-consumer-test"
-                "bootstrap.servers" (str (utils/bootstrap-servers) ":9092")
+                "bootstrap.servers" (utils/bootstrap-servers)
                 "key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
                 "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"}
         key-serde (:key-serde foo-topic)

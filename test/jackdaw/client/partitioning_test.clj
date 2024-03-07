@@ -23,7 +23,7 @@
 
 
 (deftest test->ProducerRecord
-  (with-open [p (client/producer {"bootstrap.servers" (str (utils/bootstrap-servers) ":9092")
+  (with-open [p (client/producer {"bootstrap.servers" (utils/bootstrap-servers)
                                   "key.serializer" "org.apache.kafka.common.serialization.StringSerializer"
                                   "value.serializer" "org.apache.kafka.common.serialization.StringSerializer"})]
     (testing "absent key-fn"

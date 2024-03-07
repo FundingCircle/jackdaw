@@ -13,13 +13,13 @@
 
 (set! *warn-on-reflection* false)
 
-(def kafka-config {"bootstrap.servers" (str (utils/bootstrap-servers) ":9092")
+(def kafka-config {"bootstrap.servers" (utils/bootstrap-servers)
                    "group.id" "kafka-write-test"})
 
 (defn kstream-config
   [app app-id]
   {:topology app
-   :config {"bootstrap.servers" (str (utils/bootstrap-servers) ":9092")
+   :config {"bootstrap.servers" (utils/bootstrap-servers)
             "application.id" app-id}})
 
 (defn echo-stream
