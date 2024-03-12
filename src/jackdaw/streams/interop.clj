@@ -44,6 +44,14 @@
     key-serde (.withKeySerde key-serde)
     value-serde (.withValueSerde value-serde)))
 
+(defn ->joined
+  "Builds a Joined object that represents optional params that can be
+  passed to join and left-join operations."
+  ([key-serde value-serde other-value-serde]
+   (Joined/with key-serde value-serde other-value-serde))
+  ([key-serde value-serde other-value-serde joined-name]
+   (Joined/with key-serde value-serde other-value-serde joined-name)))
+
 (defn suppress-config->suppressed
   [{:keys [max-records max-bytes until-time-limit-ms]}]
   (let [config (cond
@@ -154,6 +162,16 @@
             ^KTable (ktable* ktable)
             ^ValueJoiner (value-joiner value-joiner-fn))))
 
+  (join
+    [_ ktable value-joiner-fn
+     {key-serde :key-serde this-value-serde :value-serde joined-name :name}
+     {other-value-serde :value-serde}]
+    (clj-kstream
+     (.join ^KStream kstream
+            ^KTable (ktable* ktable)
+            ^ValueJoiner (value-joiner value-joiner-fn)
+            ^Joined (->joined key-serde this-value-serde other-value-serde joined-name))))
+
   (left-join
     [_ ktable value-joiner-fn]
     (clj-kstream
@@ -163,13 +181,13 @@
 
   (left-join
     [_ ktable value-joiner-fn
-     {key-serde :key-serde this-value-serde :value-serde}
+     {key-serde :key-serde this-value-serde :value-serde joined-name :name}
      {other-value-serde :value-serde}]
     (clj-kstream
      (.leftJoin kstream
                 ^KTable (ktable* ktable)
                 ^ValueJoiner (value-joiner value-joiner-fn)
-                (Joined/with key-serde this-value-serde other-value-serde))))
+                ^Joined (->joined key-serde this-value-serde other-value-serde joined-name))))
 
   (peek
     [_ peek-fn]

@@ -62,6 +62,12 @@
 
 (s/def ::topic-configs (s/coll-of ::topic-config))
 
+(s/def ::name string?)
+(s/def ::join-config
+  (s/keys :req-un [::key-serde
+                   ::value-serde]
+          :opt-un [::name]))
+
 (s/def ::kstreams (s/coll-of kstream?))
 (s/def ::kstream-or-ktable (s/or :kstream kstream? :ktable ktable?))
 
@@ -103,7 +109,9 @@
 (s/fdef k/join
         :args (s/or :pk-join (s/cat :kstream-or-ktable ::kstream-or-ktable
                                     :ktable ktable?
-                                    :value-joiner-fn ifn?)
+                                    :value-joiner-fn ifn?
+                                    :this-topic-config (s/? ::join-config)
+                                    :other-topic-config (s/? ::join-config))
                     :fk-join (s/cat :kstream-or-ktable ::kstream-or-ktable
                                     :ktable ktable?
                                     :fk-extractor-fn ifn?
@@ -114,8 +122,8 @@
         :args (s/cat :kstream-or-ktable ::kstream-or-ktable
                      :ktable ktable?
                      :value-joiner-fn ifn?
-                     :this-topic-config (s/? ::topic-config)
-                     :other-topic-config (s/? ::topic-config))
+                     :this-topic-config (s/? ::join-config)
+                     :other-topic-config (s/? ::join-config))
         :ret ::kstream-or-ktable)
 
 (s/fdef k/for-each!

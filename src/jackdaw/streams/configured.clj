@@ -81,6 +81,12 @@
      config
      (join kstream ktable value-joiner-fn)))
 
+  (join
+    [_ ktable value-joiner-fn topic-config other-topic-config]
+    (configured-kstream
+     config
+     (join kstream ktable value-joiner-fn topic-config other-topic-config)))
+
   (left-join
     [_ ktable value-joiner-fn]
     (configured-kstream

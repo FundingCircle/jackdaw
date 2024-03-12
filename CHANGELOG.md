@@ -1,6 +1,7 @@
 # Changelog
 
 ### Unreleased
+- Adds IKStreamBase/join with arity 5 to configure left and right serdes and possibly name the join
 
 ### [0.9.12] - [2023-12-05]
 - Support for Foreign Key joins [#365](https://github.com/FundingCircle/jackdaw/pull/365) (Issue [#364])
