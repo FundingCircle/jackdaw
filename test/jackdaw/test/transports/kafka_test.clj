@@ -8,17 +8,18 @@
    [jackdaw.test.journal :refer [watch-for]]
    [jackdaw.test.serde :as serde]
    [jackdaw.test.transports.kafka]
+   [jackdaw.utils :as utils]
    [manifold.stream :as s]))
 
 (set! *warn-on-reflection* false)
 
-(def kafka-config {"bootstrap.servers" "localhost:9092"
+(def kafka-config {"bootstrap.servers" (utils/bootstrap-servers)
                    "group.id" "kafka-write-test"})
 
 (defn kstream-config
   [app app-id]
   {:topology app
-   :config {"bootstrap.servers" "localhost:9092"
+   :config {"bootstrap.servers" (utils/bootstrap-servers)
             "application.id" app-id}})
 
 (defn echo-stream

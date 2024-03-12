@@ -8,13 +8,14 @@
             [jackdaw.data :as jd]
             [jackdaw.serdes.avro :as avro]
             [jackdaw.serdes.avro.schema-registry :as reg]
-            [jackdaw.test.fixtures :as fix])
+            [jackdaw.test.fixtures :as fix]
+            [jackdaw.utils :as utils])
   (:import [org.apache.kafka.common.serialization Serde Serdes]))
 
 (set! *warn-on-reflection* false)
 
 (def +real-schema-registry-url+
-  "http://localhost:8081")
+  (str "http://" (utils/schema-registry-address)))
 
 (def +type-registry+
   (merge avro/+base-schema-type-registry+
@@ -65,8 +66,8 @@
   "A Kafka consumer or streams config."
   (let [id (str "dev-" (java.util.UUID/randomUUID))]
     {"replication.factor" "1", "group.id" id, "application.id" id,
-     "bootstrap.servers"  "localhost:9092"
-     "zookeeper.connect"  "localhost:2181"
+     "bootstrap.servers"  (utils/bootstrap-servers)
+     "zookeeper.connect"  (utils/zookeeper-address)
      "request.timeout.ms" "1000"}))
 
 ;;;; Schemas

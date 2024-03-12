@@ -1,6 +1,8 @@
 (defproject fundingcircle/jackdaw "_"
   :description "A Clojure library for the Apache Kafka distributed streaming platform."
 
+  :license {:name "BSD 3-clause"  :url "http://opensource.org/licenses/BSD-3-Clause"}
+           
   :scm {:name "git" :url "https://github.com/fundingcircle/jackdaw"}
 
   :url "https://github.com/FundingCircle/jackdaw/"
@@ -33,12 +35,13 @@
 
   :aliases {"kaocha" ["run" "-m" "kaocha.runner"]}
   :aot [jackdaw.serdes.edn2 jackdaw.serdes.fressian jackdaw.serdes.fn-impl]
-  :plugins [[me.arrdem/lein-git-version "2.0.8"]]
+  :plugins [[me.arrdem/lein-git-version "2.0.8"]
+            [com.github.clj-kondo/lein-clj-kondo "0.2.5"]]
 
   :git-version
   {:status-to-version
    (fn [{:keys [tag branch ahead? dirty?] :as git}]
-     (if (and tag (not ahead?) (not dirty?))
+     (if (and tag (not ahead?) (not dirty?) (= "master" branch))
        tag
        (let [[_ prefix patch] (re-find #"(\d+\.\d+)\.(\d+)" tag)
              patch            (Long/parseLong patch)

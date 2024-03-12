@@ -2,7 +2,8 @@
   (:require
    [clojure.test :refer [deftest is testing]]
    [jackdaw.client :as client]
-   [jackdaw.client.partitioning :as part]))
+   [jackdaw.client.partitioning :as part]
+   [jackdaw.utils :as utils]))
 
 (set! *warn-on-reflection* false)
 
@@ -22,7 +23,7 @@
 
 
 (deftest test->ProducerRecord
-  (with-open [p (client/producer {"bootstrap.servers" "localhost:9092"
+  (with-open [p (client/producer {"bootstrap.servers" (utils/bootstrap-servers)
                                   "key.serializer" "org.apache.kafka.common.serialization.StringSerializer"
                                   "value.serializer" "org.apache.kafka.common.serialization.StringSerializer"})]
     (testing "absent key-fn"

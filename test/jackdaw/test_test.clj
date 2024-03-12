@@ -7,7 +7,8 @@
    [jackdaw.test.fixtures :as fix]
    [jackdaw.test.serde :as serde]
    [jackdaw.test.transports :as trns]
-   [jackdaw.test.middleware :refer [with-status]]))
+   [jackdaw.test.middleware :refer [with-status]]
+   [jackdaw.utils :as utils]))
 
 (set! *warn-on-reflection* false)
 
@@ -32,7 +33,7 @@
                    :key-serde :string
                    :value-serde :json}))
 
-(def kafka-config {"bootstrap.servers" "localhost:9092"
+(def kafka-config {"bootstrap.servers" (utils/bootstrap-servers)
                    "group.id" "kafka-write-test"})
 
 (defn kafka-transport
@@ -234,8 +235,7 @@
     (try
       (jd.test/with-test-machine (trns/transport {:type :mock
                                                   :driver (jd.test/mock-test-driver (echo-stream test-in test-out)
-                                                                                    {"bootstrap.servers" "localhost:9092"
-                                                                                     "application.id" "test-echo-stream"})
+                                                                                    (assoc kafka-config "application.id" "test-echo-stream"))
                                                   :topics {:in test-in
                                                            :out test-out}})
         (fn [machine]
@@ -258,7 +258,7 @@
     (try
       (jd.test/with-test-machine (trns/transport {:type :mock
                                                   :driver (jd.test/mock-test-driver (bad-topology test-in test-out)
-                                                                                    {"bootstrap.servers" "localhost:9092"
+                                                                                    {"bootstrap.servers"  (utils/bootstrap-servers)
                                                                                      "application.id" "test-echo-stream"})
                                                   :topics {:in test-in
                                                            :out test-out}})
@@ -280,7 +280,7 @@
     (try
       (jd.test/with-test-machine (trns/transport {:type :mock
                                                   :driver (jd.test/mock-test-driver (echo-stream test-in test-out)
-                                                                                    {"bootstrap.servers" "localhost:9092"
+                                                                                    {"bootstrap.servers" (utils/bootstrap-servers)
                                                                                      "application.id" "test-echo-stream"})
                                                   :topics {:in test-in
                                                            :out test-out}})
@@ -302,7 +302,7 @@
     (try
       (jd.test/with-test-machine (trns/transport {:type :mock
                                                   :driver (jd.test/mock-test-driver (echo-stream test-in test-out)
-                                                                                    {"bootstrap.servers" "localhost:9092"
+                                                                                    {"bootstrap.servers" (utils/bootstrap-servers)
                                                                                      "application.id" "test-echo-stream"})
                                                   :topics {:in test-in
                                                            :out test-out}})

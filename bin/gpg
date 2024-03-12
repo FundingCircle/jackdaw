@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Invoked by `LEIN_GPG=$app/.circleci/bin/gpg lein deploy clojars`
+# Invoked by `LEIN_GPG=$app/bin/gpg lein deploy clojars`
 
 echo $GPG_PASSPHRASE \
   | $REAL_GPG --pinentry-mode loopback --yes --batch --passphrase-fd=0 $@

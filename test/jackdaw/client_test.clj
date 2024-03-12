@@ -4,6 +4,7 @@
             [jackdaw.client :as client]
             [jackdaw.test.fixtures :as fix]
             [jackdaw.test.serde :as serde]
+            [jackdaw.utils :as utils]
             [jackdaw.data :as data])
   (:import [java.util.concurrent LinkedBlockingQueue TimeUnit]
            java.time.Duration
@@ -40,7 +41,7 @@
    "high-partition-topic" high-partition-topic})
 
 (defn broker-config []
-  {"bootstrap.servers" "localhost:9092"})
+  {"bootstrap.servers" (utils/bootstrap-servers)})
 
 (defn producer-config []
   (-> (broker-config)
@@ -159,7 +160,7 @@
 
 (deftest ^:integration consumer-test
   (let [config {"group.id" "jackdaw-client-test-consumer-test"
-                "bootstrap.servers" "localhost:9092"
+                "bootstrap.servers" (utils/bootstrap-servers)
                 "key.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"
                 "value.deserializer" "org.apache.kafka.common.serialization.StringDeserializer"}
         key-serde (:key-serde foo-topic)
