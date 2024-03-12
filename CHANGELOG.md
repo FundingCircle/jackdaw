@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+- Fixed a bug with avro serialization, where default values within a union type would not be used correctly.
+
 ### [0.9.12] - [2023-12-05]
 - Support for Foreign Key joins [#365](https://github.com/FundingCircle/jackdaw/pull/365) (Issue [#364])
 - add manifold and keep aleph in dev dependencies [#360](https://github.com/FundingCircle/jackdaw/pull/360). Users of test-machine will have to add aleph to the test deps in their app.
