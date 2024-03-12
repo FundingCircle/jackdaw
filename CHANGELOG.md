@@ -1,6 +1,7 @@
 # Changelog
 
 ### Unreleased
+- Fix inability to materialize without supplying a topic name
 
 ### [0.9.12] - [2023-12-05]
 - Support for Foreign Key joins [#365](https://github.com/FundingCircle/jackdaw/pull/365) (Issue [#364])
