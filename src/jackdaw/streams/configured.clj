@@ -523,6 +523,12 @@
      config
      (aggregate kgroupedstream initializer-fn aggregator-fn topic-config)))
 
+  (aggregate
+    [_ initializer-fn aggregator-fn]
+    (configured-ktable
+     config
+     (aggregate kgroupedstream initializer-fn aggregator-fn)))
+
   (count
     [_]
     (configured-ktable
@@ -565,6 +571,12 @@
      config
      (aggregate kgroupedstream initializer-fn aggregator-fn merger-fn topic-config)))
 
+  (aggregate
+    [_ initializer-fn aggregator-fn merger-fn]
+    (configured-ktable
+     config
+     (aggregate kgroupedstream initializer-fn aggregator-fn merger-fn)))
+
   (count
     [_]
     (configured-ktable
@@ -582,6 +594,12 @@
     (configured-ktable
      config
      (reduce kgroupedstream reducer-fn topic-config)))
+
+  (reduce
+    [_ reducer-fn]
+    (configured-ktable
+     config
+     (reduce kgroupedstream reducer-fn)))
 
   ISessionWindowedKStream
   (session-windowed-kstream*

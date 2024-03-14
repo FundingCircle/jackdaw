@@ -1,4 +1,6 @@
 # Changelog
+## Unreleased
+* Add more arities for windowed streams
 
 ### Unreleased
 
