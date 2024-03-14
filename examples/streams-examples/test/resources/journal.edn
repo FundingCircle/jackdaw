@@ -1,0 +1,15 @@
+{:topics
+ {:input
+  ({:topic :input, :key "key-1", :value 1, :partition 0, :offset 37, :headers {}}
+   {:topic :input, :key "key-1", :value 2, :partition 0, :offset 38, :headers {}}
+   {:topic :input, :key "key-1", :value "+", :partition 0, :offset 39, :headers {}}
+   {:topic :input, :key "key-2", :value 3, :partition 0, :offset 40, :headers {}}
+   {:topic :input, :key "key-2", :value 4, :partition 0, :offset 41, :headers {}}
+   {:topic :input, :key "key-2", :value "+", :partition 0, :offset 42, :headers {}}),
+  :output
+  ({:topic :output, :key "key-1", :value [1], :partition 0, :offset 7, :headers {}}
+   {:topic :output, :key "key-1", :value [2 1], :partition 0, :offset 8, :headers {}}
+   {:topic :output, :key "key-1", :value [3], :partition 0, :offset 9, :headers {}}
+   {:topic :output, :key "key-2", :value [3], :partition 0, :offset 10, :headers {}}
+   {:topic :output, :key "key-2", :value [4 3], :partition 0, :offset 11, :headers {}}
+   {:topic :output, :key "key-2", :value [7], :partition 0, :offset 12, :headers {}})}}
