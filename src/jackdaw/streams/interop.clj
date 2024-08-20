@@ -21,7 +21,7 @@
             KeyValueMapper Materialized Merger Predicate Printed Produced
             Reducer SessionWindowedKStream SessionWindows
             Suppressed Suppressed$BufferConfig TimeWindowedKStream ValueJoiner
-            ValueMapper ValueTransformerSupplier Windows ForeachAction TransformerSupplier]
+            ValueMapper ValueTransformerSupplier Windows ForeachAction TransformerSupplier SlidingWindows]
            [org.apache.kafka.streams.processor.api
             ProcessorSupplier]
            [org.apache.kafka.streams.state Stores]))
@@ -135,7 +135,7 @@
                      key-serde
                      value-serde))
     builder)
-  
+
   (streams-builder*
     [_]
     streams-builder))
@@ -602,6 +602,11 @@
     [_ windows]
     (clj-session-windowed-kstream
      (.windowedBy ^KGroupedStream kgroupedstream ^SessionWindows windows)))
+
+  (sliding-window-by-time
+    [_ windows]
+    (clj-time-windowed-kstream
+     (.windowedBy ^KGroupedStream kgroupedstream ^SlidingWindows windows)))
 
   (kgroupedstream*
     [_]

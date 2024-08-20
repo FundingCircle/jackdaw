@@ -20,3 +20,4 @@ pom.xml.asc
 .clj-kondo/
 .lsp/
 .calva/
+.portal/

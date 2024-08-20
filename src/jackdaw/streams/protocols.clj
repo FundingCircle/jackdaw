@@ -33,7 +33,6 @@
     [topology-builder store-config]
     "Adds a persistent state store to the topology with the configured name
     and serdes.")
-    
   (streams-builder*
     [streams-builder]
     "Returns the underlying KStreamBuilder."))
@@ -253,6 +252,10 @@
   (windowed-by-time [kgroupedstream window])
 
   (windowed-by-session [kgroupedstream window])
+
+  (sliding-window-by-time
+    [kgroupedstream window]
+    "Windows the KGroupedStream using a sliding time window.")
 
   (kgroupedstream*
     [kgroupedstream]

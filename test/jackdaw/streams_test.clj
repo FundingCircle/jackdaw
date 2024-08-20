@@ -14,7 +14,7 @@
   (:import [java.time Duration]
            [org.apache.kafka.streams.kstream
             JoinWindows SessionWindows TimeWindows Transformer
-            ValueTransformer]
+            ValueTransformer SlidingWindows]
            org.apache.kafka.streams.StreamsBuilder
            [org.apache.kafka.common.serialization Serdes]))
 
@@ -1094,6 +1094,58 @@
         (is (= [0 1] (first keyvals)))
         (is (= [0 3] (second keyvals)))
         (is (= [0 4] (nth keyvals 2))))))
+
+  (testing "sliding-window-by-time"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          window-size (Duration/ofMillis 1000)
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          ;; (k/peek (fn [[k v]]
+                                          ;;           (println "Input:" k v)))
+                                          (k/group-by (fn [[k v]]
+                                                        (let [result (long (/ k 10))]
+                                                          ;; (println "Group-by key:" result)
+                                                          result))
+                                                      topic-a)
+                                          (k/sliding-window-by-time
+                                           (SlidingWindows/ofTimeDifferenceWithNoGrace window-size)
+                                           topic-a)
+                                          (k/map (fn [[k v]]
+                                                   (let [original-key (.key k)]
+                                                    ;;  (println "key val:" original-key v
+                                                    ;;           "\nWindow:" k)
+                                                     [original-key v])))
+                                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
+
+      (publish 1000 1 1)
+      (publish 1500 1 2)
+      (publish 1900 1 3)
+      (publish 2100 1 4)
+      (publish 2500 1 5)
+      (publish 3000 1 6)
+      (publish 3500 1 7)
+
+
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        ;; (println "Total keyvals:" (count keyvals))
+        ;; (doseq [kv keyvals]
+        ;;   (println "Keyval:" kv))
+        (is (= 11 (count keyvals)))
+        (is (= [[0 1]  ; Window 0-1000
+                [0 3]  ; Window 500-1500
+                [0 6]  ; Window 900-1900
+                [0 5]  ; Window 1001-2001
+                [0 9]  ; Window 1100-2100
+                [0 14] ; Window 1500-2500
+                [0 12] ; Window 1501-2501
+                [0 9]  ; Window 1901-2901
+                [0 15] ; Window 2000-3000
+                [0 11] ; Window 2101-3101
+                [0 18]] ;Window 2500-3500
+               keyvals)))))
 
   (testing "windowed-by-time with string keys"
     (let [topic-a (assoc (mock/topic "topic-a") :key-serde (Serdes/String))
