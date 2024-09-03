@@ -2,6 +2,8 @@
 
 ### Unreleased
 
+- Update Kafka to 3.7.0 (confluent 7.6.0)
+
 ### [0.9.12] - [2023-12-05]
 - Support for Foreign Key joins [#365](https://github.com/FundingCircle/jackdaw/pull/365) (Issue [#364])
 - add manifold and keep aleph in dev dependencies [#360](https://github.com/FundingCircle/jackdaw/pull/360). Users of test-machine will have to add aleph to the test deps in their app.
