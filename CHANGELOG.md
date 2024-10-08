@@ -79,6 +79,8 @@ This version has been tagged in the repo but unreleased due to the broken build 
 
 ## [0.7.7] - [2021-02-09]
 
+* Allow map with keyword keys in streams constructor.
+
 ### Added
 
 * Added serializer properties when creating an avro serializer
@@ -102,6 +104,7 @@ This version has been tagged in the repo but unreleased due to the broken build 
 ### Fixed
 
 * Fix `ktable` constructor to use supplied `store-name` 
+
 
 * Bump `clj-uuid` version to `0.1.9`
 

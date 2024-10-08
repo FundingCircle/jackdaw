@@ -3,6 +3,7 @@
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:refer-clojure :exclude [count map merge reduce group-by filter peek])
   (:require [clojure.string :as str]
+            [jackdaw.data :as jd]
             [jackdaw.streams.interop :as interop]
             [jackdaw.streams.protocols :as p])
   (:import org.apache.kafka.streams.KafkaStreams
@@ -341,10 +342,8 @@
 (defn kafka-streams
   "Makes a Kafka Streams object."
   ([builder opts]
-   (let [props (java.util.Properties.)]
-     (.putAll props opts)
-     (KafkaStreams. ^Topology (.build ^StreamsBuilder (streams-builder* builder))
-                    ^java.util.Properties props))))
+   (KafkaStreams. ^Topology (.build (streams-builder* builder))
+                  (jd/map->Properties opts))))
 
 (defn start
   "Starts processing."
