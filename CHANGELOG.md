@@ -76,6 +76,7 @@ This version has been tagged in the repo but unreleased due to the broken build 
 ## [0.7.8] - [2021-03-01]
 * Override the netty version pulled by Aleph with one which fixes https://nvd.nist.gov/vuln/detail/CVE-2020-11612 [#261](https://github.com/FundingCircle/jackdaw/pull/261)
 * Restore the test fixture namespace [#266](https://github.com/FundingCircle/jackdaw/pull/266)
+* Add `divert?` stream operation
 
 ## [0.7.7] - [2021-02-09]
 
