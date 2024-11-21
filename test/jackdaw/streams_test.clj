@@ -61,12 +61,17 @@
   (testing "join"
     (let [topic-a (mock/topic "table-a")
           topic-b (mock/topic "table-b")
-          topic-c (mock/topic "topic-c")]
+          topic-c (mock/topic "topic-c")
+          join-config {:key-serde (Serdes/Long)
+                       :value-serde (Serdes/Long)
+                       :name "a-b-join"}]
 
       (with-open [driver (mock/build-driver (fn [builder]
                                               (let [left (k/kstream builder topic-a)
                                                     right (k/ktable builder topic-b)]
-                                                (-> (k/join left right +)
+                                                (-> (k/join left right +
+                                                            join-config
+                                                            topic-b)
                                                     (k/to topic-c)))))]
         (let [publish-left (partial mock/publish driver topic-a)
               publish-right (partial mock/publish driver topic-b)]

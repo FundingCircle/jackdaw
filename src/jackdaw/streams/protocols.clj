@@ -42,6 +42,7 @@
   "Methods common to KStream and KTable."
   (join
     [kstream-or-ktable ktable value-joiner-fn]
+    [kstream-or-ktable ktable value-joiner-fn this-topic-config other-topic-config]
     [kstream-or-ktable ktable foreign-key-extractor-fn value-joiner-fn]
     "Combines the values of the KStream-or-KTable with the values of the
     KTable that share the same key using an inner join. For foreign key
