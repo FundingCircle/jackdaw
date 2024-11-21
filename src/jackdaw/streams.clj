@@ -38,8 +38,11 @@
 (defn global-ktable
   "Creates a GlobalKTable that will consist of data from the specified
   topic."
-  [streams-builder topic-config]
-  (p/global-ktable streams-builder topic-config))
+  ([streams-builder topic-config]
+   (p/global-ktable streams-builder topic-config))
+  ([streams-builder topic-config store-name]
+   (p/global-ktable streams-builder topic-config store-name)))
+
 
 (defn source-topics
   "Gets the names of source topics for the topology."

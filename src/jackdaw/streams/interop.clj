@@ -92,6 +92,17 @@
               ^Consumed (topic->consumed topic-config)
               ^Materialized (topic->materialized (assoc topic-config
                                                         :topic-name store-name)))))))
+(def ^:private global-ktable-memo
+  "Returns a global-ktable for the topic, creating a new one if needed."
+  (memoize
+   (fn [streams-builder {:keys [topic-name] :as topic-config}
+        store-name]
+     (clj-global-ktable
+      (.globalTable ^StreamsBuilder streams-builder
+                    ^String topic-name
+                    ^Consumed (topic->consumed topic-config)
+                    ^Materialized (topic->materialized (assoc topic-config
+                                                              :topic-name store-name)))))))
 
 (deftype CljStreamsBuilder [^StreamsBuilder streams-builder]
   IStreamsBuilder
@@ -121,11 +132,13 @@
     [_ topic-config store-name]
     (ktable-memo streams-builder topic-config store-name))
 
-  (global-ktable [_ {:keys [topic-name] :as topic-config}]
-    (clj-global-ktable
-     (.globalTable ^StreamsBuilder streams-builder
-                   ^String topic-name
-                   ^Consumed (topic->consumed topic-config))))
+  (global-ktable 
+    [_ {:keys [topic-name] :as topic-config}]
+    (global-ktable-memo streams-builder topic-config topic-name))
+  
+  (global-ktable 
+    [_ {:keys [topic-name] :as topic-config} store-name]
+    (global-ktable-memo streams-builder topic-config store-name))
 
   (with-kv-state-store
     [builder {:keys [store-name key-serde value-serde] :as store-config}]
