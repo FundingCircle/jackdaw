@@ -159,7 +159,13 @@
     [kstream processor-supplier-fn state-store-names]
     "Creates a new KStream by applying a processor to each record.
     Replaces the removed `transform` API in Kafka 4.0+.
-    Use `lambdas/processor-with-ctx` to build the processor-supplier-fn.")
+    Use `lambdas/processor-with-ctx` or `lambdas/flat-processor-with-ctx`.")
+
+  (process-values
+    [kstream processor-supplier-fn state-store-names]
+    "Creates a new KStream by applying a FixedKeyProcessor to each record's value.
+    Key is preserved unchanged. Replaces the removed `transform-values` API in Kafka 4.0+.
+    Use `lambdas/value-processor-with-ctx` or `lambdas/flat-value-processor-with-ctx`.")
 
   (select-key
     [kstream select-key-value-mapper-fn]

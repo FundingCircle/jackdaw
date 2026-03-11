@@ -23,7 +23,7 @@
             Suppressed Suppressed$BufferConfig TimeWindowedKStream ValueJoiner
             ValueMapper ValueTransformerSupplier Windows ForeachAction TransformerSupplier]
            [org.apache.kafka.streams.processor.api
-            ProcessorSupplier]
+            ProcessorSupplier FixedKeyProcessorSupplier]
            [org.apache.kafka.streams.state Stores]))
 
 (set! *warn-on-reflection* true)
@@ -320,6 +320,13 @@
      (.process ^KStream kstream
                ^ProcessorSupplier (processor-factory-supplier processor-supplier-fn)
                ^"[Ljava.lang.String;" (into-array String state-store-names))))
+
+  (process-values
+    [_ processor-supplier-fn state-store-names]
+    (clj-kstream
+     (.processValues ^KStream kstream
+                     ^FixedKeyProcessorSupplier (value-processor-factory-supplier processor-supplier-fn)
+                     ^"[Ljava.lang.String;" (into-array String state-store-names))))
 
   (select-key
     [_ select-key-value-mapper-fn]

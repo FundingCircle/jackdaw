@@ -1234,6 +1234,148 @@
             (is (= [1 1] (first keyvals)))
             (is (= [1 6] (second keyvals)))))))))
 
+
+(deftest process-test
+  (testing "transform (k/process + processor-with-ctx)"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          total   (atom 0)
+          driver  (mock/build-driver
+                    (fn [builder]
+                      (-> builder
+                          (k/kstream topic-a)
+                          (k/process
+                            (lambdas/processor-with-ctx
+                              (fn [_ctx k v]
+                                (swap! total + v)
+                                (key-value [(* k 2) @total])))
+                            [])
+                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
+
+      (publish 1 1)
+      (publish 1 2)
+      (publish 1 4)
+
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= [2 1]  (first keyvals)))
+        (is (= [2 3]  (second keyvals)))
+        (is (= [2 7]  (nth keyvals 2))))))
+
+  (testing "flat-transform (k/process + flat-processor-with-ctx)"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          total   (atom 0)
+          driver  (mock/build-driver
+                    (fn [builder]
+                      (-> builder
+                          (k/kstream topic-a)
+                          (k/process
+                            (lambdas/flat-processor-with-ctx
+                              (fn [_ctx k v]
+                                ;; each input creates two outputs with accumulated total
+                                (map (fn [x]
+                                       (swap! total + v)
+                                       (key-value [(* k x) @total]))
+                                     [10 20])))
+                            [])
+                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
+
+      (publish 1 1)
+      (publish 1 2)
+
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= 4 (count keyvals)))
+        (is (= [10 1]  (first keyvals)))
+        (is (= [20 2]  (second keyvals)))
+        (is (= [10 4]  (nth keyvals 2)))
+        (is (= [20 6]  (nth keyvals 3)))))))
+
+(deftest process-values-test
+  (testing "transform-values (k/process-values + value-processor-with-ctx)"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          total   (atom 0)
+          driver  (mock/build-driver
+                    (fn [builder]
+                      (-> builder
+                          (k/kstream topic-a)
+                          (k/process-values
+                            (lambdas/value-processor-with-ctx
+                              (fn [_ctx v]
+                                (swap! total + v)
+                                @total))
+                            [])
+                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
+
+      (publish 1 1)
+      (publish 1 2)
+      (publish 1 4)
+
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= 3 (count keyvals)))
+        (is (= [1 1]  (first keyvals)))
+        (is (= [1 3]  (second keyvals)))
+        (is (= [1 7]  (nth keyvals 2))))))
+
+  (testing "flat-transform-values (k/process-values + flat-value-processor-with-ctx)"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          total   (atom 0)
+          driver  (mock/build-driver
+                    (fn [builder]
+                      (-> builder
+                          (k/kstream topic-a)
+                          (k/process-values
+                            (lambdas/flat-value-processor-with-ctx
+                              (fn [_ctx v]
+                                ;; returns two values per input, each accumulating total
+                                (map (fn [x]
+                                       (swap! total + v)
+                                       (+ @total x))
+                                     [100 200])))
+                            [])
+                          (k/to topic-b))))
+          publish (partial mock/publish driver topic-a)]
+
+      (publish 1 1)
+      (publish 1 2)
+      (publish 1 4)
+
+      (let [keyvals (mock/get-keyvals driver topic-b)]
+        (is (= 6 (count keyvals)))
+        (is (= [1 101] (first keyvals)))
+        (is (= [1 202] (second keyvals)))
+        (is (= [1 104] (nth keyvals 2)))
+        (is (= [1 206] (nth keyvals 3)))
+        (is (= [1 110] (nth keyvals 4)))
+        (is (= [1 214] (nth keyvals 5)))))))
+
+(deftest value-processor-with-ctx-test
+  (testing "value-processor-with-ctx provides context (replaces transformer-with-ctx)"
+    (let [input-t  (merge (mock/topic "input-topic")  {:value-serde (jse/serde)})
+          output-t (merge (mock/topic "output-topic") {:value-serde (jse/serde)})]
+      (with-open [driver (mock/build-driver
+                           (fn [builder]
+                             (-> (k/kstream builder input-t)
+                                 (k/process-values
+                                   (lambdas/value-processor-with-ctx
+                                     (fn [ctx v]
+                                       (let [topic (-> (.recordMetadata ctx)
+                                                       (.get)
+                                                       (.topic))]
+                                         {:new-val (+ (:val v) 1)
+                                          :topic   topic})))
+                                   [])
+                                 (k/to output-t))))]
+        (let [publisher (partial mock/publish driver input-t)]
+          (publisher 100 {:val 10})
+          (let [[[_k v]] (mock/get-keyvals driver output-t)]
+            (is (= 11           (:new-val v)))
+            (is (= "input-topic" (:topic v)))))))))
+
 (deftest with-kv-state-store-test
   (testing "Processor with state store sugar (replaces transform in Kafka 4.0+)"
     (let [input-t (mock/topic "input-topic")
