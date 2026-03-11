@@ -17,16 +17,16 @@
                  ;; Confluent does paired releases with Kafka, this should tie
                  ;; off with the kafka version.
                  ;; See https://docs.confluent.io/current/release-notes.html
-                 [io.confluent/kafka-json-schema-serializer "7.9.2" :exclusions [org.apache.kafka/kafka-clients]]
-                 [io.confluent/kafka-avro-serializer "7.9.2" :exclusions [org.apache.kafka/kafka-clients
+                 [io.confluent/kafka-json-schema-serializer "8.0.0" :exclusions [org.apache.kafka/kafka-clients]]
+                 [io.confluent/kafka-avro-serializer "8.0.0" :exclusions [org.apache.kafka/kafka-clients
                                                                            org.apache.commons/commons-compress]]
-                 [io.confluent/kafka-schema-registry-client "7.9.2" :exclusions [org.apache.kafka/kafka-clients
+                 [io.confluent/kafka-schema-registry-client "8.0.0" :exclusions [org.apache.kafka/kafka-clients
                                                                                  com.fasterxml.jackson.core/jackson-databind
                                                                                  org.apache.commons/commons-compress]]
 
-                 [org.apache.kafka/kafka-clients "3.9.2"]
-                 [org.apache.kafka/kafka-streams "3.9.2" :exclusions [com.fasterxml.jackson.core/jackson-core]]
-                 [org.apache.kafka/kafka-streams-test-utils "3.9.2"]
+                 [org.apache.kafka/kafka-clients "4.0.0"]
+                 [org.apache.kafka/kafka-streams "4.0.0" :exclusions [com.fasterxml.jackson.core/jackson-core]]
+                 [org.apache.kafka/kafka-streams-test-utils "4.0.0"]
 
                  [org.clojure/clojure "1.11.1" :scope "provided"]
                  [org.clojure/java.data "1.4.120"]
@@ -79,11 +79,12 @@
               :resource-paths ["test/resources"]
               :injections [(require 'io.aviso.logging.setup)]
               :dependencies [[io.aviso/logging "1.0"]
-                             [aleph/aleph "0.6.3"]
-                             [org.apache.kafka/kafka-streams-test-utils "3.9.2"]
-                             [org.apache.kafka/kafka-clients "3.9.2" :classifier "test"]
+                             [aleph/aleph "0.9.0"]
+                             [org.apache.kafka/kafka-streams-test-utils "4.0.0"]
+                             [org.apache.kafka/kafka-clients "4.0.0" :classifier "test"]
+                             [org.apache.kafka/kafka-tools "4.0.0"]
                              [org.clojure/test.check "1.1.1"]
-                             [org.apache.kafka/kafka_2.13 "3.9.2" :exclusions [com.fasterxml.jackson.core/jackson-core]]
+                             [org.apache.kafka/kafka_2.13 "4.0.0" :exclusions [com.fasterxml.jackson.core/jackson-core]]
                              [lambdaisland/kaocha "1.80.1274"]
                              [lambdaisland/kaocha-cloverage "1.1.89"]
                              [lambdaisland/kaocha-junit-xml "1.17.101"]]}

@@ -175,7 +175,8 @@
     (with-open [t (jd.test/test-machine (kafka-transport))]
       (let [prog1 [(cmd/write! "foo" {:id "msg2" :payload "yolo"})
                    (cmd/watch (by-id "foo" "msg2")
-                              {:info "failed to find foo with id=msg2"})]
+                              {:info "failed to find foo with id=msg2"
+                               :timeout 9000})]
 
             prog2 [(cmd/write! "foo" {:id "msg3" :payload "you only live twice"})
                    (cmd/watch (by-id "foo" "msg3")

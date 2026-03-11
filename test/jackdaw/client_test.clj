@@ -62,11 +62,11 @@
     (f p)))
 
 (def +response-keys+
-  {:send! [:topic-name :partition  :offset
+  {:send! [:topic-name :partition :offset
            :timestamp
            :serialized-key-size :serialized-value-size]
 
-   :produce! [:topic-name :partition  :offset
+   :produce! [:topic-name :partition :offset
               :timestamp
               :serialized-key-size :serialized-value-size]
 
@@ -231,10 +231,8 @@
    in response to successive calls of the `poll` method"
   [queue]
   (reify Consumer
-    (^ConsumerRecords poll [_this ^long ms]
-      (.poll queue ms TimeUnit/MILLISECONDS))
     (^ConsumerRecords poll [_this ^Duration duration]
-     (.poll queue (.toMillis duration) TimeUnit/MILLISECONDS))))
+      (.poll queue (.toMillis duration) TimeUnit/MILLISECONDS))))
 
 (defn poll-result [topic data]
   (let [partition 1
@@ -248,7 +246,7 @@
   (let [q (LinkedBlockingQueue.)
         consumer (mock-consumer q)]
     (.put q (poll-result "test-topic" [[1 1] [2 2]]))
-    (let [results (client/poll consumer 1000)]
+    (let [results (client/poll consumer (Duration/ofMillis 1000))]
       (are [_k _v] (first results)
            :topic "test-topic"
            :key 1
@@ -262,11 +260,11 @@
   (fix/with-fixtures [(fix/topic-fixture (broker-config) test-topics 1000)]
     (with-consumer (-> (client/consumer (consumer-config "partition-test"))
                        (client/subscribe [bar-topic]))
-        (fn [consumer]
+      (fn [consumer]
           ;; without an initial `poll`, there is no position info
-          (client/poll consumer 0)
-          (is (= {{:topic-name "bar" :partition 0} 0}
-                 (client/position-all consumer)))))))
+        (client/poll consumer (Duration/ofMillis 1000))
+        (is (= {{:topic-name "bar" :partition 0} 0}
+               (client/position-all consumer)))))))
 
 (defn with-topic-data
   "Helper for creating a randomly named topic and seeding it with data
@@ -319,20 +317,39 @@
     (with-topic-data seek-test-data "seek-test"
       (fn [consumer topic-config]
         (testing "seek-to-end"
-          (let [end-pos (-> (client/subscribe consumer [topic-config])
-                            (client/seek-to-end-eager)
-                            (client/position-all)
-                            (vals)
-                            first)]
-            (is (= 10 end-pos))))
+          (let [sub-consumer (client/subscribe consumer [topic-config])]
+            ;; Poll until partitions are assigned
+            (loop [i 0]
+              (client/poll sub-consumer (Duration/ofMillis 100))
+              (let [partitions (client/assignment sub-consumer)]
+                (if (or (seq partitions) (>= i 10))
+                  (do
+                    (when (seq partitions)
+                      (println "partitions:" partitions "type:" (type partitions))
+                      (client/seek-to-end-eager sub-consumer (java.util.ArrayList. (map #(TopicPartition. (:topic-name %) (:partition %)) partitions))))
+                    (let [end-pos (-> sub-consumer
+                                      (client/position-all)
+                                      (vals)
+                                      first)]
+                      (is (= 10 end-pos))))
+                  (recur (inc i)))))))
 
         (testing "seek-to-beginning"
-          (let [begin-pos (-> (client/subscribe consumer [topic-config])
-                              (client/seek-to-beginning-eager)
-                              (client/position-all)
-                              (vals)
-                              first)]
-            (is (= 0 begin-pos)))))))
+          (let [sub-consumer (client/subscribe consumer [topic-config])]
+            ;; Poll until partitions are assigned
+            (loop [i 0]
+              (client/poll sub-consumer (Duration/ofMillis 100))
+              (let [partitions (client/assignment sub-consumer)]
+                (if (or (seq partitions) (>= i 10))
+                  (do
+                    (when (seq partitions)
+                      (client/seek-to-beginning-eager sub-consumer partitions))
+                    (let [begin-pos (-> sub-consumer
+                                        (client/position-all)
+                                        (vals)
+                                        first)]
+                      (is (= 0 begin-pos))))
+                  (recur (inc i))))))))))
 
   (testing "consumer with manual assignment"
     (with-topic-data seek-test-data "seek-test"

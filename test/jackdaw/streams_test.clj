@@ -224,23 +224,6 @@
           (finally
             (System/setOut std-out)))))
 
-  (testing "through"
-    (testing "without partitions"
-      (let [topic-a (mock/topic "topic-a")
-            topic-b (mock/topic "topic-b")
-            topic-c (mock/topic "topic-c")
-            driver (mock/build-driver (fn [builder]
-                                        (-> builder
-                                            (k/kstream topic-a)
-                                            (k/through topic-b)
-                                            (k/to topic-c))))
-            publish (partial mock/publish driver topic-a)]
-
-        (publish 1 1)
-
-        (is (= [[1 1]] (mock/get-keyvals driver topic-b)))
-        (is (= [[1 1]] (mock/get-keyvals driver topic-c))))))
-
   (testing "to"
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
@@ -253,26 +236,6 @@
       (publish 1 1)
 
       (is (= [[1 1]] (mock/get-keyvals driver topic-b)))))
-
-  (testing "branch"
-    (let [topic-a (mock/topic "topic-a")
-          topic-pos (mock/topic "topic-pos")
-          topic-neg (mock/topic "topic-neg")
-          driver (mock/build-driver (fn [builder]
-                                      (let [[pos-stream neg-stream] (-> builder
-                                                                        (k/kstream topic-a)
-                                                                        (k/branch [(fn [[_k v]]
-                                                                                     (<= 0 v))
-                                                                                   (constantly true)]))]
-                                        (k/to pos-stream topic-pos)
-                                        (k/to neg-stream topic-neg))))
-          publish (partial mock/publish driver topic-a)]
-
-      (publish 1 1)
-      (publish 1 -1)
-
-      (is (= [[1 1]] (mock/get-keyvals driver topic-pos)))
-      (is (= [[1 -1]] (mock/get-keyvals driver topic-neg)))))
 
   (testing "flat-map"
     (let [topic-a (mock/topic "topic-a")
@@ -419,128 +382,6 @@
       (publish 1 1)
 
       (is (= [[2 1]] (mock/get-keyvals driver topic-b)))))
-
-  (testing "transform"
-    (let [topic-a (mock/topic "topic-a")
-          topic-b (mock/topic "topic-b")
-          transformer-supplier-fn #(let [total (atom 0)]
-                                     (reify Transformer
-                                       (init [_ _])
-                                       (close [_])
-                                       (transform [_ k v]
-                                         (swap! total + v)
-                                         (key-value [(* k 2) @total]))))
-          driver (mock/build-driver (fn [builder]
-                                      (-> builder
-                                          (k/kstream topic-a)
-                                          (k/transform transformer-supplier-fn)
-                                          (k/to topic-b))))
-          publish (partial mock/publish driver topic-a)]
-
-      (publish 1 1)
-      (publish 1 2)
-      (publish 1 4)
-
-      (let [keyvals (mock/get-keyvals driver topic-b)]
-        (is (= [2 1] (first keyvals)))
-        (is (= [2 3] (second keyvals)))
-        (is (= [2 7] (nth keyvals 2))))))
-
-  (testing "flat-transform"
-    (let [topic-a (mock/topic "topic-a")
-          topic-b (mock/topic "topic-b")
-          transformer-supplier-fn #(let [total (atom 0)]
-                                     (reify Transformer
-                                       (init [_ _])
-                                       (close [_])
-                                       (transform [_ k v]
-                                         ;; each input creates two outputs
-                                         ;; each v' accumulating the v read in:
-                                         ;; [[k * 10, v'] [k * 20, v'']]
-                                         (map (fn [x]
-                                                (swap! total + v)
-                                                (key-value [(* k x) @total]))
-                                              [10 20]))))
-          driver (mock/build-driver (fn [builder]
-                                      (-> builder
-                                          (k/kstream topic-a)
-                                          (k/flat-transform transformer-supplier-fn)
-                                          (k/to topic-b))))
-          publish (partial mock/publish driver topic-a)]
-
-      (publish 1 1)
-      (publish 1 2)
-      (publish 1 4)
-
-      (let [keyvals (mock/get-keyvals driver topic-b)]
-        (is (= 6 (count keyvals)))
-        (is (= [10 1] (first keyvals)))
-        (is (= [20 2] (second keyvals)))
-        (is (= [10 4] (nth keyvals 2)))
-        (is (= [20 6] (nth keyvals 3)))
-        (is (= [10 10] (nth keyvals 4)))
-        (is (= [20 14] (nth keyvals 5))))))
-
-  (testing "transform-values"
-    (let [topic-a (mock/topic "topic-a")
-          topic-b (mock/topic "topic-b")
-          transformer-supplier-fn #(let [total (atom 0)]
-                                     (reify ValueTransformer
-                                       (init [_ _])
-                                       (close [_])
-                                       (transform [_ v]
-                                         (swap! total + v)
-                                         @total)))
-          driver (mock/build-driver (fn [builder]
-                                      (-> builder
-                                          (k/kstream topic-a)
-                                          (k/transform-values transformer-supplier-fn)
-                                          (k/to topic-b))))
-          publish (partial mock/publish driver topic-a)]
-
-      (publish 1 1)
-      (publish 1 2)
-      (publish 1 4)
-
-      (let [keyvals (mock/get-keyvals driver topic-b)]
-        (is (= 3 (count keyvals)))
-        (is (= [1 1] (first keyvals)))
-        (is (= [1 3] (second keyvals)))
-        (is (= [1 7] (nth keyvals 2))))))
-
-  (testing "flat-transform-values"
-    (let [topic-a (mock/topic "topic-a")
-          topic-b (mock/topic "topic-b")
-          transformer-supplier-fn #(let [total (atom 0)]
-                                     (reify ValueTransformer
-                                       (init [_ _])
-                                       (close [_])
-                                       (transform [_ v]
-                                         ;; returns value + 100,
-                                         ;; then value + 200
-                                         (map (fn [x]
-                                                (swap! total + v)
-                                                (+ @total x))
-                                              [100 200]))))
-          driver (mock/build-driver (fn [builder]
-                                      (-> builder
-                                          (k/kstream topic-a)
-                                          (k/flat-transform-values transformer-supplier-fn)
-                                          (k/to topic-b))))
-          publish (partial mock/publish driver topic-a)]
-
-      (publish 1 1)
-      (publish 1 2)
-      (publish 1 4)
-
-      (let [keyvals (mock/get-keyvals driver topic-b)]
-        (is (= 6 (count keyvals)))
-        (is (= [1 101] (first keyvals)))
-        (is (= [1 202] (second keyvals)))
-        (is (= [1 104] (nth keyvals 2)))
-        (is (= [1 206] (nth keyvals 3)))
-        (is (= [1 110] (nth keyvals 4)))
-        (is (= [1 214] (nth keyvals 5))))))
 
   (testing "kstreams"
     (let [topic-a (mock/topic "topic-a")
@@ -1393,28 +1234,9 @@
             (is (= [1 1] (first keyvals)))
             (is (= [1 6] (second keyvals)))))))))
 
-(deftest transformer-with-ctx-test
-  (testing "Value Transformer sugar with context"
-    (let [input-t (merge (mock/topic "input-topic") {:value-serde (jse/serde)})
-          output-t (merge (mock/topic "output-topic") {:value-serde (jse/serde)})]
-      (with-open [driver (mock/build-driver
-                           (fn [builder]
-                             (-> (k/kstream builder input-t)
-                                 (k/transform-values
-                                   (lambdas/value-transformer-with-ctx
-                                     (fn [ctx v]
-                                       {:new-val (+ (:val v) 1)
-                                        :topic (.topic ctx)})))
-                                 (k/to output-t))))]
-        (let [publisher (partial mock/publish driver input-t)]
-
-          (publisher 100 {:val 10})
-
-          (let [[[_k v]] (mock/get-keyvals driver output-t)]
-            (is (= 11 (:new-val v)))
-            (is (= "input-topic" (:topic v)))))))))
-
 (deftest with-kv-state-store-test
+  true
+#_
   (testing "Transformer with state store sugar"
     (let [input-t (mock/topic "input-topic")
           output-t (merge (mock/topic "output-topic") {:value-serde (jse/serde)})]

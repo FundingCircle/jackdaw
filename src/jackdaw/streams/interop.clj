@@ -204,12 +204,6 @@
      (.mapValues kstream ^ValueMapper (value-mapper value-mapper-fn))))
 
   IKStream
-  (branch
-    [_ predicate-fns]
-    (mapv clj-kstream
-          (->> (into-array Predicate (mapv predicate predicate-fns))
-               (.branch kstream))))
-
   (flat-map
     [_ key-value-mapper-fn]
     (clj-kstream
@@ -224,11 +218,6 @@
     [_]
     (.print kstream (Printed/toSysOut))
     nil)
-
-  (through
-    [_ {:keys [topic-name] :as topic-config}]
-    (clj-kstream
-     (.through kstream topic-name ^Produced (topic->produced topic-config))))
 
   (to!
     [_ {:keys [topic-name] :as topic-config}]
@@ -330,51 +319,6 @@
     (clj-kstream
      (.selectKey ^KStream kstream
                  ^KeyValueMapper (select-key-value-mapper select-key-value-mapper-fn))))
-
-  (transform
-    [this transformer-supplier-fn]
-    (transform this transformer-supplier-fn []))
-
-  (transform
-    [_ transformer-supplier-fn state-store-names]
-    (clj-kstream
-     (.transform ^KStream kstream
-                 ^TransformerSupplier (transformer-supplier transformer-supplier-fn)
-                 ^"[Ljava.lang.String;" (into-array String state-store-names))))
-
-  (flat-transform
-    [this transformer-supplier-fn]
-    (flat-transform this transformer-supplier-fn []))
-
-  (flat-transform
-    [_ transformer-supplier-fn state-store-names]
-    (clj-kstream
-     (.flatTransform ^KStream kstream
-                     ^TransformerSupplier (transformer-supplier transformer-supplier-fn)
-                     ^"[Ljava.lang.String;" (into-array String
-                                                        (clojure.core/map name state-store-names)))))
-  (transform-values
-    [this value-transformer-supplier-fn]
-    (transform-values this value-transformer-supplier-fn []))
-
-  (transform-values
-    [_ value-transformer-supplier-fn state-store-names]
-    (clj-kstream
-     (.transformValues ^KStream kstream
-                       ^ValueTransformerSupplier (value-transformer-supplier value-transformer-supplier-fn)
-                       ^"[Ljava.lang.String;" (into-array String state-store-names))))
-
-  (flat-transform-values
-    [this value-transformer-supplier-fn]
-    (flat-transform-values this value-transformer-supplier-fn []))
-
-  (flat-transform-values
-    [_ value-transformer-supplier-fn state-store-names]
-    (clj-kstream
-     (.flatTransformValues ^KStream kstream
-                           ^ValueTransformerSupplier (value-transformer-supplier value-transformer-supplier-fn)
-                           ^"[Ljava.lang.String;" (into-array String
-                                                              (clojure.core/map name state-store-names)))))
 
   (join-global
     [_ global-ktable key-value-mapper-fn joiner-fn]

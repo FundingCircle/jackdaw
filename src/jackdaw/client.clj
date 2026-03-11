@@ -179,9 +179,7 @@
   "Polls kafka for new messages, returning a potentially empty sequence
   of datafied messages."
   [^Consumer consumer timeout]
-  (some->> (if (int? timeout)
-             (.poll consumer ^long timeout)
-             (.poll consumer ^Duration timeout))
+  (some->> (.poll consumer ^Duration timeout)
            (map jd/datafy)))
 
 (defn position
@@ -220,7 +218,7 @@
   ([^Consumer consumer]
    (seek-to-end-eager consumer []))
   ([^Consumer consumer topic-partitions]
-   (poll consumer 0) ;; load assignments
+   (poll consumer (Duration/ofMillis 0)) ;; load assignments
    (.seekToEnd consumer topic-partitions)
    (position-all consumer)
    consumer))
@@ -234,7 +232,7 @@
    (seek-to-beginning-eager consumer [])
    consumer)
   ([^Consumer consumer topic-partitions]
-   (poll consumer 0)
+   (poll consumer (Duration/ofMillis 0))
    (.seekToBeginning consumer (map jd/as-TopicPartition topic-partitions))
    (position-all consumer)
    consumer))

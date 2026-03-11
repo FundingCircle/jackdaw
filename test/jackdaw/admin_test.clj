@@ -90,7 +90,10 @@
         (let [bar (:bar test-topics)
               p (d/future
                   (admin/retry-exists? client bar 3 30))]
-          (Thread/sleep 100)
+          ;; retry-exists? exhausts after 3 retries x 30ms = ~90ms total.
+          ;; Sleep 300ms to reliably ensure all retries have completed before
+          ;; creating the topic (was 100ms which was too close on fast JVMs).
+          (Thread/sleep 300)
           (admin/create-topics! client [bar])
           (is (= false @p)))))))
 

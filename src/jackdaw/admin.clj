@@ -10,7 +10,7 @@
    [jackdaw.data :as jd]
    [manifold.deferred :as d])
   (:import [java.util Collection Properties]
-           [org.apache.kafka.clients.admin AdminClient
+           [org.apache.kafka.clients.admin AdminClient AlterConfigOp AlterConfigOp$OpType
             DescribeTopicsOptions DescribeClusterOptions DescribeConfigsOptions]))
 
 (set! *warn-on-reflection* true)
@@ -27,7 +27,7 @@
 (def client-impl
   {:alter-topics* (fn [this topics]
                     (d/future
-                      @(.all (.alterConfigs ^AdminClient this topics))))
+                      @(.all (.incrementalAlterConfigs ^AdminClient this topics))))
    :create-topics* (fn [this topics]
                     (d/future
                       @(.all (.createTopics ^AdminClient this ^Collection topics))))
@@ -36,7 +36,7 @@
                         @(.all (.deleteTopics ^AdminClient this ^Collection topics))))
    :describe-topics* (fn [this topics]
                        (d/future
-                         @(.all (.describeTopics ^AdminClient this ^Collection topics (DescribeTopicsOptions.)))))
+                         @(.allTopicNames (.describeTopics ^AdminClient this ^Collection topics (DescribeTopicsOptions.)))))
    :describe-configs* (fn [this configs]
                         (d/future
                           @(.all (.describeConfigs ^AdminClient this configs (DescribeConfigsOptions.)))))
@@ -164,15 +164,19 @@
                                 (seq (:isr part-info))))
                          partition-info)))))
 
-(defn- topics->configs
+(defn- topics->incremental-configs
+  "Converts a sequence of topic descriptors with :topic-config maps into the
+  Map<ConfigResource, Collection<AlterConfigOp>> format required by
+  incrementalAlterConfigs (Kafka 4.0+)."
   ^java.util.Map [topics]
   (into {}
-        (map (fn [{:keys [topic-name topic-config] :as t}]
+        (map (fn [{:keys [topic-name topic-config]}]
                {:pre [(string? topic-name)
                       (map? topic-config)]}
-               [(jd/->ConfigResource jd/+topic-config-resource-type+
-                                     topic-name)
-                (jd/map->Config topic-config)]))
+               [(jd/->ConfigResource jd/+topic-config-resource-type+ topic-name)
+                (map (fn [[k v]]
+                       (AlterConfigOp. (jd/->ConfigEntry k v) AlterConfigOp$OpType/SET))
+                     topic-config)]))
         topics))
 
 (defn alter-topic-config!
@@ -182,7 +186,7 @@
   [^AdminClient client topics]
   {:pre [(client? client)
          (sequential? topics)]}
-  @(alter-topics* client (topics->configs topics)))
+  @(alter-topics* client (topics->incremental-configs topics)))
 
 (defn delete-topics!
   "Given an `AdminClient` and a sequence of topic descriptors, marks the

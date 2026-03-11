@@ -146,7 +146,7 @@
 
 (deftype FnStreamPartitioner [stream-partitioner-fn]
   StreamPartitioner
-  (partition [_this topic-name key val partition-count]
+  (partitions [_this topic-name key val partition-count]
     (stream-partitioner-fn topic-name key val partition-count)))
 
 (defn stream-partitioner

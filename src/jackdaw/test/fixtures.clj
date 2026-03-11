@@ -10,6 +10,7 @@
    [manifold.deferred :as d]
    [clojure.test :as t])
   (:import
+   (org.apache.kafka.streams.errors StreamsUncaughtExceptionHandler StreamsUncaughtExceptionHandler$StreamThreadExceptionResponse)
    (org.apache.kafka.clients.admin AdminClient NewTopic)
    (org.apache.kafka.streams KafkaStreams$StateListener KafkaStreams$State)))
 
@@ -97,8 +98,8 @@
 
 (defn- set-error
   [error]
-  (reify Thread$UncaughtExceptionHandler
-    (uncaughtException [_this _thread e]
+  (reify StreamsUncaughtExceptionHandler
+    (StreamsUncaughtExceptionHandler$StreamThreadExceptionResponse/handle [_this e]
       (log/error e (.getMessage e))
       (reset! error e))))
 
@@ -202,9 +203,9 @@
 
   ([app-config reset-args reset-fn]
    (fn [t]
-   (if-not (class-exists? 'kafka.tools.StreamsResetter)
+   (if-not (class-exists? 'org.apache.kafka.tools.StreamsResetter)
      (throw (RuntimeException. "You must add a dependency on a kafka distrib which ships the kafka.tools.StreamsResetter tool"))
-     (let [rt (.newInstance (clojure.lang.RT/classForName "kafka.tools.StreamsResetter"))
+     (let [rt (.newInstance (clojure.lang.RT/classForName "org.apache.kafka.tools.StreamsResetter"))
            args (concat ["--application-id" (get app-config "application.id")
                          "--bootstrap-servers" (get app-config "bootstrap.servers")]
                         reset-args)

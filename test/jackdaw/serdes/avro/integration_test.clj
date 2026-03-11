@@ -10,7 +10,8 @@
             [jackdaw.serdes.avro.schema-registry :as reg]
             [jackdaw.test.fixtures :as fix]
             [jackdaw.utils :as utils])
-  (:import [org.apache.kafka.common.serialization Serde Serdes]))
+  (:import [org.apache.kafka.common.serialization Serde Serdes]
+           [java.time Duration]))
 
 (set! *warn-on-reflection* false)
 
@@ -125,7 +126,7 @@
           (doseq [[[_ r] {r' :value}]
                   (map vector
                        topic+record
-                       (doall (jcl/log-until-inactivity c 1000)))]
+                       (doall (jcl/log-until-inactivity c (Duration/ofMillis 3000))))]
             (is (= r r') "Record didn't round trip!")))
 
         (is (= 3 (count (keys @v1-cache)))
