@@ -314,6 +314,13 @@
               ^ProcessorSupplier (processor-supplier processor-supplier-fn)
               ^"[Ljava.lang.String;" (into-array String state-store-names)))
 
+  (process
+    [_ processor-supplier-fn state-store-names]
+    (clj-kstream
+     (.process ^KStream kstream
+               ^ProcessorSupplier (processor-factory-supplier processor-supplier-fn)
+               ^"[Ljava.lang.String;" (into-array String state-store-names))))
+
   (select-key
     [_ select-key-value-mapper-fn]
     (clj-kstream

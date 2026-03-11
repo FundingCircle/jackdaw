@@ -1235,9 +1235,7 @@
             (is (= [1 6] (second keyvals)))))))))
 
 (deftest with-kv-state-store-test
-  true
-#_
-  (testing "Transformer with state store sugar"
+  (testing "Processor with state store sugar (replaces transform in Kafka 4.0+)"
     (let [input-t (mock/topic "input-topic")
           output-t (merge (mock/topic "output-topic") {:value-serde (jse/serde)})]
       (with-open [driver (mock/build-driver
@@ -1247,10 +1245,9 @@
                                                          :key-serde (:key-serde input-t)
                                                          :value-serde (jse/serde)})
                                  (k/kstream input-t)
-                                 (k/transform
-                                   (lambdas/transformer-with-ctx
+                                 (k/process
+                                   (lambdas/processor-with-ctx
                                      (fn [ctx k v]
-                                       ;; Side effects on state store, procedural let ...
                                        (let [store (.getStateStore ctx "test-store")
                                              cur-val (.get store k)
                                              new-val (if-not cur-val
@@ -1261,15 +1258,12 @@
                                    ["test-store"])
                                  (k/to output-t))))]
         (let [publisher (partial mock/publish driver input-t)]
-
           (publisher 1 1)
           (publisher 1 2)
           (publisher 1 3)
-
           (publisher 2 10)
           (publisher 2 20)
           (publisher 2 30)
-
           (let [msgs (into {} (mock/get-keyvals driver output-t))]
             (is (= 6 (:value (msgs 1))))
             (is (= 60 (:value (msgs 2))))))))))

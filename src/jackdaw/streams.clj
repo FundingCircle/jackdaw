@@ -189,6 +189,13 @@
   [kstream processor-fn state-store-names]
   (p/process! kstream processor-fn state-store-names))
 
+(defn process
+  "Creates a new KStream by applying a processor to each record.
+  Replaces the removed `transform` API in Kafka 4.0+.
+  Use `lambdas/processor-with-ctx` to build the processor-supplier-fn."
+  [kstream processor-supplier-fn state-store-names]
+  (p/process kstream processor-supplier-fn state-store-names))
+
 (defn select-key
   "Create a new key from the current key and value.
 

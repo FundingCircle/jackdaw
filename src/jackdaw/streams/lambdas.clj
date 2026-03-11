@@ -10,7 +10,7 @@
            [org.apache.kafka.streams.processor
             StreamPartitioner]
            [org.apache.kafka.streams.processor.api
-            Processor ProcessorSupplier]))
+            Processor ProcessorSupplier Record]))
 
 (set! *warn-on-reflection* true)
 
@@ -178,6 +178,17 @@
   ^ProcessorSupplier [processor-fn]
   (FnProcessorSupplier. processor-fn))
 
+(deftype FnProcessorFactorySupplier [factory-fn]
+  ProcessorSupplier
+  (get [_this]
+    (factory-fn)))
+
+(defn processor-factory-supplier
+  "Packages up a zero-arg factory fn as a ProcessorSupplier.
+  Used with `processor-with-ctx`, which returns a factory fn."
+  ^ProcessorSupplier [factory-fn]
+  (FnProcessorFactorySupplier. factory-fn))
+
 (deftype FnTransformerSupplier [transformer-supplier-fn]
   TransformerSupplier
   (get [_this]
@@ -245,3 +256,41 @@
   ```"
   [xfm-fn]
   (fn [] (FnValueTransformer. (atom nil) xfm-fn)))
+
+(deftype FnProcessorWithCtx [context xfm-fn]
+  Processor
+  (init [_this processor-context]
+    (reset! context processor-context))
+  (close [_this])
+  (process [_this record]
+    (let [ctx @context
+          k (.key ^Record record)
+          v (.value ^Record record)
+          ts (.timestamp ^Record record)
+          result (xfm-fn ctx k v)]
+      (when result
+        (.forward ^org.apache.kafka.streams.processor.api.ProcessorContext ctx
+                  (Record. (.key ^KeyValue result)
+                           (.value ^KeyValue result)
+                           ts))))))
+
+(defn processor-with-ctx
+  "Helper to create a Processor for use with `k/process`.
+  Replaces `transformer-with-ctx` for Kafka 4.0+, where `Transformer` has been removed.
+
+  The passed function should take three args - the context, key and value for the stream.
+  Return a `(key-value [k v])` to forward a record downstream, or nil to drop it.
+
+  Example:
+  ```
+  (-> builder
+      (k/with-kv-state-store {:store-name \"my-store\" ...})
+      (k/kstream topic)
+      (k/process
+        (lambdas/processor-with-ctx
+          (fn [ctx k v]
+            (key-value [k (inc v)])))
+        [\"my-store\"]))
+  ```"
+  [xfm-fn]
+  (fn [] (FnProcessorWithCtx. (atom nil) xfm-fn)))
