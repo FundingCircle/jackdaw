@@ -2,7 +2,7 @@
 
 ### Unreleased
 
-- Update Kafka to 3.7.0 (confluent 7.6.0)
+- Update Kafka to 3.9.2 (confluent 7.9.2)
 
 ### [0.9.12] - [2023-12-05]
 - Support for Foreign Key joins [#365](https://github.com/FundingCircle/jackdaw/pull/365) (Issue [#364])
