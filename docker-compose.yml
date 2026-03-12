@@ -1,7 +1,6 @@
-version: '2'
 services:
   broker:
-    image: apache/kafka:3.7.0
+    image: apache/kafka:3.9.2
     hostname: broker
     container_name: broker
     ports:
@@ -33,7 +32,7 @@ services:
       retries: 60
 
   schema-registry:
-    image: confluentinc/cp-schema-registry:7.6.0
+    image: confluentinc/cp-schema-registry:7.9.2
     hostname: schema-registry
     container_name: schema-registry
     depends_on:
@@ -48,7 +47,7 @@ services:
       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
 
   kafka-rest:
-    image: confluentinc/cp-kafka-rest:7.6.0
+    image: confluentinc/cp-kafka-rest:7.9.2
     hostname: kafka-rest
     container_name: kafka-rest
     depends_on:
