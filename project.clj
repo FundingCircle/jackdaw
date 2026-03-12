@@ -10,7 +10,7 @@
   :repositories [["confluent" {:url "https://packages.confluent.io/maven/"}]
                  ["mulesoft" {:url "https://repository.mulesoft.org/nexus/content/repositories/public/"}]]
 
-  :dependencies [[manifold/manifold "0.4.0"]
+  :dependencies [[manifold/manifold "0.5.0"]
                  [danlentz/clj-uuid "0.1.9"
                   :exclusions [primitive-math]]
 
@@ -29,12 +29,12 @@
                  [org.apache.kafka/kafka-streams-test-utils "3.9.2"]
 
                  [org.clojure/clojure "1.11.1" :scope "provided"]
-                 [org.clojure/java.data "1.0.95"]
+                 [org.clojure/java.data "1.4.120"]
                  [org.clojure/data.json "2.4.0"]
-                 [org.clojure/data.fressian "1.0.0"]
-                 [org.clojure/tools.logging "1.2.4"]
-                 [org.clojure/core.cache "1.0.225"]
-                 [metosin/jsonista "0.3.8"]]
+                 [org.clojure/data.fressian "1.1.1"]
+                 [org.clojure/tools.logging "1.3.1"]
+                 [org.clojure/core.cache "1.2.263"]
+                 [metosin/jsonista "0.3.14"]]
 
   :aliases {"kaocha" ["run" "-m" "kaocha.runner"]}
   :aot [jackdaw.serdes.edn2 jackdaw.serdes.fressian jackdaw.serdes.fn-impl]
