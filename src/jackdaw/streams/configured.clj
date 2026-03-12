@@ -257,25 +257,17 @@
      config
      (select-key kstream key-value-mapper-fn)))
 
-  (transform
-      [this transformer-supplier-fn]
-    (transform this transformer-supplier-fn []))
-
-  (transform
-    [_ transformer-supplier-fn state-store-names]
+  (process
+    [_ processor-supplier-fn state-store-names]
     (configured-kstream
      config
-     (transform kstream transformer-supplier-fn state-store-names)))
+     (process kstream processor-supplier-fn state-store-names)))
 
-  (transform-values
-      [this value-transformer-supplier-fn]
-    (transform-values this value-transformer-supplier-fn []))
-
-  (transform-values
-    [_ value-transformer-supplier-fn state-store-names]
+  (process-values
+    [_ processor-supplier-fn state-store-names]
     (configured-kstream
      config
-     (transform-values kstream value-transformer-supplier-fn state-store-names)))
+     (process-values kstream processor-supplier-fn state-store-names)))
 
   (left-join-global
     [_ global-ktable kv-mapper joiner]

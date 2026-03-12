@@ -214,39 +214,6 @@
   [kstream select-key-value-mapper-fn]
   (p/select-key kstream select-key-value-mapper-fn))
 
-(defn transform
-  "Creates a KStream that consists of the results of applying the transformer
-  to each key/value in the input stream."
-  ([kstream transformer-supplier-fn]
-   (p/transform kstream transformer-supplier-fn))
-  ([kstream transformer-supplier-fn state-store-names]
-   (p/transform kstream transformer-supplier-fn state-store-names)))
-
-(defn flat-transform
-  "Creates a KStream that consists of the results of applying the transformer
-  to each value in the input stream. Result of the transform should be iterable,
-  and the resulting stream is as per flatMap"
-  ([kstream transformer-supplier-fn]
-   (p/flat-transform kstream transformer-supplier-fn))
-  ([kstream transformer-supplier-fn state-store-names]
-   (p/flat-transform kstream transformer-supplier-fn state-store-names)))
-
-(defn transform-values
-  "Creates a KStream that consists of the results of applying the transformer
-  to each value in the input stream."
-  ([kstream value-transformer-supplier-fn]
-   (p/transform-values kstream value-transformer-supplier-fn))
-  ([kstream value-transformer-supplier-fn state-store-names]
-   (p/transform-values kstream value-transformer-supplier-fn state-store-names)))
-
-(defn flat-transform-values
-  "Creates a KStream that consists of the results of applying the transformer
-  to each value in the input stream. Result of the transform should be iterable,
-  and the resulting stream is as per flatMap"
-  ([kstream value-transformer-supplier-fn]
-   (p/flat-transform-values kstream value-transformer-supplier-fn))
-  ([kstream value-transformer-supplier-fn state-store-names]
-   (p/flat-transform-values kstream value-transformer-supplier-fn state-store-names)))
 
 (defn join-global
   [kstream global-ktable kv-mapper joiner]

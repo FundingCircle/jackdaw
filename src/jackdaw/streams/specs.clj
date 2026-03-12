@@ -226,34 +226,23 @@
                      :processor-fn ifn?
                      :state-store-names (s/coll-of string?)))
 
+(s/fdef k/process
+        :args (s/cat :kstream kstream?
+                     :processor-supplier-fn any?
+                     :state-store-names (s/coll-of string?))
+        :ret kstream?)
+
+(s/fdef k/process-values
+        :args (s/cat :kstream kstream?
+                     :processor-supplier-fn any?
+                     :state-store-names (s/coll-of string?))
+        :ret kstream?)
+
 (s/fdef k/select-key
         :args (s/cat :kstream kstream?
                      :select-key-value-mapper-fn ifn?)
         :ret kstream?)
 
-(s/fdef k/transform
-        :args (s/cat :kstream kstream?
-                     :transformer-supplier-fn ifn?
-                     :state-store-names (s/? (s/coll-of string?)))
-        :ret kstream?)
-
-(s/fdef k/flat-transform
-        :args (s/cat :kstream kstream?
-                     :transformer-supplier-fn ifn?
-                     :state-store-names (s/? (s/coll-of string?)))
-        :ret kstream?)
-
-(s/fdef k/transform-values
-        :args (s/cat :kstream kstream?
-                     :value-transformer-supplier-fn ifn?
-                     :state-store-names (s/? (s/coll-of string?)))
-        :ret kstream?)
-
-(s/fdef k/flat-transform-values
-        :args (s/cat :kstream kstream?
-                     :value-transformer-supplier-fn ifn?
-                     :state-store-names (s/? (s/coll-of string?)))
-        :ret kstream?)
 
 (s/fdef k/join-global
         :args (s/cat :kstream kstream?

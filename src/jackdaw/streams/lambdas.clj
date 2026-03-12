@@ -5,8 +5,8 @@
            org.apache.kafka.streams.KeyValue
            [org.apache.kafka.streams.kstream
             Aggregator ForeachAction Initializer KeyValueMapper
-            Merger Predicate Reducer Transformer TransformerSupplier
-            ValueJoiner ValueMapper ValueTransformer ValueTransformerSupplier]
+            Merger Predicate Reducer
+            ValueJoiner ValueMapper]
            [org.apache.kafka.streams.processor
             StreamPartitioner]
            [org.apache.kafka.streams.processor.api
@@ -190,73 +190,6 @@
   ^ProcessorSupplier [factory-fn]
   (FnProcessorFactorySupplier. factory-fn))
 
-(deftype FnTransformerSupplier [transformer-supplier-fn]
-  TransformerSupplier
-  (get [_this]
-    (transformer-supplier-fn)))
-
-(defn transformer-supplier
-  "Packages up a Clojure fn in a kstream transformer supplier."
-  [transformer-supplier-fn]
-  (FnTransformerSupplier. transformer-supplier-fn))
-
-(deftype FnValueTransformerSupplier [value-transformer-supplier-fn]
-  ValueTransformerSupplier
-  (get [_this]
-    (value-transformer-supplier-fn)))
-
-(defn value-transformer-supplier
-  "Packages up a Clojure fn in a kstream value transformer supplier."
-  [value-transformer-supplier-fn]
-  (FnValueTransformerSupplier. value-transformer-supplier-fn))
-
-(deftype FnTransformer [context xfm-fn]
-  Transformer
-  (init [_this transformer-context]
-    (reset! context transformer-context))
-  (close [_this])
-  (transform [_this k v]
-    (xfm-fn @context k v)))
-
-(defn transformer-with-ctx
-  "Helper to create a Transformer for use inside the jackdaw transform wrapper.
-  Passed function should take three args - the context, key and value for the stream.
-  The processor context allows access to stream internals such as state stores.
-  Result is returned from the transform. E.g.
-  ```
-  (-> builder
-      (k/stream topic)
-      (k/transform
-        (kl/transformer-with-ctx
-          (fn [ctx k v]
-            ...))))
-  ```"
-  [xfm-fn]
- (fn [] (FnTransformer. (atom nil) xfm-fn)))
-
-(deftype FnValueTransformer [context xfm-fn]
-  ValueTransformer
-  (init [_this transformer-context]
-    (reset! context transformer-context))
-  (close [_this])
-  (transform [_this v]
-    (xfm-fn @context v)))
-
-(defn value-transformer-with-ctx
-  "Helper to create a ValueTransformer for use inside the jackdaw transform-values wrapper.
-  Passed function should take two args - the context and value for the stream.
-  The processor context allows access to stream internals such as state stores.
-  Result is returned from the transform-values. E.g.
-  ```
-  (-> builder
-      (k/stream topic)
-      (k/transform-values
-        (kl/value-transformer-with-ctx
-          (fn [ctx v]
-            ...))))
-  ```"
-  [xfm-fn]
-  (fn [] (FnValueTransformer. (atom nil) xfm-fn)))
 
 (deftype FnProcessorWithCtx [context xfm-fn]
   Processor

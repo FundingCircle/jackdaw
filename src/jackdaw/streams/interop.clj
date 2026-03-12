@@ -21,7 +21,7 @@
             KeyValueMapper Materialized Merger Predicate Printed Produced
             Reducer SessionWindowedKStream SessionWindows
             Suppressed Suppressed$BufferConfig TimeWindowedKStream ValueJoiner
-            ValueMapper ValueTransformerSupplier Windows ForeachAction TransformerSupplier]
+            ValueMapper Windows ForeachAction]
            [org.apache.kafka.streams.processor.api
             ProcessorSupplier FixedKeyProcessorSupplier]
            [org.apache.kafka.streams.state Stores]))
@@ -325,7 +325,9 @@
     [_ processor-supplier-fn state-store-names]
     (clj-kstream
      (.processValues ^KStream kstream
-                     ^FixedKeyProcessorSupplier (value-processor-factory-supplier processor-supplier-fn)
+                     ^FixedKeyProcessorSupplier (if (instance? FixedKeyProcessorSupplier processor-supplier-fn)
+                                                  processor-supplier-fn
+                                                  (value-processor-factory-supplier processor-supplier-fn))
                      ^"[Ljava.lang.String;" (into-array String state-store-names))))
 
   (select-key
