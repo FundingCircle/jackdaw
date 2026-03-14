@@ -154,6 +154,23 @@
 
       (is (= [[1 2]] (mock/get-keyvals driver topic-b)))))
 
+  (testing "fn interface filter"
+    ;; 4.2 enables functional interfaces on KStream
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          driver (mock/build-driver (fn [builder]
+                                      (-> builder
+                                          (k/kstream topic-a)
+                                          k/kstream* ;; unwrap 
+                                          (.filter (fn [_k v] (> v 1)))
+                                          (.to (:topic-name topic-b)))))
+          publish (partial mock/publish driver topic-a)]
+
+      (publish 1 1)
+      (publish 1 2)
+
+      (is (= [[1 2]] (mock/get-keyvals driver topic-b)))))
+
   (testing "filter-not"
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")

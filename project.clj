@@ -28,7 +28,7 @@
                  [org.apache.kafka/kafka-streams "4.2.0" :exclusions [com.fasterxml.jackson.core/jackson-core]]
                  [org.apache.kafka/kafka-streams-test-utils "4.2.0"]
 
-                 [org.clojure/clojure "1.11.1" :scope "provided"]
+                 [org.clojure/clojure "1.12.4" :scope "provided"]
                  [org.clojure/java.data "1.4.120"]
                  [org.clojure/data.json "2.4.0"]
                  [org.clojure/data.fressian "1.1.1"]
