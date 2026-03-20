@@ -99,9 +99,10 @@
 (defn- set-error
   [error]
   (reify StreamsUncaughtExceptionHandler
-    (StreamsUncaughtExceptionHandler$StreamThreadExceptionResponse/handle [_this e]
+    (handle [_this e]
       (log/error e (.getMessage e))
-      (reset! error e))))
+      (reset! error e)
+      StreamsUncaughtExceptionHandler$StreamThreadExceptionResponse/REPLACE_THREAD)))
 
 (defn kstream-fixture
   "Returns a fixture that builds and starts kafka streams for the supplied topology

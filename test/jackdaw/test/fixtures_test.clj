@@ -1,10 +1,11 @@
 (ns jackdaw.test.fixtures-test
   (:require
-   [clojure.test :refer [deftest is]]
+   [clojure.test :refer [deftest is testing]]
    [jackdaw.test.fixtures :refer [list-topics reset-application-fixture topic-fixture with-fixtures]]
    [jackdaw.utils :as utils])
   (:import
    (org.apache.kafka.clients.admin AdminClient)
+   (org.apache.kafka.streams.errors StreamsUncaughtExceptionHandler$StreamThreadExceptionResponse)
    (org.apache.kafka.tools StreamsResetter)))
 
 (set! *warn-on-reflection* false)
@@ -87,3 +88,18 @@
                    (is (= 1 (:status error-data)))
                    (is (= "helpful error message\n" (:err error-data)))
                    (is (= "essential application info\n" (:out error-data))))))
+
+(deftest test-set-error
+  (testing "handle stores the exception in the error atom"
+    (let [error (atom nil)
+          handler (#'jackdaw.test.fixtures/set-error error)
+          ex (RuntimeException. "stream thread failure")]
+      (.handle handler ex)
+      (is (= ex @error))))
+
+  (testing "handle returns REPLACE_THREAD so the stream thread is restarted"
+    (let [error (atom nil)
+          handler (#'jackdaw.test.fixtures/set-error error)
+          result (.handle handler (RuntimeException. "boom"))]
+      (is (= StreamsUncaughtExceptionHandler$StreamThreadExceptionResponse/REPLACE_THREAD
+             result)))))

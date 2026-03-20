@@ -256,6 +256,27 @@
            :key 2
            :value 2))))
 
+(deftest poll-until-assigned-test
+  (testing "returns normally when consumer already has an assignment"
+    (let [tp (TopicPartition. "test-topic" 0)
+          consumer (reify Consumer
+                     (^ConsumerRecords poll [_ ^Duration _] (ConsumerRecords/empty))
+                     (assignment [_] #{tp}))]
+      (is (nil? (#'client/poll-until-assigned consumer)))))
+
+  (testing "throws ex-info after timeout when no assignment arrives"
+    (let [consumer (reify Consumer
+                     (^ConsumerRecords poll [_ ^Duration _] (ConsumerRecords/empty))
+                     (assignment [_] #{}))]
+      (let [start (System/currentTimeMillis)
+            ex    (try
+                    (#'client/poll-until-assigned consumer 200)
+                    nil
+                    (catch clojure.lang.ExceptionInfo e e))]
+        (is (some? ex))
+        (is (= 200 (:timeout-ms (ex-data ex))))
+        (is (>= (- (System/currentTimeMillis) start) 200))))))
+
 (deftest ^:integration position-all-test
   (fix/with-fixtures [(fix/topic-fixture (broker-config) test-topics 1000)]
     (with-consumer (-> (client/consumer (consumer-config "partition-test"))
