@@ -85,11 +85,6 @@
 
 (defprotocol IKStream
   "A KStream is an abstraction of a stream of key-value pairs."
-  (branch
-    [kstream predicate-fns]
-    "Returns a list of KStreams, one for each of the `predicate-fns`
-    provided.")
-
   (flat-map
     [kstream key-value-mapper-fn]
     "Creates a KStream that will consist of the concatenation of messages
@@ -108,12 +103,6 @@
   (print!
     [kstream]
     "Prints the elements of the stream to *out*.")
-
-  (through
-    [kstream topic-config]
-    "Materializes a stream to a topic, and returns a new KStream that will
-    consume messages from the topic. Messages in the new topic will be partitioned
-    based on the output of the optional partition function that represents StreamPartitioner class")
 
   (to!
     [kstream topic-config]

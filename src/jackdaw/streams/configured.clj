@@ -133,22 +133,11 @@
     [_]
     (print! kstream))
 
-  (through
-    [_ topic-config]
-    (configured-kstream
-     config
-     (through kstream topic-config)))
-
   (to!
     [_ topic-config]
     (to! kstream topic-config))
 
   IKStream
-  (branch
-    [_ predicate-fns]
-    (mapv (partial configured-kstream config)
-          (branch kstream predicate-fns)))
-
   (flat-map
     [_ key-value-mapper-fn]
     (configured-kstream

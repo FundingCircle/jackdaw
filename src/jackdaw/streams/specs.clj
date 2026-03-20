@@ -151,11 +151,6 @@
 
 ;; IKStream
 
-(s/fdef k/branch
-        :args (s/cat :kstream kstream?
-                     :predicate-fns (s/coll-of ifn?))
-        :ret (s/coll-of kstream?))
-
 (s/fdef k/flat-map
         :args (s/cat :kstream kstream?
                      :key-value-mapper-fn ifn?)
@@ -164,11 +159,6 @@
 (s/fdef k/print!
         :args (s/cat :kstream kstream?
                      :topic-config (s/? ::topic-config)))
-
-(s/fdef k/through
-        :args (s/cat :kstream kstream?
-                     :topic-config ::topic-config)
-        :ret kstream?)
 
 (s/fdef k/to!
         :args (s/cat :kstream kstream?

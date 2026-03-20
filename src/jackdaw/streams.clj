@@ -110,24 +110,12 @@
   [kstream]
   (p/print! kstream))
 
-(defn through
-  "Materializes a stream to a topic, and returns a new KStream that will
-  consume messages from the topic."
-  [kstream topic-config]
-  (p/through kstream topic-config))
-
 (defn to
   "Materializes a stream to a topic."
   [kstream topic-config]
   (p/to! kstream topic-config))
 
 ;; IKStream
-
-(defn branch
-  "Returns a list of KStreams, one for each of the `predicate-fns`
-  provided."
-  [kstream predicate-fns]
-  (p/branch kstream predicate-fns))
 
 (defn flat-map
   "Creates a KStream that will consist of the concatenation of messages

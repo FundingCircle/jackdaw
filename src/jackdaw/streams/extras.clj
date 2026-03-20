@@ -75,17 +75,3 @@
       (-> ~builder
           (map-validating! t# ~topic-spec ~(with-file (meta &form)))
           (js/to ~partition-fn t#)))))
-
-(defmacro through
-  "Wraps `#'jackdaw.streams/through`, providing validation of records
-  against the spec of the through topic."
-  ([builder topic topic-spec]
-   `(let [t# ~topic]
-      (-> ~builder
-          (map-validating! t# ~topic-spec ~(with-file (meta &form)))
-          (js/through t#))))
-  ([builder partition-fn topic topic-spec]
-   `(let [t# ~topic]
-      (-> ~builder
-          (map-validating! t# ~topic-spec ~(with-file (meta &form)))
-          (js/through ~partition-fn t#)))))
