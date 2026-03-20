@@ -179,18 +179,6 @@
   ^ProcessorSupplier [processor-fn]
   (FnProcessorSupplier. processor-fn))
 
-(deftype FnProcessorFactorySupplier [factory-fn]
-  ProcessorSupplier
-  (get [_this]
-    (factory-fn)))
-
-(defn processor-factory-supplier
-  "Packages up a zero-arg factory fn as a ProcessorSupplier.
-  Used with `processor-with-ctx`, which returns a factory fn."
-  ^ProcessorSupplier [factory-fn]
-  (FnProcessorFactorySupplier. factory-fn))
-
-
 (deftype FnProcessorWithCtx [context xfm-fn]
   Processor
   (init [_this processor-context]
@@ -209,7 +197,7 @@
                            ts))))))
 
 (defn processor-with-ctx
-  "Helper to create a Processor for use with `k/process`.
+  "Helper to create a ProcessorSupplier for use with `k/process`.
   Replaces `transformer-with-ctx` for Kafka 4.0+, where `Transformer` has been removed.
 
   The passed function should take three args - the context, key and value for the stream.
@@ -226,8 +214,9 @@
             (key-value [k (inc v)])))
         [\"my-store\"]))
   ```"
-  [xfm-fn]
-  (fn [] (FnProcessorWithCtx. (atom nil) xfm-fn)))
+  ^ProcessorSupplier [xfm-fn]
+  (reify ProcessorSupplier
+    (get [_this] (FnProcessorWithCtx. (atom nil) xfm-fn))))
 
 
 (deftype FnFlatProcessorWithCtx [context xfm-fn]
@@ -248,11 +237,12 @@
                            ts))))))
 
 (defn flat-processor-with-ctx
-  "Helper to create a Processor for use with `k/process` that emits multiple records.
+  "Helper to create a ProcessorSupplier for use with `k/process` that emits multiple records.
   Replaces flat-transform for Kafka 4.0+.
   The passed function should take three args [ctx k v] and return a seq of (key-value [k v]) pairs."
-  [xfm-fn]
-  (fn [] (FnFlatProcessorWithCtx. (atom nil) xfm-fn)))
+  ^ProcessorSupplier [xfm-fn]
+  (reify ProcessorSupplier
+    (get [_this] (FnFlatProcessorWithCtx. (atom nil) xfm-fn))))
 
 (deftype FnValueProcessorWithCtx [context xfm-fn]
   FixedKeyProcessor
@@ -267,18 +257,14 @@
         (.forward ^org.apache.kafka.streams.processor.api.FixedKeyProcessorContext ctx
                   (.withValue ^FixedKeyRecord record result))))))
 
-(deftype FnValueProcessorFactorySupplier [factory-fn]
-  FixedKeyProcessorSupplier
-  (get [_this]
-    (factory-fn)))
-
 (defn value-processor-with-ctx
-  "Helper to create a FixedKeyProcessor for use with `k/process-values`.
+  "Helper to create a FixedKeyProcessorSupplier for use with `k/process-values`.
   Replaces transform-values for Kafka 4.0+.
   The passed function should take two args [ctx v] and return a new value (or nil to drop).
   Key is preserved. Access topic via (.recordMetadata ctx) instead of (.topic ctx)."
-  [xfm-fn]
-  (fn [] (FnValueProcessorWithCtx. (atom nil) xfm-fn)))
+  ^FixedKeyProcessorSupplier [xfm-fn]
+  (reify FixedKeyProcessorSupplier
+    (get [_this] (FnValueProcessorWithCtx. (atom nil) xfm-fn))))
 
 (deftype FnFlatValueProcessorWithCtx [context xfm-fn]
   FixedKeyProcessor
@@ -294,15 +280,9 @@
                   (.withValue ^FixedKeyRecord record result))))))
 
 (defn flat-value-processor-with-ctx
-  "Helper to create a FixedKeyProcessor for use with `k/process-values` that emits multiple values.
+  "Helper to create a FixedKeyProcessorSupplier for use with `k/process-values` that emits multiple values.
   Replaces flat-transform-values for Kafka 4.0+.
   The passed function should take two args [ctx v] and return a seq of values (key preserved for each)."
-  [xfm-fn]
-  (fn [] (FnFlatValueProcessorWithCtx. (atom nil) xfm-fn)))
-
-
-(defn value-processor-factory-supplier
-  "Packages up a zero-arg factory fn as a FixedKeyProcessorSupplier.
-  Used with `value-processor-with-ctx` and `flat-value-processor-with-ctx`."
-  ^FixedKeyProcessorSupplier [factory-fn]
-  (FnValueProcessorFactorySupplier. factory-fn))
+  ^FixedKeyProcessorSupplier [xfm-fn]
+  (reify FixedKeyProcessorSupplier
+    (get [_this] (FnFlatValueProcessorWithCtx. (atom nil) xfm-fn))))

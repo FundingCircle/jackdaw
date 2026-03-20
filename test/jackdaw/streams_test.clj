@@ -1376,34 +1376,6 @@
             (is (= "input-topic" (:topic v)))))))))
 
 
-(deftest value-processor-factory-supplier-test
-  (testing "value-processor-factory-supplier wires a FixedKeyProcessorSupplier correctly"
-    (let [topic-a (mock/topic "topic-a")
-          topic-b (mock/topic "topic-b")
-          total   (atom 0)
-          ;; Build the supplier explicitly, as process-values does internally
-          supplier (lambdas/value-processor-factory-supplier
-                     (lambdas/value-processor-with-ctx
-                       (fn [_ctx v]
-                         (swap! total + v)
-                         @total)))
-          driver   (mock/build-driver
-                     (fn [builder]
-                       (-> (k/kstream builder topic-a)
-                           (k/process-values supplier [])
-                           (k/to topic-b))))
-          publish  (partial mock/publish driver topic-a)]
-
-      (publish 1 1)
-      (publish 1 2)
-      (publish 1 4)
-
-      (let [keyvals (mock/get-keyvals driver topic-b)]
-        (is (= 3 (count keyvals)))
-        (is (= [1 1] (first keyvals)))
-        (is (= [1 3] (second keyvals)))
-        (is (= [1 7] (nth keyvals 2)))))))
-
 (deftest with-kv-state-store-test
   (testing "Processor with state store sugar (replaces transform in Kafka 4.0+)"
     (let [input-t (mock/topic "input-topic")

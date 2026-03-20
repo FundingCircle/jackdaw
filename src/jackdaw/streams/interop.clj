@@ -315,19 +315,17 @@
               ^"[Ljava.lang.String;" (into-array String state-store-names)))
 
   (process
-    [_ processor-supplier-fn state-store-names]
+    [_ processor-supplier state-store-names]
     (clj-kstream
      (.process ^KStream kstream
-               ^ProcessorSupplier (processor-factory-supplier processor-supplier-fn)
+               ^ProcessorSupplier processor-supplier
                ^"[Ljava.lang.String;" (into-array String state-store-names))))
 
   (process-values
-    [_ processor-supplier-fn state-store-names]
+    [_ processor-supplier state-store-names]
     (clj-kstream
      (.processValues ^KStream kstream
-                     ^FixedKeyProcessorSupplier (if (instance? FixedKeyProcessorSupplier processor-supplier-fn)
-                                                  processor-supplier-fn
-                                                  (value-processor-factory-supplier processor-supplier-fn))
+                     ^FixedKeyProcessorSupplier processor-supplier
                      ^"[Ljava.lang.String;" (into-array String state-store-names))))
 
   (select-key
