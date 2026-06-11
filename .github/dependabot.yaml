@@ -1,0 +1,73 @@
+version: 2
+registries:
+  fc-github:
+    type: git
+    url: https://github.com
+    username: x-access-token
+    password: ${{ secrets.READ_ONLY_GITHUB_TOKEN }}
+updates:
+  - package-ecosystem: "docker-compose"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Europe/London"
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 3
+    pull-request-branch-name:
+      separator: "-"
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "docker-compose"
+    groups:
+      docker-compose-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+  - package-ecosystem: "docker-compose"
+    directory: "/examples/rolldice"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Europe/London"
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 3
+    pull-request-branch-name:
+      separator: "-"
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "docker-compose"
+    groups:
+      docker-compose-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    registries:
+      - fc-github
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Europe/London"
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 3
+    pull-request-branch-name:
+      separator: "-"
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "github-actions"
+    groups:
+      github-actions-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
