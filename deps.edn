@@ -1,8 +1,8 @@
 {:paths ["src" "resources"],
  :deps
- {manifold/manifold {:mvn/version "0.4.0"},
+ {manifold/manifold {:mvn/version "0.5.0"},
   danlentz/clj-uuid
-  {:mvn/version "0.1.9", :exclusions [primitive-math/primitive-math]},
+  {:mvn/version "0.2.5", :exclusions [primitive-math/primitive-math]},
   io.confluent/kafka-schema-registry-client
   {:mvn/version "7.3.2",
    :exclusions [com.fasterxml.jackson.core/jackson-databind]},
@@ -11,12 +11,12 @@
   org.apache.kafka/kafka-clients {:mvn/version "3.3.2"},
   org.apache.kafka/kafka-streams {:mvn/version "3.3.2"},
   org.apache.kafka/kafka-streams-test-utils {:mvn/version "3.3.2"},
-  org.clojure/java.data {:mvn/version "1.0.95"},
-  org.clojure/data.json {:mvn/version "2.4.0"},
-  org.clojure/data.fressian {:mvn/version "1.0.0"},
-  org.clojure/tools.logging {:mvn/version "1.2.4"},
-  org.clojure/core.cache {:mvn/version "1.0.225"},
-  metosin/jsonista {:mvn/version "0.3.7"}},
+  org.clojure/java.data {:mvn/version "1.4.120"},
+  org.clojure/data.json {:mvn/version "2.5.2"},
+  org.clojure/data.fressian {:mvn/version "1.1.1"},
+  org.clojure/tools.logging {:mvn/version "1.3.1"},
+  org.clojure/core.cache {:mvn/version "1.2.263"},
+  metosin/jsonista {:mvn/version "1.0.0"}},
  :mvn/repos
  {"confluent" {:url "https://packages.confluent.io/maven/"},
   "mulesoft"
@@ -27,33 +27,35 @@
   :dev
   {:extra-paths ["dev" "test/resources"],
    :extra-deps
-   {org.clojure/clojure {:mvn/version "1.11.1"},
+   {org.clojure/clojure {:mvn/version "1.12.5"},
     io.aviso/logging {:mvn/version "1.0"},
-    aleph/aleph {:mvn/version "0.6.1"}}},
+    aleph/aleph {:mvn/version "0.9.11"}}},
 
   ;; Run the test suite: clojure -M:test
+  ;; test-runner AOT-compiles the gen-class serdes (previously handled by
+  ;; Leiningen :aot) before delegating to kaocha.
   :test
   {:extra-paths ["test" "test/resources" "dev"],
    :extra-deps
-   {org.clojure/clojure {:mvn/version "1.11.1"},
-    org.clojure/test.check {:mvn/version "1.1.1"},
+   {org.clojure/clojure {:mvn/version "1.12.5"},
+    org.clojure/test.check {:mvn/version "1.1.3"},
     org.apache.kafka/kafka_2.13 {:mvn/version "3.3.2"},
     org.apache.kafka/kafka-clients$test {:mvn/version "3.3.2"},
     io.aviso/logging {:mvn/version "1.0"},
-    aleph/aleph {:mvn/version "0.6.1"},
-    lambdaisland/kaocha {:mvn/version "1.80.1274"},
+    aleph/aleph {:mvn/version "0.9.11"},
+    lambdaisland/kaocha {:mvn/version "1.91.1392"},
     lambdaisland/kaocha-cloverage {:mvn/version "1.1.89"},
     lambdaisland/kaocha-junit-xml {:mvn/version "1.17.101"}},
-   :main-opts ["-m" "kaocha.runner"]},
+   :main-opts ["-m" "test-runner"]},
 
   ;; Lint: clojure -M:clj-kondo --lint src test
   :clj-kondo
-  {:extra-deps {clj-kondo/clj-kondo {:mvn/version "2023.12.15"}},
+  {:extra-deps {clj-kondo/clj-kondo {:mvn/version "2026.08.04"}},
    :main-opts ["-m" "clj-kondo.main"]},
 
   ;; Build jar / pom and deploy to Clojars: clojure -T:build <fn>
   :build
   {:deps
-   {io.github.clojure/tools.build {:mvn/version "0.9.6"},
-    slipset/deps-deploy {:mvn/version "0.2.2"}},
+   {io.github.clojure/tools.build {:mvn/version "0.10.14"},
+    slipset/deps-deploy {:mvn/version "0.2.5"}},
    :ns-default build}}}

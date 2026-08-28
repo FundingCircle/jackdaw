@@ -12,12 +12,12 @@ jobs:
   deploy:
     needs: run_checks
     runs-on: ubuntu-latest
-    container: 
+    container:
       image: clojure:temurin-21-tools-deps
     environment: clojars_deploy
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: deploy
         env:
           CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
@@ -27,7 +27,7 @@ jobs:
           # https://github.com/actions/runner/issues/2033
           git config --global --add safe.directory /__w/jackdaw/jackdaw
           apt-get update
-          apt-get install -y gpg 
+          apt-get install -y gpg
           echo $GPG_PRIVATE_KEY |base64 --decode |gpg --yes --batch --import
           # Route deps-deploy's `gpg` calls through the loopback wrapper so the
           # passphrase can be supplied non-interactively.
