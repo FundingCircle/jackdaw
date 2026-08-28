@@ -179,9 +179,9 @@
   "Polls kafka for new messages, returning a potentially empty sequence
   of datafied messages."
   [^Consumer consumer timeout]
-  (some->> (if (int? timeout)
-             (.poll consumer ^long timeout)
-             (.poll consumer ^Duration timeout))
+  (some->> (.poll consumer ^Duration (if (int? timeout)
+                                       (Duration/ofMillis timeout)
+                                       timeout))
            (map jd/datafy)))
 
 (defn position
@@ -211,6 +211,17 @@
   (doto ^Consumer consumer
     (.seek ^TopicPartition (jd/as-TopicPartition topic-partition) offset)))
 
+(defn- poll-for-assignment
+  "Polls until the consumer has been assigned partitions. Kafka 4.x no longer
+  performs group assignment during a zero-duration poll, so the previous
+  `(poll consumer 0)` trick no longer loads assignments."
+  [^Consumer consumer]
+  (loop [remaining-ms 10000]
+    (poll consumer 100)
+    (when (and (.isEmpty (.assignment consumer))
+               (pos? remaining-ms))
+      (recur (- remaining-ms 100)))))
+
 (defn seek-to-end-eager
   "Seek to the last offset for all assigned partitions, and force positioning.
 
@@ -220,7 +231,7 @@
   ([^Consumer consumer]
    (seek-to-end-eager consumer []))
   ([^Consumer consumer topic-partitions]
-   (poll consumer 0) ;; load assignments
+   (poll-for-assignment consumer) ;; load assignments
    (.seekToEnd consumer topic-partitions)
    (position-all consumer)
    consumer))
@@ -234,7 +245,7 @@
    (seek-to-beginning-eager consumer [])
    consumer)
   ([^Consumer consumer topic-partitions]
-   (poll consumer 0)
+   (poll-for-assignment consumer)
    (.seekToBeginning consumer (map jd/as-TopicPartition topic-partitions))
    (position-all consumer)
    consumer))

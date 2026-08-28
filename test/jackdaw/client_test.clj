@@ -231,8 +231,6 @@
    in response to successive calls of the `poll` method"
   [queue]
   (reify Consumer
-    (^ConsumerRecords poll [_this ^long ms]
-      (.poll queue ms TimeUnit/MILLISECONDS))
     (^ConsumerRecords poll [_this ^Duration duration]
      (.poll queue (.toMillis duration) TimeUnit/MILLISECONDS))))
 
@@ -263,8 +261,11 @@
     (with-consumer (-> (client/consumer (consumer-config "partition-test"))
                        (client/subscribe [bar-topic]))
         (fn [consumer]
-          ;; without an initial `poll`, there is no position info
-          (client/poll consumer 0)
+          ;; Kafka 4.x poll(0) no longer triggers assignment; poll until assigned
+          (loop [n 100]
+            (client/poll consumer 100)
+            (when (and (empty? (client/position-all consumer)) (pos? n))
+              (recur (dec n))))
           (is (= {{:topic-name "bar" :partition 0} 0}
                  (client/position-all consumer)))))))
 

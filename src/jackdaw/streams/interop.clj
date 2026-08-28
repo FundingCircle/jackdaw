@@ -8,7 +8,7 @@
   (:import [java.util
             Collection]
            [java.util.function
-            Function]
+            Consumer Function]
            [java.util.regex
             Pattern]
            [java.time
@@ -16,14 +16,14 @@
            [org.apache.kafka.streams
             StreamsBuilder]
            [org.apache.kafka.streams.kstream
-            Aggregator Consumed GlobalKTable Grouped Initializer Joined StreamJoined
+            Aggregator Branched BranchedKStream Consumed GlobalKTable Grouped Initializer Joined StreamJoined
             JoinWindows KGroupedStream KGroupedTable KStream KTable
             KeyValueMapper Materialized Merger Predicate Printed Produced
             Reducer SessionWindowedKStream SessionWindows
             Suppressed Suppressed$BufferConfig TimeWindowedKStream ValueJoiner
-            ValueMapper ValueTransformerSupplier Windows ForeachAction TransformerSupplier]
+            ValueMapper Windows ForeachAction]
            [org.apache.kafka.streams.processor.api
-            ProcessorSupplier]
+            ProcessorSupplier FixedKeyProcessorSupplier]
            [org.apache.kafka.streams.state Stores]))
 
 (set! *warn-on-reflection* true)
@@ -70,7 +70,8 @@
      (clj-kstream
       (.stream ^StreamsBuilder streams-builder
                ^String topic-name
-               ^Consumed (topic->consumed topic-config))))))
+               ^Consumed (topic->consumed topic-config))
+      streams-builder))))
 
 (def ^:private kstream-memo-patterned
   "Returns a kstream for the topic, creating a new one if needed."
@@ -79,7 +80,8 @@
      (clj-kstream
       (.stream ^StreamsBuilder streams-builder
                ^Pattern topic-pattern
-               ^Consumed (topic->consumed topic-config))))))
+               ^Consumed (topic->consumed topic-config))
+      streams-builder))))
 
 (def ^:private ktable-memo
   "Returns a ktable for the topic, creating a new one if needed."
@@ -111,7 +113,8 @@
        (.stream streams-builder
                 ^Collection topic-names
                 ;; Assume all the topics use the same serdes.
-                ^Consumed (topic->consumed (first topic-configs))))))
+                ^Consumed (topic->consumed (first topic-configs))))
+     streams-builder))
 
   (ktable
     [_ {:keys [topic-name] :as topic-config}]
@@ -145,21 +148,23 @@
   []
   (CljStreamsBuilder. (StreamsBuilder.)))
 
-(deftype CljKStream [^KStream kstream]
+(deftype CljKStream [^KStream kstream streams-builder]
   IKStreamBase
   (join
     [_ ktable value-joiner-fn]
     (clj-kstream
      (.join ^KStream kstream
             ^KTable (ktable* ktable)
-            ^ValueJoiner (value-joiner value-joiner-fn))))
+            ^ValueJoiner (value-joiner value-joiner-fn))
+     streams-builder))
 
   (left-join
     [_ ktable value-joiner-fn]
     (clj-kstream
      (.leftJoin ^KStream kstream
                 ^KTable (ktable* ktable)
-                ^ValueJoiner (value-joiner value-joiner-fn))))
+                ^ValueJoiner (value-joiner value-joiner-fn))
+     streams-builder))
 
   (left-join
     [_ ktable value-joiner-fn
@@ -169,22 +174,26 @@
      (.leftJoin kstream
                 ^KTable (ktable* ktable)
                 ^ValueJoiner (value-joiner value-joiner-fn)
-                (Joined/with key-serde this-value-serde other-value-serde))))
+                (Joined/with key-serde this-value-serde other-value-serde))
+     streams-builder))
 
   (peek
     [_ peek-fn]
     (clj-kstream
-     (.peek kstream ^ForeachAction (foreach-action peek-fn))))
+     (.peek kstream ^ForeachAction (foreach-action peek-fn))
+     streams-builder))
 
   (filter
     [_ predicate-fn]
     (clj-kstream
-     (.filter kstream ^Predicate (predicate predicate-fn))))
+     (.filter kstream ^Predicate (predicate predicate-fn))
+     streams-builder))
 
   (filter-not
     [_ predicate-fn]
     (clj-kstream
-     (.filterNot kstream ^Predicate (predicate predicate-fn))))
+     (.filterNot kstream ^Predicate (predicate predicate-fn))
+     streams-builder))
 
   (group-by
     [_ key-value-mapper-fn]
@@ -201,19 +210,32 @@
   (map-values
     [_ value-mapper-fn]
     (clj-kstream
-     (.mapValues kstream ^ValueMapper (value-mapper value-mapper-fn))))
+     (.mapValues kstream ^ValueMapper (value-mapper value-mapper-fn))
+     streams-builder))
 
   IKStream
   (branch
     [_ predicate-fns]
-    (mapv clj-kstream
-          (->> (into-array Predicate (mapv predicate predicate-fns))
-               (.branch kstream))))
+    ;; Kafka 4.x removed KStream.branch; split() + Branched/withConsumer lets us
+    ;; collect the branch streams in predicate order.
+    (let [collected (atom [])
+          bks (clojure.core/reduce
+               (fn [b predicate-fn]
+                 (.branch ^BranchedKStream b
+                          ^Predicate (predicate predicate-fn)
+                          (Branched/withConsumer
+                           (reify Consumer
+                             (accept [_ ks] (swap! collected conj ks))))))
+               (.split ^KStream kstream)
+               predicate-fns)]
+      (.noDefaultBranch ^BranchedKStream bks)
+      (mapv #(clj-kstream % streams-builder) @collected)))
 
   (flat-map
     [_ key-value-mapper-fn]
     (clj-kstream
-     (.flatMap kstream ^KeyValueMapper (key-value-flatmapper key-value-mapper-fn))))
+     (.flatMap kstream ^KeyValueMapper (key-value-flatmapper key-value-mapper-fn))
+     streams-builder))
 
   (for-each!
     [_ foreach-fn]
@@ -227,8 +249,14 @@
 
   (through
     [_ {:keys [topic-name] :as topic-config}]
+    ;; Kafka 4.x removed KStream.through; materialise to the topic and read it
+    ;; back as a new source stream.
+    (.to kstream ^String topic-name ^Produced (topic->produced topic-config))
     (clj-kstream
-     (.through kstream topic-name ^Produced (topic->produced topic-config))))
+     (.stream ^StreamsBuilder streams-builder
+              ^String topic-name
+              ^Consumed (topic->consumed topic-config))
+     streams-builder))
 
   (to!
     [_ {:keys [topic-name] :as topic-config}]
@@ -238,7 +266,8 @@
   (flat-map-values
     [_ value-mapper-fn]
     (clj-kstream
-     (.flatMapValues kstream ^ValueMapper (value-mapper value-mapper-fn))))
+     (.flatMapValues kstream ^ValueMapper (value-mapper value-mapper-fn))
+     streams-builder))
 
   (group-by-key
     [_]
@@ -257,7 +286,8 @@
      (.join ^KStream kstream
             ^KStream (kstream* other-kstream)
             ^ValueJoiner (value-joiner value-joiner-fn)
-            ^JoinWindows windows)))
+            ^JoinWindows windows)
+     streams-builder))
 
   (join-windowed
     [_ other-kstream value-joiner-fn windows
@@ -268,7 +298,8 @@
             ^KStream (kstream* other-kstream)
             ^ValueJoiner (value-joiner value-joiner-fn)
             ^JoinWindows windows
-            (StreamJoined/with key-serde this-value-serde other-value-serde))))
+            (StreamJoined/with key-serde this-value-serde other-value-serde))
+     streams-builder))
 
   (left-join-windowed
     [_ other-kstream value-joiner-fn windows]
@@ -276,7 +307,8 @@
      (.leftJoin ^KStream kstream
                 ^KStream (kstream* other-kstream)
                 ^ValueJoiner (value-joiner value-joiner-fn)
-                ^JoinWindows windows)))
+                ^JoinWindows windows)
+     streams-builder))
 
   (left-join-windowed
     [_ other-kstream value-joiner-fn windows
@@ -287,18 +319,21 @@
                 ^KStream (kstream* other-kstream)
                 ^ValueJoiner (value-joiner value-joiner-fn)
                 ^JoinWindows windows
-                (StreamJoined/with key-serde value-serde other-value-serde))))
+                (StreamJoined/with key-serde value-serde other-value-serde))
+     streams-builder))
 
   (map
     [_ key-value-mapper-fn]
     (clj-kstream
-     (.map kstream ^KeyValueMapper (key-value-mapper key-value-mapper-fn))))
+     (.map kstream ^KeyValueMapper (key-value-mapper key-value-mapper-fn))
+     streams-builder))
 
   (merge
     [_ other-kstream]
     (clj-kstream
       (.merge kstream
-              ^KStream (kstream* other-kstream))))
+              ^KStream (kstream* other-kstream))
+      streams-builder))
 
   (outer-join-windowed
     [_ other-kstream value-joiner-fn windows]
@@ -306,7 +341,8 @@
      (.outerJoin ^KStream kstream
                  ^KStream (kstream* other-kstream)
                  ^ValueJoiner (value-joiner value-joiner-fn)
-                 ^JoinWindows windows)))
+                 ^JoinWindows windows)
+     streams-builder))
 
   (outer-join-windowed
     [_ other-kstream value-joiner-fn windows
@@ -317,7 +353,8 @@
                  ^KStream (kstream* other-kstream)
                  ^ValueJoiner (value-joiner value-joiner-fn)
                  ^JoinWindows windows
-                 (StreamJoined/with key-serde value-serde other-value-serde))))
+                 (StreamJoined/with key-serde value-serde other-value-serde))
+     streams-builder))
 
   (process!
     [_ processor-supplier-fn state-store-names]
@@ -329,7 +366,8 @@
     [_ select-key-value-mapper-fn]
     (clj-kstream
      (.selectKey ^KStream kstream
-                 ^KeyValueMapper (select-key-value-mapper select-key-value-mapper-fn))))
+                 ^KeyValueMapper (select-key-value-mapper select-key-value-mapper-fn))
+     streams-builder))
 
   (transform
     [this transformer-supplier-fn]
@@ -337,10 +375,12 @@
 
   (transform
     [_ transformer-supplier-fn state-store-names]
+    ;; Kafka 4.x removed KStream.transform; drive the supplier via process.
     (clj-kstream
-     (.transform ^KStream kstream
-                 ^TransformerSupplier (transformer-supplier transformer-supplier-fn)
-                 ^"[Ljava.lang.String;" (into-array String state-store-names))))
+     (.process ^KStream kstream
+               ^ProcessorSupplier (transform-supplier->processor-supplier transformer-supplier-fn false)
+               ^"[Ljava.lang.String;" (into-array String state-store-names))
+     streams-builder))
 
   (flat-transform
     [this transformer-supplier-fn]
@@ -349,20 +389,24 @@
   (flat-transform
     [_ transformer-supplier-fn state-store-names]
     (clj-kstream
-     (.flatTransform ^KStream kstream
-                     ^TransformerSupplier (transformer-supplier transformer-supplier-fn)
-                     ^"[Ljava.lang.String;" (into-array String
-                                                        (clojure.core/map name state-store-names)))))
+     (.process ^KStream kstream
+               ^ProcessorSupplier (transform-supplier->processor-supplier transformer-supplier-fn true)
+               ^"[Ljava.lang.String;" (into-array String
+                                                  (clojure.core/map name state-store-names)))
+     streams-builder))
+
   (transform-values
     [this value-transformer-supplier-fn]
     (transform-values this value-transformer-supplier-fn []))
 
   (transform-values
     [_ value-transformer-supplier-fn state-store-names]
+    ;; Kafka 4.x removed KStream.transformValues; drive via processValues.
     (clj-kstream
-     (.transformValues ^KStream kstream
-                       ^ValueTransformerSupplier (value-transformer-supplier value-transformer-supplier-fn)
-                       ^"[Ljava.lang.String;" (into-array String state-store-names))))
+     (.processValues ^KStream kstream
+                     ^FixedKeyProcessorSupplier (value-transform-supplier->fk-processor-supplier value-transformer-supplier-fn false)
+                     ^"[Ljava.lang.String;" (into-array String state-store-names))
+     streams-builder))
 
   (flat-transform-values
     [this value-transformer-supplier-fn]
@@ -371,10 +415,11 @@
   (flat-transform-values
     [_ value-transformer-supplier-fn state-store-names]
     (clj-kstream
-     (.flatTransformValues ^KStream kstream
-                           ^ValueTransformerSupplier (value-transformer-supplier value-transformer-supplier-fn)
-                           ^"[Ljava.lang.String;" (into-array String
-                                                              (clojure.core/map name state-store-names)))))
+     (.processValues ^KStream kstream
+                     ^FixedKeyProcessorSupplier (value-transform-supplier->fk-processor-supplier value-transformer-supplier-fn true)
+                     ^"[Ljava.lang.String;" (into-array String
+                                                        (clojure.core/map name state-store-names)))
+     streams-builder))
 
   (join-global
     [_ global-ktable key-value-mapper-fn joiner-fn]
@@ -382,7 +427,8 @@
      (.join kstream
             ^GlobalKTable (global-ktable* global-ktable)
             ^KeyValueMapper (select-key-value-mapper key-value-mapper-fn)
-            ^ValueJoiner (value-joiner joiner-fn))))
+            ^ValueJoiner (value-joiner joiner-fn))
+     streams-builder))
 
   (left-join-global
     [_ global-ktable key-value-mapper-fn joiner-fn]
@@ -390,15 +436,18 @@
      (.leftJoin kstream
                 ^GlobalKTable (global-ktable* global-ktable)
                 ^KeyValueMapper (select-key-value-mapper key-value-mapper-fn)
-                ^ValueJoiner (value-joiner joiner-fn))))
+                ^ValueJoiner (value-joiner joiner-fn))
+     streams-builder))
 
   (kstream* [_]
     kstream))
 
 (defn clj-kstream
   "Makes a CljKStream object."
-  [kstream]
-  (CljKStream. kstream))
+  ([kstream]
+   (CljKStream. kstream nil))
+  ([kstream streams-builder]
+   (CljKStream. kstream streams-builder)))
 
 (deftype CljKTable [^KTable ktable]
   IKStreamBase

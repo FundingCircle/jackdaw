@@ -1404,7 +1404,7 @@
                                    (lambdas/value-transformer-with-ctx
                                      (fn [ctx v]
                                        {:new-val (+ (:val v) 1)
-                                        :topic (.topic ctx)})))
+                                        :topic (.topic (.get (.recordMetadata ctx)))})))
                                  (k/to output-t))))]
         (let [publisher (partial mock/publish driver input-t)]
 
