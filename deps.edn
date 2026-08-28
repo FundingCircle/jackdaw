@@ -4,10 +4,15 @@
   danlentz/clj-uuid
   {:mvn/version "0.2.5", :exclusions [primitive-math/primitive-math]},
   io.confluent/kafka-schema-registry-client
-  {:mvn/version "7.3.2",
-   :exclusions [com.fasterxml.jackson.core/jackson-databind]},
-  io.confluent/kafka-avro-serializer {:mvn/version "7.3.2"},
-  io.confluent/kafka-json-schema-serializer {:mvn/version "7.3.2"},
+  {:mvn/version "8.3.1",
+   :exclusions [com.fasterxml.jackson.core/jackson-databind
+                org.apache.kafka/kafka-clients]},
+  io.confluent/kafka-avro-serializer
+  {:mvn/version "8.3.1",
+   :exclusions [org.apache.kafka/kafka-clients]},
+  io.confluent/kafka-json-schema-serializer
+  {:mvn/version "8.3.1",
+   :exclusions [org.apache.kafka/kafka-clients]},
   org.apache.kafka/kafka-clients {:mvn/version "4.3.0"},
   org.apache.kafka/kafka-streams {:mvn/version "4.3.0"},
   org.apache.kafka/kafka-streams-test-utils {:mvn/version "4.3.0"},
