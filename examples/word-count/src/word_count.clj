@@ -43,7 +43,7 @@
    "bootstrap.servers" (or (System/getenv "BOOTSTRAP_SERVERS") "localhost:9092")
    "default.key.serde" "jackdaw.serdes.EdnSerde"
    "default.value.serde" "jackdaw.serdes.EdnSerde"
-   "cache.max.bytes.buffering" "0"})
+   "statestore.cache.max.bytes" "0"})
 
 (def config
   "The production config.

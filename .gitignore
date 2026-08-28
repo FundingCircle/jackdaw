@@ -16,6 +16,7 @@ pom.xml.asc
 .cpcache
 .nrepl-port
 /examples/*/target
+/examples/*/classes
 .clj-kondo/
 .lsp/
 .calva/
