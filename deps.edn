@@ -1,0 +1,59 @@
+{:paths ["src" "resources"],
+ :deps
+ {manifold/manifold {:mvn/version "0.4.0"},
+  danlentz/clj-uuid
+  {:mvn/version "0.1.9", :exclusions [primitive-math/primitive-math]},
+  io.confluent/kafka-schema-registry-client
+  {:mvn/version "7.3.2",
+   :exclusions [com.fasterxml.jackson.core/jackson-databind]},
+  io.confluent/kafka-avro-serializer {:mvn/version "7.3.2"},
+  io.confluent/kafka-json-schema-serializer {:mvn/version "7.3.2"},
+  org.apache.kafka/kafka-clients {:mvn/version "3.3.2"},
+  org.apache.kafka/kafka-streams {:mvn/version "3.3.2"},
+  org.apache.kafka/kafka-streams-test-utils {:mvn/version "3.3.2"},
+  org.clojure/java.data {:mvn/version "1.0.95"},
+  org.clojure/data.json {:mvn/version "2.4.0"},
+  org.clojure/data.fressian {:mvn/version "1.0.0"},
+  org.clojure/tools.logging {:mvn/version "1.2.4"},
+  org.clojure/core.cache {:mvn/version "1.0.225"},
+  metosin/jsonista {:mvn/version "0.3.7"}},
+ :mvn/repos
+ {"confluent" {:url "https://packages.confluent.io/maven/"},
+  "mulesoft"
+  {:url
+   "https://repository.mulesoft.org/nexus/content/repositories/public/"}},
+ :aliases
+ {;; REPL / development
+  :dev
+  {:extra-paths ["dev" "test/resources"],
+   :extra-deps
+   {org.clojure/clojure {:mvn/version "1.11.1"},
+    io.aviso/logging {:mvn/version "1.0"},
+    aleph/aleph {:mvn/version "0.6.1"}}},
+
+  ;; Run the test suite: clojure -M:test
+  :test
+  {:extra-paths ["test" "test/resources" "dev"],
+   :extra-deps
+   {org.clojure/clojure {:mvn/version "1.11.1"},
+    org.clojure/test.check {:mvn/version "1.1.1"},
+    org.apache.kafka/kafka_2.13 {:mvn/version "3.3.2"},
+    org.apache.kafka/kafka-clients$test {:mvn/version "3.3.2"},
+    io.aviso/logging {:mvn/version "1.0"},
+    aleph/aleph {:mvn/version "0.6.1"},
+    lambdaisland/kaocha {:mvn/version "1.80.1274"},
+    lambdaisland/kaocha-cloverage {:mvn/version "1.1.89"},
+    lambdaisland/kaocha-junit-xml {:mvn/version "1.17.101"}},
+   :main-opts ["-m" "kaocha.runner"]},
+
+  ;; Lint: clojure -M:clj-kondo --lint src test
+  :clj-kondo
+  {:extra-deps {clj-kondo/clj-kondo {:mvn/version "2023.12.15"}},
+   :main-opts ["-m" "clj-kondo.main"]},
+
+  ;; Build jar / pom and deploy to Clojars: clojure -T:build <fn>
+  :build
+  {:deps
+   {io.github.clojure/tools.build {:mvn/version "0.9.6"},
+    slipset/deps-deploy {:mvn/version "0.2.2"}},
+   :ns-default build}}}

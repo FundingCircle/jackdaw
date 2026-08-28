@@ -7,7 +7,7 @@ jobs:
   RunChecks:
     runs-on: ubuntu-latest
     container: 
-      image:  clojure:latest
+      image:  clojure:temurin-21-tools-deps
       options: --user 1001 # don't run as root
     services:
       kafka:
@@ -49,11 +49,11 @@ jobs:
           fetch-depth: 100
       - name: build
         run: | 
-          lein kaocha
+          clojure -M:test
         env: 
           KAFKA_BOOTSTRAP_SERVERS: kafka
           ZOOKEEPER_HOST: zoopkeeper
           SCHEMA_REGISTRY_HOST: schema-registry
           KAFKA_REST_PROXY_HOST: kafka-rest
       - name: lint
-        run: lein clj-kondo --lint src test || true
+        run: clojure -M:clj-kondo --lint src test || true

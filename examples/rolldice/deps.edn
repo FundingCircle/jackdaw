@@ -1,0 +1,20 @@
+{:paths
+ ["src" "resources"]
+
+ :deps
+ {org.clojure/clojure {:mvn/version "1.10.1"}
+  fundingcircle/jackdaw {:mvn/version "0.7.8"}
+  pjstadig/humane-test-output {:mvn/version "0.11.0"}
+  com.taoensso/timbre {:mvn/version "4.2.0"}
+  org.slf4j/slf4j-nop {:mvn/version "1.7.30"}}
+
+ :aliases
+ {;; Run the app: clojure -M:run
+  :run
+  {:main-opts ["-m" "roll-dice.core"]}
+
+  :test
+  {:extra-paths ["test"]
+   :extra-deps {com.cognitect/test-runner {:git/url "https://github.com/cognitect-labs/test-runner.git"
+                                            :sha "028a6d41ac9ac5d5c405dfc38e4da6b4cc1255d5"}}
+   :main-opts ["-m" "cognitect.test-runner"]}}}

@@ -10,4 +10,4 @@ Clone this repo.
 
 1. Bring up the Kafka services by running `docker-compose up -d`. Alternatively, run the Kafka services (broker and zookeeper) locally, following instructions in the [Apache Kafka Quickstart](https://kafka.apache.org/quickstart).
 
-2. From the root directory of the repo, run: `lein run`
+2. From the root directory of the repo, run: `clojure -M:run`

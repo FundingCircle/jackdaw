@@ -13,7 +13,6 @@
 /logs
 pom.xml
 pom.xml.asc
-.lein-*
 .cpcache
 .nrepl-port
 /examples/*/target
