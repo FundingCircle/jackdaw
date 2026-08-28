@@ -19,4 +19,3 @@ pom.xml.asc
 .clj-kondo/
 .lsp/
 .calva/
-docker-compose.override.yml
