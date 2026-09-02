@@ -23,7 +23,9 @@
   org.clojure/core.cache {:mvn/version "1.2.263"},
   metosin/jsonista {:mvn/version "1.0.0"}},
  :mvn/repos
- {"confluent" {:url "https://packages.confluent.io/maven/"},
+ {"central" {:url "https://repo1.maven.org/maven2/"},
+  "clojars" {:url "https://repo.clojars.org/"},
+  "confluent" {:url "https://packages.confluent.io/maven/"},
   "mulesoft"
   {:url
    "https://repository.mulesoft.org/nexus/content/repositories/public/"}},

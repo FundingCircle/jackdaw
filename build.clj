@@ -51,8 +51,9 @@
 (def snapshot? (str/ends-with? version "-SNAPSHOT"))
 
 (defn- basis []
-  ;; :root nil keeps deps at their deps.edn scope in the pom (mirrors the old
-  ;; lein :scope "provided") rather than pinning to the build container's basis.
+  ;; :root nil keeps the CLI's own Clojure out of the generated pom; deps.edn
+  ;; declares central/clojars/confluent/mulesoft explicitly so resolution does
+  ;; not rely on the root deps.edn's repos.
   (b/create-basis {:root nil :project "deps.edn"}))
 
 (defn clean [_]
