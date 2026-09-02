@@ -4,6 +4,7 @@
             [clojure.test :refer [deftest is testing]]
             [jackdaw.serdes.edn :as jse]
             [jackdaw.streams :as k]
+            [jackdaw.streams.configured :as configured]
             [jackdaw.streams.interop :as interop]
             [jackdaw.streams.lambdas :as lambdas :refer [key-value]]
             [jackdaw.streams.lambdas.specs]
@@ -1490,4 +1491,56 @@
     (let [p (lambdas/->FnStreamPartitioner (fn [_t _k _v _n] nil))]
       (is (= (java.util.Optional/empty)
              (.partitions p "topic" :k :v 10))))))
+
+(defn- configured-driver
+  "Builds a TopologyTestDriver from a topology described against a configured
+  (jackdaw.streams.configured) streams builder."
+  [f]
+  (let [cb (configured/streams-builder {} (interop/streams-builder))]
+    (f cb)
+    (mock/streams-builder->test-driver cb)))
+
+(deftest configured-flat-transform-test
+  (testing "flat-transform delegates through the configured wrapper"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          supplier (fn []
+                     (let [ctx (atom nil)]
+                       (reify Processor
+                         (init [_ c] (reset! ctx c))
+                         (close [_])
+                         (process [_ record]
+                           (let [k (.key record) v (.value record)]
+                             (doseq [x [1 2]]
+                               (.forward @ctx (.withValue (.withKey record (* k x)) (* v x)))))))))
+          driver (configured-driver
+                  (fn [builder]
+                    (-> builder
+                        (k/kstream topic-a)
+                        (k/flat-transform supplier)
+                        (k/to topic-b))))]
+      (mock/publish driver topic-a 2 3)
+      (is (= [[2 3] [4 6]] (mock/get-keyvals driver topic-b)))))
+
+  (testing "flat-transform-values delegates through the configured wrapper"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          supplier (fn []
+                     (let [ctx (atom nil)]
+                       (reify FixedKeyProcessor
+                         (init [_ c] (reset! ctx c))
+                         (close [_])
+                         (process [_ record]
+                           (let [v (.value record)]
+                             (doseq [x [10 20]]
+                               (.forward @ctx (.withValue record (+ v x)))))))))
+          driver (configured-driver
+                  (fn [builder]
+                    (-> builder
+                        (k/kstream topic-a)
+                        (k/flat-transform-values supplier)
+                        (k/to topic-b))))]
+      (mock/publish driver topic-a 1 5)
+      (is (= [[1 15] [1 25]] (mock/get-keyvals driver topic-b))))))
+
 

@@ -11,7 +11,8 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.tools.build.api :as b]
-            [deps-deploy.deps-deploy :as dd]))
+            [deps-deploy.deps-deploy :as dd]
+            [deps-deploy.gpg]))
 
 (def lib 'fundingcircle/jackdaw)
 
@@ -50,7 +51,9 @@
 (def snapshot? (str/ends-with? version "-SNAPSHOT"))
 
 (defn- basis []
-  (b/create-basis {:project "deps.edn"}))
+  ;; :root nil keeps deps at their deps.edn scope in the pom (mirrors the old
+  ;; lein :scope "provided") rather than pinning to the build container's basis.
+  (b/create-basis {:root nil :project "deps.edn"}))
 
 (defn clean [_]
   (b/delete {:path "target"}))
@@ -93,8 +96,14 @@
   [_]
   (when-not (.exists (io/file jar-file))
     (jar nil))
-  (dd/deploy {:installer :remote
-              :artifact jar-file
-              :pom-file (b/pom-path {:class-dir class-dir :lib lib})
-              :sign-releases? (not snapshot?)})
+  ;; deps-deploy 0.2.5 calls gpg/read-passphrase unconditionally in sign!, even
+  ;; when a key id is supplied. System/console is nil on a non-TTY, so this NPEs
+  ;; in CI. bin/gpg supplies the passphrase via loopback pinentry, so the value
+  ;; read here is never used.
+  (with-redefs [deps-deploy.gpg/read-passphrase (constantly "")]
+    (dd/deploy {:installer :remote
+                :artifact jar-file
+                :pom-file (b/pom-path {:class-dir class-dir :lib lib})
+                :sign-key-id "fundingcirclebot@fundingcircle.com"
+                :sign-releases? (not snapshot?)}))
   (println "Deployed" jar-file "to Clojars"))
