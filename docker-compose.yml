@@ -52,7 +52,7 @@ services:
       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
 
   kafka-rest:
-    image: confluentinc/cp-kafka-rest:6.1.1
+    image: confluentinc/cp-kafka-rest:8.3.1
     hostname: kafka-rest
     container_name: kafka-rest
     depends_on:
