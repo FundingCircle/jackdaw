@@ -45,7 +45,7 @@
   "Seeks to the end of all the partitions assigned to the given consumer
    and returns the updated consumer"
   [consumer & topic-partitions]
-  (let [assigned-partitions (or topic-partitions (load-assignments consumer))]
+  (let [assigned-partitions (or (seq topic-partitions) (load-assignments consumer))]
     (.seekToEnd ^Consumer consumer assigned-partitions)
     (doseq [assigned-partition assigned-partitions]
       ;; This forces the seek to happen now

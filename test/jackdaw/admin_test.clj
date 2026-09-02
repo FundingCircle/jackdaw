@@ -161,9 +161,14 @@
                           (->> ops
                                (filter #(= op-type (.opType %)))
                                (map #(.name (.configEntry %)))
-                               set))]
+                               set))
+              delete-op (->> ops
+                             (filter #(= AlterConfigOp$OpType/DELETE (.opType %)))
+                             first)]
           (is (= #{"retention.ms"} (names-for AlterConfigOp$OpType/SET)))
-          (is (= #{"some-key"} (names-for AlterConfigOp$OpType/DELETE))))))))
+          (is (= #{"some-key"} (names-for AlterConfigOp$OpType/DELETE)))
+          ;; incrementalAlterConfigs rejects DELETE ops with a non-null value.
+          (is (nil? (.value (.configEntry delete-op)))))))))
 
 (deftest test-broker-config
   (with-mock-admin-client test-cluster

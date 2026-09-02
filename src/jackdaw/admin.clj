@@ -193,7 +193,8 @@
                                   AlterConfigOp$OpType/SET))
                 topic-config)
            (map (fn [k]
-                  (AlterConfigOp. (jd/->ConfigEntry k "")
+                  ;; incrementalAlterConfigs requires a null value for DELETE.
+                  (AlterConfigOp. (jd/->ConfigEntry k nil)
                                   AlterConfigOp$OpType/DELETE))
                 dropped)))))
 
