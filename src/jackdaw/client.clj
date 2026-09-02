@@ -220,12 +220,14 @@
    (poll-until-assigned consumer 30000))
   ([^Consumer consumer timeout-ms]
    (let [deadline (+ (System/currentTimeMillis) timeout-ms)]
+     ;; Check the assignment before polling so an already-assigned consumer does
+     ;; not fetch (and discard) records here; only poll while it stays empty.
      (loop []
-       (poll consumer (Duration/ofMillis 100))
        (when (empty? (.assignment consumer))
          (when (>= (System/currentTimeMillis) deadline)
            (throw (ex-info "Timed out waiting for partition assignment"
                            {:timeout-ms timeout-ms})))
+         (poll consumer (Duration/ofMillis 100))
          (recur))))))
 
 (defn seek-to-end-eager

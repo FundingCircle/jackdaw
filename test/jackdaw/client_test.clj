@@ -257,12 +257,17 @@
            :value 2))))
 
 (deftest poll-until-assigned-test
-  (testing "returns nil when the consumer already has an assignment"
+  (testing "returns nil without polling when the consumer already has an assignment"
     (let [tp (TopicPartition. "test-topic" 0)
+          polls (atom 0)
           consumer (reify Consumer
-                     (^ConsumerRecords poll [_ ^Duration _] (ConsumerRecords/empty))
+                     (^ConsumerRecords poll [_ ^Duration _]
+                       (swap! polls inc)
+                       (ConsumerRecords/empty))
                      (assignment [_] #{tp}))]
-      (is (nil? (client/poll-until-assigned consumer)))))
+      (is (nil? (client/poll-until-assigned consumer)))
+      ;; Polling an already-assigned consumer here would fetch and discard records.
+      (is (= 0 @polls))))
 
   (testing "throws ex-info after the timeout when no assignment arrives"
     ;; Wall-clock based: iteration counting would have returned almost
