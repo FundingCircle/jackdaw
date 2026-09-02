@@ -1462,3 +1462,14 @@
           (let [msgs (into {} (mock/get-keyvals driver output-t))]
             (is (= 6 (:value (msgs 1))))
             (is (= 60 (:value (msgs 2))))))))))
+
+(deftest stream-partitioner-test
+  (testing "returns the fn's partition wrapped in an Optional set"
+    (let [p (lambdas/->FnStreamPartitioner (fn [_t _k _v _n] 3))]
+      (is (= (java.util.Optional/of #{3})
+             (.partitions p "topic" :k :v 10)))))
+  (testing "a nil result delegates to Kafka's default partitioner"
+    (let [p (lambdas/->FnStreamPartitioner (fn [_t _k _v _n] nil))]
+      (is (= (java.util.Optional/empty)
+             (.partitions p "topic" :k :v 10))))))
+

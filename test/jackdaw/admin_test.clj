@@ -6,7 +6,7 @@
    [manifold.deferred :as d])
   (:import
    (org.apache.kafka.common Node KafkaFuture)
-   (org.apache.kafka.clients.admin MockAdminClient)))
+   (org.apache.kafka.clients.admin AlterConfigOp$OpType MockAdminClient)))
 
 (set! *warn-on-reflection* false)
 
@@ -144,6 +144,26 @@
                     client (map #(update % :replication-factor inc)
                                 [foo bar]))
                    first)))))))
+
+(deftest test-alter-topic-config!-replacement-semantics
+  (testing "supplied keys are SET and dropped dynamic overrides are DELETEd"
+    (with-mock-admin-client test-cluster
+      (fn [client]
+        (admin/create-topics! client [(:foo test-topics)])
+        ;; The mock reports an existing "some-key" override that is absent from
+        ;; the supplied :topic-config, so it must be deleted to keep replacement
+        ;; semantics (Kafka 4.x incrementalAlterConfigs only merges otherwise).
+        (let [[_altered configs] (admin/alter-topic-config!
+                                  client [{:topic-name "foo"
+                                           :topic-config {"retention.ms" "1000"}}])
+              ops (-> configs vals first)
+              names-for (fn [op-type]
+                          (->> ops
+                               (filter #(= op-type (.opType %)))
+                               (map #(.name (.configEntry %)))
+                               set))]
+          (is (= #{"retention.ms"} (names-for AlterConfigOp$OpType/SET)))
+          (is (= #{"some-key"} (names-for AlterConfigOp$OpType/DELETE))))))))
 
 (deftest test-broker-config
   (with-mock-admin-client test-cluster

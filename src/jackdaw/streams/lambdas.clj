@@ -149,10 +149,12 @@
 (deftype FnStreamPartitioner [stream-partitioner-fn]
   StreamPartitioner
   ;; Kafka 4.x removed the single-partition `partition` method; `partitions`
-  ;; returns an Optional set of target partitions.
+  ;; returns an Optional set of target partitions. A nil result from the user fn
+  ;; delegates to Kafka's default partitioner via Optional/empty.
   (partitions [_this topic-name key val partition-count]
-    (java.util.Optional/of
-     #{(int (stream-partitioner-fn topic-name key val partition-count))})))
+    (if-let [p (stream-partitioner-fn topic-name key val partition-count)]
+      (java.util.Optional/of #{(int p)})
+      (java.util.Optional/empty))))
 
 (defn stream-partitioner
   "Packages up a Clojure fn in a kstream partitioner."

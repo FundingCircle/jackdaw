@@ -165,30 +165,61 @@
                                 (seq (:isr part-info))))
                          partition-info)))))
 
-(defn- topics->configs
-  ^java.util.Map [topics]
+(defn- describe-current-configs
+  "Return a map from topic name to its current live configuration, as a map from
+  config key to metadata (`:value`, `:default?`, `:read-only?`, ...)."
+  [client topic-names]
   (into {}
-        (map (fn [{:keys [topic-name topic-config] :as _t}]
-               {:pre [(string? topic-name)
-                      (map? topic-config)]}
-               [(jd/->ConfigResource jd/+topic-config-resource-type+
-                                     topic-name)
-                ;; Kafka 4.x removed alterConfigs; incrementalAlterConfigs takes
-                ;; a collection of AlterConfigOp per resource.
-                (mapv (fn [[k v]]
-                        (AlterConfigOp. (jd/->ConfigEntry k v)
-                                        AlterConfigOp$OpType/SET))
-                      topic-config)]))
-        topics))
+        (map (fn [[resource config]]
+               [(:name (jd/datafy resource)) (jd/datafy config)]))
+        @(describe-configs* client (map jd/->topic-resource topic-names))))
+
+(defn- topic-config-ops
+  "Build the incremental `AlterConfigOp`s that make a topic's live configuration
+  correspond exactly to `topic-config`: `SET` every supplied key and `DELETE`
+  any dynamic (non-default, non-read-only) override that is being dropped. The
+  `DELETE`s preserve the replacement semantics of the removed `alterConfigs`."
+  [current-config topic-config]
+  (let [new-keys (set (keys topic-config))
+        dropped (for [[k entry] current-config
+                      :when (and (not (contains? new-keys k))
+                                 (not (:default? entry))
+                                 (not (:read-only? entry)))]
+                  k)]
+    (into []
+          (concat
+           (map (fn [[k v]]
+                  (AlterConfigOp. (jd/->ConfigEntry k v)
+                                  AlterConfigOp$OpType/SET))
+                topic-config)
+           (map (fn [k]
+                  (AlterConfigOp. (jd/->ConfigEntry k "")
+                                  AlterConfigOp$OpType/DELETE))
+                dropped)))))
 
 (defn alter-topic-config!
   "Given an `AdminClient` and a sequence of topic descriptors having
   `:topic-config`, alters the live configuration of the specified
-  topics to correspond to the specified `:topic-config`."
+  topics to correspond to the specified `:topic-config`.
+
+  Kafka 4.x removed `alterConfigs` (whole-config replacement) in favour of
+  `incrementalAlterConfigs`. To preserve the replacement semantics, the current
+  configuration is described first and any dynamic override omitted from
+  `:topic-config` is explicitly deleted."
   [^AdminClient client topics]
   {:pre [(client? client)
-         (sequential? topics)]}
-  @(alter-topics* client (topics->configs topics)))
+         (sequential? topics)
+         (every? (comp string? :topic-name) topics)
+         (every? (comp map? :topic-config) topics)]}
+  (let [current (describe-current-configs client (map :topic-name topics))
+        configs (into {}
+                      (map (fn [{:keys [topic-name topic-config]}]
+                             [(jd/->ConfigResource jd/+topic-config-resource-type+
+                                                   topic-name)
+                              (topic-config-ops (get current topic-name)
+                                                topic-config)]))
+                      topics)]
+    @(alter-topics* client configs)))
 
 (defn delete-topics!
   "Given an `AdminClient` and a sequence of topic descriptors, marks the
