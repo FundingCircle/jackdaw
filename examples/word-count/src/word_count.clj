@@ -6,12 +6,45 @@
   the value into words. It then writes to a Kafka topic called
   `output` for each word seen."
   (:require
+   [clojure.java.io :as io]
    [clojure.string :as str]
    [clojure.tools.logging :refer [info]]
    [jackdaw.admin :as ja]
    [jackdaw.serdes :as js]
    [jackdaw.streams :as j]
    [integrant.core :as ig]))
+
+
+(defn- context-classloader []
+  (.getContextClassLoader (Thread/currentThread)))
+
+(defn- serdes-available? []
+  (try
+    (Class/forName "jackdaw.serdes.EdnSerde" false (context-classloader))
+    true
+    (catch ClassNotFoundException _ false)))
+
+(defn- compile-serdes!
+  "Jackdaw is consumed here via :local/root (raw source), so its gen-class serdes
+  (e.g. jackdaw.serdes.EdnSerde, configured as default.*.serde below) are not
+  precompiled as they would be in the published jar. AOT-compile them and expose
+  them on the thread context classloader so Kafka Streams can instantiate them by
+  class name from both the -main and REPL/dev workflows."
+  []
+  (let [dir (io/file "classes")]
+    (.mkdirs dir)
+    (binding [*compile-path* (str dir)]
+      (run! compile '[jackdaw.serdes.edn2
+                      jackdaw.serdes.fressian
+                      jackdaw.serdes.fn-impl]))
+    (.setContextClassLoader
+     (Thread/currentThread)
+     (java.net.URLClassLoader.
+      (into-array java.net.URL [(.toURL (.toURI dir))])
+      (context-classloader)))))
+
+(when-not (serdes-available?)
+  (compile-serdes!))
 
 
 (defn split-lines
