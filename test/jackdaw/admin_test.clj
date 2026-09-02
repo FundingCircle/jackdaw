@@ -90,7 +90,9 @@
         (let [bar (:bar test-topics)
               p (d/future
                   (admin/retry-exists? client bar 3 30))]
-          (Thread/sleep 100)
+          ;; Create well after the ~90ms retry window so the result is
+          ;; deterministically false regardless of scheduling jitter.
+          (Thread/sleep 1000)
           (admin/create-topics! client [bar])
           (is (= false @p)))))))
 
