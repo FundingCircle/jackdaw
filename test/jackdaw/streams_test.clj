@@ -241,16 +241,24 @@
         (is (= [[1 1]] (mock/get-keyvals driver topic-b)))
         (is (= [[1 1]] (mock/get-keyvals driver topic-c)))))
 
-    (testing "on a stream without a StreamsBuilder throws a clear error"
-      ;; Streams produced by KTable/to-kstream do not carry a StreamsBuilder,
-      ;; which through needs to re-source the topic under Kafka 4.x.
-      (is (thrown-with-msg?
-           clojure.lang.ExceptionInfo #"through requires a StreamsBuilder"
-           (mock/build-driver
-            (fn [builder]
-              (-> (k/ktable builder (mock/topic "topic-a"))
-                  (k/to-kstream)
-                  (k/through (mock/topic "topic-b")))))))))
+    (testing "on a stream produced by KTable/to-kstream"
+      ;; Streams from to-kstream carry the StreamsBuilder, so through can
+      ;; re-source the topic under Kafka 4.x rather than failing.
+      (let [topic-a (mock/topic "topic-a")
+            topic-b (mock/topic "topic-b")
+            topic-c (mock/topic "topic-c")
+            driver (mock/build-driver
+                    (fn [builder]
+                      (-> (k/ktable builder topic-a)
+                          (k/to-kstream)
+                          (k/through topic-b)
+                          (k/to topic-c))))
+            publish (partial mock/publish driver topic-a)]
+
+        (publish 1 1)
+
+        (is (= [[1 1]] (mock/get-keyvals driver topic-b)))
+        (is (= [[1 1]] (mock/get-keyvals driver topic-c))))))
 
   (testing "to"
     (let [topic-a (mock/topic "topic-a")

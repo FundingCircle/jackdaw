@@ -93,7 +93,8 @@
               ^String topic-name
               ^Consumed (topic->consumed topic-config)
               ^Materialized (topic->materialized (assoc topic-config
-                                                        :topic-name store-name)))))))
+                                                        :topic-name store-name)))
+      streams-builder))))
 
 (deftype CljStreamsBuilder [^StreamsBuilder streams-builder]
   IStreamsBuilder
@@ -198,14 +199,16 @@
   (group-by
     [_ key-value-mapper-fn]
     (clj-kgroupedstream
-     (.groupBy kstream ^KeyValueMapper (select-key-value-mapper key-value-mapper-fn))))
+     (.groupBy kstream ^KeyValueMapper (select-key-value-mapper key-value-mapper-fn))
+     streams-builder))
 
   (group-by
     [_ key-value-mapper-fn topic-config]
     (clj-kgroupedstream
      (.groupBy kstream
                ^KeyValueMapper (select-key-value-mapper key-value-mapper-fn)
-               ^Grouped (topic->grouped topic-config))))
+               ^Grouped (topic->grouped topic-config))
+     streams-builder))
 
   (map-values
     [_ value-mapper-fn]
@@ -279,13 +282,15 @@
   (group-by-key
     [_]
     (clj-kgroupedstream
-     (.groupByKey kstream)))
+     (.groupByKey kstream)
+     streams-builder))
 
   (group-by-key
     [_ topic-config]
     (clj-kgroupedstream
      (.groupByKey ^KStream kstream
-                  ^Grouped (topic->grouped topic-config))))
+                  ^Grouped (topic->grouped topic-config))
+     streams-builder))
 
   (join-windowed
     [_ other-kstream value-joiner-fn windows]
@@ -456,14 +461,15 @@
   ([kstream streams-builder]
    (CljKStream. kstream streams-builder)))
 
-(deftype CljKTable [^KTable ktable]
+(deftype CljKTable [^KTable ktable streams-builder]
   IKStreamBase
   (join
     [_ other-ktable value-joiner-fn]
     (clj-ktable
      (.join ^KTable ktable
             ^KTable (ktable* other-ktable)
-            ^ValueJoiner (value-joiner value-joiner-fn))))
+            ^ValueJoiner (value-joiner value-joiner-fn))
+     streams-builder))
 
   (join
     [_ other-ktable foreign-key-extractor-fn value-joiner-fn]
@@ -471,75 +477,88 @@
       (.join ^KTable ktable
              ^KTable (ktable* other-ktable)
              ^Function (foreign-key-extractor foreign-key-extractor-fn)
-             ^ValueJoiner (value-joiner value-joiner-fn))))
+             ^ValueJoiner (value-joiner value-joiner-fn))
+      streams-builder))
 
   (left-join
     [_ other-ktable value-joiner-fn]
     (clj-ktable
      (.leftJoin ^KTable ktable
                 ^KTable (ktable* other-ktable)
-                ^ValueJoiner (value-joiner value-joiner-fn))))
+                ^ValueJoiner (value-joiner value-joiner-fn))
+     streams-builder))
 
   (filter
     [_ predicate-fn]
     (clj-ktable
      (.filter ^KTable ktable
-              ^Predicate (predicate predicate-fn))))
+              ^Predicate (predicate predicate-fn))
+     streams-builder))
 
   (filter-not
     [_ predicate-fn]
     (clj-ktable
      (.filterNot ^KTable ktable
-                 ^Predicate (predicate predicate-fn))))
+                 ^Predicate (predicate predicate-fn))
+     streams-builder))
 
   (map-values
     [_ value-mapper-fn]
     (clj-ktable
-     (.mapValues ktable ^ValueMapper (value-mapper value-mapper-fn))))
+     (.mapValues ktable ^ValueMapper (value-mapper value-mapper-fn))
+     streams-builder))
 
   IKTable
   (group-by
     [_ key-value-mapper-fn]
     (clj-kgroupedtable
-     (.groupBy ktable ^KeyValueMapper (key-value-mapper key-value-mapper-fn))))
+     (.groupBy ktable ^KeyValueMapper (key-value-mapper key-value-mapper-fn))
+     streams-builder))
 
   (group-by
     [_ key-value-mapper-fn topic-config]
     (clj-kgroupedtable
      (.groupBy ktable
                ^KeyValueMapper (key-value-mapper key-value-mapper-fn)
-               ^Grouped (topic->grouped topic-config))))
+               ^Grouped (topic->grouped topic-config))
+     streams-builder))
 
   (outer-join
     [_ other-ktable value-joiner-fn]
     (clj-ktable
      (.outerJoin ^KTable ktable
                  ^KTable (ktable* other-ktable)
-                 ^ValueJoiner (value-joiner value-joiner-fn))))
+                 ^ValueJoiner (value-joiner value-joiner-fn))
+     streams-builder))
 
   (suppress
     [_ suppress-config]
     (clj-ktable
-       (.suppress ^KTable ktable (suppress-config->suppressed suppress-config))))
+       (.suppress ^KTable ktable (suppress-config->suppressed suppress-config))
+       streams-builder))
 
   (to-kstream
     [_]
     (clj-kstream
-     (.toStream ^KTable ktable)))
+     (.toStream ^KTable ktable)
+     streams-builder))
 
   (to-kstream
     [_ key-value-mapper-fn]
     (clj-kstream
      (.toStream ^KTable ktable
-                ^KeyValueMapper (key-value-mapper key-value-mapper-fn))))
+                ^KeyValueMapper (key-value-mapper key-value-mapper-fn))
+     streams-builder))
 
   (ktable* [_]
     ktable))
 
 (defn clj-ktable
   "Makes a CljKTable object."
-  [ktable]
-  (CljKTable. ktable))
+  ([ktable]
+   (CljKTable. ktable nil))
+  ([ktable streams-builder]
+   (CljKTable. ktable streams-builder)))
 
 (deftype CljGlobalKTable [^GlobalKTable global-ktable]
   IGlobalKTable
@@ -552,7 +571,7 @@
   [global-ktable]
   (CljGlobalKTable. global-ktable))
 
-(deftype CljKGroupedTable [^KGroupedTable kgroupedtable]
+(deftype CljKGroupedTable [^KGroupedTable kgroupedtable streams-builder]
   IKGroupedBase
   (aggregate
     [_ initializer-fn adder-fn subtractor-fn topic]
@@ -561,7 +580,8 @@
                  ^Initializer (initializer initializer-fn)
                  ^Aggregator (aggregator adder-fn)
                  ^Aggregator (aggregator subtractor-fn)
-                 ^Materialized (topic->materialized topic))))
+                 ^Materialized (topic->materialized topic))
+     streams-builder))
 
   (aggregate
     [_ initializer-fn adder-fn subtractor-fn]
@@ -569,18 +589,21 @@
      (.aggregate ^KGroupedTable kgroupedtable
                  ^Initializer (initializer initializer-fn)
                  ^Aggregator (aggregator adder-fn)
-                 ^Aggregator (aggregator subtractor-fn))))
+                 ^Aggregator (aggregator subtractor-fn))
+     streams-builder))
 
   (count
     [_]
     (clj-ktable
-     (.count ^KGroupedTable kgroupedtable)))
+     (.count ^KGroupedTable kgroupedtable)
+     streams-builder))
 
   (count
     [_ topic-config]
     (clj-ktable
      (.count ^KGroupedTable kgroupedtable
-             ^Materialized (topic->materialized topic-config))))
+             ^Materialized (topic->materialized topic-config))
+     streams-builder))
 
   (reduce
     [_ adder-fn subtractor-fn topic-config]
@@ -588,14 +611,16 @@
      (.reduce ^KGroupedTable kgroupedtable
               ^Reducer (reducer adder-fn)
               ^Reducer (reducer subtractor-fn)
-              ^Materialized (topic->materialized topic-config))))
+              ^Materialized (topic->materialized topic-config))
+     streams-builder))
 
   (reduce
     [_ adder-fn subtractor-fn]
     (clj-ktable
      (.reduce ^KGroupedTable kgroupedtable
               ^Reducer (reducer adder-fn)
-              ^Reducer (reducer subtractor-fn))))
+              ^Reducer (reducer subtractor-fn))
+     streams-builder))
 
   IKGroupedTable
   (kgroupedtable*
@@ -604,10 +629,12 @@
 
 (defn clj-kgroupedtable
   "Makes a CljKGroupedTable object."
-  [kgroupedtable]
-  (CljKGroupedTable. kgroupedtable))
+  ([kgroupedtable]
+   (CljKGroupedTable. kgroupedtable nil))
+  ([kgroupedtable streams-builder]
+   (CljKGroupedTable. kgroupedtable streams-builder)))
 
-(deftype CljKGroupedStream [^KGroupedStream kgroupedstream]
+(deftype CljKGroupedStream [^KGroupedStream kgroupedstream streams-builder]
   IKGroupedBase
   (aggregate
     [_ initializer-fn aggregator-fn topic]
@@ -615,49 +642,57 @@
      (.aggregate ^KGroupedStream kgroupedstream
                  ^Initializer (initializer initializer-fn)
                  ^Aggregator (aggregator aggregator-fn)
-                 ^Materialized (topic->materialized topic))))
+                 ^Materialized (topic->materialized topic))
+     streams-builder))
 
   (aggregate
     [_ initializer-fn aggregator-fn]
     (clj-ktable
      (.aggregate ^KGroupedStream kgroupedstream
                  ^Initializer (initializer initializer-fn)
-                 ^Aggregator (aggregator aggregator-fn))))
+                 ^Aggregator (aggregator aggregator-fn))
+     streams-builder))
 
   (count
     [_]
     (clj-ktable
-     (.count ^KGroupedStream kgroupedstream)))
+     (.count ^KGroupedStream kgroupedstream)
+     streams-builder))
 
   (count
     [_ topic-config]
     (clj-ktable
      (.count ^KGroupedStream kgroupedstream
-             ^Materialized (topic->materialized topic-config))))
+             ^Materialized (topic->materialized topic-config))
+     streams-builder))
 
   (reduce
     [_ reducer-fn topic-config]
     (clj-ktable
      (.reduce ^KGroupedStream kgroupedstream
               ^Reducer (reducer reducer-fn)
-              ^Materialized (topic->materialized topic-config))))
+              ^Materialized (topic->materialized topic-config))
+     streams-builder))
 
   (reduce
     [_ reducer-fn]
     (clj-ktable
      (.reduce ^KGroupedStream kgroupedstream
-              ^Reducer (reducer reducer-fn))))
+              ^Reducer (reducer reducer-fn))
+     streams-builder))
 
   IKGroupedStream
   (windowed-by-time
     [_ windows]
     (clj-time-windowed-kstream
-     (.windowedBy ^KGroupedStream kgroupedstream ^Windows windows)))
+     (.windowedBy ^KGroupedStream kgroupedstream ^Windows windows)
+     streams-builder))
 
   (windowed-by-session
     [_ windows]
     (clj-session-windowed-kstream
-     (.windowedBy ^KGroupedStream kgroupedstream ^SessionWindows windows)))
+     (.windowedBy ^KGroupedStream kgroupedstream ^SessionWindows windows)
+     streams-builder))
 
   (kgroupedstream*
     [_]
@@ -665,10 +700,12 @@
 
 (defn clj-kgroupedstream
   "Makes a CljKGroupedStream object."
-  [kgroupedstream]
-  (CljKGroupedStream. kgroupedstream))
+  ([kgroupedstream]
+   (CljKGroupedStream. kgroupedstream nil))
+  ([kgroupedstream streams-builder]
+   (CljKGroupedStream. kgroupedstream streams-builder)))
 
-(deftype CljTimeWindowedKStream [^TimeWindowedKStream windowed-kstream]
+(deftype CljTimeWindowedKStream [^TimeWindowedKStream windowed-kstream streams-builder]
   IKGroupedBase
   (aggregate
     [_ initializer-fn aggregator-fn topic]
@@ -676,25 +713,29 @@
      (.aggregate ^TimeWindowedKStream windowed-kstream
                  ^Initializer (initializer initializer-fn)
                  ^Aggregator (aggregator aggregator-fn)
-                 ^Materialized (topic->materialized topic))))
+                 ^Materialized (topic->materialized topic))
+     streams-builder))
 
   (count
     [_]
     (clj-ktable
-     (.count ^TimeWindowedKStream windowed-kstream)))
+     (.count ^TimeWindowedKStream windowed-kstream)
+     streams-builder))
 
   (count
     [_ topic-config]
     (clj-ktable
      (.count ^TimeWindowedKStream windowed-kstream
-             ^Materialized (topic->materialized topic-config))))
+             ^Materialized (topic->materialized topic-config))
+     streams-builder))
 
   (reduce
     [_ reducer-fn topic-config]
     (clj-ktable
      (.reduce ^TimeWindowedKStream windowed-kstream
               ^Reducer (reducer reducer-fn)
-              ^Materialized (topic->materialized topic-config))))
+              ^Materialized (topic->materialized topic-config))
+     streams-builder))
 
   ITimeWindowedKStream
   (time-windowed-kstream*
@@ -703,10 +744,12 @@
 
 (defn clj-time-windowed-kstream
   "Makes a CljTimeWindowedKStream object."
-  [windowed-kstream]
-  (CljTimeWindowedKStream. windowed-kstream))
+  ([windowed-kstream]
+   (CljTimeWindowedKStream. windowed-kstream nil))
+  ([windowed-kstream streams-builder]
+   (CljTimeWindowedKStream. windowed-kstream streams-builder)))
 
-(deftype CljSessionWindowedKStream [^SessionWindowedKStream windowed-kstream]
+(deftype CljSessionWindowedKStream [^SessionWindowedKStream windowed-kstream streams-builder]
   IKGroupedBase
   (aggregate
     [_ initializer-fn aggregator-fn merger-fn topic]
@@ -715,25 +758,29 @@
                  ^Initializer (initializer initializer-fn)
                  ^Aggregator (aggregator aggregator-fn)
                  ^Merger (merger merger-fn)
-                 ^Materialized (topic->materialized topic))))
+                 ^Materialized (topic->materialized topic))
+     streams-builder))
 
   (count
     [_]
     (clj-ktable
-     (.count ^SessionWindowedKStream windowed-kstream)))
+     (.count ^SessionWindowedKStream windowed-kstream)
+     streams-builder))
 
   (count
     [_ topic-config]
     (clj-ktable
      (.count ^SessionWindowedKStream windowed-kstream
-             ^Materialized (topic->materialized topic-config))))
+             ^Materialized (topic->materialized topic-config))
+     streams-builder))
 
   (reduce
     [_ reducer-fn topic-config]
     (clj-ktable
      (.reduce ^SessionWindowedKStream windowed-kstream
               ^Reducer (reducer reducer-fn)
-              ^Materialized (topic->materialized topic-config))))
+              ^Materialized (topic->materialized topic-config))
+     streams-builder))
 
   ISessionWindowedKStream
   (session-windowed-kstream*
@@ -742,5 +789,7 @@
 
 (defn clj-session-windowed-kstream
   "Makes a CljSessionWindowedKStream object."
-  [windowed-kstream]
-  (CljSessionWindowedKStream. windowed-kstream))
+  ([windowed-kstream]
+   (CljSessionWindowedKStream. windowed-kstream nil))
+  ([windowed-kstream streams-builder]
+   (CljSessionWindowedKStream. windowed-kstream streams-builder)))
