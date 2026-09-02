@@ -55,4 +55,4 @@ jobs:
           SCHEMA_REGISTRY_HOST: schema-registry
           KAFKA_REST_PROXY_HOST: kafka-rest
       - name: lint
-        run: clojure -M:clj-kondo --lint src test || true
+        run: clojure -M:clj-kondo --lint src test
