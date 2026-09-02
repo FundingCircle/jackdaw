@@ -15,4 +15,19 @@
            manifold.deferred/loop clojure.core/let}
 
  :hooks {:analyze-call {jackdaw.test.transports/deftransport
-                        hooks.jackdaw.test.transports/deftransport}}}
+                        hooks.jackdaw.test.transports/deftransport}}
+
+ ;; interop/configured wrap Kafka Streams via protocols referred with :refer
+ ;; :all; clj-kondo misreports missing/unresolved protocol methods for the
+ ;; core-shadowed names (group-by, peek, ...) and the few intentionally
+ ;; unimplemented ones (source-topics, write-as-text!, ...).
+ :config-in-ns
+ {jackdaw.streams.interop {:linters {:missing-protocol-method {:level :off}
+                                     :unresolved-protocol-method {:level :off}}}
+  jackdaw.streams.configured {:linters {:missing-protocol-method {:level :off}
+                                        :unresolved-protocol-method {:level :off}}}}
+
+ ;; The jackdaw.data.* files are `load`ed `in-ns` fragments of jackdaw.data, not
+ ;; standalone namespaces, so clj-kondo can't resolve defn->data/datafy in them
+ ;; and reports order-dependent false errors. Exclude them from output.
+ :output {:exclude-files ["jackdaw/data/"]}}

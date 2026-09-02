@@ -13,8 +13,6 @@
          configured-time-windowed-kstream
          configured-session-windowed-kstream)
 
-;; with-kv-state-store is intentionally not implemented for this wrapper type.
-#_{:clj-kondo/ignore [:missing-protocol-method]}
 (deftype ConfiguredStreamsBuilder [config streams-builder]
   IStreamsBuilder
   (kstream
@@ -75,10 +73,6 @@
   ([config streams-builder]
    (ConfiguredStreamsBuilder. config streams-builder)))
 
-;; print!/through/to!/flat-transform(-values) are implemented below but flagged
-;; by clj-kondo due to core-name shadowing; write-as-text! is intentionally not
-;; implemented for this wrapper type.
-#_{:clj-kondo/ignore [:missing-protocol-method :unresolved-protocol-method]}
 (deftype ConfiguredKStream [config kstream]
   IKStreamBase
   (join
@@ -312,9 +306,6 @@
   [config kstream]
   (ConfiguredKStream. config kstream))
 
-;; group-by/peek are implemented below but flagged by clj-kondo due to
-;; core-name shadowing; write-as-text! is intentionally not implemented here.
-#_{:clj-kondo/ignore [:missing-protocol-method :unresolved-protocol-method]}
 (deftype ConfiguredKTable [config ktable]
   IKStreamBase
   (join
