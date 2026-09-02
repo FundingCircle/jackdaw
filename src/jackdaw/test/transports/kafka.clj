@@ -31,14 +31,9 @@
 
 (defn load-assignments
   [consumer]
-  ;; Kafka 4.x no longer assigns partitions during a zero-duration poll, so poll
-  ;; until the assignment is established (otherwise seek-to-end is a no-op and
-  ;; the consumer races the producer).
-  (loop [remaining-ms 10000]
-    (.poll ^Consumer consumer (Duration/ofMillis 100))
-    (when (and (.isEmpty (.assignment ^Consumer consumer))
-               (pos? remaining-ms))
-      (recur (- remaining-ms 100))))
+  ;; Kafka 4.x no longer assigns partitions during a zero-duration poll; delegate
+  ;; to the shared client helper (wall-clock timeout, throws on failure).
+  (kafka/poll-until-assigned consumer)
   (.assignment ^Consumer consumer))
 
 (defn seek-to-end

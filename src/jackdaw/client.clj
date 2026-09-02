@@ -211,16 +211,22 @@
   (doto ^Consumer consumer
     (.seek ^TopicPartition (jd/as-TopicPartition topic-partition) offset)))
 
-(defn- poll-for-assignment
-  "Polls until the consumer has been assigned partitions. Kafka 4.x no longer
-  performs group assignment during a zero-duration poll, so the previous
-  `(poll consumer 0)` trick no longer loads assignments."
-  [^Consumer consumer]
-  (loop [remaining-ms 10000]
-    (poll consumer 100)
-    (when (and (.isEmpty (.assignment consumer))
-               (pos? remaining-ms))
-      (recur (- remaining-ms 100)))))
+(defn poll-until-assigned
+  "Poll the consumer until partition assignment is non-empty, returning nil.
+
+  In Kafka 4.0+, `poll(0)` no longer triggers assignment. Throws `ex-info` if no
+  assignment is received within `timeout-ms` (default 30000)."
+  ([^Consumer consumer]
+   (poll-until-assigned consumer 30000))
+  ([^Consumer consumer timeout-ms]
+   (let [deadline (+ (System/currentTimeMillis) timeout-ms)]
+     (loop []
+       (poll consumer (Duration/ofMillis 100))
+       (when (empty? (.assignment consumer))
+         (when (>= (System/currentTimeMillis) deadline)
+           (throw (ex-info "Timed out waiting for partition assignment"
+                           {:timeout-ms timeout-ms})))
+         (recur))))))
 
 (defn seek-to-end-eager
   "Seek to the last offset for all assigned partitions, and force positioning.
@@ -231,7 +237,7 @@
   ([^Consumer consumer]
    (seek-to-end-eager consumer []))
   ([^Consumer consumer topic-partitions]
-   (poll-for-assignment consumer) ;; load assignments
+   (poll-until-assigned consumer) ;; load assignments
    (.seekToEnd consumer topic-partitions)
    (position-all consumer)
    consumer))
@@ -245,7 +251,7 @@
    (seek-to-beginning-eager consumer [])
    consumer)
   ([^Consumer consumer topic-partitions]
-   (poll-for-assignment consumer)
+   (poll-until-assigned consumer)
    (.seekToBeginning consumer (map jd/as-TopicPartition topic-partitions))
    (position-all consumer)
    consumer))
