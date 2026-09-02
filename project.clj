@@ -10,28 +10,31 @@
   :repositories [["confluent" {:url "https://packages.confluent.io/maven/"}]
                  ["mulesoft" {:url "https://repository.mulesoft.org/nexus/content/repositories/public/"}]]
 
-  :dependencies [[manifold/manifold "0.4.0"]
+  :dependencies [[manifold/manifold "0.5.0"]
                  [danlentz/clj-uuid "0.1.9"
                   :exclusions [primitive-math]]
 
                  ;; Confluent does paired releases with Kafka, this should tie
                  ;; off with the kafka version.
                  ;; See https://docs.confluent.io/current/release-notes.html
-                 [io.confluent/kafka-schema-registry-client "7.3.2"
-                  :exclusions [com.fasterxml.jackson.core/jackson-databind]]
-                 [io.confluent/kafka-avro-serializer "7.3.2"]
-                 [io.confluent/kafka-json-schema-serializer "7.3.2"]
-                 [org.apache.kafka/kafka-clients "3.3.2"]
-                 [org.apache.kafka/kafka-streams "3.3.2"]
-                 [org.apache.kafka/kafka-streams-test-utils "3.3.2"]
+                 [io.confluent/kafka-json-schema-serializer "7.9.2" :exclusions [org.apache.kafka/kafka-clients]]
+                 [io.confluent/kafka-avro-serializer "7.9.2" :exclusions [org.apache.kafka/kafka-clients
+                                                                           org.apache.commons/commons-compress]]
+                 [io.confluent/kafka-schema-registry-client "7.9.2" :exclusions [org.apache.kafka/kafka-clients
+                                                                                 com.fasterxml.jackson.core/jackson-databind
+                                                                                 org.apache.commons/commons-compress]]
+
+                 [org.apache.kafka/kafka-clients "3.9.2"]
+                 [org.apache.kafka/kafka-streams "3.9.2" :exclusions [com.fasterxml.jackson.core/jackson-core]]
+                 [org.apache.kafka/kafka-streams-test-utils "3.9.2"]
 
                  [org.clojure/clojure "1.11.1" :scope "provided"]
-                 [org.clojure/java.data "1.0.95"]
+                 [org.clojure/java.data "1.4.120"]
                  [org.clojure/data.json "2.4.0"]
-                 [org.clojure/data.fressian "1.0.0"]
-                 [org.clojure/tools.logging "1.2.4"]
-                 [org.clojure/core.cache "1.0.225"]
-                 [metosin/jsonista "0.3.7"]]
+                 [org.clojure/data.fressian "1.1.1"]
+                 [org.clojure/tools.logging "1.3.1"]
+                 [org.clojure/core.cache "1.2.263"]
+                 [metosin/jsonista "0.3.14"]]
 
   :aliases {"kaocha" ["run" "-m" "kaocha.runner"]}
   :aot [jackdaw.serdes.edn2 jackdaw.serdes.fressian jackdaw.serdes.fn-impl]
@@ -76,11 +79,10 @@
               :resource-paths ["test/resources"]
               :injections [(require 'io.aviso.logging.setup)]
               :dependencies [[io.aviso/logging "1.0"]
-                             [aleph/aleph "0.6.1"]
-                             [org.apache.kafka/kafka-streams-test-utils "3.3.2"]
-                             [org.apache.kafka/kafka-clients "3.3.2" :classifier "test"]
+                             [aleph/aleph "0.6.3"]
+                             [org.apache.kafka/kafka-clients "3.9.2" :classifier "test"]
                              [org.clojure/test.check "1.1.1"]
-                             [org.apache.kafka/kafka_2.13 "3.3.2"]
+                             [org.apache.kafka/kafka_2.13 "3.9.2" :exclusions [com.fasterxml.jackson.core/jackson-core]]
                              [lambdaisland/kaocha "1.80.1274"]
                              [lambdaisland/kaocha-cloverage "1.1.89"]
                              [lambdaisland/kaocha-junit-xml "1.17.101"]]}
