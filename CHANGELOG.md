@@ -1,6 +1,8 @@
 # Changelog
 
 ### Unreleased
+- **Kafka 4.x / Confluent Platform 8.x support.** Upgraded `org.apache.kafka` to 4.3.0 and the Confluent serializers/schema-registry client to 8.3.1. Adapts to the removal of `KStream.branch`/`through`/`transform*` (now built on `split`/`process`/`processValues`), `StreamPartitioner.partition` -> `partitions`, `AdminClient.alterConfigs` -> `incrementalAlterConfigs`, `Duration`-only `Consumer.poll`, the new `StreamsUncaughtExceptionHandler`, and the relocated `org.apache.kafka.tools.StreamsResetter`. The Docker test stack now runs Kafka 4.x in KRaft mode (no ZooKeeper). [#384](https://github.com/FundingCircle/jackdaw/pull/384)
+- **Migrated build tooling from Leiningen to `deps.edn`/`tools.build`.** Replaced `project.clj` with `deps.edn` + `build.clj`; example projects and CI updated accordingly. [#384](https://github.com/FundingCircle/jackdaw/pull/384)
 
 ### [0.9.12] - [2023-12-05]
 - Support for Foreign Key joins [#365](https://github.com/FundingCircle/jackdaw/pull/365) (Issue [#364])

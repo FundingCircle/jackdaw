@@ -190,16 +190,26 @@
 ;; fn that returns either a (deprecated) Transformer/ValueTransformer whose
 ;; transform result is forwarded, or - via the -with-ctx helpers below - a new
 ;; Processor/FixedKeyProcessor built against the new ProcessorContext.
+;;
+;; NOTE: a deprecated Transformer/ValueTransformer receives no processor context
+;; (its `init` requires the legacy org.apache.kafka.streams.processor.Processor-
+;; Context, which is not available from a new Processor). Such transformers are
+;; therefore supported for stateless use only; logic that needs a context (state
+;; stores, forwarding, headers, topic/partition/offset) must use the -with-ctx
+;; helpers below or supply a Processor/FixedKeyProcessor directly.
 
 (defn- transformer->processor
   "Drives a (deprecated) Transformer as a new Processor, forwarding the
   KeyValue(s) it returns. When `flat?`, each element of the returned iterable is
-  forwarded."
+  forwarded. The Transformer is initialised without a processor context, so it
+  must not depend on one (state stores, forwarding, etc.)."
   [^Transformer transformer flat?]
   (let [ctx (atom nil)]
     (reify Processor
       (init [_ context]
         (reset! ctx context)
+        ;; Deprecated Transformer.init needs the legacy ProcessorContext, which
+        ;; the new Processor cannot provide; stateless transformers ignore it.
         (.init transformer nil))
       (process [_ record]
         (let [result (.transform transformer (.key ^Record record) (.value ^Record record))]
@@ -216,7 +226,8 @@
 
 (defn transform-supplier->processor-supplier
   "Adapts a jackdaw transform supplier fn to a Kafka ProcessorSupplier. The fn
-  may return either a new Processor or a (deprecated) Transformer."
+  may return either a new Processor (recommended; receives a ProcessorContext)
+  or a (deprecated) Transformer (stateless only; receives no context)."
   ^ProcessorSupplier [supplier-fn flat?]
   (reify ProcessorSupplier
     (get [_]
@@ -226,12 +237,16 @@
           (transformer->processor obj flat?))))))
 
 (defn- value-transformer->processor
-  "Drives a (deprecated) ValueTransformer as a new FixedKeyProcessor."
+  "Drives a (deprecated) ValueTransformer as a new FixedKeyProcessor. The
+  ValueTransformer is initialised without a processor context, so it must not
+  depend on one (state stores, forwarding, etc.)."
   [^ValueTransformer vt flat?]
   (let [ctx (atom nil)]
     (reify FixedKeyProcessor
       (init [_ context]
         (reset! ctx context)
+        ;; Deprecated ValueTransformer.init needs the legacy ProcessorContext,
+        ;; which the new FixedKeyProcessor cannot provide; stateless only.
         (.init vt nil))
       (process [_ record]
         (let [result (.transform vt (.value ^FixedKeyRecord record))]
@@ -243,8 +258,9 @@
 
 (defn value-transform-supplier->fk-processor-supplier
   "Adapts a jackdaw transform-values supplier fn to a FixedKeyProcessorSupplier.
-  The fn may return either a new FixedKeyProcessor or a (deprecated)
-  ValueTransformer."
+  The fn may return either a new FixedKeyProcessor (recommended; receives a
+  FixedKeyProcessorContext) or a (deprecated) ValueTransformer (stateless only;
+  receives no context)."
   ^FixedKeyProcessorSupplier [supplier-fn flat?]
   (reify FixedKeyProcessorSupplier
     (get [_]

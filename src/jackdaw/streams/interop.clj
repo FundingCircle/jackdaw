@@ -250,7 +250,14 @@
   (through
     [_ {:keys [topic-name] :as topic-config}]
     ;; Kafka 4.x removed KStream.through; materialise to the topic and read it
-    ;; back as a new source stream.
+    ;; back as a new source stream. This needs the StreamsBuilder, which is not
+    ;; carried by every CljKStream (e.g. those produced by KTable/to-kstream).
+    (when (nil? streams-builder)
+      (throw (ex-info (str "through requires a StreamsBuilder-backed stream. "
+                           "This stream was created without one (e.g. via "
+                           "to-kstream); call through on a stream obtained from "
+                           "IStreamsBuilder/kstream instead.")
+                      {:topic-name topic-name})))
     (.to kstream ^String topic-name ^Produced (topic->produced topic-config))
     (clj-kstream
      (.stream ^StreamsBuilder streams-builder
