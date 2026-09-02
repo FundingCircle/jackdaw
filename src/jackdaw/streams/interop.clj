@@ -253,13 +253,11 @@
   (through
     [_ {:keys [topic-name] :as topic-config}]
     ;; Kafka 4.x removed KStream.through; materialise to the topic and read it
-    ;; back as a new source stream. This needs the StreamsBuilder, which is not
-    ;; carried by every CljKStream (e.g. those produced by KTable/to-kstream).
+    ;; back as a new source stream, which needs the StreamsBuilder. Streams from
+    ;; IStreamsBuilder and KTable/to-kstream carry it; only the internal 1-arity
+    ;; clj-kstream constructor omits it.
     (when (nil? streams-builder)
-      (throw (ex-info (str "through requires a StreamsBuilder-backed stream. "
-                           "This stream was created without one (e.g. via "
-                           "to-kstream); call through on a stream obtained from "
-                           "IStreamsBuilder/kstream instead.")
+      (throw (ex-info "through requires a StreamsBuilder-backed stream, but this CljKStream was created without one."
                       {:topic-name topic-name})))
     (.to kstream ^String topic-name ^Produced (topic->produced topic-config))
     (clj-kstream
@@ -390,7 +388,7 @@
     ;; Kafka 4.x removed KStream.transform; drive the supplier via process.
     (clj-kstream
      (.process ^KStream kstream
-               ^ProcessorSupplier (transform-supplier->processor-supplier transformer-supplier-fn false)
+               ^ProcessorSupplier (transform-supplier->processor-supplier transformer-supplier-fn)
                ^"[Ljava.lang.String;" (into-array String state-store-names))
      streams-builder))
 
@@ -402,7 +400,7 @@
     [_ transformer-supplier-fn state-store-names]
     (clj-kstream
      (.process ^KStream kstream
-               ^ProcessorSupplier (transform-supplier->processor-supplier transformer-supplier-fn true)
+               ^ProcessorSupplier (transform-supplier->processor-supplier transformer-supplier-fn)
                ^"[Ljava.lang.String;" (into-array String
                                                   (clojure.core/map name state-store-names)))
      streams-builder))
@@ -416,7 +414,7 @@
     ;; Kafka 4.x removed KStream.transformValues; drive via processValues.
     (clj-kstream
      (.processValues ^KStream kstream
-                     ^FixedKeyProcessorSupplier (value-transform-supplier->fk-processor-supplier value-transformer-supplier-fn false)
+                     ^FixedKeyProcessorSupplier (value-transform-supplier->fk-processor-supplier value-transformer-supplier-fn)
                      ^"[Ljava.lang.String;" (into-array String state-store-names))
      streams-builder))
 
@@ -428,7 +426,7 @@
     [_ value-transformer-supplier-fn state-store-names]
     (clj-kstream
      (.processValues ^KStream kstream
-                     ^FixedKeyProcessorSupplier (value-transform-supplier->fk-processor-supplier value-transformer-supplier-fn true)
+                     ^FixedKeyProcessorSupplier (value-transform-supplier->fk-processor-supplier value-transformer-supplier-fn)
                      ^"[Ljava.lang.String;" (into-array String
                                                         (clojure.core/map name state-store-names)))
      streams-builder))
