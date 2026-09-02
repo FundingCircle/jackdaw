@@ -95,6 +95,8 @@
               ^Materialized (topic->materialized (assoc topic-config
                                                         :topic-name store-name)))))))
 
+;; source-topics is intentionally not implemented for this wrapper type.
+#_{:clj-kondo/ignore [:missing-protocol-method]}
 (deftype CljStreamsBuilder [^StreamsBuilder streams-builder]
   IStreamsBuilder
 
@@ -148,6 +150,8 @@
   []
   (CljStreamsBuilder. (StreamsBuilder.)))
 
+;; write-as-text! is intentionally not implemented for this wrapper type.
+#_{:clj-kondo/ignore [:missing-protocol-method]}
 (deftype CljKStream [^KStream kstream streams-builder]
   IKStreamBase
   (join
@@ -456,6 +460,9 @@
   ([kstream streams-builder]
    (CljKStream. kstream streams-builder)))
 
+;; group-by/peek are implemented below but flagged by clj-kondo due to
+;; core-name shadowing; write-as-text! is intentionally not implemented here.
+#_{:clj-kondo/ignore [:missing-protocol-method :unresolved-protocol-method]}
 (deftype CljKTable [^KTable ktable]
   IKStreamBase
   (join

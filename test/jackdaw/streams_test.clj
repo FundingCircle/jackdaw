@@ -851,10 +851,13 @@
 
           (publish 1 1 3)
           (publish 2 2 4)
-          (try
-            (publish 2 3 4)
-            (catch org.apache.kafka.streams.errors.StreamsException e
-              (is "task [0_0] Failed to flush state store topic-b" (.getMessage e))))
+          (let [thrown (try
+                         (publish 2 3 4)
+                         nil
+                         (catch org.apache.kafka.streams.errors.StreamsException e
+                           e))]
+            (is (some? thrown)
+                "publishing beyond the suppress buffer max-records should shut down the app"))
 
           (let [keyvals (mock/get-keyvals driver topic-c)]
             (is (= 0 (count keyvals))))))))
