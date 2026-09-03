@@ -1,9 +1,9 @@
 {:deps
  {danlentz/clj-uuid {:mvn/version "0.1.7"}
   fundingcircle/jackdaw {:local/root "../.."}
-  org.apache.kafka/kafka-clients {:mvn/version "4.3.0"}
-  org.apache.kafka/kafka-streams {:mvn/version "4.3.0"}
-  org.apache.kafka/kafka-streams-test-utils {:mvn/version "4.3.0"}
+  org.apache.kafka/kafka-clients {:mvn/version "4.3.1"}
+  org.apache.kafka/kafka-streams {:mvn/version "4.3.1"}
+  org.apache.kafka/kafka-streams-test-utils {:mvn/version "4.3.1"}
   org.clojure/clojure {:mvn/version "1.12.5"}
   org.clojure/tools.logging {:mvn/version "0.4.1"}}
 
