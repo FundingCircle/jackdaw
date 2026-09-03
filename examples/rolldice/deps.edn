@@ -2,7 +2,7 @@
  ["src" "resources"]
 
  :deps
- {org.clojure/clojure {:mvn/version "1.12.5"}
+ {org.clojure/clojure {:mvn/version "1.12.6"}
   fundingcircle/jackdaw {:local/root "../.."}
   org.apache.kafka/kafka-clients {:mvn/version "4.3.1"}
   pjstadig/humane-test-output {:mvn/version "0.11.0"}

@@ -17,7 +17,7 @@ jobs:
     environment: clojars_deploy
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # Fetch full history and tags so build.clj/derive-version can find the
           # latest semver tag (snapshot builds are triggered by non-semver tags).

@@ -42,7 +42,7 @@ jobs:
           KAFKA_REST_HOST_NAME: kafka-rest
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           # do not fetch tags if the trigger event is a tag push
           fetch-tags: ${{ startsWith(github.ref, 'refs/tags') != true }}
