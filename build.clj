@@ -28,16 +28,23 @@
     (catch Exception _ nil)))
 
 (defn- derive-version
-  "Return the release version when HEAD is exactly a semver tag, otherwise a
-  SNAPSHOT version based on the next patch of the latest semver tag."
+  "Return the release version when HEAD is exactly a semver tag. When HEAD is a
+  `publish-snapshot-<semver>` tag, return that semver as a SNAPSHOT. Otherwise
+  return a SNAPSHOT version based on the next patch of the latest semver tag."
   []
   (or (System/getenv "JACKDAW_VERSION")
       (let [latest-tag (git "describe" "--tags" "--abbrev=0"
                             "--match" "[0-9]*.[0-9]*.[0-9]*")
             exact-tag  (git "describe" "--tags" "--exact-match"
-                            "--match" "[0-9]*.[0-9]*.[0-9]*")]
+                            "--match" "[0-9]*.[0-9]*.[0-9]*")
+            snapshot-tag (git "describe" "--tags" "--exact-match"
+                              "--match" "publish-snapshot-[0-9]*.[0-9]*.[0-9]*")]
         (cond
           exact-tag exact-tag
+
+          snapshot-tag
+          (let [[_ semver] (re-find #"publish-snapshot-(\d+\.\d+\.\d+)" snapshot-tag)]
+            (format "%s-SNAPSHOT" semver))
 
           latest-tag
           (let [[_ prefix patch] (re-find #"(\d+\.\d+)\.(\d+)" latest-tag)]

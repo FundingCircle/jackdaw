@@ -48,7 +48,7 @@ Steps 2 to 6 is essentially `git tag $version -m "$title\n\n$description" && git
 
 #### Snapshot release
 
-Snapshot releases can be created by pushing a tag with the format `publish-snapshot-semver`
+Snapshot releases can be created by pushing a tag with the format `publish-snapshot-<semver>`, for example `publish-snapshot-0.10.0`, which deploys `0.10.0-SNAPSHOT`.
 
 ## License
 
