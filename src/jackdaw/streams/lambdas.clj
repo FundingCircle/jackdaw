@@ -5,12 +5,14 @@
            org.apache.kafka.streams.KeyValue
            [org.apache.kafka.streams.kstream
             Aggregator ForeachAction Initializer KeyValueMapper
-            Merger Predicate Reducer Transformer TransformerSupplier
-            ValueJoiner ValueMapper ValueTransformer ValueTransformerSupplier]
+            Merger Predicate Reducer
+            ValueJoiner ValueMapper]
            [org.apache.kafka.streams.processor
             StreamPartitioner]
            [org.apache.kafka.streams.processor.api
-            Processor ProcessorSupplier]))
+            Processor ProcessorSupplier ProcessorContext Record
+            FixedKeyProcessor FixedKeyProcessorSupplier FixedKeyProcessorContext
+            FixedKeyRecord]))
 
 (set! *warn-on-reflection* true)
 
@@ -146,8 +148,13 @@
 
 (deftype FnStreamPartitioner [stream-partitioner-fn]
   StreamPartitioner
-  (partition [_this topic-name key val partition-count]
-    (stream-partitioner-fn topic-name key val partition-count)))
+  ;; Kafka 4.x removed the single-partition `partition` method; `partitions`
+  ;; returns an Optional set of target partitions. A nil result from the user fn
+  ;; delegates to Kafka's default partitioner via Optional/empty.
+  (partitions [_this topic-name key val partition-count]
+    (if-let [p (stream-partitioner-fn topic-name key val partition-count)]
+      (java.util.Optional/of #{(int p)})
+      (java.util.Optional/empty))))
 
 (defn stream-partitioner
   "Packages up a Clojure fn in a kstream partitioner."
@@ -178,39 +185,56 @@
   ^ProcessorSupplier [processor-fn]
   (FnProcessorSupplier. processor-fn))
 
-(deftype FnTransformerSupplier [transformer-supplier-fn]
-  TransformerSupplier
-  (get [_this]
-    (transformer-supplier-fn)))
+;; --- Transform/process adapters (Kafka 4.x) --------------------------------
+;;
+;; Kafka 4.x removed KStream.transform/transformValues in favour of
+;; process/processValues, backed by the new Processor/FixedKeyProcessor API and
+;; its ProcessorContext. The jackdaw transform* wrappers therefore require a
+;; supplier fn that returns a Processor/FixedKeyProcessor - e.g. via the
+;; transformer-with-ctx / value-transformer-with-ctx helpers below.
+;;
+;; The deprecated Transformer/ValueTransformer types are no longer accepted: they
+;; can only be initialised with the legacy ProcessorContext, which the new API
+;; cannot supply, so a context-dependent transformer would silently break.
+;; Supplying one now fails fast with a clear error rather than being run without
+;; a context.
 
-(defn transformer-supplier
-  "Packages up a Clojure fn in a kstream transformer supplier."
-  [transformer-supplier-fn]
-  (FnTransformerSupplier. transformer-supplier-fn))
+(defn transform-supplier->processor-supplier
+  "Adapts a jackdaw transform supplier fn to a Kafka ProcessorSupplier. The
+  supplier fn must return an org.apache.kafka.streams.processor.api.Processor
+  (e.g. via `transformer-with-ctx`)."
+  ^ProcessorSupplier [supplier-fn]
+  (reify ProcessorSupplier
+    (get [_]
+      (let [obj (supplier-fn)]
+        (if (instance? Processor obj)
+          obj
+          (throw (ex-info (str "transform now requires an org.apache.kafka.streams.processor.api.Processor "
+                               "(e.g. via jackdaw.streams.lambdas/transformer-with-ctx); the deprecated "
+                               "Transformer type is not supported under Kafka 4.x.")
+                          {:supplied (class obj)})))))))
 
-(deftype FnValueTransformerSupplier [value-transformer-supplier-fn]
-  ValueTransformerSupplier
-  (get [_this]
-    (value-transformer-supplier-fn)))
-
-(defn value-transformer-supplier
-  "Packages up a Clojure fn in a kstream value transformer supplier."
-  [value-transformer-supplier-fn]
-  (FnValueTransformerSupplier. value-transformer-supplier-fn))
-
-(deftype FnTransformer [context xfm-fn]
-  Transformer
-  (init [_this transformer-context]
-    (reset! context transformer-context))
-  (close [_this])
-  (transform [_this k v]
-    (xfm-fn @context k v)))
+(defn value-transform-supplier->fk-processor-supplier
+  "Adapts a jackdaw transform-values supplier fn to a FixedKeyProcessorSupplier.
+  The supplier fn must return an
+  org.apache.kafka.streams.processor.api.FixedKeyProcessor (e.g. via
+  `value-transformer-with-ctx`)."
+  ^FixedKeyProcessorSupplier [supplier-fn]
+  (reify FixedKeyProcessorSupplier
+    (get [_]
+      (let [obj (supplier-fn)]
+        (if (instance? FixedKeyProcessor obj)
+          obj
+          (throw (ex-info (str "transform-values now requires an org.apache.kafka.streams.processor.api.FixedKeyProcessor "
+                               "(e.g. via jackdaw.streams.lambdas/value-transformer-with-ctx); the deprecated "
+                               "ValueTransformer type is not supported under Kafka 4.x.")
+                          {:supplied (class obj)})))))))
 
 (defn transformer-with-ctx
-  "Helper to create a Transformer for use inside the jackdaw transform wrapper.
+  "Helper to create a processor for use inside the jackdaw transform wrapper.
   Passed function should take three args - the context, key and value for the stream.
   The processor context allows access to stream internals such as state stores.
-  Result is returned from the transform. E.g.
+  The returned key-value is forwarded. E.g.
   ```
   (-> builder
       (k/stream topic)
@@ -220,21 +244,21 @@
             ...))))
   ```"
   [xfm-fn]
- (fn [] (FnTransformer. (atom nil) xfm-fn)))
-
-(deftype FnValueTransformer [context xfm-fn]
-  ValueTransformer
-  (init [_this transformer-context]
-    (reset! context transformer-context))
-  (close [_this])
-  (transform [_this v]
-    (xfm-fn @context v)))
+  (fn []
+    (let [ctx (atom nil)]
+      (reify Processor
+        (init [_ context] (reset! ctx context))
+        (process [_ record]
+          (when-let [result (xfm-fn @ctx (.key ^Record record) (.value ^Record record))]
+            (.forward ^ProcessorContext @ctx
+                      ^Record (.withValue (.withKey ^Record record (.key ^KeyValue result))
+                                          (.value ^KeyValue result)))))
+        (close [_])))))
 
 (defn value-transformer-with-ctx
-  "Helper to create a ValueTransformer for use inside the jackdaw transform-values wrapper.
-  Passed function should take two args - the context and value for the stream.
-  The processor context allows access to stream internals such as state stores.
-  Result is returned from the transform-values. E.g.
+  "Helper to create a fixed-key processor for use inside the jackdaw
+  transform-values wrapper. Passed function should take two args - the context
+  and value for the stream. The returned value is forwarded. E.g.
   ```
   (-> builder
       (k/stream topic)
@@ -244,4 +268,11 @@
             ...))))
   ```"
   [xfm-fn]
-  (fn [] (FnValueTransformer. (atom nil) xfm-fn)))
+  (fn []
+    (let [ctx (atom nil)]
+      (reify FixedKeyProcessor
+        (init [_ context] (reset! ctx context))
+        (process [_ record]
+          (.forward ^FixedKeyProcessorContext @ctx
+                    (.withValue ^FixedKeyRecord record (xfm-fn @ctx (.value ^FixedKeyRecord record)))))
+        (close [_])))))

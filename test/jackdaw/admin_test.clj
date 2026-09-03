@@ -6,7 +6,7 @@
    [manifold.deferred :as d])
   (:import
    (org.apache.kafka.common Node KafkaFuture)
-   (org.apache.kafka.clients.admin MockAdminClient)))
+   (org.apache.kafka.clients.admin AlterConfigOp$OpType MockAdminClient)))
 
 (set! *warn-on-reflection* false)
 
@@ -90,7 +90,9 @@
         (let [bar (:bar test-topics)
               p (d/future
                   (admin/retry-exists? client bar 3 30))]
-          (Thread/sleep 100)
+          ;; Create well after the ~90ms retry window so the result is
+          ;; deterministically false regardless of scheduling jitter.
+          (Thread/sleep 1000)
           (admin/create-topics! client [bar])
           (is (= false @p)))))))
 
@@ -144,6 +146,31 @@
                     client (map #(update % :replication-factor inc)
                                 [foo bar]))
                    first)))))))
+
+(deftest test-alter-topic-config!-replacement-semantics
+  (testing "supplied keys are SET and dropped dynamic overrides are DELETEd"
+    (with-mock-admin-client test-cluster
+      (fn [client]
+        (admin/create-topics! client [(:foo test-topics)])
+        ;; The mock reports an existing "some-key" override that is absent from
+        ;; the supplied :topic-config, so it must be deleted to keep replacement
+        ;; semantics (Kafka 4.x incrementalAlterConfigs only merges otherwise).
+        (let [[_altered configs] (admin/alter-topic-config!
+                                  client [{:topic-name "foo"
+                                           :topic-config {"retention.ms" "1000"}}])
+              ops (-> configs vals first)
+              names-for (fn [op-type]
+                          (->> ops
+                               (filter #(= op-type (.opType %)))
+                               (map #(.name (.configEntry %)))
+                               set))
+              delete-op (->> ops
+                             (filter #(= AlterConfigOp$OpType/DELETE (.opType %)))
+                             first)]
+          (is (= #{"retention.ms"} (names-for AlterConfigOp$OpType/SET)))
+          (is (= #{"some-key"} (names-for AlterConfigOp$OpType/DELETE)))
+          ;; incrementalAlterConfigs rejects DELETE ops with a non-null value.
+          (is (nil? (.value (.configEntry delete-op)))))))))
 
 (deftest test-broker-config
   (with-mock-admin-client test-cluster

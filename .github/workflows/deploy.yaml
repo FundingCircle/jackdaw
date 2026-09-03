@@ -12,12 +12,16 @@ jobs:
   deploy:
     needs: run_checks
     runs-on: ubuntu-latest
-    container: 
-      image: clojure:latest
+    container:
+      image: clojure:temurin-21-tools-deps
     environment: clojars_deploy
     steps:
       - name: checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+        with:
+          # Fetch full history and tags so build.clj/derive-version can find the
+          # latest semver tag (snapshot builds are triggered by non-semver tags).
+          fetch-depth: 0
       - name: deploy
         env:
           CLOJARS_USERNAME: ${{ secrets.CLOJARS_USERNAME }}
@@ -27,9 +31,11 @@ jobs:
           # https://github.com/actions/runner/issues/2033
           git config --global --add safe.directory /__w/jackdaw/jackdaw
           apt-get update
-          apt-get install -y gpg 
+          apt-get install -y gpg
           echo $GPG_PRIVATE_KEY |base64 --decode |gpg --yes --batch --import
-          export LEIN_GPG=/__w/jackdaw/jackdaw/bin/gpg
-          export REAL_GPG=$(which gpg)
-          lein do jar, pom, deploy clojars
+          # Route deps-deploy's `gpg` calls through the loopback wrapper so the
+          # passphrase can be supplied non-interactively.
+          export REAL_GPG=$(command -v gpg)
+          export PATH="/__w/jackdaw/jackdaw/bin:$PATH"
+          clojure -T:build deploy
 

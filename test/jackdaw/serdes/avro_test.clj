@@ -376,7 +376,7 @@
           clj-data {:stringField "foo"
                     :longField 123
                     :recordField {:a 1}}
-          clj-data-opt (assoc clj-data :optionalField (long (Integer/MAX_VALUE)))
+          clj-data-opt (assoc clj-data :optionalField (long Integer/MAX_VALUE))
           avro-data (->generic-record avro-schema {"stringField" "foo"
                                                    "longField" 123
                                                    "defaultField" 1

@@ -11,7 +11,9 @@
    [clojure.test :as t])
   (:import
    (org.apache.kafka.clients.admin AdminClient NewTopic)
-   (org.apache.kafka.streams KafkaStreams$StateListener KafkaStreams$State)))
+   (org.apache.kafka.streams KafkaStreams$StateListener KafkaStreams$State)
+   (org.apache.kafka.streams.errors StreamsUncaughtExceptionHandler
+                                    StreamsUncaughtExceptionHandler$StreamThreadExceptionResponse)))
 
 (set! *warn-on-reflection* false)
 
@@ -97,10 +99,13 @@
 
 (defn- set-error
   [error]
-  (reify Thread$UncaughtExceptionHandler
-    (uncaughtException [_this _thread e]
+  ;; Kafka 4.x replaced the Thread.UncaughtExceptionHandler overload with
+  ;; StreamsUncaughtExceptionHandler, whose handle returns a response enum.
+  (reify StreamsUncaughtExceptionHandler
+    (handle [_this e]
       (log/error e (.getMessage e))
-      (reset! error e))))
+      (reset! error e)
+      StreamsUncaughtExceptionHandler$StreamThreadExceptionResponse/SHUTDOWN_CLIENT)))
 
 (defn kstream-fixture
   "Returns a fixture that builds and starts kafka streams for the supplied topology
@@ -185,15 +190,15 @@
 
 (defn default-reset-fn
   [rt args]
-  (.run rt (into-array String args)))
+  (.execute rt (into-array String args)))
 
 
 (defn- class-exists? [c]
   (resolve-class (.getContextClassLoader (Thread/currentThread)) c))
 
 (defn reset-application-fixture
-  "Returns a fixture that runs the kafka.tools.StreamsResetter with the supplied
-   `reset-args` as parameters"
+  "Returns a fixture that runs the org.apache.kafka.tools.StreamsResetter with
+   the supplied `reset-args` as parameters"
   ([app-config]
    (reset-application-fixture app-config [] default-reset-fn))
 
@@ -202,9 +207,9 @@
 
   ([app-config reset-args reset-fn]
    (fn [t]
-   (if-not (class-exists? 'kafka.tools.StreamsResetter)
-     (throw (RuntimeException. "You must add a dependency on a kafka distrib which ships the kafka.tools.StreamsResetter tool"))
-     (let [rt (.newInstance (clojure.lang.RT/classForName "kafka.tools.StreamsResetter"))
+   (if-not (class-exists? 'org.apache.kafka.tools.StreamsResetter)
+     (throw (RuntimeException. "You must add a dependency on a kafka distrib which ships the org.apache.kafka.tools.StreamsResetter tool"))
+     (let [rt (.newInstance (clojure.lang.RT/classForName "org.apache.kafka.tools.StreamsResetter"))
            args (concat ["--application-id" (get app-config "application.id")
                          "--bootstrap-servers" (get app-config "bootstrap.servers")]
                         reset-args)

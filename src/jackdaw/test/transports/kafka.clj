@@ -12,6 +12,7 @@
                                serde-map
                                byte-array-serde]])
   (:import
+   java.time.Duration
    org.apache.kafka.common.header.Header
    org.apache.kafka.clients.consumer.Consumer
    org.apache.kafka.clients.consumer.ConsumerRecord
@@ -30,14 +31,16 @@
 
 (defn load-assignments
   [consumer]
-  (.poll ^Consumer consumer 0)
+  ;; Kafka 4.x no longer assigns partitions during a zero-duration poll; delegate
+  ;; to the shared client helper (wall-clock timeout, throws on failure).
+  (kafka/poll-until-assigned consumer)
   (.assignment ^Consumer consumer))
 
 (defn seek-to-end
   "Seeks to the end of all the partitions assigned to the given consumer
    and returns the updated consumer"
   [consumer & topic-partitions]
-  (let [assigned-partitions (or topic-partitions (load-assignments consumer))]
+  (let [assigned-partitions (or (seq topic-partitions) (load-assignments consumer))]
     (.seekToEnd ^Consumer consumer assigned-partitions)
     (doseq [assigned-partition assigned-partitions]
       ;; This forces the seek to happen now
@@ -50,7 +53,7 @@
   [messages]
   (fn [consumer]
     (try
-      (let [m (.poll ^Consumer consumer 1000)]
+      (let [m (.poll ^Consumer consumer (Duration/ofMillis 1000))]
         (when m
           (s/put-all! messages m)))
       (catch Throwable e

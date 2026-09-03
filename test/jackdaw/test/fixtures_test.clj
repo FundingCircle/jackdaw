@@ -63,7 +63,7 @@
                               (reset! reset-args [rt args])
                               0)}
                  (fn [{:keys [resetter reset-args error-data]}]
-                   (is (instance? kafka.tools.StreamsResetter resetter))
+                   (is (instance? org.apache.kafka.tools.StreamsResetter resetter))
                    (is (= ["--application-id" "yolo"
                            "--bootstrap-servers" "kafka.test:9092"
                            "--foo" "foo"
@@ -82,7 +82,7 @@
                               (.write *out* "essential application info\n")
                               1)}
                  (fn [{:keys [resetter error-data]}]
-                   (is (instance? kafka.tools.StreamsResetter resetter))
+                   (is (instance? org.apache.kafka.tools.StreamsResetter resetter))
                    (is (= 1 (:status error-data)))
                    (is (= "helpful error message\n" (:err error-data)))
                    (is (= "essential application info\n" (:out error-data))))))

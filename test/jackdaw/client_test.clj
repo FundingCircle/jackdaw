@@ -231,8 +231,6 @@
    in response to successive calls of the `poll` method"
   [queue]
   (reify Consumer
-    (^ConsumerRecords poll [_this ^long ms]
-      (.poll queue ms TimeUnit/MILLISECONDS))
     (^ConsumerRecords poll [_this ^Duration duration]
      (.poll queue (.toMillis duration) TimeUnit/MILLISECONDS))))
 
@@ -258,13 +256,44 @@
            :key 2
            :value 2))))
 
+(deftest poll-until-assigned-test
+  (testing "returns nil without polling when the consumer already has an assignment"
+    (let [tp (TopicPartition. "test-topic" 0)
+          polls (atom 0)
+          consumer (reify Consumer
+                     (^ConsumerRecords poll [_ ^Duration _]
+                       (swap! polls inc)
+                       (ConsumerRecords/empty))
+                     (assignment [_] #{tp}))]
+      (is (nil? (client/poll-until-assigned consumer)))
+      ;; Polling an already-assigned consumer here would fetch and discard records.
+      (is (= 0 @polls))))
+
+  (testing "throws ex-info after the timeout when no assignment arrives"
+    ;; Wall-clock based: iteration counting would have returned almost
+    ;; immediately (and silently) when poll responds fast.
+    (let [consumer (reify Consumer
+                     (^ConsumerRecords poll [_ ^Duration _] (ConsumerRecords/empty))
+                     (assignment [_] #{}))
+          start (System/currentTimeMillis)
+          ex (try
+               (client/poll-until-assigned consumer 200)
+               nil
+               (catch clojure.lang.ExceptionInfo e e))]
+      (is (some? ex))
+      (is (= 200 (:timeout-ms (ex-data ex))))
+      (is (>= (- (System/currentTimeMillis) start) 200)))))
+
 (deftest ^:integration position-all-test
   (fix/with-fixtures [(fix/topic-fixture (broker-config) test-topics 1000)]
     (with-consumer (-> (client/consumer (consumer-config "partition-test"))
                        (client/subscribe [bar-topic]))
         (fn [consumer]
-          ;; without an initial `poll`, there is no position info
-          (client/poll consumer 0)
+          ;; Kafka 4.x poll(0) no longer triggers assignment; poll until assigned
+          (loop [n 100]
+            (client/poll consumer 100)
+            (when (and (empty? (client/position-all consumer)) (pos? n))
+              (recur (dec n))))
           (is (= {{:topic-name "bar" :partition 0} 0}
                  (client/position-all consumer)))))))
 

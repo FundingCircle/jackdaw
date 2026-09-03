@@ -4,6 +4,7 @@
             [clojure.test :refer [deftest is testing]]
             [jackdaw.serdes.edn :as jse]
             [jackdaw.streams :as k]
+            [jackdaw.streams.configured :as configured]
             [jackdaw.streams.interop :as interop]
             [jackdaw.streams.lambdas :as lambdas :refer [key-value]]
             [jackdaw.streams.lambdas.specs]
@@ -13,8 +14,9 @@
             [jackdaw.streams.specs])
   (:import [java.time Duration]
            [org.apache.kafka.streams.kstream
-            JoinWindows SessionWindows TimeWindows Transformer
-            ValueTransformer]
+            JoinWindows SessionWindows TimeWindows]
+           [org.apache.kafka.streams.processor.api
+            FixedKeyProcessor Processor]
            org.apache.kafka.streams.StreamsBuilder
            [org.apache.kafka.common.serialization Serdes]))
 
@@ -239,6 +241,25 @@
         (publish 1 1)
 
         (is (= [[1 1]] (mock/get-keyvals driver topic-b)))
+        (is (= [[1 1]] (mock/get-keyvals driver topic-c)))))
+
+    (testing "on a stream produced by KTable/to-kstream"
+      ;; Streams from to-kstream carry the StreamsBuilder, so through can
+      ;; re-source the topic under Kafka 4.x rather than failing.
+      (let [topic-a (mock/topic "topic-a")
+            topic-b (mock/topic "topic-b")
+            topic-c (mock/topic "topic-c")
+            driver (mock/build-driver
+                    (fn [builder]
+                      (-> (k/ktable builder topic-a)
+                          (k/to-kstream)
+                          (k/through topic-b)
+                          (k/to topic-c))))
+            publish (partial mock/publish driver topic-a)]
+
+        (publish 1 1)
+
+        (is (= [[1 1]] (mock/get-keyvals driver topic-b)))
         (is (= [[1 1]] (mock/get-keyvals driver topic-c))))))
 
   (testing "to"
@@ -423,13 +444,15 @@
   (testing "transform"
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
-          transformer-supplier-fn #(let [total (atom 0)]
-                                     (reify Transformer
-                                       (init [_ _])
-                                       (close [_])
-                                       (transform [_ k v]
-                                         (swap! total + v)
-                                         (key-value [(* k 2) @total]))))
+          transformer-supplier-fn (fn []
+                                    (let [total (atom 0)
+                                          ctx (atom nil)]
+                                      (reify Processor
+                                        (init [_ context] (reset! ctx context))
+                                        (close [_])
+                                        (process [_ record]
+                                          (swap! total + (.value record))
+                                          (.forward @ctx (.withValue (.withKey record (* (.key record) 2)) @total))))))
           driver (mock/build-driver (fn [builder]
                                       (-> builder
                                           (k/kstream topic-a)
@@ -449,18 +472,19 @@
   (testing "flat-transform"
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
-          transformer-supplier-fn #(let [total (atom 0)]
-                                     (reify Transformer
-                                       (init [_ _])
-                                       (close [_])
-                                       (transform [_ k v]
-                                         ;; each input creates two outputs
-                                         ;; each v' accumulating the v read in:
-                                         ;; [[k * 10, v'] [k * 20, v'']]
-                                         (map (fn [x]
-                                                (swap! total + v)
-                                                (key-value [(* k x) @total]))
-                                              [10 20]))))
+          transformer-supplier-fn (fn []
+                                    (let [total (atom 0)
+                                          ctx (atom nil)]
+                                      (reify Processor
+                                        (init [_ context] (reset! ctx context))
+                                        (close [_])
+                                        (process [_ record]
+                                          ;; each input creates two outputs, each
+                                          ;; accumulating the value read in
+                                          (let [k (.key record) v (.value record)]
+                                            (doseq [x [10 20]]
+                                              (swap! total + v)
+                                              (.forward @ctx (.withValue (.withKey record (* k x)) @total))))))))
           driver (mock/build-driver (fn [builder]
                                       (-> builder
                                           (k/kstream topic-a)
@@ -484,13 +508,15 @@
   (testing "transform-values"
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
-          transformer-supplier-fn #(let [total (atom 0)]
-                                     (reify ValueTransformer
-                                       (init [_ _])
-                                       (close [_])
-                                       (transform [_ v]
-                                         (swap! total + v)
-                                         @total)))
+          transformer-supplier-fn (fn []
+                                    (let [total (atom 0)
+                                          ctx (atom nil)]
+                                      (reify FixedKeyProcessor
+                                        (init [_ context] (reset! ctx context))
+                                        (close [_])
+                                        (process [_ record]
+                                          (swap! total + (.value record))
+                                          (.forward @ctx (.withValue record @total))))))
           driver (mock/build-driver (fn [builder]
                                       (-> builder
                                           (k/kstream topic-a)
@@ -511,17 +537,18 @@
   (testing "flat-transform-values"
     (let [topic-a (mock/topic "topic-a")
           topic-b (mock/topic "topic-b")
-          transformer-supplier-fn #(let [total (atom 0)]
-                                     (reify ValueTransformer
-                                       (init [_ _])
-                                       (close [_])
-                                       (transform [_ v]
-                                         ;; returns value + 100,
-                                         ;; then value + 200
-                                         (map (fn [x]
-                                                (swap! total + v)
-                                                (+ @total x))
-                                              [100 200]))))
+          transformer-supplier-fn (fn []
+                                    (let [total (atom 0)
+                                          ctx (atom nil)]
+                                      (reify FixedKeyProcessor
+                                        (init [_ context] (reset! ctx context))
+                                        (close [_])
+                                        (process [_ record]
+                                          ;; forwards value + 100, then value + 200
+                                          (let [v (.value record)]
+                                            (doseq [x [100 200]]
+                                              (swap! total + v)
+                                              (.forward @ctx (.withValue record (+ @total x)))))))))
           driver (mock/build-driver (fn [builder]
                                       (-> builder
                                           (k/kstream topic-a)
@@ -840,10 +867,13 @@
 
           (publish 1 1 3)
           (publish 2 2 4)
-          (try
-            (publish 2 3 4)
-            (catch org.apache.kafka.streams.errors.StreamsException e
-              (is "task [0_0] Failed to flush state store topic-b" (.getMessage e))))
+          (let [thrown (try
+                         (publish 2 3 4)
+                         nil
+                         (catch org.apache.kafka.streams.errors.StreamsException e
+                           e))]
+            (is (some? thrown)
+                "publishing beyond the suppress buffer max-records should shut down the app"))
 
           (let [keyvals (mock/get-keyvals driver topic-c)]
             (is (= 0 (count keyvals))))))))
@@ -1404,7 +1434,7 @@
                                    (lambdas/value-transformer-with-ctx
                                      (fn [ctx v]
                                        {:new-val (+ (:val v) 1)
-                                        :topic (.topic ctx)})))
+                                        :topic (.topic (.get (.recordMetadata ctx)))})))
                                  (k/to output-t))))]
         (let [publisher (partial mock/publish driver input-t)]
 
@@ -1451,3 +1481,66 @@
           (let [msgs (into {} (mock/get-keyvals driver output-t))]
             (is (= 6 (:value (msgs 1))))
             (is (= 60 (:value (msgs 2))))))))))
+
+(deftest stream-partitioner-test
+  (testing "returns the fn's partition wrapped in an Optional set"
+    (let [p (lambdas/->FnStreamPartitioner (fn [_t _k _v _n] 3))]
+      (is (= (java.util.Optional/of #{3})
+             (.partitions p "topic" :k :v 10)))))
+  (testing "a nil result delegates to Kafka's default partitioner"
+    (let [p (lambdas/->FnStreamPartitioner (fn [_t _k _v _n] nil))]
+      (is (= (java.util.Optional/empty)
+             (.partitions p "topic" :k :v 10))))))
+
+(defn- configured-driver
+  "Builds a TopologyTestDriver from a topology described against a configured
+  (jackdaw.streams.configured) streams builder."
+  [f]
+  (let [cb (configured/streams-builder {} (interop/streams-builder))]
+    (f cb)
+    (mock/streams-builder->test-driver cb)))
+
+(deftest configured-flat-transform-test
+  (testing "flat-transform delegates through the configured wrapper"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          supplier (fn []
+                     (let [ctx (atom nil)]
+                       (reify Processor
+                         (init [_ c] (reset! ctx c))
+                         (close [_])
+                         (process [_ record]
+                           (let [k (.key record) v (.value record)]
+                             (doseq [x [1 2]]
+                               (.forward @ctx (.withValue (.withKey record (* k x)) (* v x)))))))))
+          driver (configured-driver
+                  (fn [builder]
+                    (-> builder
+                        (k/kstream topic-a)
+                        (k/flat-transform supplier)
+                        (k/to topic-b))))]
+      (mock/publish driver topic-a 2 3)
+      (is (= [[2 3] [4 6]] (mock/get-keyvals driver topic-b)))))
+
+  (testing "flat-transform-values delegates through the configured wrapper"
+    (let [topic-a (mock/topic "topic-a")
+          topic-b (mock/topic "topic-b")
+          supplier (fn []
+                     (let [ctx (atom nil)]
+                       (reify FixedKeyProcessor
+                         (init [_ c] (reset! ctx c))
+                         (close [_])
+                         (process [_ record]
+                           (let [v (.value record)]
+                             (doseq [x [10 20]]
+                               (.forward @ctx (.withValue record (+ v x)))))))))
+          driver (configured-driver
+                  (fn [builder]
+                    (-> builder
+                        (k/kstream topic-a)
+                        (k/flat-transform-values supplier)
+                        (k/to topic-b))))]
+      (mock/publish driver topic-a 1 5)
+      (is (= [[1 15] [1 25]] (mock/get-keyvals driver topic-b))))))
+
+
