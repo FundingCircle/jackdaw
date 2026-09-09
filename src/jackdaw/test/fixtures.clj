@@ -144,7 +144,7 @@
 ;; system readyness
 
 (defn service-ready?
-  [{:keys [http-url http-params timeout]}]
+  [{:keys [http-url http-params http-timeout]}]
   (fn [t]
     (let [ok? (fn [x]
                 (and (not (= :timeout x))
@@ -158,13 +158,13 @@
                                               (catch java.net.ConnectException _))]
                               result
                               (recur))))
-                        timeout
+                        http-timeout
                         :timeout)]
       (if (ok? ready-check)
         (t)
         (throw (ex-info (format "service %s not available after waiting for %s"
                                 http-url
-                                timeout)
+                                http-timeout)
                         {}))))))
 
 (defn delete-recursively [fname]

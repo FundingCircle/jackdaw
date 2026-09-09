@@ -1,18 +1,10 @@
 {:paths ["src" "resources"],
  :deps
  {manifold/manifold {:mvn/version "0.5.0"},
-  danlentz/clj-uuid
-  {:mvn/version "0.2.5", :exclusions [primitive-math/primitive-math]},
-  io.confluent/kafka-schema-registry-client
-  {:mvn/version "8.3.1",
-   :exclusions [com.fasterxml.jackson.core/jackson-databind
-                org.apache.kafka/kafka-clients]},
-  io.confluent/kafka-avro-serializer
-  {:mvn/version "8.3.1",
-   :exclusions [org.apache.kafka/kafka-clients]},
-  io.confluent/kafka-json-schema-serializer
-  {:mvn/version "8.3.1",
-   :exclusions [org.apache.kafka/kafka-clients]},
+  danlentz/clj-uuid {:mvn/version "0.2.5"},
+  io.confluent/kafka-schema-registry-client {:mvn/version "8.3.1"},
+  io.confluent/kafka-avro-serializer {:mvn/version "8.3.1"},
+  io.confluent/kafka-json-schema-serializer {:mvn/version "8.3.1"},
   org.apache.kafka/kafka-clients {:mvn/version "4.3.1"},
   org.apache.kafka/kafka-streams {:mvn/version "4.3.1"},
   org.apache.kafka/kafka-streams-test-utils {:mvn/version "4.3.1"},
@@ -21,7 +13,7 @@
   org.clojure/data.fressian {:mvn/version "1.1.1"},
   org.clojure/tools.logging {:mvn/version "1.3.1"},
   org.clojure/core.cache {:mvn/version "1.2.263"},
-  metosin/jsonista {:mvn/version "1.0.0"}},
+  metosin/jsonista {:mvn/version "1.0.1"}},
  :mvn/repos
  {"central" {:url "https://repo1.maven.org/maven2/"},
   "clojars" {:url "https://repo.clojars.org/"},
@@ -60,6 +52,11 @@
   :clj-kondo
   {:extra-deps {clj-kondo/clj-kondo {:mvn/version "2026.08.04"}},
    :main-opts ["-m" "clj-kondo.main"]},
+
+  ;; Check for outdated dependencies: clojure -M:outdated
+  :outdated
+  {:extra-deps {com.github.liquidz/antq {:mvn/version "2.11.1276"}},
+   :main-opts ["-m" "antq.core"]},
 
   ;; Build jar / pom and deploy to Clojars: clojure -T:build <fn>
   :build
