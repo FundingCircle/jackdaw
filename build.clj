@@ -55,7 +55,6 @@
 (def version (derive-version))
 (def class-dir "target/classes")
 (def jar-file (format "target/%s-%s.jar" (name lib) version))
-(def snapshot? (str/ends-with? version "-SNAPSHOT"))
 
 (defn- basis []
   ;; :root nil keeps the CLI's own Clojure out of the generated pom; deps.edn
@@ -100,7 +99,7 @@
   "Build the jar (if necessary) and deploy it to Clojars.
 
   Credentials are read from the CLOJARS_USERNAME / CLOJARS_PASSWORD environment
-  variables. Non-snapshot releases are GPG signed."
+  variables. All releases, including snapshots, are GPG signed."
   [_]
   (when-not (.exists (io/file jar-file))
     (jar nil))
@@ -116,5 +115,5 @@
                 ;; signing key directly and skips the uid lookup that failed
                 ;; when the keyring looked empty at signing time.
                 :sign-key-id "45F6FBBB4066FB92"
-                :sign-releases? (not snapshot?)}))
+                :sign-releases? true}))
   (println "Deployed" jar-file "to Clojars"))
