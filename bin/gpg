@@ -4,5 +4,5 @@
 # PATH ahead of the real gpg so `clojure -T:build deploy` (deps-deploy) can sign
 # artifacts non-interactively.
 
-echo $GPG_PASSPHRASE \
-  | $REAL_GPG --pinentry-mode loopback --yes --batch --passphrase-fd=0 $@
+echo "$GPG_PASSPHRASE" \
+  | $REAL_GPG --pinentry-mode loopback --yes --batch --passphrase-fd=0 "$@"

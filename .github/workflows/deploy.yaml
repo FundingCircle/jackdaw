@@ -33,10 +33,30 @@ jobs:
           git config --global --add safe.directory /__w/jackdaw/jackdaw
           apt-get update
           apt-get install -y gpg
-          echo $GPG_PRIVATE_KEY |base64 --decode |gpg --yes --batch --import
+          # Pin GNUPGHOME so the import below and the gpg subprocess that
+          # deps-deploy execs at signing time resolve the same keyring. GPG 2.1+
+          # keeps secret keys under $GNUPGHOME/private-keys-v1.d; if HOME drifts
+          # between processes the importer writes a keyring the signer can't see.
+          export GNUPGHOME="$HOME/.gnupg"
+          mkdir -p "$GNUPGHOME"
+          chmod 700 "$GNUPGHOME"
+          # Quote the secret: harmless for single-line base64, but preserves
+          # newlines if the key is exported as multi-line ASCII armor.
+          echo "$GPG_PRIVATE_KEY" | base64 --decode | gpg --yes --batch --import
+          gpg --list-secret-keys --keyid-format=long
+          # Fail fast if the imported key can't actually sign, rather than after
+          # deps-deploy has spent ~16s building the jar first.
+          echo "jackdaw gpg signing smoke test" > gpg-smoke.txt
+          echo "$GPG_PASSPHRASE" | gpg --pinentry-mode loopback --batch --yes \
+            --passphrase-fd 0 --local-user 45F6FBBB4066FB92 \
+            --armor --detach-sign gpg-smoke.txt
+          rm -f gpg-smoke.txt gpg-smoke.txt.asc
           # Route deps-deploy's `gpg` calls through the loopback wrapper so the
           # passphrase can be supplied non-interactively.
           export REAL_GPG=$(command -v gpg)
           export PATH="/__w/jackdaw/jackdaw/bin:$PATH"
+          # Confirm the wrapper on PATH still sees the secret key immediately
+          # before deploy, matching exactly what deps-deploy will invoke.
+          gpg --list-secret-keys --keyid-format=long
           clojure -T:build deploy
 

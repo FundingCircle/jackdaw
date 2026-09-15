@@ -112,6 +112,9 @@
     (dd/deploy {:installer :remote
                 :artifact jar-file
                 :pom-file (b/pom-path {:class-dir class-dir :lib lib})
-                :sign-key-id "fundingcirclebot@fundingcircle.com"
+                ;; Long key id rather than the email uid, so gpg selects the
+                ;; signing key directly and skips the uid lookup that failed
+                ;; when the keyring looked empty at signing time.
+                :sign-key-id "45F6FBBB4066FB92"
                 :sign-releases? (not snapshot?)}))
   (println "Deployed" jar-file "to Clojars"))
