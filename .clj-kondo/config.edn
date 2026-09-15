@@ -2,9 +2,32 @@
                             :exclude-destructured-as true}
            :unresolved-symbol { ;; `thrown-with-msg-and-data?` is a legit extension to the `is` macro
                                ;; via an `assert-expr` defmethod (see clojure.test doc)
-                               :exclude [(clojure.test/is [thrown-with-msg-and-data?])]}}
+                               :exclude [(clojure.test/is [thrown-with-msg-and-data?])]}
+           ;; clj-uuid defines its vars (v4, v5, +null+, to-string, ...) via
+           ;; macros that clj-kondo can't analyse; treat them as resolved.
+           :unresolved-var {:exclude [clj-uuid]}
+           ;; jackdaw.test.commands intentionally excludes the `do` special form
+           ;; so it can define its own `do` command builder.
+           :unresolved-excluded-var {:level :off}}
 
  :lint-as {clojure.test.check.clojure-test/defspec clojure.core/def
            jackdaw.data/defn->data clojure.core/defn
-           jackdaw.test.transports/deftransport clojure.core/defn
-           manifold.deferred/loop clojure.core/let}}
+           manifold.deferred/loop clojure.core/let}
+
+ :hooks {:analyze-call {jackdaw.test.transports/deftransport
+                        hooks.jackdaw.test.transports/deftransport}}
+
+ ;; interop/configured wrap Kafka Streams via protocols referred with :refer
+ ;; :all; clj-kondo misreports missing/unresolved protocol methods for the
+ ;; core-shadowed names (group-by, peek, ...) and the few intentionally
+ ;; unimplemented ones (source-topics, write-as-text!, ...).
+ :config-in-ns
+ {jackdaw.streams.interop {:linters {:missing-protocol-method {:level :off}
+                                     :unresolved-protocol-method {:level :off}}}
+  jackdaw.streams.configured {:linters {:missing-protocol-method {:level :off}
+                                        :unresolved-protocol-method {:level :off}}}}
+
+ ;; The jackdaw.data.* files are `load`ed `in-ns` fragments of jackdaw.data, not
+ ;; standalone namespaces, so clj-kondo can't resolve defn->data/datafy in them
+ ;; and reports order-dependent false errors. Exclude them from output.
+ :output {:exclude-files ["jackdaw/data/"]}}

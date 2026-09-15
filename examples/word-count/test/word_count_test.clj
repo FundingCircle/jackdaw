@@ -55,7 +55,7 @@
 (def test-config
   {:broker-config broker-config
    :topic-metadata topic-metadata
-   :app-config (assoc wc/streams-config "cache.max.bytes.buffering" "0")
+   :app-config (assoc wc/streams-config "statestore.cache.max.bytes" "0")
    :enable? (get-env "BOOTSTRAP_SERVERS")})
 
 (defn props-for [x]

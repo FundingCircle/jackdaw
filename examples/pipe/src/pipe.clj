@@ -28,7 +28,7 @@
   []
   {"application.id" "pipe"
    "bootstrap.servers" "localhost:9092"
-   "cache.max.bytes.buffering" "0"})
+   "statestore.cache.max.bytes" "0"})
 
 (defn build-topology
   "Reads from a Kafka topic called `input`, logs the key and value,

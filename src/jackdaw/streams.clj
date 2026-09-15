@@ -201,34 +201,37 @@
   (p/select-key kstream select-key-value-mapper-fn))
 
 (defn transform
-  "Creates a KStream that consists of the results of applying the transformer
-  to each key/value in the input stream."
+  "Transforms each record with a processor. `transformer-supplier-fn` is a 0-arg
+  fn returning an org.apache.kafka.streams.processor.api.Processor (e.g. via
+  jackdaw.streams.lambdas/transformer-with-ctx); the records it forwards form the
+  output stream."
   ([kstream transformer-supplier-fn]
    (p/transform kstream transformer-supplier-fn))
   ([kstream transformer-supplier-fn state-store-names]
    (p/transform kstream transformer-supplier-fn state-store-names)))
 
 (defn flat-transform
-  "Creates a KStream that consists of the results of applying the transformer
-  to each value in the input stream. Result of the transform should be iterable,
-  and the resulting stream is as per flatMap"
+  "Like `transform`, but for processors that forward zero or more records per
+  input record."
   ([kstream transformer-supplier-fn]
    (p/flat-transform kstream transformer-supplier-fn))
   ([kstream transformer-supplier-fn state-store-names]
    (p/flat-transform kstream transformer-supplier-fn state-store-names)))
 
 (defn transform-values
-  "Creates a KStream that consists of the results of applying the transformer
-  to each value in the input stream."
+  "Transforms each value with a fixed-key processor.
+  `value-transformer-supplier-fn` is a 0-arg fn returning an
+  org.apache.kafka.streams.processor.api.FixedKeyProcessor (e.g. via
+  jackdaw.streams.lambdas/value-transformer-with-ctx); the records it forwards
+  form the output stream."
   ([kstream value-transformer-supplier-fn]
    (p/transform-values kstream value-transformer-supplier-fn))
   ([kstream value-transformer-supplier-fn state-store-names]
    (p/transform-values kstream value-transformer-supplier-fn state-store-names)))
 
 (defn flat-transform-values
-  "Creates a KStream that consists of the results of applying the transformer
-  to each value in the input stream. Result of the transform should be iterable,
-  and the resulting stream is as per flatMap"
+  "Like `transform-values`, but for fixed-key processors that forward zero or
+  more records per input record."
   ([kstream value-transformer-supplier-fn]
    (p/flat-transform-values kstream value-transformer-supplier-fn))
   ([kstream value-transformer-supplier-fn state-store-names]

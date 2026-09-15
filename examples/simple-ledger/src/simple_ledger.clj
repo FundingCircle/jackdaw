@@ -40,7 +40,7 @@
   []
   {"application.id" "simple-ledger"
    "bootstrap.servers" "localhost:9092"
-   "cache.max.bytes.buffering" "0"})
+   "statestore.cache.max.bytes" "0"})
 
 (defn build-topology
   "Returns a topology builder.

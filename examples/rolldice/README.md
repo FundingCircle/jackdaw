@@ -8,6 +8,6 @@ Clone this repo.
 
 ## Usage
 
-1. Bring up the Kafka services by running `docker-compose up -d`. Alternatively, run the Kafka services (broker and zookeeper) locally, following instructions in the [Apache Kafka Quickstart](https://kafka.apache.org/quickstart).
+1. Bring up the Kafka broker by running `docker-compose up -d`. Alternatively, run a Kafka broker locally (KRaft mode, no ZooKeeper), following instructions in the [Apache Kafka Quickstart](https://kafka.apache.org/quickstart).
 
-2. From the root directory of the repo, run: `lein run`
+2. From the `examples/rolldice` directory, run: `clojure -M:run`

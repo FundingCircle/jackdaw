@@ -67,7 +67,6 @@
   (let [id (str "dev-" (java.util.UUID/randomUUID))]
     {"replication.factor" "1", "group.id" id, "application.id" id,
      "bootstrap.servers"  (utils/bootstrap-servers)
-     "zookeeper.connect"  (utils/zookeeper-address)
      "request.timeout.ms" "1000"}))
 
 ;;;; Schemas

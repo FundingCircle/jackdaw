@@ -179,9 +179,9 @@
   "Polls kafka for new messages, returning a potentially empty sequence
   of datafied messages."
   [^Consumer consumer timeout]
-  (some->> (if (int? timeout)
-             (.poll consumer ^long timeout)
-             (.poll consumer ^Duration timeout))
+  (some->> (.poll consumer ^Duration (if (int? timeout)
+                                       (Duration/ofMillis timeout)
+                                       timeout))
            (map jd/datafy)))
 
 (defn position
@@ -211,6 +211,25 @@
   (doto ^Consumer consumer
     (.seek ^TopicPartition (jd/as-TopicPartition topic-partition) offset)))
 
+(defn poll-until-assigned
+  "Poll the consumer until partition assignment is non-empty, returning nil.
+
+  In Kafka 4.0+, `poll(0)` no longer triggers assignment. Throws `ex-info` if no
+  assignment is received within `timeout-ms` (default 30000)."
+  ([^Consumer consumer]
+   (poll-until-assigned consumer 30000))
+  ([^Consumer consumer timeout-ms]
+   (let [deadline (+ (System/currentTimeMillis) timeout-ms)]
+     ;; Check the assignment before polling so an already-assigned consumer does
+     ;; not fetch (and discard) records here; only poll while it stays empty.
+     (loop []
+       (when (empty? (.assignment consumer))
+         (when (>= (System/currentTimeMillis) deadline)
+           (throw (ex-info "Timed out waiting for partition assignment"
+                           {:timeout-ms timeout-ms})))
+         (poll consumer (Duration/ofMillis 100))
+         (recur))))))
+
 (defn seek-to-end-eager
   "Seek to the last offset for all assigned partitions, and force positioning.
 
@@ -220,7 +239,7 @@
   ([^Consumer consumer]
    (seek-to-end-eager consumer []))
   ([^Consumer consumer topic-partitions]
-   (poll consumer 0) ;; load assignments
+   (poll-until-assigned consumer) ;; load assignments
    (.seekToEnd consumer topic-partitions)
    (position-all consumer)
    consumer))
@@ -234,7 +253,7 @@
    (seek-to-beginning-eager consumer [])
    consumer)
   ([^Consumer consumer topic-partitions]
-   (poll consumer 0)
+   (poll-until-assigned consumer)
    (.seekToBeginning consumer (map jd/as-TopicPartition topic-partitions))
    (position-all consumer)
    consumer))

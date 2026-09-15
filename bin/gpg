@@ -1,6 +1,8 @@
 #!/bin/sh
 #
-# Invoked by `LEIN_GPG=$app/bin/gpg lein deploy clojars`
+# GPG wrapper that supplies the passphrase via loopback pinentry. Placed on the
+# PATH ahead of the real gpg so `clojure -T:build deploy` (deps-deploy) can sign
+# artifacts non-interactively.
 
 echo $GPG_PASSPHRASE \
   | $REAL_GPG --pinentry-mode loopback --yes --batch --passphrase-fd=0 $@

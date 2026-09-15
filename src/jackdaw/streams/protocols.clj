@@ -168,26 +168,31 @@
   (transform
     [kstream transformer-supplier-fn]
     [kstream transformer-supplier-fn state-store-names]
-    "Creates a KStream that consists of the results of applying the transformer
-    to each key/value in the input stream.")
+    "Transforms each record with a processor. `transformer-supplier-fn` is a
+    0-arg fn returning an org.apache.kafka.streams.processor.api.Processor (e.g.
+    via jackdaw.streams.lambdas/transformer-with-ctx); the records it forwards
+    form the output stream.")
 
   (flat-transform
     [kstream transformer-supplier-fn]
     [kstream transformer-supplier-fn state-store-names]
-    "Creates a KStream that consists of the results of applying the transformer
-    to each key/value in the input stream via flatTransform.")
+    "Like `transform`, but for processors that forward zero or more records per
+    input record.")
 
   (transform-values
     [kstream value-transformer-supplier-fn]
     [kstream value-transformer-supplier-fn state-store-names]
-    "Creates a KStream that consists of the results of applying the transformer
-    to each value in the input stream.")
+    "Transforms each value with a fixed-key processor.
+    `value-transformer-supplier-fn` is a 0-arg fn returning an
+    org.apache.kafka.streams.processor.api.FixedKeyProcessor (e.g. via
+    jackdaw.streams.lambdas/value-transformer-with-ctx); the records it forwards
+    form the output stream.")
 
   (flat-transform-values
     [kstream value-transformer-supplier-fn]
     [kstream value-transformer-supplier-fn state-store-names]
-    "Creates a KStream that consists of the results of applying the transformer
-    to each key/value in the input stream via flatTransformValues.")
+    "Like `transform-values`, but for fixed-key processors that forward zero or
+    more records per input record.")
 
   (join-global
     [kstream global-ktable kv-mapper joiner])

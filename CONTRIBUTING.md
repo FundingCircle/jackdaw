@@ -48,7 +48,7 @@ git config format.signoff true
 
 * Read [how to properly contribute to open source projects on Github][3].
 * Keep style and feature PRs separate. Feel free to discuss proposals in #jackdaw[9]
-* Make sure that the unit tests are passing (`lein test`).
+* Make sure that the unit tests are passing (`clojure -M:test`).
 * Write [good commit messages][4] and sign each commit (`git commit -s -m 'Add foo feature'`).
 * Mention related tickets in the commit messages (e.g. `[Fix #N] Add command ...`).
 * Update the [changelog][7].

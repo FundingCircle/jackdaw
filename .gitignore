@@ -13,10 +13,10 @@
 /logs
 pom.xml
 pom.xml.asc
-.lein-*
 .cpcache
 .nrepl-port
 /examples/*/target
+/examples/*/classes
 .clj-kondo/
 .lsp/
 .calva/

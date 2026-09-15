@@ -3,7 +3,9 @@
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
   (:import [io.confluent.kafka.schemaregistry.client
             MockSchemaRegistryClient
-            CachedSchemaRegistryClient]))
+            CachedSchemaRegistryClient]
+           [io.confluent.kafka.schemaregistry.avro AvroSchemaProvider]
+           [io.confluent.kafka.schemaregistry.json JsonSchemaProvider]))
 
 (set! *warn-on-reflection* true)
 
@@ -18,6 +20,9 @@
 (defn mock-client
   "Build and return a mock schema registry client.
 
+  Registers both Avro and JSON Schema providers so the client can handle either
+  format; Confluent 8.x no longer bundles them in the no-arg constructor.
+
   Really suitable only for testing."
   []
-  (MockSchemaRegistryClient.))
+  (MockSchemaRegistryClient. [(AvroSchemaProvider.) (JsonSchemaProvider.)]))

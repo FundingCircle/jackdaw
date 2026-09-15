@@ -277,6 +277,26 @@
      config
      (transform-values kstream value-transformer-supplier-fn state-store-names)))
 
+  (flat-transform
+      [this transformer-supplier-fn]
+    (flat-transform this transformer-supplier-fn []))
+
+  (flat-transform
+    [_ transformer-supplier-fn state-store-names]
+    (configured-kstream
+     config
+     (flat-transform kstream transformer-supplier-fn state-store-names)))
+
+  (flat-transform-values
+      [this value-transformer-supplier-fn]
+    (flat-transform-values this value-transformer-supplier-fn []))
+
+  (flat-transform-values
+    [_ value-transformer-supplier-fn state-store-names]
+    (configured-kstream
+     config
+     (flat-transform-values kstream value-transformer-supplier-fn state-store-names)))
+
   (left-join-global
     [_ global-ktable kv-mapper joiner]
     (configured-kstream

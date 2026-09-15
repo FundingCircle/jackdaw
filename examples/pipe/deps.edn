@@ -1,8 +1,9 @@
 {:deps
- {fundingcircle/jackdaw {:mvn/version "0.6.4"}
-  org.apache.kafka/kafka-streams {:mvn/version "2.1.0"}
-  org.apache.kafka/kafka-streams-test-utils {:mvn/version "2.1.0"}
-  org.clojure/clojure {:mvn/version "1.10.0"}
+ {fundingcircle/jackdaw {:local/root "../.."}
+  org.apache.kafka/kafka-clients {:mvn/version "4.3.1"}
+  org.apache.kafka/kafka-streams {:mvn/version "4.3.1"}
+  org.apache.kafka/kafka-streams-test-utils {:mvn/version "4.3.1"}
+  org.clojure/clojure {:mvn/version "1.12.6"}
   org.clojure/tools.logging {:mvn/version "0.4.1"}}
 
  :mvn/repos
@@ -15,4 +16,4 @@
  {:test {:extra-deps {com.cognitect/test-runner
                       {:git/url "https://github.com/cognitect-labs/test-runner.git"
                        :sha "028a6d41ac9ac5d5c405dfc38e4da6b4cc1255d5"}}
-         :main-opts ["-m" "cognitect.test-runner"]}}}
+         :main-opts ["-m" "test-runner"]}}}

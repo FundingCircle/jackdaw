@@ -180,7 +180,7 @@ requirements.
   (with-fixtures [(topic-fixture kafka-config input-topic-config)
                   (topic-fixture kafka-config output-topic-config)
                   (service-ready? {:http-url "http://localhost:8082"
-                                   :timeout 5000})]
+                                   :http-timeout 5000})]
     (with-open [machine (test-machine transport)]
       (f machine))))
 ```

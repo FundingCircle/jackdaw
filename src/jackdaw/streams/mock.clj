@@ -1,7 +1,6 @@
 (ns jackdaw.streams.mock
   "Mocks for testing kafka streams."
   {:license "BSD 3-Clause License <https://github.com/FundingCircle/jackdaw/blob/master/LICENSE>"}
-  (:refer-clojure :exclude [send])
   (:require [jackdaw.streams :as js]
             [jackdaw.streams.interop :as interop]
             [jackdaw.data :as data])
