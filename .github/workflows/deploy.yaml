@@ -28,6 +28,11 @@ jobs:
           CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASSWORD }}
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          # Deliberately a literal, not a secret: a fingerprint is not
+          # sensitive, and masking it would redact the `gpg
+          # --list-secret-keys` output below, which is what diagnosed the
+          # expired-key failure in the first place.
+          GPG_KEY_ID: DB8FD4761D2C2B55C50397727658FBE150227262
         run: |
           # https://github.com/actions/runner/issues/2033
           git config --global --add safe.directory /__w/jackdaw/jackdaw
@@ -48,7 +53,7 @@ jobs:
           # deps-deploy has spent ~16s building the jar first.
           echo "jackdaw gpg signing smoke test" > gpg-smoke.txt
           echo "$GPG_PASSPHRASE" | gpg --pinentry-mode loopback --batch --yes \
-            --passphrase-fd 0 --local-user 45F6FBBB4066FB92 \
+            --passphrase-fd 0 --local-user "$GPG_KEY_ID" \
             --armor --detach-sign gpg-smoke.txt
           rm -f gpg-smoke.txt gpg-smoke.txt.asc
           # Route deps-deploy's `gpg` calls through the loopback wrapper so the

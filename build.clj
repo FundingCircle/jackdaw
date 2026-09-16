@@ -95,6 +95,18 @@
             :jar-file jar-file}))
   (println "Built" jar-file))
 
+(defn- sign-key-id
+  "Return the GPG key fingerprint used to sign artifacts.
+
+  Read from GPG_KEY_ID so rotating the key needs no code change. A full
+  fingerprint rather than the email uid, so gpg selects the signing key
+  directly instead of a uid lookup, which reports a misleading \"no default
+  secret key\" when the key is merely expired. Throws when unset, so
+  deps-deploy cannot fall back to gpg's default key."
+  []
+  (or (System/getenv "GPG_KEY_ID")
+      (throw (ex-info "GPG_KEY_ID is not set; refusing to sign" {}))))
+
 (defn deploy
   "Build the jar (if necessary) and deploy it to Clojars.
 
@@ -111,9 +123,6 @@
     (dd/deploy {:installer :remote
                 :artifact jar-file
                 :pom-file (b/pom-path {:class-dir class-dir :lib lib})
-                ;; Long key id rather than the email uid, so gpg selects the
-                ;; signing key directly and skips the uid lookup that failed
-                ;; when the keyring looked empty at signing time.
-                :sign-key-id "45F6FBBB4066FB92"
+                :sign-key-id (sign-key-id)
                 :sign-releases? true}))
   (println "Deployed" jar-file "to Clojars"))
