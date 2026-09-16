@@ -6,6 +6,7 @@
    [manifold.deferred :as d])
   (:import
    (org.apache.kafka.common Node KafkaFuture)
+   (org.apache.kafka.common.errors TimeoutException)
    (org.apache.kafka.clients.admin AlterConfigOp$OpType MockAdminClient)))
 
 (set! *warn-on-reflection* false)
@@ -114,8 +115,21 @@
 (deftest test-topics-ready?
   (with-mock-admin-client test-cluster
     (fn [client]
-      (admin/create-topics! client (vals test-topics))
-      (is (admin/topics-ready? client (vals test-topics))))))
+      (testing "returns true when all topics exist and have a leader and isr"
+        (admin/create-topics! client (vals test-topics))
+        (is (admin/topics-ready? client (vals test-topics))))
+
+      (testing "returns false when a topic does not exist"
+        (is (false? (admin/topics-ready? client [{:topic-name "does-not-exist"}])))
+        (is (false? (admin/topics-ready? client (conj (vec (vals test-topics))
+                                                      {:topic-name "does-not-exist"})))))
+
+      (testing "rethrows errors unrelated to the topic being unavailable"
+        (with-redefs [admin/describe-topics* (fn [_this _topics]
+                                               (d/future
+                                                 (throw (TimeoutException. "boom"))))]
+          (is (thrown-with-msg? Exception #"boom"
+                                (admin/topics-ready? client (vals test-topics)))))))))
 
 (deftest test-partition-ids-of-topics
   (with-mock-admin-client test-cluster
