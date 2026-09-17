@@ -4,5 +4,12 @@
 # PATH ahead of the real gpg so `clojure -T:build deploy` (deps-deploy) can sign
 # artifacts non-interactively.
 
-echo "$GPG_PASSPHRASE" \
-  | $REAL_GPG --pinentry-mode loopback --yes --batch --passphrase-fd=0 "$@"
+# Without this, an unset REAL_GPG runs --pinentry-mode as the command and
+# reports "--pinentry-mode: command not found", hiding the real problem.
+: "${REAL_GPG:?REAL_GPG is not set; point it at the real gpg}"
+
+# printf with a constant format, not echo: /bin/sh is dash in the CI image and
+# its echo interprets backslash escapes, which would corrupt a passphrase
+# containing one. A leading -n or -e would likewise be read as an option.
+printf '%s\n' "$GPG_PASSPHRASE" \
+  | "$REAL_GPG" --pinentry-mode loopback --yes --batch --passphrase-fd=0 "$@"

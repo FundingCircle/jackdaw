@@ -52,7 +52,7 @@ jobs:
           # Fail fast if the imported key can't actually sign, rather than after
           # deps-deploy has spent ~16s building the jar first.
           echo "jackdaw gpg signing smoke test" > gpg-smoke.txt
-          echo "$GPG_PASSPHRASE" | gpg --pinentry-mode loopback --batch --yes \
+          printf '%s\n' "$GPG_PASSPHRASE" | gpg --pinentry-mode loopback --batch --yes \
             --passphrase-fd 0 --local-user "$GPG_KEY_ID" \
             --armor --detach-sign gpg-smoke.txt
           rm -f gpg-smoke.txt gpg-smoke.txt.asc
