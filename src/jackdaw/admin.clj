@@ -12,7 +12,8 @@
   (:import [java.util Collection Properties]
            [org.apache.kafka.clients.admin AdminClient
             AlterConfigOp AlterConfigOp$OpType
-            DescribeTopicsOptions DescribeClusterOptions DescribeConfigsOptions]))
+            DescribeTopicsOptions DescribeClusterOptions DescribeConfigsOptions]
+           [org.apache.kafka.common.errors UnknownTopicOrPartitionException]))
 
 (set! *warn-on-reflection* true)
 
@@ -147,10 +148,25 @@
                     (assoc m (jd/datafy k) (jd/datafy v)))
                   {})))
 
+(defn- unknown-topic-or-partition?
+  "Predicate.
+
+  Return `true` if and only if the given throwable is, or wraps, an
+  `UnknownTopicOrPartitionException`."
+  [^Throwable t]
+  (->> (iterate #(.getCause ^Throwable %) t)
+       (take-while some?)
+       ;; Guard against pathological (cyclic) cause chains.
+       (take 20)
+       (some #(instance? UnknownTopicOrPartitionException %))
+       boolean))
+
 (defn topics-ready?
   "Given an `AdminClient` and a sequence topic descriptors, return
   `true` if and only if all listed topics have a leader and in-sync
   replicas.
+
+  Returns `false` if any of the listed topics does not exist yet.
 
   This can be used to determine if some set of newly created topics
   are healthy yet, or detect whether leader re-election has finished
@@ -158,12 +174,17 @@
   [^AdminClient client topics]
   {:pre [(client? client)
          (sequential? topics)]}
-  (->> @(describe-topics* client (map :topic-name topics))
-       (every? (fn [[_topic-name {:keys [partition-info]}]]
-                 (every? (fn [part-info]
-                           (and (boolean (:leader part-info))
-                                (seq (:isr part-info))))
-                         partition-info)))))
+  (try
+    (->> @(describe-topics* client (map :topic-name topics))
+         (every? (fn [[_topic-name {:keys [partition-info]}]]
+                   (every? (fn [part-info]
+                             (and (boolean (:leader part-info))
+                                  (seq (:isr part-info))))
+                           partition-info))))
+    (catch Exception e
+      (if (unknown-topic-or-partition? e)
+        false
+        (throw e)))))
 
 (defn- describe-current-configs
   "Return a map from topic name to its current live configuration, as a map from
