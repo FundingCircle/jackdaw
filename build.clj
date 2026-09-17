@@ -101,10 +101,13 @@
   Read from GPG_KEY_ID so rotating the key needs no code change. A full
   fingerprint rather than the email uid, so gpg selects the signing key
   directly instead of a uid lookup, which reports a misleading \"no default
-  secret key\" when the key is merely expired. Throws when unset, so
-  deps-deploy cannot fall back to gpg's default key."
+  secret key\" when the key is merely expired.
+
+  Throws when unset or blank. gpg ignores an empty --default-key and signs
+  with whatever secret key it finds, so a blank value would silently produce
+  an artifact signed by the wrong key."
   []
-  (or (System/getenv "GPG_KEY_ID")
+  (or (some-> (System/getenv "GPG_KEY_ID") str/trim not-empty)
       (throw (ex-info "GPG_KEY_ID is not set; refusing to sign" {}))))
 
 (defn deploy
