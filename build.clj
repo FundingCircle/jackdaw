@@ -55,7 +55,6 @@
 (def version (derive-version))
 (def class-dir "target/classes")
 (def jar-file (format "target/%s-%s.jar" (name lib) version))
-(def snapshot? (str/ends-with? version "-SNAPSHOT"))
 
 (defn- basis []
   ;; :root nil keeps the CLI's own Clojure out of the generated pom; deps.edn
@@ -96,11 +95,26 @@
             :jar-file jar-file}))
   (println "Built" jar-file))
 
+(defn- sign-key-id
+  "Return the GPG key fingerprint used to sign artifacts.
+
+  Read from GPG_KEY_ID so rotating the key needs no code change. A full
+  fingerprint rather than the email uid, so gpg selects the signing key
+  directly instead of a uid lookup, which reports a misleading \"no default
+  secret key\" when the key is merely expired.
+
+  Throws when unset or blank. gpg ignores an empty --default-key and signs
+  with whatever secret key it finds, so a blank value would silently produce
+  an artifact signed by the wrong key."
+  []
+  (or (some-> (System/getenv "GPG_KEY_ID") str/trim not-empty)
+      (throw (ex-info "GPG_KEY_ID is not set; refusing to sign" {}))))
+
 (defn deploy
   "Build the jar (if necessary) and deploy it to Clojars.
 
   Credentials are read from the CLOJARS_USERNAME / CLOJARS_PASSWORD environment
-  variables. Non-snapshot releases are GPG signed."
+  variables. All releases, including snapshots, are GPG signed."
   [_]
   (when-not (.exists (io/file jar-file))
     (jar nil))
@@ -112,6 +126,6 @@
     (dd/deploy {:installer :remote
                 :artifact jar-file
                 :pom-file (b/pom-path {:class-dir class-dir :lib lib})
-                :sign-key-id "fundingcirclebot@fundingcircle.com"
-                :sign-releases? (not snapshot?)}))
+                :sign-key-id (sign-key-id)
+                :sign-releases? true}))
   (println "Deployed" jar-file "to Clojars"))
