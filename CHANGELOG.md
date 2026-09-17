@@ -1,6 +1,6 @@
 # Changelog
 
-### Unreleased
+### [0.10.0] - [2026-09-17]
 - `jackdaw.admin/topics-ready?` now returns `false` when a topic does not exist, instead of throwing an `UnknownTopicOrPartitionException`. Errors unrelated to the topic being unavailable are still propagated.
 - **Kafka 4.x / Confluent Platform 8.x support.** Upgraded `org.apache.kafka` to 4.3.1 and the Confluent serializers/schema-registry client to 8.3.1. Adapts to the removal of `KStream.branch`/`through`/`transform*` (now built on `split`/`process`/`processValues`), `StreamPartitioner.partition` -> `partitions`, `AdminClient.alterConfigs` -> `incrementalAlterConfigs`, `Duration`-only `Consumer.poll`, the new `StreamsUncaughtExceptionHandler`, and the relocated `org.apache.kafka.tools.StreamsResetter`. The Docker test stack now runs Kafka 4.x in KRaft mode (no ZooKeeper). Closes [#378](https://github.com/FundingCircle/jackdaw/issues/378). [#384](https://github.com/FundingCircle/jackdaw/pull/384)
 - **Migrated build tooling from Leiningen to `deps.edn`/`tools.build`.** Replaced `project.clj` with `deps.edn` + `build.clj`; example projects and CI updated accordingly. [#384](https://github.com/FundingCircle/jackdaw/pull/384)
