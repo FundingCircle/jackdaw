@@ -159,19 +159,20 @@ requirements.
   {"bootstrap.servers" "localhost:9092"
    "group.id" "my-app"})
 
+
 (def input-topic-config
   {:foo {:topic-name "foo"
          :key-serde (string-serde)
          :value-serde (string-serde)
          :partition-count 1
-         :replication-factor 1})
+         :replication-factor 1}})
 
 (def output-topic-config
   {:foo {:topic-name "bar"
          :key-serde (string-serde)
          :value-serde (string-serde)
          :partition-count 1
-         :replication-factor 1})
+         :replication-factor 1}})
 
 (defn with-test-machine
   "Creates a test-machine using the supplied `transport` and then
