@@ -10,6 +10,8 @@
 - **Breaking:** `transform`/`transform-values` (and their flat variants) no longer accept the deprecated `Transformer`/`ValueTransformer` types, which Kafka 4.x can no longer supply a processor context to. Supplier fns must return a `Processor`/`FixedKeyProcessor` (e.g. via `transformer-with-ctx` / `value-transformer-with-ctx`); supplying the old types now throws a clear error. [#384](https://github.com/FundingCircle/jackdaw/pull/384)
 - **Breaking:** `flat-transform`/`flat-transform-values` no longer flatten a returned collection into multiple output records. Under the `Processor`/`FixedKeyProcessor` API the output stream is formed by whatever the processor forwards via its context (`.forward`), so emitting zero, one, or many records per input is now the caller's responsibility. Code that previously relied on returning a sequence to fan out will silently produce a single record until updated to call `.forward` per output record. [#384](https://github.com/FundingCircle/jackdaw/pull/384)
 
+- Fixed a bug with avro serialization, where default values within a union type would not be used correctly.
+
 ### [0.9.12] - [2023-12-05]
 - Support for Foreign Key joins [#365](https://github.com/FundingCircle/jackdaw/pull/365) (Issue [#364])
 - add manifold and keep aleph in dev dependencies [#360](https://github.com/FundingCircle/jackdaw/pull/360). Users of test-machine will have to add aleph to the test deps in their app.
