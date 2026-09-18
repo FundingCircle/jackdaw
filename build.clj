@@ -8,7 +8,8 @@
   The version is taken from the JACKDAW_VERSION environment variable when set,
   otherwise it is derived from the most recent semver git tag (mirroring the
   behaviour of the old lein-git-version plugin)."
-  (:require [clojure.java.io :as io]
+  (:require [clojure.edn :as edn]
+            [clojure.java.io :as io]
             [clojure.string :as str]
             [clojure.tools.build.api :as b]
             [deps-deploy.deps-deploy :as dd]
@@ -65,6 +66,35 @@
 (defn clean [_]
   (b/delete {:path "target"}))
 
+(defn- alias-dep-version
+  "Read a dep's :mvn/version out of one of deps.edn's :aliases, so a version
+  declared only in an alias has a single source of truth."
+  [alias-key lib]
+  (-> "deps.edn" slurp edn/read-string
+      (get-in [:aliases alias-key :extra-deps lib :mvn/version])))
+
+;; aleph deliberately isn't in :deps (see :test alias) so :local/root/:git/url
+;; consumers don't inherit it. write-pom only publishes :deps though, and has
+;; no concept of scope, so add it to the pom by hand.
+(defn- add-test-scope-dep! [pom-file coord]
+  (let [[group artifact] (str/split (str coord) #"/")
+        version (or (alias-dep-version :test coord)
+                    (throw (ex-info (str "No :mvn/version for " coord " in :test alias")
+                                     {:coord coord})))
+        dep-xml (format (str "    <dependency>\n"
+                             "      <groupId>%s</groupId>\n"
+                             "      <artifactId>%s</artifactId>\n"
+                             "      <version>%s</version>\n"
+                             "      <scope>test</scope>\n"
+                             "    </dependency>\n")
+                        group artifact version)
+        content (slurp pom-file)
+        patched (str/replace-first content #"<dependencies>" (str "<dependencies>\n" dep-xml))]
+    (when (= content patched)
+      (throw (ex-info "Could not find <dependencies> to insert into"
+                       {:pom-file pom-file})))
+    (spit pom-file patched)))
+
 (defn jar
   "Write the pom, AOT compile the serdes namespaces and build the jar."
   [_]
@@ -85,6 +115,7 @@
                     [:license
                      [:name "BSD 3-clause"]
                      [:url "http://opensource.org/licenses/BSD-3-Clause"]]]]})
+    (add-test-scope-dep! (b/pom-path {:class-dir class-dir :lib lib}) 'aleph/aleph)
     (b/copy-dir {:src-dirs ["src" "resources"]
                  :target-dir class-dir})
     (b/compile-clj {:basis basis
