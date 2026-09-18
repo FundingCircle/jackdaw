@@ -2,6 +2,7 @@
 
 ### [Unreleased]
 - Publish `aleph` as a `test`-scope dependency in the pom again. The `deps.edn`/`tools.build` migration in 0.10.0 dropped it from the published pom entirely (it only lived in the `:dev`/`:test` aliases), which broke cljdoc's API doc generation: `jackdaw.test.fixtures`/`jackdaw.test.transports.rest-proxy` require `aleph.http` at compile time, and cljdoc's analyzer resolves the published pom's own dependencies to build its classpath. Restores the shape `aleph` had in pre-0.10.0 poms, so it's still not pulled in transitively for consumers (see `examples/word-count/deps.edn`).
+- Adds IKStreamBase/join with arity 5 to configure left and right serdes and possibly name the join
 
 ### [0.10.0] - [2026-09-17]
 - `jackdaw.admin/topics-ready?` now returns `false` when a topic does not exist, instead of throwing an `UnknownTopicOrPartitionException`. Errors unrelated to the topic being unavailable are still propagated.
