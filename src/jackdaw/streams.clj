@@ -64,6 +64,8 @@
   share the same key or a foreign key using an inner join."
   ([kstream-or-ktable ktable value-joiner-fn]
    (p/join kstream-or-ktable ktable value-joiner-fn))
+  ([kstream-or-ktable ktable value-joiner-fn this-topic-config other-topic-config]
+   (p/join kstream-or-ktable ktable value-joiner-fn this-topic-config other-topic-config))
   ([kstream-or-ktable ktable foreign-key-extractor-fn value-joiner-fn]
    (p/join kstream-or-ktable ktable foreign-key-extractor-fn value-joiner-fn)))
 
