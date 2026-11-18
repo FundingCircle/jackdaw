@@ -129,6 +129,20 @@
   [kstream predicate-fns]
   (p/branch kstream predicate-fns))
 
+(defn divert?
+  "Diverts records that match any `pred` to the provided `topic-config`. Records that
+  do not match any `pred` are pushed on through the app.
+
+  When providing multiple diverts, diverts can either be:
+    - ordered (by providing a vector of `predicate` `topic-config` tuples); or
+    - unordered (by providing a map `predicate` to `topic-config` key pairs)"
+  ([stream diverts]
+   (clojure.core/reduce #(apply divert? %1 %2) stream (into [] diverts)))
+  ([stream pred topic-config]
+   (let [[divert-stream continue-stream] (branch stream [pred (constantly true)])]
+     (to divert-stream topic-config)
+     continue-stream)))
+
 (defn flat-map
   "Creates a KStream that will consist of the concatenation of messages
   returned by calling `key-value-mapper-fn` on each key/value pair in the
