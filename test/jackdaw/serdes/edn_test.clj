@@ -40,3 +40,14 @@
       (prop/for-all [x (s/gen uri?)]
         (is (= x (->> (.serialize (jse/serializer) nil x)
                       (.deserialize (jse/deserializer opts) nil))))))))
+
+(deftest edn-ex-data-deserialize
+  (testing "ex-data has :topic and data :keys"
+    (let [data (java.net.URI. "https://example.com")]
+      (try (->> (.serialize (jse/serializer) nil data)
+                (.deserialize (jse/deserializer) nil))
+           (assert false)
+           (catch Exception e
+             (is (= {:data (prn-str data)
+                     :topic nil}
+                    (ex-data e))))))))
