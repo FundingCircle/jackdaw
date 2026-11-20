@@ -3,12 +3,12 @@
 
  :deps
  {fundingcircle/jackdaw {:local/root "../.."}
-  org.clojure/clojure {:mvn/version "1.12.6"}
+  org.clojure/clojure {:mvn/version "1.12.7"}
   org.clojure/tools.logging {:mvn/version "0.4.1"}
-  org.apache.kafka/kafka-clients {:mvn/version "4.3.1"}
-  org.apache.kafka/kafka-streams {:mvn/version "4.3.1"}
-  org.apache.kafka/kafka-streams-test-utils {:mvn/version "4.3.1"}
-  ch.qos.logback/logback-classic {:mvn/version "1.2.3"}
+  org.apache.kafka/kafka-clients {:mvn/version "4.4.0"}
+  org.apache.kafka/kafka-streams {:mvn/version "4.4.0"}
+  org.apache.kafka/kafka-streams-test-utils {:mvn/version "4.4.0"}
+  ch.qos.logback/logback-classic {:mvn/version "1.6.8"}
   integrant {:mvn/version "0.7.0"}}
 
  :aliases
