@@ -2,18 +2,26 @@
  :deps
  {manifold/manifold {:mvn/version "0.5.0"},
   danlentz/clj-uuid {:mvn/version "0.2.5"},
-  io.confluent/kafka-schema-registry-client {:mvn/version "8.3.1"},
-  io.confluent/kafka-avro-serializer {:mvn/version "8.3.1"},
-  io.confluent/kafka-json-schema-serializer {:mvn/version "8.3.1"},
-  org.apache.kafka/kafka-clients {:mvn/version "4.3.1"},
-  org.apache.kafka/kafka-streams {:mvn/version "4.3.1"},
-  org.apache.kafka/kafka-streams-test-utils {:mvn/version "4.3.1"},
+  io.confluent/kafka-schema-registry-client {:mvn/version "8.4.1"},
+  io.confluent/kafka-avro-serializer {:mvn/version "8.4.1"},
+  io.confluent/kafka-json-schema-serializer {:mvn/version "8.4.1"},
+  org.apache.kafka/kafka-clients {:mvn/version "4.4.0"},
+  org.apache.kafka/kafka-streams {:mvn/version "4.4.0"},
+  org.apache.kafka/kafka-streams-test-utils {:mvn/version "4.4.0"},
   org.clojure/java.data {:mvn/version "1.4.120"},
   org.clojure/data.json {:mvn/version "2.5.2"},
   org.clojure/data.fressian {:mvn/version "1.1.1"},
-  org.clojure/tools.logging {:mvn/version "1.3.1"},
-  org.clojure/core.cache {:mvn/version "1.2.263"},
-  metosin/jsonista {:mvn/version "1.0.1"}},
+  org.clojure/tools.logging {:mvn/version "1.3.2"},
+  org.clojure/core.cache {:mvn/version "1.2.999"},
+  metosin/jsonista {:mvn/version "1.0.2"},
+  ;; CVE pins over kafka-clients 4.4.0 (lz4 CVE-2026-106451, snappy
+  ;; CVE-2026-93451/108106). Kafka 4.4 branch has these versions.
+  ;; Remove at Kafka 4.4.1.
+  at.yawk.lz4/lz4-java {:mvn/version "1.11.4"},
+  org.xerial.snappy/snappy-java {:mvn/version "1.1.10.12"},
+  ;; CVE pin over Confluent 8.4.1 (guava CVE-2026-102554). Confluent
+  ;; 8.4.x branch has this version. Remove at the next Confluent 8.4 patch.
+  com.google.guava/guava {:mvn/version "33.7.2-jre"}},
  :mvn/repos
  {"central" {:url "https://repo1.maven.org/maven2/"},
   "clojars" {:url "https://repo.clojars.org/"},
@@ -26,8 +34,9 @@
   :dev
   {:extra-paths ["dev" "test/resources"],
    :extra-deps
-   {org.clojure/clojure {:mvn/version "1.12.6"},
+   {org.clojure/clojure {:mvn/version "1.12.7"},
     io.aviso/logging {:mvn/version "1.0"},
+    ch.qos.logback/logback-classic {:mvn/version "1.6.8"},
     aleph/aleph {:mvn/version "0.9.11"}}},
 
   ;; Run the test suite: clojure -M:test
@@ -36,12 +45,13 @@
   :test
   {:extra-paths ["test" "test/resources" "dev"],
    :extra-deps
-   {org.clojure/clojure {:mvn/version "1.12.6"},
+   {org.clojure/clojure {:mvn/version "1.12.7"},
     org.clojure/test.check {:mvn/version "1.1.3"},
-    org.apache.kafka/kafka_2.13 {:mvn/version "4.3.1"},
-    org.apache.kafka/kafka-clients$test {:mvn/version "4.3.1"},
-    org.apache.kafka/kafka-tools {:mvn/version "4.3.1"},
+    org.apache.kafka/kafka_2.13 {:mvn/version "4.4.0"},
+    org.apache.kafka/kafka-clients$test-fixtures {:mvn/version "4.4.0"},
+    org.apache.kafka/kafka-tools {:mvn/version "4.4.0"},
     io.aviso/logging {:mvn/version "1.0"},
+    ch.qos.logback/logback-classic {:mvn/version "1.6.8"},
     aleph/aleph {:mvn/version "0.9.11"},
     lambdaisland/kaocha {:mvn/version "1.91.1392"},
     lambdaisland/kaocha-cloverage {:mvn/version "1.1.89"},
@@ -50,7 +60,7 @@
 
   ;; Lint: clojure -M:clj-kondo --lint src test
   :clj-kondo
-  {:extra-deps {clj-kondo/clj-kondo {:mvn/version "2026.08.04"}},
+  {:extra-deps {clj-kondo/clj-kondo {:mvn/version "2026.10.26"}},
    :main-opts ["-m" "clj-kondo.main"]},
 
   ;; Check for outdated dependencies: clojure -M:outdated

@@ -1,6 +1,7 @@
 # Changelog
 
-### [Unreleased]
+### [0.10.1] - [2026-11-20]
+- **Kafka 4.4 / Confluent Platform 8.4.** Upgraded `org.apache.kafka` to 4.4.0 and the Confluent serializers/schema-registry client to 8.4.1. Pins `lz4-java` 1.11.4, `snappy-java` 1.1.10.12 and `guava` 33.7.2-jre to clear CVEs that those releases still ship transitively; remove the pins once Kafka 4.4.1 and the next Confluent 8.4 patch are out. Also bumps `jsonista` 1.0.2, `core.cache` 1.2.999 and `tools.logging` 1.3.2. Test deps move from `kafka-clients$test` to `kafka-clients$test-fixtures` (where `MockAdminClient` now lives) and add `logback-classic` 1.6.8, since the 1.2.3 pulled in by `io.aviso/logging` does not bind to slf4j 2 and test logging was a no-op. Docker test stack and examples updated to match. [#398](https://github.com/FundingCircle/jackdaw/pull/398)
 - Publish `aleph` as a `test`-scope dependency in the pom again. The `deps.edn`/`tools.build` migration in 0.10.0 dropped it from the published pom entirely (it only lived in the `:dev`/`:test` aliases), which broke cljdoc's API doc generation: `jackdaw.test.fixtures`/`jackdaw.test.transports.rest-proxy` require `aleph.http` at compile time, and cljdoc's analyzer resolves the published pom's own dependencies to build its classpath. Restores the shape `aleph` had in pre-0.10.0 poms, so it's still not pulled in transitively for consumers (see `examples/word-count/deps.edn`).
 - Improved `mangle` and `unmangle` performance in the avro serde
 
